@@ -400,18 +400,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div id="loginScreen">
   <div class="lcard">
     <div class="llogo"><h1>IPORÃVE</h1><p>Sistema Logístico — Paraguay</p></div>
-    <div id="loginAlert"></div>
-    <div class="fg"><label>Usuario</label><input type="text" id="loginUser" placeholder="Ingresá tu usuario" autocomplete="username"></div>
-    <div class="fg"><label>Contraseña</label><div class="pwd-wrap"><input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" class="pwd-eye" onclick="togglePwd('loginPass',this)" tabindex="-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-    <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="doLogin()">
-      <span id="loginBtnTxt">Ingresar al sistema</span>
-    </button>
-    <div id="connMode" class="lmode loc">🔶 Modo offline — localStorage</div>
-    <div class="ldemo">
-      <b>admin</b>/admin123 · <b>vendedor</b>/vendedor123<br>
-      <b>delivery</b>/delivery123 · <b>dropshipper</b>/dropshipper123<br>
-      <b>proveedor</b>/proveedor123
+
+    <!-- Panel login -->
+    <div id="loginPanel">
+      <div id="loginAlert"></div>
+      <div class="fg"><label>Usuario</label><input type="text" id="loginUser" placeholder="Ingresá tu usuario" autocomplete="username"></div>
+      <div class="fg"><label>Contraseña</label><div class="pwd-wrap"><input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" class="pwd-eye" onclick="togglePwd('loginPass',this)" tabindex="-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+      <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="doLogin()">
+        <span id="loginBtnTxt">Ingresar al sistema</span>
+      </button>
+      <div style="text-align:center;margin-top:14px">
+        <a href="#" style="color:var(--accent);font-size:13px;text-decoration:none" onclick="showForgotPanel();return false;">¿Olvidaste tu contraseña?</a>
+      </div>
+      <div id="connMode" class="lmode loc">🔶 Modo offline — localStorage</div>
     </div>
+
+    <!-- Panel recuperar contraseña -->
+    <div id="forgotPanel" style="display:none">
+      <div id="forgotAlert"></div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Ingresá tu nombre de usuario y se enviará una solicitud al administrador para que te ayude a recuperar tu acceso.</p>
+      <div class="fg"><label>Usuario</label><input type="text" id="forgotUser" placeholder="Tu nombre de usuario" autocomplete="username"></div>
+      <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="doForgotPassword()">
+        <span id="forgotBtnTxt">Enviar solicitud</span>
+      </button>
+      <div style="text-align:center;margin-top:14px">
+        <a href="#" style="color:var(--text3);font-size:13px;text-decoration:none" onclick="showLoginPanel();return false;">← Volver al inicio de sesión</a>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -513,13 +529,13 @@ const DEF_ORDERS = [];
 const DEF_CATALOGO = [];
 
 const DEF_USERS = [
-  {id:1,username:'admin',       password:'Ip0r@v3_Adm!n#2026', nombre:'Administrador',    rol:'admin',      vehiculo:'',patente:'',whatsapp:''},
+  {id:1,username:'distribuidoraiporave', password:'distribuidoraiporave2026', nombre:'Administrador',    rol:'admin',      vehiculo:'',patente:'',whatsapp:''},
   {id:2,username:'vendedor',    password:'V3nd3d0r_Ip0r@!26',   nombre:'Vendedor',         rol:'vendedor',   vehiculo:'',patente:'',whatsapp:''},
   {id:3,username:'dropshipper', password:'Dr0pSh!p_Ip0r@26',    nombre:'Dropshipper',      rol:'dropshipper',vehiculo:'',patente:'',whatsapp:''},
   {id:4,username:'delivery',    password:'D3l!v3ry_Ip0r@26',    nombre:'Delivery',         rol:'delivery',   vehiculo:'moto',patente:'',whatsapp:''},
   {id:5,username:'proveedor',   password:'Pr0v3d0r_Ip0r@26',    nombre:'Proveedor',        rol:'proveedor',  vehiculo:'',patente:'',whatsapp:''},
 ];
-const DEF_USERS_VER = 4;
+const DEF_USERS_VER = 5;
 
 /* ══════════════════════════════════════════════════
    HELPERS
@@ -1671,6 +1687,49 @@ async function doLogin(){
   }catch(e){
     showAlert('loginAlert','e','Error al iniciar sesión: '+e.message);
     if(btn)btn.textContent='Ingresar al sistema';
+  }
+}
+function showForgotPanel(){
+  $('loginPanel').style.display='none';
+  $('forgotPanel').style.display='block';
+  $('forgotAlert').innerHTML='';
+  const fi=$('forgotUser');if(fi)fi.value='';
+}
+function showLoginPanel(){
+  $('forgotPanel').style.display='none';
+  $('loginPanel').style.display='block';
+  $('loginAlert').innerHTML='';
+}
+async function doForgotPassword(){
+  const btn=$('forgotBtnTxt');
+  const username=$('forgotUser').value.trim();
+  if(!username){showAlert('forgotAlert','e','Ingresá tu nombre de usuario');return;}
+  if(btn)btn.textContent='Enviando...';
+  try{
+    const users=await DL.getUsers();
+    const found=users.find(u=>u.username===username);
+    if(!found){
+      showAlert('forgotAlert','e','No se encontró ningún usuario con ese nombre');
+      if(btn)btn.textContent='Enviar solicitud';
+      return;
+    }
+    // Enviar mensaje al admin via mensajes
+    if(_supaConnected&&_supa){
+      const admin=users.find(u=>u.rol==='admin');
+      if(admin){
+        await _supa.from('mensajes').insert({
+          de_id:found.id,de_nombre:found.nombre,
+          para_id:admin.id,para_nombre:admin.nombre,
+          mensaje:'🔑 SOLICITUD DE RECUPERACIÓN: El usuario "'+found.nombre+'" ('+found.username+', '+found.rol+') olvidó su contraseña y necesita asistencia.',
+          leido:false
+        });
+      }
+    }
+    showAlert('forgotAlert','s','✅ Solicitud enviada. El administrador te contactará para ayudarte a recuperar tu acceso. Comunicate también al correo: iporave@gmail.com');
+    if(btn)btn.textContent='Solicitud enviada';
+  }catch(e){
+    showAlert('forgotAlert','e','Error al enviar solicitud: '+e.message);
+    if(btn)btn.textContent='Enviar solicitud';
   }
 }
 function doLogout(){
