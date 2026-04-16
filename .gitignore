@@ -1,0 +1,5 @@
+node_modules/
+.env
+CLAUDE.md
+Nuevo documento de texto.txt
+*.log
