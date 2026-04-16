@@ -562,13 +562,13 @@ const DEF_ORDERS = [];
 const DEF_CATALOGO = [];
 
 const DEF_USERS = [
-  {id:1,username:'distribuidoraiporave', password:'distribuidoraiporave2026', nombre:'Administrador',    rol:'admin',      vehiculo:'',patente:'',whatsapp:''},
-  {id:2,username:'vendedor',    password:'V3nd3d0r_Ip0r@!26',   nombre:'Vendedor',         rol:'vendedor',   vehiculo:'',patente:'',whatsapp:''},
-  {id:3,username:'dropshipper', password:'Dr0pSh!p_Ip0r@26',    nombre:'Dropshipper',      rol:'dropshipper',vehiculo:'',patente:'',whatsapp:''},
-  {id:4,username:'delivery',    password:'D3l!v3ry_Ip0r@26',    nombre:'Delivery',         rol:'delivery',   vehiculo:'moto',patente:'',whatsapp:''},
-  {id:5,username:'proveedor',   password:'Pr0v3d0r_Ip0r@26',    nombre:'Proveedor',        rol:'proveedor',  vehiculo:'',patente:'',whatsapp:''},
+  {id:1,username:'distribuidoraiporave', password:'distribuidoraiporave2026', nombre:'Administrador',    rol:'admin',      vehiculo:'',patente:'',whatsapp:'',contactos:[]},
+  {id:2,username:'vendedor',    password:'V3nd3d0r_Ip0r@!26',   nombre:'Vendedor',         rol:'vendedor',   vehiculo:'',patente:'',whatsapp:'',contactos:[]},
+  {id:3,username:'dropshipper', password:'Dr0pSh!p_Ip0r@26',    nombre:'Dropshipper',      rol:'dropshipper',vehiculo:'',patente:'',whatsapp:'',contactos:[]},
+  {id:4,username:'delivery',    password:'D3l!v3ry_Ip0r@26',    nombre:'Delivery',         rol:'delivery',   vehiculo:'moto',patente:'',whatsapp:'',contactos:[]},
+  {id:5,username:'proveedor',   password:'Pr0v3d0r_Ip0r@26',    nombre:'Proveedor',        rol:'proveedor',  vehiculo:'',patente:'',whatsapp:'',contactos:[]},
 ];
-const DEF_USERS_VER = 5;
+const DEF_USERS_VER = 6;
 
 /* ══════════════════════════════════════════════════
    HELPERS
@@ -776,12 +776,17 @@ const DL = {
       try{
         const{data,error}=await _supa.from('usuarios').select('*');
         if(!error&&data&&data.length){
+          // Parsear campo contactos si viene como string de Supabase
+          const parsed=data.map(u=>({...u,contactos:typeof u.contactos==='string'?JSON.parse(u.contactos||'[]'):(u.contactos||[])}));
+          // Actualizar contactos de usuarios locales con lo que hay en Supabase
+          parsed.forEach(su=>{
+            const li=local.findIndex(u=>u.id===su.id);
+            if(li>=0){local[li]={...local[li],contactos:su.contactos||local[li].contactos||[]};}
+          });
           const allIds=new Set(local.map(u=>u.id));
-          const soloSupa=data.filter(u=>!allIds.has(u.id));
-          if(soloSupa.length){
-            local=[...local,...soloSupa];
-            this._ls('users',local);
-          }
+          const soloSupa=parsed.filter(u=>!allIds.has(u.id));
+          if(soloSupa.length)local=[...local,...soloSupa];
+          this._ls('users',local);
         }
       }catch(e){console.warn('getUsers Supabase:',e.message);}
     }
@@ -3482,7 +3487,8 @@ function resetAll(){
 let _msgConvPartner=null; // usuario con quien está abierta la conversación
 
 PAGES.mensajes=async function(){
-  $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNuevoMensaje()">+ Nuevo mensaje</button>';
+  const gestionBtn=CU.rol!=='admin'?'<button class="btn btn-secondary" onclick="openGestionContactos()" style="margin-right:6px">👥 Mis contactos</button>':'';
+  $('tbActions').innerHTML=gestionBtn+'<button class="btn btn-primary" onclick="openNuevoMensaje()">+ Nuevo mensaje</button>';
   $('ca').classList.add('mc-page');
   $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Cargando mensajes…</div>';
   if(!_supaConnected){
@@ -3605,17 +3611,14 @@ async function sendMsgThread(toId,toNom){
 }
 
 function _contactosPermitidos(){
-  // Define qué roles puede contactar cada rol
-  const permisos={
-    admin:   ['admin','vendedor','dropshipper','delivery','proveedor','cliente'],
-    vendedor:['admin','vendedor','dropshipper'],
-    dropshipper:['admin','vendedor','dropshipper'],
-    delivery:['admin','delivery'],
-    proveedor:['admin','vendedor','dropshipper'],
-    cliente: ['admin'],
-  };
-  const rolesPermitidos=permisos[CU.rol]||['admin'];
-  return _usersCache.filter(u=>u.id!==CU.id&&rolesPermitidos.includes(u.rol));
+  if(CU.rol==='admin')return _usersCache.filter(u=>u.id!==CU.id);
+  // Para otros roles: admin siempre disponible + sus contactos personales
+  const misContactos=CU.contactos||[];
+  return _usersCache.filter(u=>u.id!==CU.id&&(u.rol==='admin'||misContactos.includes(u.id)));
+}
+// Roles que se pueden agregar como contacto (vendedor, proveedor, dropshipper)
+function _rolesAgregables(){
+  return['vendedor','dropshipper','proveedor'];
 }
 function openNuevoMensaje(){
   const otros=_contactosPermitidos();
@@ -3651,6 +3654,59 @@ function filtrarContactos(q){
     '<div style="color:var(--accent);font-size:20px">›</div>'+
     '</div>'
   ).join('');
+}
+
+function openGestionContactos(){
+  _renderModalContactos('');
+}
+function _renderModalContactos(q){
+  const misIds=CU.contactos||[];
+  const misContactos=_usersCache.filter(u=>misIds.includes(u.id));
+  const disponibles=_usersCache.filter(u=>
+    u.id!==CU.id&&u.rol!=='admin'&&!misIds.includes(u.id)&&
+    _rolesAgregables().includes(u.rol)&&
+    (!q||u.nombre.toLowerCase().includes(q.toLowerCase())||capRole(u.rol).toLowerCase().includes(q.toLowerCase()))
+  );
+  const htmlMios=misContactos.length?misContactos.map(u=>
+    '<div class="mc-conv-item" style="margin-bottom:3px;border-radius:var(--radius)">'+
+    '<div class="mc-avatar" style="width:36px;height:36px;font-size:13px">'+u.nombre[0].toUpperCase()+'</div>'+
+    '<div class="mc-info"><div class="mc-name">'+u.nombre+'</div><div class="mc-preview">'+capRole(u.rol)+'</div></div>'+
+    '<button class="btn btn-secondary btn-sm" onclick="quitarContacto('+u.id+')">Quitar</button>'+
+    '</div>'
+  ).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">No tenés contactos agregados aún.</div>';
+  const htmlDisp=disponibles.length?disponibles.map(u=>
+    '<div class="mc-conv-item" style="margin-bottom:3px;border-radius:var(--radius)">'+
+    '<div class="mc-avatar" style="width:36px;height:36px;font-size:13px">'+u.nombre[0].toUpperCase()+'</div>'+
+    '<div class="mc-info"><div class="mc-name">'+u.nombre+'</div><div class="mc-preview">'+capRole(u.rol)+'</div></div>'+
+    '<button class="btn btn-primary btn-sm" onclick="agregarContacto('+u.id+')">+ Agregar</button>'+
+    '</div>'
+  ).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">No hay más usuarios disponibles para agregar.</div>';
+  openA('👥 Mis contactos',
+    '<div style="margin-bottom:12px"><input type="text" placeholder="Buscar…" value="'+q+'" oninput="_renderModalContactos(this.value)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:13px"></div>'+
+    '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);font-weight:700;margin-bottom:6px">Mis contactos</div>'+
+    '<div id="mcMios">'+htmlMios+'</div>'+
+    '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);font-weight:700;margin:12px 0 6px">Agregar contacto</div>'+
+    '<div id="mcDisp" style="max-height:220px;overflow-y:auto">'+htmlDisp+'</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>'
+  );
+}
+async function agregarContacto(uid){
+  if(!CU.contactos)CU.contactos=[];
+  if(CU.contactos.includes(uid))return;
+  CU.contactos=[...CU.contactos,uid];
+  const idx=_usersCache.findIndex(u=>u.id===CU.id);
+  if(idx>=0)_usersCache[idx]=CU;
+  await DL.saveUser(CU);
+  pushNotif('Contacto agregado','s');
+  _renderModalContactos('');
+}
+async function quitarContacto(uid){
+  if(!CU.contactos)return;
+  CU.contactos=CU.contactos.filter(id=>id!==uid);
+  const idx=_usersCache.findIndex(u=>u.id===CU.id);
+  if(idx>=0)_usersCache[idx]=CU;
+  await DL.saveUser(CU);
+  _renderModalContactos('');
 }
 
 async function _limpiarMensajes24h(){
