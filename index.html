@@ -1923,20 +1923,25 @@ const NAV_CFG={
   ]}],
   dropshipper:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis productos',ic:'pkg'},
-    {id:'balance',l:'Mis comisiones',ic:'dollar'},{id:'mensajes',l:'Mensajes',ic:'chat'},
+    {id:'balance',l:'Mis comisiones',ic:'dollar'},
+    {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+    {id:'mensajes',l:'Mensajes',ic:'chat'},
   ]}],
   delivery:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'entregas',l:'Mis entregas',ic:'truck'},
     {id:'recaudacion',l:'Mi recaudación',ic:'dollar'},{id:'cupo',l:'Mi cupo y premios',ic:'trophy'},
+    {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
     {id:'mensajes',l:'Mensajes',ic:'chat'},
   ]}],
   proveedor:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'suministros',l:'Mis suministros',ic:'pkg'},
-    {id:'catalogo',l:'Mi catálogo',ic:'pkg'},{id:'mensajes',l:'Mensajes',ic:'chat'},
+    {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},{id:'mensajes',l:'Mensajes',ic:'chat'},
   ]}],
   cliente:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'mispedidos',l:'Mis pedidos',ic:'pkg'},
-    {id:'boletas',l:'Mis boletas',ic:'receipt'},{id:'mensajes',l:'Mensajes',ic:'chat'},
+    {id:'boletas',l:'Mis boletas',ic:'receipt'},
+    {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+    {id:'mensajes',l:'Mensajes',ic:'chat'},
   ]}],
 };
 const SVG={
@@ -3114,19 +3119,26 @@ async function delZona(id){
 }
 
 /* ─── CATÁLOGO DE PRODUCTOS ─── */
-PAGES.catalogo=function(){
+PAGES.catalogo=function(q=''){
   const canEdit=CU.rol==='admin';
-  $('tbActions').innerHTML=canEdit?'<button class="btn btn-primary" onclick="openNuevoProducto()">+ Nuevo producto</button>':'';
+  $('tbActions').innerHTML=(canEdit?'<button class="btn btn-primary" onclick="openNuevoProducto()">+ Nuevo producto</button>':'');
   if(!_catalogoCache.length){
     $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">'+
       '<div style="font-size:44px;margin-bottom:14px">📦</div>'+
       '<div style="font-size:15px;font-weight:700;margin-bottom:6px">Catálogo vacío</div>'+
-      '<div style="font-size:13px;margin-bottom:18px">Agregá tu primer producto con el botón de arriba</div>'+
+      '<div style="font-size:13px;margin-bottom:18px">'+(canEdit?'Agregá tu primer producto con el botón de arriba':'El administrador aún no cargó productos.')+'</div>'+
       (canEdit?'<button class="btn btn-primary" onclick="openNuevoProducto()">+ Nuevo producto</button>':'')+'</div>';
     return;
   }
+  const rolLabel={vendedor:'Tu precio (vendedor)',dropshipper:'Tu precio (dropshipper)',proveedor:'Tu precio (proveedor)',delivery:'Precio base',cliente:'Precio base'}[CU.rol]||'Precio base';
+  const filtrados=q?_catalogoCache.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())||(p.proveedorNombre||'').toLowerCase().includes(q.toLowerCase())):_catalogoCache;
   $('ca').innerHTML='<div style="max-width:820px">'+
-    _catalogoCache.map(p=>{
+    '<div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
+      '<input type="text" placeholder="🔍 Buscar producto…" value="'+q+'" oninput="PAGES.catalogo(this.value)" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
+      (!canEdit?'<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:5px 10px">💡 Precios mostrados: <b style="color:var(--accent)">'+rolLabel+'</b></div>':'')+
+    '</div>'+
+    (filtrados.length?'':'<div style="text-align:center;padding:40px;color:var(--text3)">Sin resultados para "'+q+'"</div>')+
+    filtrados.map(p=>{
       const presHtml=(p.presentaciones&&p.presentaciones.length)
         ?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'+
           p.presentaciones.map(pr=>{
