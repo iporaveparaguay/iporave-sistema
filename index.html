@@ -272,9 +272,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 #menuBtn{display:none;}
 @media print{.sidebar,.topbar,.btn,.fbar,.moverlay,#aiBtn,#aiPanel,#notifArea,#menuBtn,#sideOverlay,#ntPanel,#ntBell{display:none!important;}.main{margin:0!important;}}
 /* ── MENSAJES ── */
-.ca.mc-page{padding:0!important;}
-.mc-wrap{display:flex;flex-direction:column;height:calc(100vh - 52px);max-height:calc(100vh - 52px);overflow:hidden;}
-.mc-conv-list{flex:1;overflow-y:auto;}
+.ca.mc-page{padding:0!important;overflow:hidden;}
+.mc-wrap{display:flex;flex-direction:column;height:calc(100vh - 52px);max-height:calc(100vh - 52px);overflow:hidden;width:100%;}
+.mc-conv-list{flex:1;overflow-y:auto;overflow-x:hidden;width:100%;}
 .mc-conv-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;min-width:0;}
 .mc-conv-item:hover,.mc-conv-item:active{background:var(--bg3);}
 .mc-avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#000;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -290,13 +290,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mc-back{cursor:pointer;color:var(--accent);font-size:20px;line-height:1;padding:4px;}
 .mc-thread-name{font-weight:700;font-size:15px;}
 .mc-thread-role{font-size:11px;color:var(--text3);}
-.mc-bubbles{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:6px;}
+.mc-bubbles{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 14px;display:flex;flex-direction:column;gap:6px;width:100%;box-sizing:border-box;}
 .mc-bubble{max-width:78%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word;}
 .mc-bubble.sent{align-self:flex-end;background:var(--accent);color:#000;border-bottom-right-radius:3px;}
 .mc-bubble.recv{align-self:flex-start;background:var(--bg3);color:var(--text);border-bottom-left-radius:3px;}
 .mc-btime{font-size:10px;opacity:.65;margin-top:3px;text-align:right;}
 .mc-recv-name{font-size:10px;font-weight:700;color:var(--accent);margin-bottom:2px;}
-.mc-input-bar{display:flex;gap:8px;padding:10px 12px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;}
+.mc-input-bar{display:flex;gap:8px;padding:10px 12px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;width:100%;box-sizing:border-box;}
 .mc-input-bar textarea{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:8px 14px;color:var(--text);font-size:13px;resize:none;max-height:100px;overflow-y:auto;min-width:0;}
 .mc-send-btn{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#000;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border:none;}
 .mc-empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:14px;}
@@ -3556,8 +3556,7 @@ function resetAll(){
 let _msgConvPartner=null; // usuario con quien está abierta la conversación
 
 PAGES.mensajes=async function(){
-  const gestionBtn=CU.rol!=='admin'?'<button class="btn btn-secondary" onclick="openGestionContactos()" style="margin-right:6px">👥 Mis contactos</button>':'';
-  $('tbActions').innerHTML=gestionBtn+'<button class="btn btn-primary" onclick="openNuevoMensaje()">+ Nuevo mensaje</button>';
+  $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNuevoMensaje()">+ Nuevo mensaje</button>';
   $('ca').classList.add('mc-page');
   $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Cargando mensajes…</div>';
   if(!_supaConnected){
@@ -3587,15 +3586,19 @@ PAGES.mensajes=async function(){
   });
   const convs=Object.values(convMap).sort((a,b)=>new Date(b.last.created_at)-new Date(a.last.created_at));
   const fmtAgo=d=>{const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'ahora';if(s<3600)return Math.floor(s/60)+'min';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';};
+  const contactosBtn=CU.rol!=='admin'
+    ?'<div style="padding:10px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-secondary btn-full" onclick="openGestionContactos()">👥 Gestionar mis contactos</button></div>'
+    :'';
   $('ca').innerHTML='<div class="mc-wrap"><div class="mc-conv-list">'+
+    contactosBtn+
     convs.map(c=>
       '<div class="mc-conv-item" onclick="openConvThread('+c.pid+',\''+c.pnom.replace(/'/g,'\\\'')+'\')" >'+
-      '<div class="mc-avatar">'+c.pnom[0].toUpperCase()+'</div>'+
-      '<div class="mc-info">'+
-        '<div class="mc-name">'+c.pnom+'</div>'+
+      '<div class="mc-avatar" style="flex-shrink:0">'+c.pnom[0].toUpperCase()+'</div>'+
+      '<div class="mc-info" style="min-width:0;flex:1;overflow:hidden">'+
+        '<div class="mc-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+c.pnom+'</div>'+
         '<div class="mc-preview">'+(c.last.de_id==CU.id?'Vos: ':'')+c.last.mensaje+'</div>'+
       '</div>'+
-      '<div class="mc-meta">'+
+      '<div class="mc-meta" style="flex-shrink:0">'+
         '<div class="mc-time">'+fmtAgo(c.last.created_at)+'</div>'+
         (c.unread?'<div class="mc-badge">'+c.unread+'</div>':'')+
       '</div></div>'
