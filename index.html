@@ -872,22 +872,39 @@ const DL = {
   async getCatalogo(){
     if(_supaConnected){
       const{data,error}=await _supa.from('catalogo').select('*').order('id');
-      if(!error&&data)return data.map(r=>({...r,
-        presentaciones:typeof r.presentaciones==='string'?JSON.parse(r.presentaciones||'[]'):(r.presentaciones||[])
-      }));
+      if(!error&&data){
+        const remote=data.map(r=>({...r,
+          presentaciones:typeof r.presentaciones==='string'?JSON.parse(r.presentaciones||'[]'):(r.presentaciones||[])
+        }));
+        this._ls('catalogo',remote);
+        return remote;
+      }
     }
     return this._lg('catalogo')||DEF_CATALOGO;
   },
   async saveProducto(p){
-    if(_supaConnected){
-      const row={...p,presentaciones:JSON.stringify(p.presentaciones||[])};
-      const{error}=p.id?await _supa.from('catalogo').upsert(row):await _supa.from('catalogo').insert(row);
-      if(error)console.warn(error.message);
-    }
     const cat=this._lg('catalogo')||[];
     const i=cat.findIndex(x=>x.id===p.id);
     if(i>=0)cat[i]=p;else cat.push(p);
     this._ls('catalogo',cat);
+    if(_supaConnected){
+      const row={...p,presentaciones:JSON.stringify(p.presentaciones||[])};
+      const{error}=p.id?await _supa.from('catalogo').upsert(row):await _supa.from('catalogo').insert(row);
+      if(error)console.warn('saveProducto:',error.message);
+    }
+  },
+  // Sincronizar catálogo local del admin hacia Supabase (migración inicial)
+  async syncCatalogoToSupa(){
+    if(!_supaConnected)return 0;
+    const local=this._lg('catalogo')||[];
+    if(!local.length)return 0;
+    let ok=0;
+    for(const p of local){
+      const row={...p,presentaciones:JSON.stringify(p.presentaciones||[])};
+      const{error}=await _supa.from('catalogo').upsert(row);
+      if(!error)ok++;
+    }
+    return ok;
   },
   async deleteProducto(id){
     if(_supaConnected)await _supa.from('catalogo').delete().eq('id',id);
@@ -1774,6 +1791,10 @@ async function doLogin(){
     DL.getMensajesNoLeidos(CU.id).then(n=>{_unreadMsgs=n;updateAIBadge();});
     _cargarMensajesPrevios();
     setInterval(_pollMensajes,5000);
+    // Admin: sincronizar catálogo local a Supabase para que todos los roles lo vean
+    if(CU.rol==='admin'&&_supaConnected){
+      DL.syncCatalogoToSupa().then(n=>{if(n>0)console.log('Catálogo sincronizado: '+n+' productos');});
+    }
   }catch(e){
     showAlert('loginAlert','e','Error al iniciar sesión: '+e.message);
     if(btn)btn.textContent='Ingresar al sistema';
