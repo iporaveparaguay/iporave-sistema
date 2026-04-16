@@ -1,7 +1,8 @@
-const CACHE_NAME = 'iporave-v5';
+const CACHE_NAME = 'iporave-v6';
+const BASE = self.location.pathname.replace('/sw.js', '');
 const ASSETS = [
-  '/',
-  '/index.html',
+  BASE + '/',
+  BASE + '/index.html',
   'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;600&display=swap',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'
 ];
@@ -10,8 +11,7 @@ const ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      // Cache local assets (fonts/CDN may fail — that's ok)
-      return cache.addAll(['/index.html']).catch(() => {});
+      return cache.addAll([BASE + '/index.html']).catch(() => {});
     })
   );
   self.skipWaiting();
@@ -29,14 +29,13 @@ self.addEventListener('activate', event => {
 
 // Fetch — network first, fallback to cache
 self.addEventListener('fetch', event => {
-  // Skip non-GET and Supabase API requests (always need fresh data)
   if (event.request.method !== 'GET') return;
   if (event.request.url.includes('supabase.co')) return;
+  if (event.request.url.includes('anthropic')) return;
 
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Cache successful responses
         if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
@@ -44,12 +43,10 @@ self.addEventListener('fetch', event => {
         return response;
       })
       .catch(() => {
-        // Network failed — serve from cache
         return caches.match(event.request).then(cached => {
           if (cached) return cached;
-          // Fallback to index.html for navigation requests
           if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+            return caches.match(BASE + '/index.html');
           }
         });
       })
