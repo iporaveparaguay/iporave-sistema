@@ -684,10 +684,14 @@ const DL = {
   _lg(k){try{return JSON.parse(localStorage.getItem('ipv5_'+k)||'null');}catch{return null;}},
   _ls(k,v){try{localStorage.setItem('ipv5_'+k,JSON.stringify(v));}catch(e){console.error(e);}},
   _initLocal(){
-    // Migración: si la versión de usuarios no coincide, resetear al DEF_USERS actualizado
+    // Migración: si la versión de usuarios no coincide, actualizar solo los usuarios base
+    // pero conservar todos los usuarios extra que el admin haya creado
     if(this._lg('usersVer')!==DEF_USERS_VER){
-      this._ls('users', JSON.parse(JSON.stringify(DEF_USERS)));
-      this._ls('usersVer', DEF_USERS_VER);
+      const existing=this._lg('users')||[];
+      const defIds=new Set(DEF_USERS.map(u=>u.id));
+      const extraUsers=existing.filter(u=>!defIds.has(u.id));
+      this._ls('users',[...JSON.parse(JSON.stringify(DEF_USERS)),...extraUsers]);
+      this._ls('usersVer',DEF_USERS_VER);
     }
     if(!this._lg('orders')) this._ls('orders', []);
     if(!this._lg('zonas'))  this._ls('zonas',  JSON.parse(JSON.stringify(DEF_ZONAS)));
