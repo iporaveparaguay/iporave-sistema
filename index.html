@@ -246,6 +246,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .ntp-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
 .ntp-list{overflow-y:auto;flex:1;}
 .ntp-item{padding:9px 13px;border-bottom:1px solid var(--border);font-size:12px;display:flex;gap:8px;align-items:flex-start;cursor:default;}
+.ntp-item.clickable{cursor:pointer;}
+.ntp-item.clickable:active{background:var(--bg3);}
 .ntp-item:hover{background:var(--bg3);}
 .ntp-item.unread{background:rgba(245,166,35,.04);}
 .ntp-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
@@ -610,14 +612,25 @@ function _updateBell(){
 function _renderNotifList(){
   const list=$('ntList');if(!list)return;
   if(!_notifHistory.length){list.innerHTML='<div class="ntp-empty">Sin notificaciones</div>';return;}
-  list.innerHTML=_notifHistory.map(n=>
-    '<div class="ntp-item'+(n.read?'':' unread')+'"'+(n.action?' style="cursor:pointer" onclick="toggleNotifPanel();'+n.action+'"':'')+'>'+
+  list.innerHTML=_notifHistory.map((n,i)=>
+    '<div class="ntp-item'+(n.read?'':' unread')+(n.action?' clickable':'')+'" data-nidx="'+i+'">'+
     '<div class="ntp-dot" style="background:'+n.color+'"></div>'+
     '<div style="flex:1;min-width:0">'+
       '<div style="color:var(--text);line-height:1.4">'+n.msg+'</div>'+
       '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+n.time+(n.action?' — <span style="color:var(--accent)">Tocá para abrir →</span>':'')+' </div>'+
-    '</div></div>'
+    '</div>'+(n.action?'<div style="color:var(--accent);font-size:16px;align-self:center">›</div>':'')+
+    '</div>'
   ).join('');
+  // Asignar eventos con addEventListener (más confiable que onclick en innerHTML)
+  list.querySelectorAll('.ntp-item.clickable').forEach(el=>{
+    const idx=parseInt(el.dataset.nidx);
+    const n=_notifHistory[idx];
+    if(!n||!n.action)return;
+    el.addEventListener('click',()=>{
+      toggleNotifPanel();
+      try{eval(n.action);}catch(e){console.warn('notif action:',e);}
+    });
+  });
 }
 function toggleNotifPanel(){
   const p=$('ntPanel');if(!p)return;
