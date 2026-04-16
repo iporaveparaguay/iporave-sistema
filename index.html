@@ -3479,7 +3479,7 @@ function resetAll(){
 let _msgConvPartner=null; // usuario con quien está abierta la conversación
 
 PAGES.mensajes=async function(){
-  $('tbActions').innerHTML='';
+  $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNuevoMensaje()">+ Nuevo mensaje</button>';
   $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Cargando mensajes…</div>';
   if(!_supaConnected){
     $('ca').innerHTML='<div class="mc-empty">📵 Necesitás conexión a internet para ver mensajes.</div>';
@@ -3598,6 +3598,42 @@ async function sendMsgThread(toId,toNom){
   }else{
     pushNotif('Error al enviar el mensaje. Verificá la conexión.','e');
   }
+}
+
+function openNuevoMensaje(){
+  const otros=_usersCache.filter(u=>u.id!==CU.id);
+  if(!otros.length){openA('Nuevo mensaje','<div class="mc-empty">No hay otros usuarios en el sistema.</div>','<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>');return;}
+  const items=otros.map(u=>
+    '<div class="mc-conv-item" style="border-radius:var(--radius);margin-bottom:4px" onclick="closeA();openConvThread('+u.id+',\''+u.nombre.replace(/'/g,'\\\'')+'\')" >'+
+    '<div class="mc-avatar" style="width:40px;height:40px;font-size:15px">'+u.nombre[0].toUpperCase()+'</div>'+
+    '<div class="mc-info">'+
+      '<div class="mc-name">'+u.nombre+'</div>'+
+      '<div class="mc-preview">'+capRole(u.rol)+'</div>'+
+    '</div>'+
+    '<div style="color:var(--accent);font-size:20px">›</div>'+
+    '</div>'
+  ).join('');
+  openA('Nuevo mensaje',
+    '<div style="margin-bottom:8px"><input type="text" id="mcSearch" placeholder="Buscar usuario…" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 12px;color:var(--text);font-size:13px" oninput="filtrarContactos(this.value)"></div>'+
+    '<div id="mcContactList" style="max-height:320px;overflow-y:auto">'+items+'</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'
+  );
+}
+function filtrarContactos(q){
+  const list=$('mcContactList');if(!list)return;
+  const otros=_usersCache.filter(u=>u.id!==CU.id);
+  const filtrados=q?otros.filter(u=>u.nombre.toLowerCase().includes(q.toLowerCase())||capRole(u.rol).toLowerCase().includes(q.toLowerCase())):otros;
+  if(!filtrados.length){list.innerHTML='<div class="mc-empty" style="padding:20px">Sin resultados</div>';return;}
+  list.innerHTML=filtrados.map(u=>
+    '<div class="mc-conv-item" style="border-radius:var(--radius);margin-bottom:4px" onclick="closeA();openConvThread('+u.id+',\''+u.nombre.replace(/'/g,'\\\'')+'\')" >'+
+    '<div class="mc-avatar" style="width:40px;height:40px;font-size:15px">'+u.nombre[0].toUpperCase()+'</div>'+
+    '<div class="mc-info">'+
+      '<div class="mc-name">'+u.nombre+'</div>'+
+      '<div class="mc-preview">'+capRole(u.rol)+'</div>'+
+    '</div>'+
+    '<div style="color:var(--accent);font-size:20px">›</div>'+
+    '</div>'
+  ).join('');
 }
 
 async function _limpiarMensajes24h(){
