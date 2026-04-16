@@ -1045,17 +1045,9 @@ function initRealtime(){
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'mensajes'},async payload=>{
         const msg=payload.new;
         if(!CU)return;
-        if(msg.para_id===CU.id){
-          pushNotif('💬 '+msg.de_nombre+': '+msg.mensaje.substring(0,60)+(msg.mensaje.length>60?'…':''),'i','openAI()');
-          _unreadMsgs++;
-          updateAIBadge();
-          // Mostrar el mensaje directamente en el chat del asistente
-          addAIMsg('💬 <b>Mensaje de '+msg.de_nombre+':</b><br>'+msg.mensaje,'bot');
-          // Marcar como leído si el panel está abierto
-          const panel=$('aiPanel');
-          if(panel&&panel.classList.contains('open')){
-            DL.markMensajesLeidos(CU.id);_unreadMsgs=0;updateAIBadge();
-          }
+        // eslint-disable-next-line eqeqeq
+        if(msg.para_id==CU.id){
+          _mostrarMensajeEntrante(msg);
         }
       })
       .subscribe();
@@ -1065,6 +1057,39 @@ async function _rtRefreshOrders(){
   _ordersCache=await DL.getOrders();
   const cur=document.querySelector('.ni.active');
   if(cur){const pid=cur.id.replace('ni_','');if(['orders','entregas','mispedidos','dashboard','suministros'].includes(pid)&&PAGES[pid])PAGES[pid]();}
+}
+
+function _mostrarMensajeEntrante(msg){
+  if(!msg||!msg.id)return;
+  if(_shownMsgIds.has(msg.id))return; // evitar duplicados
+  _shownMsgIds.add(msg.id);
+  pushNotif('💬 '+msg.de_nombre+': '+msg.mensaje.substring(0,60)+(msg.mensaje.length>60?'…':''),'i','openAI()');
+  _unreadMsgs++;
+  updateAIBadge();
+  addAIMsg('💬 <b>'+msg.de_nombre+' te escribió:</b><br>'+msg.mensaje,'bot');
+  const panel=$('aiPanel');
+  if(panel&&panel.classList.contains('open')){
+    DL.markMensajesLeidos(CU.id);_unreadMsgs=0;updateAIBadge();
+  }
+}
+
+// Polling de respaldo: verifica mensajes nuevos cada 20 segundos
+// por si el real-time de Supabase no dispara
+async function _pollMensajes(){
+  if(!CU||!_supaConnected)return;
+  try{
+    const{data,error}=await _supa.from('mensajes')
+      .select('*')
+      .eq('para_id',CU.id)
+      .eq('leido',false)
+      .order('created_at',{ascending:false})
+      .limit(10);
+    if(error||!data)return;
+    data.forEach(msg=>{
+      // eslint-disable-next-line eqeqeq
+      if(msg.para_id==CU.id)_mostrarMensajeEntrante(msg);
+    });
+  }catch(e){}
 }
 
 /* ══════════════════════════════════════════════════
@@ -1331,6 +1356,10 @@ const AI_TOOLS=[
     input_schema:{type:'object',required:['mensaje'],properties:{
       mensaje:{type:'string',description:'Mensaje a enviar al administrador'},
     }}},
+  {name:'responder_administrador',description:'Responde un mensaje del administrador o envía un nuevo mensaje al admin. Usá esta tool cuando el usuario quiera responder o escribirle al administrador.',
+    input_schema:{type:'object',required:['mensaje'],properties:{
+      mensaje:{type:'string',description:'Mensaje a enviar al administrador'},
+    }}},
   {name:'ver_mensajes',description:'Muestra los mensajes internos recibidos. Admin ve todos los mensajes de todos los usuarios.',
     input_schema:{type:'object',properties:{
       no_leidos:{type:'boolean',description:'Si true muestra solo los no leídos'},
@@ -1501,6 +1530,15 @@ const AI_TOOL_EXEC={
     if(!saved)return'Error al enviar el mensaje.';
     return`Mensaje enviado a ${u.nombre} correctamente.`;
   },
+  async responder_administrador(args){
+    if(CU.rol==='admin')return'Sos el administrador. Usá "responder_usuario" para enviar mensajes.';
+    const admin=_usersCache.find(u=>u.rol==='admin');
+    if(!admin)return'No se encontró al administrador en el sistema.';
+    const m={de_id:CU.id,de_nombre:CU.nombre,para_id:admin.id,para_nombre:admin.nombre,mensaje:args.mensaje,leido:false};
+    const saved=await DL.saveMensaje(m);
+    if(!saved)return'Error al enviar el mensaje. Verificá la conexión.';
+    return'Mensaje enviado al administrador: "'+args.mensaje+'"';
+  },
   async notificar_cliente_gps(args){
     if(!['delivery','admin'].includes(CU.rol))return'Solo delivery o admin pueden usar esta función.';
     const o=_ordersCache.find(x=>x.id===args.pedido_id);
@@ -1524,15 +1562,15 @@ function getAITools(){
     if(rol==='admin')return true;
     if(['vendedor','dropshipper'].includes(rol))return[
       'consultar_pedidos','crear_pedido','actualizar_estado_pedido',
-      'notificar_administrador','ver_mensajes'
+      'notificar_administrador','responder_administrador','ver_mensajes'
     ].includes(t.name);
     if(rol==='delivery')return[
       'consultar_pedidos','actualizar_estado_pedido',
-      'notificar_cliente_gps','notificar_administrador','ver_mensajes'
+      'notificar_cliente_gps','notificar_administrador','responder_administrador','ver_mensajes'
     ].includes(t.name);
     if(rol==='proveedor')return[
       'consultar_pedidos','crear_pedido',
-      'notificar_administrador','ver_mensajes'
+      'notificar_administrador','responder_administrador','ver_mensajes'
     ].includes(t.name);
     return['consultar_pedidos','notificar_administrador','ver_mensajes'].includes(t.name);
   });
@@ -1684,6 +1722,7 @@ async function doLogin(){
     initRealtime();
     loadGoogleMaps();
     DL.getMensajesNoLeidos(CU.id).then(n=>{_unreadMsgs=n;updateAIBadge();});
+    setInterval(_pollMensajes,20000);
   }catch(e){
     showAlert('loginAlert','e','Error al iniciar sesión: '+e.message);
     if(btn)btn.textContent='Ingresar al sistema';
@@ -1841,6 +1880,7 @@ function nav(page){
    CACHED DATA LAYER (sync wrappers for UI)
 ══════════════════════════════════════════════════ */
 let _ordersCache=[];let _usersCache=[];let _zonasCache=[];let _catalogoCache=[];
+let _shownMsgIds=new Set();
 async function refreshCache(){
   _ordersCache=await DL.getOrders();
   _usersCache=await DL.getUsers();
