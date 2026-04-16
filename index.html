@@ -1073,22 +1073,31 @@ function _mostrarMensajeEntrante(msg){
   }
 }
 
-// Polling de respaldo: verifica mensajes nuevos cada 20 segundos
-// por si el real-time de Supabase no dispara
-async function _pollMensajes(){
+let _sessionStart='';
+// Cargar mensajes no leídos previos al iniciar sesión (solo registrar IDs, sin mostrar en chat)
+async function _cargarMensajesPrevios(){
   if(!CU||!_supaConnected)return;
+  _sessionStart=new Date().toISOString();
+  try{
+    const{data}=await _supa.from('mensajes')
+      .select('id')
+      .eq('para_id',CU.id)
+      .eq('leido',false);
+    if(data)data.forEach(m=>_shownMsgIds.add(m.id)); // marcar como ya vistos
+  }catch(e){}
+}
+// Polling cada 5 segundos — solo muestra mensajes que llegaron DESPUÉS del login
+async function _pollMensajes(){
+  if(!CU||!_supaConnected||!_sessionStart)return;
   try{
     const{data,error}=await _supa.from('mensajes')
       .select('*')
       .eq('para_id',CU.id)
       .eq('leido',false)
-      .order('created_at',{ascending:false})
-      .limit(10);
+      .gt('created_at',_sessionStart)
+      .order('created_at',{ascending:true});
     if(error||!data)return;
-    data.forEach(msg=>{
-      // eslint-disable-next-line eqeqeq
-      if(msg.para_id==CU.id)_mostrarMensajeEntrante(msg);
-    });
+    data.forEach(msg=>_mostrarMensajeEntrante(msg));
   }catch(e){}
 }
 
@@ -1722,7 +1731,8 @@ async function doLogin(){
     initRealtime();
     loadGoogleMaps();
     DL.getMensajesNoLeidos(CU.id).then(n=>{_unreadMsgs=n;updateAIBadge();});
-    setInterval(_pollMensajes,20000);
+    _cargarMensajesPrevios();
+    setInterval(_pollMensajes,5000);
   }catch(e){
     showAlert('loginAlert','e','Error al iniciar sesión: '+e.message);
     if(btn)btn.textContent='Ingresar al sistema';
