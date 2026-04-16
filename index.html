@@ -3556,7 +3556,7 @@ function resetAll(){
 let _msgConvPartner=null; // usuario con quien está abierta la conversación
 
 PAGES.mensajes=async function(){
-  $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNuevoMensaje()">+ Nuevo mensaje</button>';
+  $('tbActions').innerHTML='';
   $('ca').classList.add('mc-page');
   $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Cargando mensajes…</div>';
   if(!_supaConnected){
@@ -3571,8 +3571,13 @@ PAGES.mensajes=async function(){
     .order('created_at',{ascending:false});
   if(error){$('ca').innerHTML='<div class="mc-empty">Error al cargar mensajes.</div>';return;}
   const msgs=data||[];
+  // Botones de acción dentro del contenido (siempre visibles en mobile)
+  const nuevoMsgBtn='<div style="padding:10px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-primary btn-full" onclick="openNuevoMensaje()">+ Nuevo mensaje</button></div>';
+  const contactosBtn=CU.rol!=='admin'
+    ?'<div style="padding:8px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-secondary btn-full" onclick="openGestionContactos()">👥 Gestionar mis contactos</button></div>'
+    :'';
   if(!msgs.length){
-    $('ca').innerHTML='<div class="mc-empty">💬<br><br>No tenés mensajes aún.<br><span style="font-size:12px">Los mensajes se eliminan automáticamente después de 24 horas.</span></div>';
+    $('ca').innerHTML='<div class="mc-wrap"><div class="mc-conv-list">'+nuevoMsgBtn+contactosBtn+'<div class="mc-empty" style="padding:40px 20px">💬<br><br>No tenés mensajes aún.<br><span style="font-size:12px">Los mensajes se eliminan automáticamente después de 24 horas.</span></div></div></div>';
     return;
   }
   // Agrupar por conversación (partner ID)
@@ -3586,10 +3591,8 @@ PAGES.mensajes=async function(){
   });
   const convs=Object.values(convMap).sort((a,b)=>new Date(b.last.created_at)-new Date(a.last.created_at));
   const fmtAgo=d=>{const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'ahora';if(s<3600)return Math.floor(s/60)+'min';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';};
-  const contactosBtn=CU.rol!=='admin'
-    ?'<div style="padding:10px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-secondary btn-full" onclick="openGestionContactos()">👥 Gestionar mis contactos</button></div>'
-    :'';
   $('ca').innerHTML='<div class="mc-wrap"><div class="mc-conv-list">'+
+    nuevoMsgBtn+
     contactosBtn+
     convs.map(c=>
       '<div class="mc-conv-item" onclick="openConvThread('+c.pid+',\''+c.pnom.replace(/'/g,'\\\'')+'\')" >'+
