@@ -272,9 +272,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 #menuBtn{display:none;}
 @media print{.sidebar,.topbar,.btn,.fbar,.moverlay,#aiBtn,#aiPanel,#notifArea,#menuBtn,#sideOverlay,#ntPanel,#ntBell{display:none!important;}.main{margin:0!important;}}
 /* ── MENSAJES ── */
-.mc-wrap{display:flex;flex-direction:column;height:calc(100vh - 52px);max-height:calc(100vh - 52px);}
+.ca.mc-page{padding:0!important;}
+.mc-wrap{display:flex;flex-direction:column;height:calc(100vh - 52px);max-height:calc(100vh - 52px);overflow:hidden;}
 .mc-conv-list{flex:1;overflow-y:auto;}
-.mc-conv-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.mc-conv-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;min-width:0;}
 .mc-conv-item:hover,.mc-conv-item:active{background:var(--bg3);}
 .mc-avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#000;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .mc-info{flex:1;min-width:0;}
@@ -284,7 +285,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mc-time{font-size:10px;color:var(--text3);}
 .mc-badge{background:var(--accent);color:#000;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;min-width:18px;text-align:center;}
 /* Hilo de conversación */
-.mc-thread{display:flex;flex-direction:column;height:calc(100vh - 52px);}
+.mc-thread{display:flex;flex-direction:column;height:calc(100vh - 52px);overflow:hidden;}
 .mc-thread-header{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
 .mc-back{cursor:pointer;color:var(--accent);font-size:20px;line-height:1;padding:4px;}
 .mc-thread-name{font-weight:700;font-size:15px;}
@@ -296,7 +297,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mc-btime{font-size:10px;opacity:.65;margin-top:3px;text-align:right;}
 .mc-recv-name{font-size:10px;font-weight:700;color:var(--accent);margin-bottom:2px;}
 .mc-input-bar{display:flex;gap:8px;padding:10px 12px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;}
-.mc-input-bar textarea{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:8px 14px;color:var(--text);font-size:13px;resize:none;max-height:100px;overflow-y:auto;}
+.mc-input-bar textarea{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:8px 14px;color:var(--text);font-size:13px;resize:none;max-height:100px;overflow-y:auto;min-width:0;}
 .mc-send-btn{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#000;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border:none;}
 .mc-empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:14px;}
 .mc-day-sep{text-align:center;font-size:10px;color:var(--text3);margin:8px 0;position:relative;}
@@ -1984,6 +1985,8 @@ function nav(page){
   const n=$('ni_'+page);if(n)n.classList.add('active');
   $('tbTitle').textContent=PT[page]||page;
   $('tbActions').innerHTML='';
+  $('ca').classList.remove('mc-page');
+  _msgConvPartner=null;
   closeSidebar(); // cierra el sidebar en mobile al navegar
   const fn=PAGES[page];
   if(fn)fn();
@@ -3480,6 +3483,7 @@ let _msgConvPartner=null; // usuario con quien está abierta la conversación
 
 PAGES.mensajes=async function(){
   $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNuevoMensaje()">+ Nuevo mensaje</button>';
+  $('ca').classList.add('mc-page');
   $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Cargando mensajes…</div>';
   if(!_supaConnected){
     $('ca').innerHTML='<div class="mc-empty">📵 Necesitás conexión a internet para ver mensajes.</div>';
@@ -3600,8 +3604,21 @@ async function sendMsgThread(toId,toNom){
   }
 }
 
+function _contactosPermitidos(){
+  // Define qué roles puede contactar cada rol
+  const permisos={
+    admin:   ['admin','vendedor','dropshipper','delivery','proveedor','cliente'],
+    vendedor:['admin','vendedor','dropshipper'],
+    dropshipper:['admin','vendedor','dropshipper'],
+    delivery:['admin','delivery'],
+    proveedor:['admin'],
+    cliente: ['admin'],
+  };
+  const rolesPermitidos=permisos[CU.rol]||['admin'];
+  return _usersCache.filter(u=>u.id!==CU.id&&rolesPermitidos.includes(u.rol));
+}
 function openNuevoMensaje(){
-  const otros=_usersCache.filter(u=>u.id!==CU.id);
+  const otros=_contactosPermitidos();
   if(!otros.length){openA('Nuevo mensaje','<div class="mc-empty">No hay otros usuarios en el sistema.</div>','<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>');return;}
   const items=otros.map(u=>
     '<div class="mc-conv-item" style="border-radius:var(--radius);margin-bottom:4px" onclick="closeA();openConvThread('+u.id+',\''+u.nombre.replace(/'/g,'\\\'')+'\')" >'+
@@ -3621,7 +3638,7 @@ function openNuevoMensaje(){
 }
 function filtrarContactos(q){
   const list=$('mcContactList');if(!list)return;
-  const otros=_usersCache.filter(u=>u.id!==CU.id);
+  const otros=_contactosPermitidos();
   const filtrados=q?otros.filter(u=>u.nombre.toLowerCase().includes(q.toLowerCase())||capRole(u.rol).toLowerCase().includes(q.toLowerCase())):otros;
   if(!filtrados.length){list.innerHTML='<div class="mc-empty" style="padding:20px">Sin resultados</div>';return;}
   list.innerHTML=filtrados.map(u=>
