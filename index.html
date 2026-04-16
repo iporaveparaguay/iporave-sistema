@@ -762,30 +762,35 @@ const DL = {
 
   // USERS
   async getUsers(){
-    // 1. Leer localStorage
+    // 1. Base: localStorage
     let local=this._lg('users')||[];
-    // 2. SIEMPRE restaurar los DEF_USERS que falten (por si se borraron por error)
-    const localIds=new Set(local.map(u=>u.id));
-    const faltantes=DEF_USERS.filter(u=>!localIds.has(u.id));
-    if(faltantes.length){
-      local=[...local,...faltantes];
-      this._ls('users',local);
-    }
-    // 3. Agregar usuarios que solo existan en Supabase (creados en otro dispositivo)
+    // 2. Restaurar DEF_USERS base si faltan
+    DEF_USERS.forEach(du=>{
+      if(!local.find(u=>u.id==du.id))local.push({...du,contactos:du.contactos||[]});
+    });
+    // 3. Sincronizar con Supabase (fuente de verdad multi-dispositivo)
     if(_supaConnected){
       try{
         const{data,error}=await _supa.from('usuarios').select('*');
         if(!error&&data&&data.length){
-          // Parsear campo contactos si viene como string de Supabase
-          const parsed=data.map(u=>({...u,contactos:typeof u.contactos==='string'?JSON.parse(u.contactos||'[]'):(u.contactos||[])}));
-          // Actualizar contactos de usuarios locales con lo que hay en Supabase
+          const parsed=data.map(u=>({
+            ...u,
+            contactos:typeof u.contactos==='string'?JSON.parse(u.contactos||'[]'):(u.contactos||[])
+          }));
+          // Actualizar local con datos de Supabase (Supabase gana, excepto valores null)
           parsed.forEach(su=>{
-            const li=local.findIndex(u=>u.id===su.id);
-            if(li>=0){local[li]={...local[li],contactos:su.contactos||local[li].contactos||[]};}
+            const li=local.findIndex(u=>u.id==su.id); // == para tolerancia de tipos
+            if(li>=0){
+              // Supabase gana en todos los campos con valor real (no null/undefined)
+              const merge={};
+              Object.entries(su).forEach(([k,v])=>{if(v!=null)merge[k]=v;});
+              local[li]={...local[li],...merge,contactos:su.contactos||local[li].contactos||[]};
+            }
           });
-          const allIds=new Set(local.map(u=>u.id));
-          const soloSupa=parsed.filter(u=>!allIds.has(u.id));
-          if(soloSupa.length)local=[...local,...soloSupa];
+          // Agregar usuarios solo en Supabase (creados en otro dispositivo)
+          parsed.forEach(su=>{
+            if(!local.find(u=>u.id==su.id))local.push(su);
+          });
           this._ls('users',local);
         }
       }catch(e){console.warn('getUsers Supabase:',e.message);}
@@ -793,18 +798,22 @@ const DL = {
     return local;
   },
   async saveUser(u){
-    // localStorage primero — respuesta inmediata
+    // 1. localStorage inmediato (siempre funciona, mismo dispositivo)
     const users=this._lg('users')||JSON.parse(JSON.stringify(DEF_USERS));
-    const i=users.findIndex(x=>x.id===u.id);
+    const i=users.findIndex(x=>x.id==u.id);
     if(i>=0)users[i]=u;else users.push(u);
     this._ls('users',users);
-    // Supabase en segundo plano
+    // 2. Supabase (necesario para multi-dispositivo)
     if(_supaConnected){
-      const{error}=u.id
-        ?await _supa.from('usuarios').upsert(u)
-        :await _supa.from('usuarios').insert(u);
-      if(error)console.warn(error.message);
+      try{
+        const{error}=await _supa.from('usuarios').upsert(
+          {...u,contactos:Array.isArray(u.contactos)?u.contactos:[]},
+          {onConflict:'id'}
+        );
+        if(error){console.warn('saveUser Supabase:',error.message);return{ok:false,error:error.message};}
+      }catch(e){console.warn('saveUser catch:',e.message);return{ok:false,error:e.message};}
     }
+    return{ok:true};
   },
   async deleteUser(id){
     if(_supaConnected)await _supa.from('usuarios').delete().eq('id',id);
@@ -1835,7 +1844,8 @@ async function doLogin(){
     loadGoogleMaps();
     DL.getMensajesNoLeidos(CU.id).then(n=>{_unreadMsgs=n;updateAIBadge();});
     _cargarMensajesPrevios();
-    setInterval(_pollMensajes,5000);
+    if(_pollInterval)clearInterval(_pollInterval);
+    _pollInterval=setInterval(_pollMensajes,5000);
     // Admin: sincronizar catálogo local a Supabase para que todos los roles lo vean
     if(CU.rol==='admin'&&_supaConnected){
       DL.syncCatalogoToSupa().then(n=>{if(n>0)console.log('Catálogo sincronizado: '+n+' productos');});
@@ -1891,6 +1901,9 @@ async function doForgotPassword(){
 function doLogout(){
   CU=null;
   if(_realtimeSub){try{_supa.removeChannel(_realtimeSub);}catch(e){} _realtimeSub=null;}
+  if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
+  _shownMsgIds=new Set();
+  _sessionStart='';
   $('appScreen').classList.remove('show');
   $('loginScreen').style.display='';
   $('loginUser').value='';$('loginPass').value='';
@@ -2008,6 +2021,7 @@ function nav(page){
 ══════════════════════════════════════════════════ */
 let _ordersCache=[];let _usersCache=[];let _zonasCache=[];let _catalogoCache=[];
 let _shownMsgIds=new Set();
+let _pollInterval=null;
 async function refreshCache(){
   _ordersCache=await DL.getOrders();
   _usersCache=await DL.getUsers();
@@ -2960,17 +2974,22 @@ function openNewUser(){
 }
 function toggleDlvF2(){const r=gv('nuRol');const f=$('dlvXF');if(f)f.style.display=r==='delivery'?'block':'none';}
 async function saveNewUser(){
-  const nom=gv('nuNom').trim(),user=gv('nuUser').trim(),pass=gv('nuPass'),rol=gv('nuRol');
+  const nom=gv('nuNom').trim(),user=gv('nuUser').trim(),pass=gv('nuPass').trim(),rol=gv('nuRol');
   if(!nom||!user||!pass){showAlert('nuAlert','e','Completá todos los campos');return;}
-  if(_usersCache.find(u=>u.username===user)){showAlert('nuAlert','e','El usuario ya existe');return;}
-  const id=Math.max(..._usersCache.map(u=>u.id),0)+1;
-  const u={id,username:user,password:pass,nombre:nom,rol,
+  if(pass.length<4){showAlert('nuAlert','e','La contraseña debe tener al menos 4 caracteres');return;}
+  if(_usersCache.find(u=>u.username===user)){showAlert('nuAlert','e','El nombre de usuario ya existe');return;}
+  const id=Math.max(0,..._usersCache.map(u=>Number(u.id)||0))+1;
+  const u={id,username:user,password:pass,nombre:nom,rol,contactos:[],
     vehiculo:rol==='delivery'?gv('nuVeh'):'',patente:rol==='delivery'?gv('nuPat'):'',
     whatsapp:rol==='delivery'?gv('nuWa'):''};
   _usersCache=[..._usersCache,u];
+  const r=await DL.saveUser(u);
   closeA();PAGES.usuarios();
-  pushNotif('Usuario "'+user+'" creado','s');
-  DL.saveUser(u);
+  if(r.ok){
+    pushNotif('Usuario "'+user+'" creado correctamente','s');
+  } else {
+    pushNotif('Usuario creado en este dispositivo. Supabase: '+r.error,'w');
+  }
 }
 function editUser(id){
   const u=_usersCache.find(x=>x.id===id);if(!u)return;
@@ -2993,17 +3012,22 @@ function editUser(id){
   );
 }
 async function saveEditUser(id){
-  const u=_usersCache.find(x=>x.id===id);if(!u)return;
-  if(gv('euNom'))u.nombre=gv('euNom');
-  if(gv('euUser'))u.username=gv('euUser');
-  if(gv('euPass'))u.password=gv('euPass');
+  const u=_usersCache.find(x=>x.id==id);if(!u)return;
+  const newNom=gv('euNom').trim();if(newNom)u.nombre=newNom;
+  const newUser=gv('euUser').trim();if(newUser)u.username=newUser;
+  const newPass=gv('euPass').trim();if(newPass)u.password=newPass;
   if(gv('euRol'))u.rol=gv('euRol');
   u.vehiculo=gv('euVeh');u.patente=gv('euPat');u.whatsapp=gv('euWa');
-  const idx=_usersCache.findIndex(x=>x.id===id);
+  if(!u.contactos)u.contactos=[];
+  const idx=_usersCache.findIndex(x=>x.id==id);
   if(idx>=0)_usersCache[idx]=u;
+  const r=await DL.saveUser(u);
   closeA();PAGES.usuarios();
-  pushNotif('Usuario actualizado','s');
-  DL.saveUser(u);
+  if(r.ok){
+    pushNotif('Usuario actualizado correctamente','s');
+  } else {
+    pushNotif('Actualizado localmente. Supabase: '+r.error,'w');
+  }
 }
 function delUser(id){
   const u=_usersCache.find(x=>x.id===id);if(!u)return;
