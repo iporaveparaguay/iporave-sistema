@@ -271,6 +271,36 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* Botón hamburger oculto en desktop, visible solo en mobile */
 #menuBtn{display:none;}
 @media print{.sidebar,.topbar,.btn,.fbar,.moverlay,#aiBtn,#aiPanel,#notifArea,#menuBtn,#sideOverlay,#ntPanel,#ntBell{display:none!important;}.main{margin:0!important;}}
+/* ── MENSAJES ── */
+.mc-wrap{display:flex;flex-direction:column;height:calc(100vh - 52px);max-height:calc(100vh - 52px);}
+.mc-conv-list{flex:1;overflow-y:auto;}
+.mc-conv-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.mc-conv-item:hover,.mc-conv-item:active{background:var(--bg3);}
+.mc-avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#000;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mc-info{flex:1;min-width:0;}
+.mc-name{font-weight:600;font-size:14px;color:var(--text);}
+.mc-preview{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.mc-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.mc-time{font-size:10px;color:var(--text3);}
+.mc-badge{background:var(--accent);color:#000;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;min-width:18px;text-align:center;}
+/* Hilo de conversación */
+.mc-thread{display:flex;flex-direction:column;height:calc(100vh - 52px);}
+.mc-thread-header{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.mc-back{cursor:pointer;color:var(--accent);font-size:20px;line-height:1;padding:4px;}
+.mc-thread-name{font-weight:700;font-size:15px;}
+.mc-thread-role{font-size:11px;color:var(--text3);}
+.mc-bubbles{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:6px;}
+.mc-bubble{max-width:78%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word;}
+.mc-bubble.sent{align-self:flex-end;background:var(--accent);color:#000;border-bottom-right-radius:3px;}
+.mc-bubble.recv{align-self:flex-start;background:var(--bg3);color:var(--text);border-bottom-left-radius:3px;}
+.mc-btime{font-size:10px;opacity:.65;margin-top:3px;text-align:right;}
+.mc-recv-name{font-size:10px;font-weight:700;color:var(--accent);margin-bottom:2px;}
+.mc-input-bar{display:flex;gap:8px;padding:10px 12px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;}
+.mc-input-bar textarea{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:8px 14px;color:var(--text);font-size:13px;resize:none;max-height:100px;overflow-y:auto;}
+.mc-send-btn{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#000;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border:none;}
+.mc-empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:14px;}
+.mc-day-sep{text-align:center;font-size:10px;color:var(--text3);margin:8px 0;position:relative;}
+.mc-day-sep span{background:var(--bg);padding:0 10px;}
 /* TABLET */
 @media(max-width:1024px){
   .sidebar{width:210px;}
@@ -1091,12 +1121,21 @@ async function _rtRefreshOrders(){
 
 function _mostrarMensajeEntrante(msg){
   if(!msg||!msg.id)return;
-  if(_shownMsgIds.has(msg.id))return; // evitar duplicados
+  if(_shownMsgIds.has(msg.id))return;
   _shownMsgIds.add(msg.id);
-  pushNotif('💬 '+msg.de_nombre+': '+msg.mensaje.substring(0,60)+(msg.mensaje.length>60?'…':''),'i','openAI()');
+  pushNotif('💬 '+msg.de_nombre+': '+msg.mensaje.substring(0,60)+(msg.mensaje.length>60?'…':''),'i',"nav('mensajes')");
   _unreadMsgs++;
   updateAIBadge();
-  addAIMsg('💬 <b>'+msg.de_nombre+' te escribió:</b><br>'+msg.mensaje,'bot');
+  // Si el hilo de esa conversación está abierto, agregar burbuja en tiempo real
+  const b=$('mcBubbles');
+  if(b&&_msgConvPartner&&_msgConvPartner.id==msg.de_id){
+    const d=document.createElement('div');
+    d.className='mc-bubble recv';
+    const now=new Date(msg.created_at||Date.now()).toLocaleString('es-PY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    d.innerHTML='<div class="mc-recv-name">'+msg.de_nombre+'</div>'+msg.mensaje+'<div class="mc-btime">'+now+'</div>';
+    b.appendChild(d);b.scrollTop=b.scrollHeight;
+    _supa.from('mensajes').update({leido:true}).eq('id',msg.id).then(()=>{_unreadMsgs--;updateAIBadge();});
+  }
   const panel=$('aiPanel');
   if(panel&&panel.classList.contains('open')){
     DL.markMensajesLeidos(CU.id);_unreadMsgs=0;updateAIBadge();
@@ -1869,27 +1908,29 @@ const NAV_CFG={
       {id:'recaudacion',l:'Recaudación Delivery',ic:'truck'},{id:'boletas',l:'Boletas IVA',ic:'receipt'},
       {id:'cierre',l:'Cierre de jornada',ic:'sun'},
     ]},
+    {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
   ],
   vendedor:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis pedidos',ic:'pkg'},
     {id:'balance',l:'Mi balance',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
-    {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+    {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},{id:'mensajes',l:'Mensajes',ic:'chat'},
   ]}],
   dropshipper:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis productos',ic:'pkg'},
-    {id:'balance',l:'Mis comisiones',ic:'dollar'},
+    {id:'balance',l:'Mis comisiones',ic:'dollar'},{id:'mensajes',l:'Mensajes',ic:'chat'},
   ]}],
   delivery:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'entregas',l:'Mis entregas',ic:'truck'},
     {id:'recaudacion',l:'Mi recaudación',ic:'dollar'},{id:'cupo',l:'Mi cupo y premios',ic:'trophy'},
+    {id:'mensajes',l:'Mensajes',ic:'chat'},
   ]}],
   proveedor:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'suministros',l:'Mis suministros',ic:'pkg'},
-    {id:'catalogo',l:'Mi catálogo',ic:'pkg'},
+    {id:'catalogo',l:'Mi catálogo',ic:'pkg'},{id:'mensajes',l:'Mensajes',ic:'chat'},
   ]}],
   cliente:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'mispedidos',l:'Mis pedidos',ic:'pkg'},
-    {id:'boletas',l:'Mis boletas',ic:'receipt'},
+    {id:'boletas',l:'Mis boletas',ic:'receipt'},{id:'mensajes',l:'Mensajes',ic:'chat'},
   ]}],
 };
 const SVG={
@@ -1906,12 +1947,13 @@ const SVG={
   plus:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   trophy:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M17 3H7v10a5 5 0 0010 0V3z"/><path d="M17 4h2a2 2 0 012 2v1a4 4 0 01-4 4M7 4H5a2 2 0 00-2 2v1a4 4 0 004 4"/></svg>',
   db:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+  chat:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
 };
 const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'Liquidación',
   usuarios:'Usuarios',zonas:'Zonas y Tarifas',config:'Configuración',setup:'Setup / SQL',
   recaudacion:'Recaudación Delivery',boletas:'Boletas IVA',cierre:'Cierre de Jornada',
   neworder:'Nuevo Pedido',entregas:'Mis Entregas',cupo:'Mi Cupo y Premios',mispedidos:'Mis Pedidos',
-  catalogo:'Catálogo de Productos',suministros:'Mis Suministros'};
+  catalogo:'Catálogo de Productos',suministros:'Mis Suministros',mensajes:'Mensajes'};
 
 /* ── SIDEBAR MOBILE ── */
 function toggleSidebar(){
@@ -3431,6 +3473,139 @@ function resetAll(){
   DL._initLocal();
   refreshCache().then(()=>nav('dashboard'));
   pushNotif('Datos reseteados','w');
+}
+
+/* ─── MENSAJES PAGE ─── */
+let _msgConvPartner=null; // usuario con quien está abierta la conversación
+
+PAGES.mensajes=async function(){
+  $('tbActions').innerHTML='';
+  $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Cargando mensajes…</div>';
+  if(!_supaConnected){
+    $('ca').innerHTML='<div class="mc-empty">📵 Necesitás conexión a internet para ver mensajes.</div>';
+    return;
+  }
+  // Limpiar mensajes viejos (más de 24h)
+  await _limpiarMensajes24h();
+  // Cargar todos los mensajes del usuario actual
+  const {data,error}=await _supa.from('mensajes').select('*')
+    .or(`de_id.eq.${CU.id},para_id.eq.${CU.id}`)
+    .order('created_at',{ascending:false});
+  if(error){$('ca').innerHTML='<div class="mc-empty">Error al cargar mensajes.</div>';return;}
+  const msgs=data||[];
+  if(!msgs.length){
+    $('ca').innerHTML='<div class="mc-empty">💬<br><br>No tenés mensajes aún.<br><span style="font-size:12px">Los mensajes se eliminan automáticamente después de 24 horas.</span></div>';
+    return;
+  }
+  // Agrupar por conversación (partner ID)
+  const convMap={};
+  msgs.forEach(m=>{
+    const pid=m.de_id==CU.id?m.para_id:m.de_id;
+    const pnom=m.de_id==CU.id?m.para_nombre:m.de_nombre;
+    if(!convMap[pid]){convMap[pid]={pid,pnom,last:m,unread:0};}
+    if(!m.leido&&m.para_id==CU.id)convMap[pid].unread++;
+    if(new Date(m.created_at)>new Date(convMap[pid].last.created_at))convMap[pid].last=m;
+  });
+  const convs=Object.values(convMap).sort((a,b)=>new Date(b.last.created_at)-new Date(a.last.created_at));
+  const fmtAgo=d=>{const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'ahora';if(s<3600)return Math.floor(s/60)+'min';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';};
+  $('ca').innerHTML='<div class="mc-wrap"><div class="mc-conv-list">'+
+    convs.map(c=>
+      '<div class="mc-conv-item" onclick="openConvThread('+c.pid+',\''+c.pnom.replace(/'/g,'\\\'')+'\')" >'+
+      '<div class="mc-avatar">'+c.pnom[0].toUpperCase()+'</div>'+
+      '<div class="mc-info">'+
+        '<div class="mc-name">'+c.pnom+'</div>'+
+        '<div class="mc-preview">'+(c.last.de_id==CU.id?'Vos: ':'')+c.last.mensaje+'</div>'+
+      '</div>'+
+      '<div class="mc-meta">'+
+        '<div class="mc-time">'+fmtAgo(c.last.created_at)+'</div>'+
+        (c.unread?'<div class="mc-badge">'+c.unread+'</div>':'')+
+      '</div></div>'
+    ).join('')+
+  '</div></div>';
+};
+
+async function openConvThread(partnerId,partnerNom){
+  _msgConvPartner={id:partnerId,nom:partnerNom};
+  $('ca').innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)">Cargando conversación…</div>';
+  const pu=_usersCache.find(u=>u.id==partnerId);
+  const partnerRol=pu?capRole(pu.rol):'';
+  // Marcar como leídos
+  await _supa.from('mensajes').update({leido:true}).eq('para_id',CU.id).eq('de_id',partnerId);
+  _unreadMsgs=await DL.getMensajesNoLeidos(CU.id);updateAIBadge();
+  await _renderConvThread(partnerId,partnerNom,partnerRol);
+}
+
+async function _renderConvThread(pid,pnom,prol){
+  const {data}=await _supa.from('mensajes').select('*')
+    .or(`and(de_id.eq.${CU.id},para_id.eq.${pid}),and(de_id.eq.${pid},para_id.eq.${CU.id})`)
+    .order('created_at',{ascending:true});
+  const msgs=(data||[]);
+  const fmtTime=d=>new Date(d).toLocaleString('es-PY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  let bubblesHtml='';
+  let lastDay='';
+  msgs.forEach(m=>{
+    const sent=m.de_id==CU.id;
+    const day=new Date(m.created_at).toLocaleDateString('es-PY');
+    if(day!==lastDay){
+      bubblesHtml+='<div class="mc-day-sep"><span>'+day+'</span></div>';
+      lastDay=day;
+    }
+    bubblesHtml+=
+      '<div class="mc-bubble '+(sent?'sent':'recv')+'">'+
+      (!sent?'<div class="mc-recv-name">'+m.de_nombre+'</div>':'')+
+      m.mensaje+
+      '<div class="mc-btime">'+fmtTime(m.created_at)+(sent?'':'')+' '+(m.leido&&sent?'✓✓':'')+'</div>'+
+      '</div>';
+  });
+  if(!bubblesHtml)bubblesHtml='<div class="mc-empty" style="padding:30px">Todavía no hay mensajes. ¡Escribí el primero!</div>';
+  $('ca').innerHTML=
+    '<div class="mc-thread">'+
+    '<div class="mc-thread-header">'+
+      '<div class="mc-back" onclick="PAGES.mensajes()">‹</div>'+
+      '<div class="mc-avatar" style="width:36px;height:36px;font-size:14px">'+pnom[0].toUpperCase()+'</div>'+
+      '<div>'+
+        '<div class="mc-thread-name">'+pnom+'</div>'+
+        (prol?'<div class="mc-thread-role">'+prol+'</div>':'')+
+      '</div>'+
+    '</div>'+
+    '<div class="mc-bubbles" id="mcBubbles">'+bubblesHtml+'</div>'+
+    '<div class="mc-input-bar">'+
+      '<textarea id="mcInput" placeholder="Escribí un mensaje…" rows="1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendMsgThread('+pid+',\''+pnom.replace(/'/g,'\\\'')+'\')}"></textarea>'+
+      '<button class="mc-send-btn" onclick="sendMsgThread('+pid+',\''+pnom.replace(/'/g,'\\\'')+'\')" title="Enviar">➤</button>'+
+    '</div>'+
+    '</div>';
+  // Scroll al final
+  setTimeout(()=>{const b=$('mcBubbles');if(b)b.scrollTop=b.scrollHeight;},80);
+}
+
+async function sendMsgThread(toId,toNom){
+  const inp=$('mcInput');if(!inp)return;
+  const txt=inp.value.trim();if(!txt)return;
+  inp.value='';inp.style.height='auto';
+  const m={de_id:CU.id,de_nombre:CU.nombre,para_id:toId,para_nombre:toNom,mensaje:txt,leido:false};
+  const saved=await DL.saveMensaje(m);
+  if(saved){
+    // Agregar burbuja localmente sin recargar todo
+    const b=$('mcBubbles');
+    if(b){
+      const d=document.createElement('div');
+      d.className='mc-bubble sent';
+      const now=new Date().toLocaleString('es-PY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      d.innerHTML=txt+'<div class="mc-btime">'+now+'</div>';
+      b.appendChild(d);
+      b.scrollTop=b.scrollHeight;
+    }
+  }else{
+    pushNotif('Error al enviar el mensaje. Verificá la conexión.','e');
+  }
+}
+
+async function _limpiarMensajes24h(){
+  if(!_supaConnected)return;
+  try{
+    const hace24h=new Date(Date.now()-24*60*60*1000).toISOString();
+    await _supa.from('mensajes').delete().lt('created_at',hace24h);
+  }catch(e){console.warn('limpiarMensajes:',e.message);}
 }
 
 /* ─── SETUP PAGE ─── */
