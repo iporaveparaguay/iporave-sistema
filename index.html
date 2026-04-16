@@ -2995,13 +2995,16 @@ async function saveNewUser(){
     vehiculo:rol==='delivery'?gv('nuVeh'):'',patente:rol==='delivery'?gv('nuPat'):'',
     whatsapp:rol==='delivery'?gv('nuWa'):''};
   _usersCache=[..._usersCache,u];
+  showAlert('nuAlert','i','Guardando...');
   const r=await DL.saveUser(u);
-  closeA();PAGES.usuarios();
-  if(r.ok){
-    pushNotif('Usuario "'+user+'" creado correctamente','s');
-  } else {
-    pushNotif('Usuario creado en este dispositivo. Supabase: '+r.error,'w');
+  if(!r.ok){
+    // Revertir cache si falló Supabase para que no quede inconsistente
+    _usersCache=_usersCache.filter(x=>x.id!==u.id);
+    showAlert('nuAlert','e','❌ Error al guardar en Supabase: '+r.error+'<br><small>El usuario NO fue creado. Mostrá este error al soporte.</small>');
+    return;
   }
+  closeA();PAGES.usuarios();
+  pushNotif('Usuario "'+user+'" creado correctamente','s');
 }
 function editUser(id){
   const u=_usersCache.find(x=>x.id===id);if(!u)return;
@@ -3018,13 +3021,15 @@ function editUser(id){
     '<option value="" '+((!u.vehiculo)?'selected':'')+'>N/A</option>'+
     '</select></div>'+
     '<div class="fg"><label>Patente</label><input type="text" id="euPat" value="'+(u.patente||'')+'"></div></div>'+
-    '<div class="fg"><label>WhatsApp</label><input type="text" id="euWa" value="'+(u.whatsapp||'')+'"></div>',
+    '<div class="fg"><label>WhatsApp</label><input type="text" id="euWa" value="'+(u.whatsapp||'')+'"></div>'+
+    '<div id="euAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveEditUser('+id+')">Guardar</button>'
   );
 }
 async function saveEditUser(id){
   const u=_usersCache.find(x=>x.id==id);if(!u)return;
+  const prev={...u}; // copia para revertir si falla
   const newNom=gv('euNom').trim();if(newNom)u.nombre=newNom;
   const newUser=gv('euUser').trim();if(newUser)u.username=newUser;
   const newPass=gv('euPass').trim();if(newPass)u.password=newPass;
@@ -3033,13 +3038,16 @@ async function saveEditUser(id){
   if(!u.contactos)u.contactos=[];
   const idx=_usersCache.findIndex(x=>x.id==id);
   if(idx>=0)_usersCache[idx]=u;
+  showAlert('euAlert','i','Guardando...');
   const r=await DL.saveUser(u);
-  closeA();PAGES.usuarios();
-  if(r.ok){
-    pushNotif('Usuario actualizado correctamente','s');
-  } else {
-    pushNotif('Actualizado localmente. Supabase: '+r.error,'w');
+  if(!r.ok){
+    // Revertir
+    if(idx>=0)_usersCache[idx]=prev;
+    showAlert('euAlert','e','❌ Error Supabase: '+r.error+'<br><small>Mostrá este mensaje al soporte.</small>');
+    return;
   }
+  closeA();PAGES.usuarios();
+  pushNotif('Usuario actualizado correctamente','s');
 }
 function delUser(id){
   const u=_usersCache.find(x=>x.id===id);if(!u)return;
