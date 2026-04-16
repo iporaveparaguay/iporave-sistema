@@ -1313,6 +1313,10 @@ function aiAutoGrow(el){
 
 /* ── Definición de tools para Claude ── */
 const AI_TOOLS=[
+  {name:'consultar_catalogo',description:'Consulta el catálogo de productos con precios, presentaciones y stock disponible. Usá esta tool cuando el usuario pregunte por productos, precios o presentaciones disponibles.',
+    input_schema:{type:'object',properties:{
+      producto:{type:'string',description:'Nombre o parte del nombre del producto a buscar. Si no se especifica devuelve todo el catálogo.'},
+    }}},
   {name:'consultar_pedidos',description:'Consulta pedidos del sistema con filtros opcionales.',
     input_schema:{type:'object',properties:{
       pedido_id:{type:'integer',description:'ID específico del pedido'},
@@ -1400,6 +1404,22 @@ const AI_TOOLS=[
 
 /* ── Ejecutores de cada tool ── */
 const AI_TOOL_EXEC={
+  async consultar_catalogo(args){
+    if(!_catalogoCache.length)return'El catálogo está vacío. El administrador aún no cargó productos.';
+    const rolPrecio=CU?({vendedor:'precioVendedor',dropshipper:'precioDropshipper',proveedor:'precioProveedor'}[CU.rol]||'precio'):'precio';
+    let cat=_catalogoCache;
+    if(args.producto)cat=cat.filter(c=>c.nombre.toLowerCase().includes(args.producto.toLowerCase()));
+    if(!cat.length)return`No se encontró ningún producto que coincida con "${args.producto}".`;
+    return cat.map(c=>{
+      const pres=(c.presentaciones||[]);
+      if(!pres.length)return`📦 ${c.nombre}${c.proveedorNombre?' (proveedor: '+c.proveedorNombre+')':''}: sin presentaciones cargadas aún.`;
+      const lineas=pres.map(p=>{
+        const precio=p[rolPrecio]||p.precio||0;
+        return`  • ${p.nombre}: Gs. ${Number(precio).toLocaleString('es-PY')}`;
+      }).join('\n');
+      return`📦 ${c.nombre}${c.proveedorNombre?' (proveedor: '+c.proveedorNombre+')':''}:\n${lineas}`;
+    }).join('\n\n');
+  },
   async consultar_pedidos(args){
     let orders=getVisibleOrders();
     if(args.pedido_id)orders=orders.filter(o=>o.id===args.pedido_id);
@@ -1583,18 +1603,18 @@ function getAITools(){
   return AI_TOOLS.filter(t=>{
     if(rol==='admin')return true;
     if(['vendedor','dropshipper'].includes(rol))return[
-      'consultar_pedidos','crear_pedido','actualizar_estado_pedido',
+      'consultar_catalogo','consultar_pedidos','crear_pedido','actualizar_estado_pedido',
       'notificar_administrador','responder_administrador','ver_mensajes'
     ].includes(t.name);
     if(rol==='delivery')return[
-      'consultar_pedidos','actualizar_estado_pedido',
+      'consultar_catalogo','consultar_pedidos','actualizar_estado_pedido',
       'notificar_cliente_gps','notificar_administrador','responder_administrador','ver_mensajes'
     ].includes(t.name);
     if(rol==='proveedor')return[
-      'consultar_pedidos','crear_pedido',
+      'consultar_catalogo','consultar_pedidos','crear_pedido',
       'notificar_administrador','responder_administrador','ver_mensajes'
     ].includes(t.name);
-    return['consultar_pedidos','notificar_administrador','ver_mensajes'].includes(t.name);
+    return['consultar_catalogo','consultar_pedidos','notificar_administrador','ver_mensajes'].includes(t.name);
   });
 }
 
@@ -1609,7 +1629,15 @@ async function sendAI(){
   const ent=orders.filter(o=>o.estado==='Entregado');
   const zonasList=_zonasCache.map(z=>`#${z.id} ${z.nombre} (Gs.${z.precio}, extra delivery: Gs.${z.extraDelivery}, tiempo: ${z.tiempoEntrega})`).join('\n');
   const usersList=_usersCache.map(u=>`#${u.id} ${u.nombre} — rol: ${capRole(u.rol)}, usuario: ${u.username}${u.whatsapp?', WA: '+u.whatsapp:''}`).join('\n');
-  const catList=_catalogoCache.length?_catalogoCache.map(c=>`#${c.id} ${c.nombre} — precio: Gs.${c.precio}${c.costo?', costo: Gs.'+c.costo:''}${c.unidad?', unidad: '+c.unidad:''}${c.stock!==undefined?', stock: '+c.stock:''}`).join('\n'):'Sin productos en catálogo aún.';
+  const _rolPrecio=r=>{if(r==='vendedor')return'precioVendedor';if(r==='dropshipper')return'precioDropshipper';if(r==='proveedor')return'precioProveedor';return'precio';};
+  const _campoP=_rolPrecio(CU?CU.rol:'admin');
+  const catList=_catalogoCache.length?_catalogoCache.map(c=>{
+    const pres=(c.presentaciones||[]).map(p=>{
+      const val=p[_campoP]||p.precio||0;
+      return`    • ${p.nombre}: Gs.${Number(val).toLocaleString('es-PY')} (base: Gs.${Number(p.precio||0).toLocaleString('es-PY')}, vendedor: Gs.${Number(p.precioVendedor||0).toLocaleString('es-PY')}, drop: Gs.${Number(p.precioDropshipper||0).toLocaleString('es-PY')})`;
+    }).join('\n');
+    return`#${c.id} ${c.nombre}${c.proveedorNombre?' [proveedor: '+c.proveedorNombre+']':''}\n${pres||'    (sin presentaciones)'}`;
+  }).join('\n'):'Sin productos en catálogo aún.';
   const ordersDetail=orders.slice(0,30).map(o=>`#${o.id} ${o.cliente||'?'} — ${o.producto} x${o.qty} — Estado: ${o.estado} — Gs.${o.precio} — Zona: ${o.zona||'—'}`).join('\n');
   const context=
     'Sistema Logístico Iporãve — Paraguay. Fecha: '+today()+'.\n'+
