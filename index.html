@@ -500,7 +500,7 @@ const DEF_ZONAS = [
 const DEF_CONFIG = {
   supabaseUrl:'https://hrpnqbmknmgdaaokjelb.supabase.co',
   supabaseKey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycG5xYm1rbm1nZGFhb2tqZWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0ODQ1NTYsImV4cCI6MjA5MDA2MDU1Nn0.KO7faBlyZsBBlsQAFtUZ989LKEDyaNgeCQxQqpEsrt8',
-  googleMapsKey:'',claudeApiKey:'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',
+  googleMapsKey:'',
   ivaTasa:10,cupoMoto:15,cupoAuto:12,
   sueldoFijo:200000,premioMes:2000000,premioExtra12:1000000,premioExtra3:2000000,
   numDocActual:1,
@@ -513,13 +513,13 @@ const DEF_ORDERS = [];
 const DEF_CATALOGO = [];
 
 const DEF_USERS = [
-  {id:1,username:'admin',       password:'admin123',       nombre:'Administrador',    rol:'admin',      vehiculo:'',patente:'',whatsapp:''},
-  {id:2,username:'vendedor',    password:'vendedor123',    nombre:'Vendedor',         rol:'vendedor',   vehiculo:'',patente:'',whatsapp:''},
-  {id:3,username:'dropshipper', password:'dropshipper123', nombre:'Dropshipper',      rol:'dropshipper',vehiculo:'',patente:'',whatsapp:''},
-  {id:4,username:'delivery',    password:'delivery123',    nombre:'Delivery',         rol:'delivery',   vehiculo:'moto',patente:'',whatsapp:''},
-  {id:5,username:'proveedor',   password:'proveedor123',   nombre:'Proveedor',        rol:'proveedor',  vehiculo:'',patente:'',whatsapp:''},
+  {id:1,username:'admin',       password:'Ip0r@v3_Adm!n#2026', nombre:'Administrador',    rol:'admin',      vehiculo:'',patente:'',whatsapp:''},
+  {id:2,username:'vendedor',    password:'V3nd3d0r_Ip0r@!26',   nombre:'Vendedor',         rol:'vendedor',   vehiculo:'',patente:'',whatsapp:''},
+  {id:3,username:'dropshipper', password:'Dr0pSh!p_Ip0r@26',    nombre:'Dropshipper',      rol:'dropshipper',vehiculo:'',patente:'',whatsapp:''},
+  {id:4,username:'delivery',    password:'D3l!v3ry_Ip0r@26',    nombre:'Delivery',         rol:'delivery',   vehiculo:'moto',patente:'',whatsapp:''},
+  {id:5,username:'proveedor',   password:'Pr0v3d0r_Ip0r@26',    nombre:'Proveedor',        rol:'proveedor',  vehiculo:'',patente:'',whatsapp:''},
 ];
-const DEF_USERS_VER = 3;
+const DEF_USERS_VER = 4;
 
 /* ══════════════════════════════════════════════════
    HELPERS
@@ -1179,7 +1179,7 @@ function waEntregado(o){
 ══════════════════════════════════════════════════ */
 let _aiHistory = [];
 let _unreadMsgs = 0;
-const AI_PROXY='https://claude-proxy.iporaveparaguay.workers.dev';
+const AI_PROXY='/api/claude';
 
 function updateAIBadge(){
   const btn=$('aiBtn');if(!btn)return;
@@ -1537,7 +1537,6 @@ async function sendAI(){
       const res=await fetch(AI_PROXY,{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          api_key:getCfg().claudeApiKey,
           model:'claude-haiku-4-5-20251001',
           max_tokens:1200,
           system:'Sos el asistente interno del sistema logístico Iporãve (Paraguay). '+
