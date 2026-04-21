@@ -573,13 +573,7 @@ const DEF_CONFIG = {
 const DEF_ORDERS = [];
 const DEF_CATALOGO = [];
 
-const DEF_USERS = [
-  {id:1,username:'distribuidoraiporave',nombre:'Administrador',    rol:'admin',      vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-  {id:2,username:'vendedor',            nombre:'Vendedor',         rol:'vendedor',   vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-  {id:3,username:'dropshipper',         nombre:'Dropshipper',      rol:'dropshipper',vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-  {id:4,username:'delivery',            nombre:'Delivery',         rol:'delivery',   vehiculo:'moto',patente:'',whatsapp:'',contactos:[]},
-  {id:5,username:'proveedor',           nombre:'Proveedor',        rol:'proveedor',  vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-];harset="UTF-8">
+const DEF_USERS = [];harset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iporãve — Sistema Logístico Paraguay</title>
 
@@ -1151,14 +1145,8 @@ const DEF_CONFIG = {
 const DEF_ORDERS = [];
 const DEF_CATALOGO = [];
 
-const DEF_USERS = [
-  {id:1,username:'distribuidoraiporave',nombre:'Administrador',    rol:'admin',      vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-  {id:2,username:'vendedor',            nombre:'Vendedor',         rol:'vendedor',   vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-  {id:3,username:'dropshipper',         nombre:'Dropshipper',      rol:'dropshipper',vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-  {id:4,username:'delivery',            nombre:'Delivery',         rol:'delivery',   vehiculo:'moto',patente:'',whatsapp:'',contactos:[]},
-  {id:5,username:'proveedor',           nombre:'Proveedor',        rol:'proveedor',  vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-];
-const DEF_USERS_VER = 7;
+const DEF_USERS = [];
+const DEF_USERS_VER = 8;
 
 /* ══════════════════════════════════════════════════
    CONFIG DESDE SERVIDOR (sin claves en el código)
@@ -1401,10 +1389,6 @@ const DL = {
   async getUsers(){
     // 1. Base: localStorage
     let local=this._lg('users')||[];
-    // 2. Restaurar DEF_USERS base si faltan
-    DEF_USERS.forEach(du=>{
-      if(!local.find(u=>u.id==du.id))local.push({...du,contactos:du.contactos||[]});
-    });
     // 3. Sincronizar con Supabase (fuente de verdad multi-dispositivo)
     if(_supaConnected){
       try{
@@ -4249,7 +4233,6 @@ PAGES.config=function(){
       '<div class="fg"><label>Tasa IVA por defecto (%)</label><input type="number" id="cfgIVA" value="'+cfg.ivaTasa+'"></div>'+
       '<div id="cfgAlert"></div>'+
       '<button class="btn btn-primary" onclick="saveCfgMain()">Guardar parámetros</button>'+
-      '<button class="btn btn-danger" style="margin-left:8px" onclick="resetAll()">Reset datos demo</button>'+
     '</div>'+
     '</div>';
 };
