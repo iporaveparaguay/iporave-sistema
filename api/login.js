@@ -8,8 +8,11 @@ async function enviarEmailDispositivo(username, deviceInfo, approvalToken) {
   if (!user || !pass) { console.warn('Email no configurado'); return; }
 
   const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user, pass } });
-  const approveUrl = `${APP_URL}/api/aprobar-dispositivo?token=${approvalToken}`;
-  const rejectUrl  = `${APP_URL}/api/rechazar-dispositivo?token=${approvalToken}`;
+  const botonesHtml = approvalToken ? `
+    <div style="display:flex;gap:12px;margin-top:24px">
+      <a href="${APP_URL}/api/aprobar-dispositivo?token=${approvalToken}" style="flex:1;text-align:center;background:#22c55e;color:white;padding:14px 20px;text-decoration:none;border-radius:8px;font-weight:700">✅ Autorizar acceso</a>
+      <a href="${APP_URL}/api/rechazar-dispositivo?token=${approvalToken}" style="flex:1;text-align:center;background:#ef4444;color:white;padding:14px 20px;text-decoration:none;border-radius:8px;font-weight:700">❌ Rechazar</a>
+    </div>` : `<p style="color:#ef4444;margin-top:16px">⚠️ Revisá manualmente en Supabase para autorizar este dispositivo.</p>`;
 
   await transporter.sendMail({
     from: `"Iporãve Sistema" <${user}>`,
@@ -30,10 +33,7 @@ async function enviarEmailDispositivo(username, deviceInfo, approvalToken) {
             <tr style="background:#f9fafb"><td style="padding:8px 12px;font-weight:700;border:1px solid #e5e7eb">Zona horaria</td><td style="padding:8px 12px;border:1px solid #e5e7eb">${deviceInfo.timezone||'—'}</td></tr>
             <tr><td style="padding:8px 12px;font-weight:700;border:1px solid #e5e7eb">Fecha / hora</td><td style="padding:8px 12px;border:1px solid #e5e7eb">${new Date().toLocaleString('es-PY',{timeZone:'America/Asuncion'})}</td></tr>
           </table>
-          <div style="display:flex;gap:12px;margin-top:24px">
-            <a href="${approveUrl}" style="flex:1;text-align:center;background:#22c55e;color:white;padding:14px 20px;text-decoration:none;border-radius:8px;font-weight:700">✅ Autorizar acceso</a>
-            <a href="${rejectUrl}" style="flex:1;text-align:center;background:#ef4444;color:white;padding:14px 20px;text-decoration:none;border-radius:8px;font-weight:700">❌ Rechazar</a>
-          </div>
+          ${botonesHtml}
         </div>
       </div>`,
   });
@@ -82,30 +82,24 @@ module.exports = async function(req, res) {
         const approvalToken = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-        // Intentar insert completo; si falla por columna inexistente, intentar insert mínimo
+        // Intentar insert con distintos fallbacks según columnas disponibles
+        const inserts = [
+          { user_id: user.id, username: user.username, nombre: user.nombre, device_hash, device_info: fullInfo, ip, autorizado: false, token_aprobacion: approvalToken, token_expires_at: expiresAt, creado_at: new Date().toISOString() },
+          { user_id: user.id, username: user.username, nombre: user.nombre, device_hash, device_info: fullInfo, ip, autorizado: false, token_aprobacion: approvalToken, created_at: new Date().toISOString() },
+          { user_id: user.id, username: user.username, device_hash, autorizado: false, token_aprobacion: approvalToken },
+        ];
         let insertOk = false;
-        const { error: e1 } = await supa.from('dispositivos').insert({
-          user_id: user.id, username: user.username, nombre: user.nombre,
-          device_hash, device_info: fullInfo, ip, autorizado: false,
-          token_aprobacion: approvalToken, token_expires_at: expiresAt,
-          creado_at: new Date().toISOString(),
-        });
-        if (!e1) {
-          insertOk = true;
-        } else {
-          console.error('Insert completo falló, intentando insert mínimo:', e1.message);
-          const { error: e2 } = await supa.from('dispositivos').insert({
-            user_id: user.id, username: user.username,
-            device_hash, autorizado: false,
-            token_aprobacion: approvalToken,
-            creado_at: new Date().toISOString(),
-          });
-          if (!e2) insertOk = true;
-          else console.error('Insert mínimo también falló:', e2.message);
+        for (const row of inserts) {
+          const { error: err } = await supa.from('dispositivos').insert(row);
+          if (!err) { insertOk = true; break; }
+          console.error('Insert dispositivo falló:', err.message);
         }
 
-        if (insertOk) {
-          try { await enviarEmailDispositivo(user.username, fullInfo, approvalToken); } catch(e) { console.error('Email error:', e.message); }
+        // Siempre enviar email — independientemente de si el insert funcionó
+        try {
+          await enviarEmailDispositivo(user.username, fullInfo, insertOk ? approvalToken : null);
+        } catch(e) {
+          console.error('Email error:', e.message);
         }
 
         return res.status(403).json({
