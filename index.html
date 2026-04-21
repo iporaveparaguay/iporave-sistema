@@ -1388,22 +1388,24 @@ const DL = {
     return(list||[]).filter(u=>!DEMO.includes((u.username||'').toLowerCase()));
   },
   async getUsers(){
-    // Limpiar demo users del localStorage antes de cualquier cosa
+    // Siempre limpiar demo del localStorage primero
     const stored=this._lg('users')||[];
     const clean=this._filterDemo(stored);
     if(clean.length!==stored.length)this._ls('users',clean);
     let local=clean;
 
-    if(_supaConnected){
+    // Usar endpoint del servidor (service key) en lugar de anon key directamente
+    if(_sessionToken){
       try{
-        const{data,error}=await _supa.from('usuarios').select('id,username,nombre,rol,vehiculo,patente,whatsapp,contactos');
-        if(!error&&data){
-          const parsed=this._filterDemo(data)
-            .map(u=>({...u,contactos:typeof u.contactos==='string'?JSON.parse(u.contactos||'[]'):(u.contactos||[])}));
-          this._ls('users',parsed);
-          local=parsed;
+        const r=await fetch('/api/get-users',{headers:{'Authorization':'Bearer '+_sessionToken}});
+        if(r.ok){
+          const json=await r.json();
+          if(json.ok&&json.users){
+            this._ls('users',json.users);
+            local=json.users;
+          }
         }
-      }catch(e){console.warn('getUsers Supabase:',e.message);}
+      }catch(e){console.warn('getUsers API:',e.message);}
     }
     return local;
   },
