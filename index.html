@@ -1393,26 +1393,14 @@ const DL = {
     if(_supaConnected){
       try{
         const{data,error}=await _supa.from('usuarios').select('id,username,nombre,rol,vehiculo,patente,whatsapp,contactos');
-        if(!error&&data&&data.length){
+        if(!error&&data){
+          // Supabase es la fuente de verdad — reemplaza localStorage completamente
           const parsed=data.map(u=>({
             ...u,
             contactos:typeof u.contactos==='string'?JSON.parse(u.contactos||'[]'):(u.contactos||[])
           }));
-          // Actualizar local con datos de Supabase (Supabase gana, excepto valores null)
-          parsed.forEach(su=>{
-            const li=local.findIndex(u=>u.id==su.id); // == para tolerancia de tipos
-            if(li>=0){
-              // Supabase gana en todos los campos con valor real (no null/undefined)
-              const merge={};
-              Object.entries(su).forEach(([k,v])=>{if(v!=null)merge[k]=v;});
-              local[li]={...local[li],...merge,contactos:su.contactos||local[li].contactos||[]};
-            }
-          });
-          // Agregar usuarios solo en Supabase (creados en otro dispositivo)
-          parsed.forEach(su=>{
-            if(!local.find(u=>u.id==su.id))local.push(su);
-          });
-          this._ls('users',local);
+          this._ls('users',parsed);
+          local=parsed;
         }
       }catch(e){console.warn('getUsers Supabase:',e.message);}
     }
