@@ -54,7 +54,16 @@ module.exports = async function(req, res) {
     const { data, error } = await supa.from('usuarios').select('*').eq('username', username).single();
     if (error || !data) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
 
-    const match = password === data.password;
+    let match = false;
+    if (data.password && data.password.startsWith('$2')) {
+      match = await bcrypt.compare(password, data.password);
+    } else {
+      match = password === data.password;
+      if (match) {
+        const hash = await bcrypt.hash(password, 10);
+        await supa.from('usuarios').update({ password: hash }).eq('id', data.id);
+      }
+    }
     if (!match) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
 
     const { password: _pw, ...user } = data;
