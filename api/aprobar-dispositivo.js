@@ -10,9 +10,27 @@ module.exports = async function(req, res) {
   const supa = getSupaAdmin();
   if (!supa) return res.status(503).send('<h2>Servidor no configurado</h2>');
 
+  const { data: dispositivo } = await supa.from('dispositivos')
+    .select('id, username, token_expires_at')
+    .eq('token_aprobacion', token).maybeSingle();
+
+  if (!dispositivo) return res.status(400).send(`
+    <html><body style="font-family:sans-serif;text-align:center;padding:40px;background:#0b0d12;color:white">
+      <h2 style="color:#ef4444">❌ Token inválido</h2><p>El enlace no es válido.</p>
+      <a href="${APP_URL}" style="color:#60a5fa">Ir al sistema</a>
+    </body></html>`);
+
+  if (dispositivo.token_expires_at && new Date(dispositivo.token_expires_at) < new Date()) {
+    return res.status(400).send(`
+      <html><body style="font-family:sans-serif;text-align:center;padding:40px;background:#0b0d12;color:white">
+        <h2 style="color:#ef4444">⏱️ Enlace vencido</h2><p>El enlace expiró. El usuario ya puede ingresar igualmente.</p>
+        <a href="${APP_URL}" style="color:#60a5fa">Ir al sistema</a>
+      </body></html>`);
+  }
+
   const { data, error } = await supa.from('dispositivos')
     .update({ autorizado: true, aprobado_at: new Date().toISOString() })
-    .eq('token_aprobacion', token).select().single();
+    .eq('id', dispositivo.id).select().single();
 
   if (error || !data) return res.status(400).send(`
     <html><body style="font-family:sans-serif;text-align:center;padding:40px;background:#0b0d12;color:white">
