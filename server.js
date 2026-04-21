@@ -10,10 +10,8 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-const JWT_SECRET = process.env.JWT_SECRET || (() => {
-  console.warn('⚠️  JWT_SECRET no configurado — usá una variable de entorno en producción.');
-  return 'dev-secret-iporave-2026-cambiar';
-})();
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET no configurado en variables de entorno');
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'iporaveparaguay@gmail.com';
 const APP_URL     = process.env.APP_URL || 'https://iporaveparaguay.com';

@@ -2,7 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-iporave-2026-cambiar';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET no configurado en variables de entorno');
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'iporaveparaguay@gmail.com';
 const APP_URL = process.env.APP_URL || 'https://iporave-sistema.vercel.app';
 
