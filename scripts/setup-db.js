@@ -34,7 +34,10 @@ ALTER TABLE dispositivos ADD COLUMN IF NOT EXISTS token_expires_at timestamptz;
 ALTER TABLE dispositivos ADD COLUMN IF NOT EXISTS aprobado_at      timestamptz;
 ALTER TABLE dispositivos ADD COLUMN IF NOT EXISTS creado_at        timestamptz DEFAULT now();
 
--- ── 3. Hashear contraseñas en texto plano con bcrypt (work factor 10) ─────────
+-- ── 3. Eliminar usuarios demo por ID (2=vendedor, 3=dropshipper, 4=delivery) ──
+DELETE FROM usuarios WHERE id IN (2, 3, 4) AND username IN ('vendedor','dropshipper','delivery');
+
+-- ── 4. Hashear contraseñas en texto plano con bcrypt (work factor 10) ─────────
 UPDATE usuarios
 SET password = crypt(password, gen_salt('bf', 10))
 WHERE password IS NOT NULL
@@ -92,6 +95,7 @@ function runSQL(sql) {
     console.log('🔧 Ejecutando migración de seguridad...');
     await runSQL(SQL);
     console.log('✅ Migración completada:');
+    console.log('   • Usuarios demo eliminados de Supabase (vendedor, dropshipper, delivery)');
     console.log('   • Tabla dispositivos verificada y columnas completadas');
     console.log('   • Contraseñas en texto plano hasheadas con bcrypt');
     console.log('   • RLS activado en usuarios y dispositivos');
