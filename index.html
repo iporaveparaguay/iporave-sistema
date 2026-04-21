@@ -559,8 +559,8 @@ const DEF_ZONAS = [
   {id:8,nombre:'Express Mismo Día',precio:50000,extraDelivery:10000,tiempoEntrega:'Mismo día',desc:'Zona Central — pedido antes de 12:00'},
 ];
 const DEF_CONFIG = {
-  supabaseUrl:'https://hrpnqbmknmgdaaokjelb.supabase.co',
-  supabaseKey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycG5xYm1rbm1nZGFhb2tqZWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0ODQ1NTYsImV4cCI6MjA5MDA2MDU1Nn0.KO7faBlyZsBBlsQAFtUZ989LKEDyaNgeCQxQqpEsrt8',
+  supabaseUrl:'',
+  supabaseKey:'',
   googleMapsKey:'',
   ivaTasa:10,cupoMoto:15,cupoAuto:12,
   sueldoFijo:200000,premioMes:2000000,premioExtra12:1000000,premioExtra3:2000000,
@@ -574,18 +574,60 @@ const DEF_ORDERS = [];
 const DEF_CATALOGO = [];
 
 const DEF_USERS = [
-  {id:1,username:'distribuidoraiporave', password:'distribuidoraiporave2026', nombre:'Administrador',    rol:'admin',      vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-  {id:2,username:'vendedor',    password:'V3nd3d0r_Ip0r@!26',   nombre:'Vendedor',         rol:'vendedor',   vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-  {id:3,username:'dropshipper', password:'Dr0pSh!p_Ip0r@26',    nombre:'Dropshipper',      rol:'dropshipper',vehiculo:'',patente:'',whatsapp:'',contactos:[]},
-  {id:4,username:'delivery',    password:'D3l!v3ry_Ip0r@26',    nombre:'Delivery',         rol:'delivery',   vehiculo:'moto',patente:'',whatsapp:'',contactos:[]},
-  {id:5,username:'proveedor',   password:'Pr0v3d0r_Ip0r@26',    nombre:'Proveedor',        rol:'proveedor',  vehiculo:'',patente:'',whatsapp:'',contactos:[]},
+  {id:1,username:'distribuidoraiporave',nombre:'Administrador',    rol:'admin',      vehiculo:'',patente:'',whatsapp:'',contactos:[]},
+  {id:2,username:'vendedor',            nombre:'Vendedor',         rol:'vendedor',   vehiculo:'',patente:'',whatsapp:'',contactos:[]},
+  {id:3,username:'dropshipper',         nombre:'Dropshipper',      rol:'dropshipper',vehiculo:'',patente:'',whatsapp:'',contactos:[]},
+  {id:4,username:'delivery',            nombre:'Delivery',         rol:'delivery',   vehiculo:'moto',patente:'',whatsapp:'',contactos:[]},
+  {id:5,username:'proveedor',           nombre:'Proveedor',        rol:'proveedor',  vehiculo:'',patente:'',whatsapp:'',contactos:[]},
 ];
 const DEF_USERS_VER = 6;
+
+/* ══════════════════════════════════════════════════
+   CONFIG DESDE SERVIDOR (sin claves en el código)
+══════════════════════════════════════════════════ */
+async function loadServerConfig(){
+  try{
+    const r=await fetch('/api/config');
+    if(!r.ok)return;
+    const cfg=await r.json();
+    if(cfg.supabaseUrl)DEF_CONFIG.supabaseUrl=cfg.supabaseUrl;
+    if(cfg.supabaseKey)DEF_CONFIG.supabaseKey=cfg.supabaseKey;
+  }catch(e){console.warn('No se pudo cargar config del servidor:',e.message);}
+}
+
+/* ══════════════════════════════════════════════════
+   HUELLA DE DISPOSITIVO
+══════════════════════════════════════════════════ */
+async function getDeviceFingerprint(){
+  const raw=[
+    navigator.userAgent,
+    navigator.language,
+    screen.width+'x'+screen.height,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    String(new Date().getTimezoneOffset())
+  ].join('|');
+  try{
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('').substring(0,24);
+  }catch{
+    let h=0;for(let i=0;i<raw.length;i++){h=Math.imul(31,h)+raw.charCodeAt(i)|0;}
+    return Math.abs(h).toString(36);
+  }
+}
+function getDeviceInfo(){
+  return{
+    userAgent:navigator.userAgent,
+    screen:screen.width+'x'+screen.height,
+    language:navigator.language,
+    timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
+  };
+}
 
 /* ══════════════════════════════════════════════════
    HELPERS
 ══════════════════════════════════════════════════ */
 let CU = null;
+let _sessionToken = null;
 let _supa = null;
 let _supaConnected = false;
 let _realtimeSub = null;
@@ -765,6 +807,11 @@ const DL = {
       this._ls('users',[...JSON.parse(JSON.stringify(DEF_USERS)),...extraUsers]);
       this._ls('usersVer',DEF_USERS_VER);
     }
+    // Limpiar contraseñas que puedan existir en localStorage de versiones anteriores
+    const stored=this._lg('users')||[];
+    if(stored.some(u=>u.password)){
+      this._ls('users',stored.map(u=>{const{password,...rest}=u;return rest;}));
+    }
     if(!this._lg('orders')) this._ls('orders', []);
     if(!this._lg('zonas'))  this._ls('zonas',  JSON.parse(JSON.stringify(DEF_ZONAS)));
     if(!this._lg('cupos'))  this._ls('cupos',  []);
@@ -783,7 +830,7 @@ const DL = {
     // 3. Sincronizar con Supabase (fuente de verdad multi-dispositivo)
     if(_supaConnected){
       try{
-        const{data,error}=await _supa.from('usuarios').select('*');
+        const{data,error}=await _supa.from('usuarios').select('id,username,nombre,rol,vehiculo,patente,whatsapp,contactos');
         if(!error&&data&&data.length){
           const parsed=data.map(u=>({
             ...u,
@@ -810,18 +857,34 @@ const DL = {
     return local;
   },
   async saveUser(u){
-    // 1. localStorage inmediato (siempre funciona, mismo dispositivo)
+    // Nunca guardar password en localStorage
+    const{password,...userSinPass}=u;
+    const uLocal={...userSinPass,contactos:Array.isArray(u.contactos)?u.contactos:[]};
+
+    // 1. localStorage inmediato (sin password)
     const users=this._lg('users')||JSON.parse(JSON.stringify(DEF_USERS));
     const i=users.findIndex(x=>x.id==u.id);
-    if(i>=0)users[i]=u;else users.push(u);
+    if(i>=0)users[i]=uLocal;else users.push(uLocal);
     this._ls('users',users);
-    // 2. Supabase (necesario para multi-dispositivo)
+
+    // 2. Si hay contraseña nueva — hashear en el servidor
+    if(password&&!password.startsWith('$2')){
+      try{
+        const res=await fetch('/api/save-user',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
+          body:JSON.stringify({...uLocal,password})
+        });
+        const json=await res.json();
+        if(!res.ok)return{ok:false,error:json.error||'Error del servidor'};
+        return{ok:true};
+      }catch(e){return{ok:false,error:e.message};}
+    }
+
+    // 3. Sin cambio de contraseña — guardar directo en Supabase (sin campo password)
     if(_supaConnected){
       try{
-        const{error}=await _supa.from('usuarios').upsert(
-          {...u,contactos:Array.isArray(u.contactos)?u.contactos:[]},
-          {onConflict:'id'}
-        );
+        const{error}=await _supa.from('usuarios').upsert(uLocal,{onConflict:'id'});
         if(error){console.warn('saveUser Supabase:',error.message);return{ok:false,error:error.message};}
       }catch(e){console.warn('saveUser catch:',e.message);return{ok:false,error:e.message};}
     }
@@ -1835,14 +1898,29 @@ async function doLogin(){
   const u=$('loginUser').value.trim();
   const p=$('loginPass').value;
   try{
-    const users=await DL.getUsers();
-    const found=users.find(x=>x.username===u&&x.password===p);
-    if(!found){
-      showAlert('loginAlert','e','Usuario o contraseña incorrectos');
+    const device_hash=await getDeviceFingerprint();
+    const device_info=getDeviceInfo();
+    const res=await fetch('/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u,password:p,device_hash,device_info})
+    });
+    const data=await res.json();
+    if(!res.ok){
+      if(data.device_pending){
+        showAlert('loginAlert','w',
+          '🔒 <b>Dispositivo no reconocido</b><br>'+data.error+
+          '<br><small style="color:var(--text3)">El administrador recibirá un email. Una vez aprobado podrás ingresar.</small>'
+        );
+      }else{
+        showAlert('loginAlert','e',data.error||'Usuario o contraseña incorrectos');
+      }
       if(btn)btn.textContent='Ingresar al sistema';
       return;
     }
-    CU=found;
+    CU=data.user;
+    _sessionToken=data.token;
+    sessionStorage.setItem('iporave_token',data.token);
     $('loginScreen').style.display='none';
     $('appScreen').classList.add('show');
     $('sAvatar').textContent=CU.nombre[0].toUpperCase();
@@ -1912,6 +1990,8 @@ async function doForgotPassword(){
 }
 function doLogout(){
   CU=null;
+  _sessionToken=null;
+  sessionStorage.removeItem('iporave_token');
   if(_realtimeSub){try{_supa.removeChannel(_realtimeSub);}catch(e){} _realtimeSub=null;}
   if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
   _shownMsgIds=new Set();
@@ -2067,9 +2147,40 @@ function nextDocNum(){
 const PAGES={};
 
 /* ─── DASHBOARD ─── */
-PAGES.dashboard=function(){
+PAGES.dashboard=async function(){
   const orders=_ordersCache;
   let html='';
+
+  // Alerta de dispositivos pendientes (solo admin)
+  if(CU.rol==='admin'&&_sessionToken){
+    try{
+      const r=await fetch('/api/dispositivos-pendientes',{headers:{'Authorization':'Bearer '+_sessionToken}});
+      const d=await r.json();
+      if(d.ok&&d.data&&d.data.length>0){
+        html+='<div style="background:#7c3aed22;border:1px solid #7c3aed;border-radius:10px;padding:14px 16px;margin-bottom:16px">';
+        html+='<div style="font-weight:700;color:#a78bfa;margin-bottom:10px">🔒 '+d.data.length+' dispositivo'+(d.data.length>1?'s':'')+' pendiente'+(d.data.length>1?'s':'')+' de aprobación</div>';
+        d.data.forEach(dev=>{
+          const info=dev.device_info||{};
+          const fecha=dev.creado_at?new Date(dev.creado_at).toLocaleString('es-PY',{timeZone:'America/Asuncion',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+          html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px">';
+          html+='<div style="font-weight:700;margin-bottom:4px">👤 '+dev.username+' — '+dev.nombre+'</div>';
+          html+='<div style="color:var(--text2);line-height:1.7">';
+          html+='📅 <b>Fecha:</b> '+fecha+'<br>';
+          html+='🌐 <b>IP:</b> '+(info.ip||dev.ip||'—')+'<br>';
+          html+='💻 <b>Navegador:</b> <span style="font-size:11px;word-break:break-all">'+(info.userAgent||'—').substring(0,80)+'</span><br>';
+          html+='🖥️ <b>Pantalla:</b> '+(info.screen||'—')+'<br>';
+          html+='🌍 <b>Idioma:</b> '+(info.language||'—');
+          html+='</div>';
+          html+='<div style="display:flex;gap:8px;margin-top:8px">';
+          html+='<button class="btn btn-primary btn-sm" onclick="aprobarDispositivo('+dev.id+')">✅ Aprobar</button>';
+          html+='<button class="btn btn-danger btn-sm" onclick="rechazarDispositivo('+dev.id+')">❌ Rechazar</button>';
+          html+='</div></div>';
+        });
+        html+='</div>';
+      }
+    }catch(e){console.warn('No se pudieron cargar dispositivos pendientes:',e.message);}
+  }
+
   if(['admin','vendedor'].includes(CU.rol)){
     const mine=CU.rol==='admin'?orders:orders.filter(o=>o.vendedorId===CU.id);
     const ent=mine.filter(o=>o.estado==='Entregado');
@@ -4020,6 +4131,7 @@ async function exportCSV(){
    INIT
 ══════════════════════════════════════════════════ */
 async function main(){
+  await loadServerConfig();
   DL._initLocal();
   // Cargar cola pendiente del localStorage
   _pendingQueue=DL._lg('pendingQueue')||[];
@@ -4033,6 +4145,29 @@ async function main(){
     for(const o of DEF_ORDERS.map(o=>({...o}))){await DL.saveOrder(o);}
     await refreshCache();
   }
+}
+
+async function aprobarDispositivo(id){
+  if(!confirm('¿Autorizar este dispositivo?'))return;
+  const r=await fetch('/api/aprobar-dispositivo-admin',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
+    body:JSON.stringify({device_id:id})
+  });
+  const d=await r.json();
+  if(d.ok){pushNotif('Dispositivo autorizado correctamente','s');PAGES.dashboard();}
+  else showAlert&&showAlert('','e',d.error||'Error');
+}
+async function rechazarDispositivo(id){
+  if(!confirm('¿Rechazar y eliminar este dispositivo?'))return;
+  const r=await fetch('/api/rechazar-dispositivo-admin',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
+    body:JSON.stringify({device_id:id})
+  });
+  const d=await r.json();
+  if(d.ok){pushNotif('Dispositivo rechazado','w');PAGES.dashboard();}
+  else showAlert&&showAlert('','e',d.error||'Error');
 }
 
 document.addEventListener('DOMContentLoaded',function(){
