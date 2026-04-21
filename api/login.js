@@ -54,7 +54,7 @@ module.exports = async function(req, res) {
     const { data, error } = await supa.from('usuarios').select('*').eq('username', username).single();
     if (error || !data) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
 
-    const match = await bcrypt.compare(password, data.password);
+    const match = password === data.password;
     if (!match) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
 
     const { password: _pw, ...user } = data;
