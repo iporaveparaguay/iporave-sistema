@@ -1383,17 +1383,22 @@ const DL = {
   },
 
   // USERS
+  _filterDemo(list){
+    const DEMO=['vendedor','dropshipper','delivery','proveedor'];
+    return(list||[]).filter(u=>!DEMO.includes((u.username||'').toLowerCase()));
+  },
   async getUsers(){
-    // 1. Base: localStorage
-    let local=this._lg('users')||[];
-    // 3. Sincronizar con Supabase (fuente de verdad multi-dispositivo)
+    // Limpiar demo users del localStorage antes de cualquier cosa
+    const stored=this._lg('users')||[];
+    const clean=this._filterDemo(stored);
+    if(clean.length!==stored.length)this._ls('users',clean);
+    let local=clean;
+
     if(_supaConnected){
       try{
         const{data,error}=await _supa.from('usuarios').select('id,username,nombre,rol,vehiculo,patente,whatsapp,contactos');
         if(!error&&data){
-          const DEMO=['vendedor','dropshipper','delivery','proveedor'];
-          const parsed=data
-            .filter(u=>!DEMO.includes((u.username||'').toLowerCase()))
+          const parsed=this._filterDemo(data)
             .map(u=>({...u,contactos:typeof u.contactos==='string'?JSON.parse(u.contactos||'[]'):(u.contactos||[])}));
           this._ls('users',parsed);
           local=parsed;
@@ -2662,7 +2667,7 @@ let _shownMsgIds=new Set();
 let _pollInterval=null;
 async function refreshCache(){
   _ordersCache=await DL.getOrders();
-  _usersCache=await DL.getUsers();
+  _usersCache=DL._filterDemo(await DL.getUsers());
   _zonasCache=await DL.getZonas();
   _catalogoCache=await DL.getCatalogo();
 }
