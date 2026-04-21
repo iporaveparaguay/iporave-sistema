@@ -1365,12 +1365,9 @@ const DL = {
   _ls(k,v){try{localStorage.setItem('ipv5_'+k,JSON.stringify(v));}catch(e){console.error(e);}},
   _initLocal(){
     // Migración: si la versión de usuarios no coincide, actualizar solo los usuarios base
-    // pero conservar todos los usuarios extra que el admin haya creado
+    // Si la versión cambió, limpiar usuarios del localStorage para que Supabase sea la fuente fresca
     if(this._lg('usersVer')!==DEF_USERS_VER){
-      const existing=this._lg('users')||[];
-      const defIds=new Set(DEF_USERS.map(u=>u.id));
-      const extraUsers=existing.filter(u=>!defIds.has(u.id));
-      this._ls('users',[...JSON.parse(JSON.stringify(DEF_USERS)),...extraUsers]);
+      this._ls('users',[]);
       this._ls('usersVer',DEF_USERS_VER);
     }
     // Limpiar contraseñas que puedan existir en localStorage de versiones anteriores
