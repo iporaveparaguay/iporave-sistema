@@ -34,8 +34,13 @@ ALTER TABLE dispositivos ADD COLUMN IF NOT EXISTS token_expires_at timestamptz;
 ALTER TABLE dispositivos ADD COLUMN IF NOT EXISTS aprobado_at      timestamptz;
 ALTER TABLE dispositivos ADD COLUMN IF NOT EXISTS creado_at        timestamptz DEFAULT now();
 
--- ── 3. Eliminar usuarios demo por ID (2=vendedor, 3=dropshipper, 4=delivery) ──
-DELETE FROM usuarios WHERE id IN (2, 3, 4) AND username IN ('vendedor','dropshipper','delivery');
+-- ── 3. Eliminar usuarios demo — primero limpiar referencias en pedidos ──────────
+UPDATE pedidos SET vendedor_id = NULL WHERE vendedor_id IN (SELECT id FROM usuarios WHERE lower(username) IN ('vendedor','dropshipper','delivery','proveedor'));
+UPDATE pedidos SET delivery_id = NULL WHERE delivery_id IN (SELECT id FROM usuarios WHERE lower(username) IN ('vendedor','dropshipper','delivery','proveedor'));
+UPDATE pedidos SET drop_id     = NULL WHERE drop_id     IN (SELECT id FROM usuarios WHERE lower(username) IN ('vendedor','dropshipper','delivery','proveedor'));
+UPDATE cupos   SET delivery_id = NULL WHERE delivery_id IN (SELECT id FROM usuarios WHERE lower(username) IN ('vendedor','dropshipper','delivery','proveedor'));
+DELETE FROM dispositivos WHERE user_id IN (SELECT id FROM usuarios WHERE lower(username) IN ('vendedor','dropshipper','delivery','proveedor'));
+DELETE FROM usuarios WHERE lower(username) IN ('vendedor','dropshipper','delivery','proveedor');
 
 -- ── 4. Hashear contraseñas en texto plano con bcrypt (work factor 10) ─────────
 UPDATE usuarios
