@@ -2482,6 +2482,7 @@ async function doLogin(){
     $('sDate').textContent=new Date().toLocaleDateString('es-PY',{weekday:'short',day:'numeric',month:'short'});
     updateConnUI(_supaConnected);
     buildNav();
+    await refreshCache();
     nav('dashboard');
     initRealtime();
     loadGoogleMaps();
@@ -3608,7 +3609,8 @@ function verCierre(fecha){
 }
 
 /* ─── USUARIOS ─── */
-PAGES.usuarios=function(){
+PAGES.usuarios=async function(){
+  await refreshCache();
   $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNewUser()">+ Nuevo usuario</button>';
   $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Usuarios ('+_usersCache.length+')</span></div>'+
   '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
