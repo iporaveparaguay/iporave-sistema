@@ -80,11 +80,15 @@ module.exports = async function(req, res) {
 
       if (!dev) {
         const token = crypto.randomBytes(32).toString('hex');
-        await supa.from('dispositivos').insert({
+        const { error: insertErr } = await supa.from('dispositivos').insert({
           user_id: user.id, username: user.username, nombre: user.nombre,
           device_hash, device_info: fullInfo, ip, autorizado: false,
           token_aprobacion: token, creado_at: new Date().toISOString(),
         });
+        if (insertErr) {
+          console.error('Error insertando dispositivo:', insertErr.message);
+          return res.status(500).json({ error: 'Error al registrar dispositivo. Contactá al administrador.' });
+        }
         try { await enviarEmailDispositivo(user.username, fullInfo, token); } catch(e) { console.error('Email error:', e.message); }
         return res.status(403).json({ ok: false, device_pending: true, error: 'Dispositivo no reconocido. Se envió una notificación al administrador para aprobar el acceso.' });
       }
