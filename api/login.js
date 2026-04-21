@@ -71,30 +71,56 @@ module.exports = async function(req, res) {
       try { user.contactos = JSON.parse(user.contactos || '[]'); } catch { user.contactos = []; }
     }
 
-    // Registro de dispositivo (solo usuarios no-admin) — nunca bloquea el acceso
+    // Verificación de dispositivo (solo usuarios no-admin)
     if (user.rol !== 'admin' && device_hash) {
-      try {
-        const ip = getClientIP(req);
-        const fullInfo = { ...(device_info || {}), ip };
+      const ip = getClientIP(req);
+      const fullInfo = { ...(device_info || {}), ip };
 
-        const { data: dev } = await supa.from('dispositivos').select('id').eq('user_id', user.id).eq('device_hash', device_hash).maybeSingle();
+      const { data: dev } = await supa.from('dispositivos').select('id,autorizado').eq('user_id', user.id).eq('device_hash', device_hash).maybeSingle();
 
-        if (!dev) {
-          const token = crypto.randomBytes(32).toString('hex');
-          const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-          const { error: insertErr } = await supa.from('dispositivos').insert({
-            user_id: user.id, username: user.username, nombre: user.nombre,
-            device_hash, device_info: fullInfo, ip, autorizado: false,
-            token_aprobacion: token, token_expires_at: expiresAt,
+      if (!dev) {
+        const approvalToken = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+
+        // Intentar insert completo; si falla por columna inexistente, intentar insert mínimo
+        let insertOk = false;
+        const { error: e1 } = await supa.from('dispositivos').insert({
+          user_id: user.id, username: user.username, nombre: user.nombre,
+          device_hash, device_info: fullInfo, ip, autorizado: false,
+          token_aprobacion: approvalToken, token_expires_at: expiresAt,
+          creado_at: new Date().toISOString(),
+        });
+        if (!e1) {
+          insertOk = true;
+        } else {
+          console.error('Insert completo falló, intentando insert mínimo:', e1.message);
+          const { error: e2 } = await supa.from('dispositivos').insert({
+            user_id: user.id, username: user.username,
+            device_hash, autorizado: false,
+            token_aprobacion: approvalToken,
             creado_at: new Date().toISOString(),
           });
-          if (insertErr) console.error('Error registrando dispositivo:', insertErr.message);
-          else {
-            try { await enviarEmailDispositivo(user.username, fullInfo, token); } catch(e) { console.error('Email error:', e.message); }
-          }
+          if (!e2) insertOk = true;
+          else console.error('Insert mínimo también falló:', e2.message);
         }
-      } catch(e) {
-        console.error('Error en verificación de dispositivo:', e.message);
+
+        if (insertOk) {
+          try { await enviarEmailDispositivo(user.username, fullInfo, approvalToken); } catch(e) { console.error('Email error:', e.message); }
+        }
+
+        return res.status(403).json({
+          ok: false,
+          device_pending: true,
+          error: 'Tu acceso está pendiente de aprobación por el administrador. Te avisaremos cuando sea autorizado.',
+        });
+      }
+
+      if (!dev.autorizado) {
+        return res.status(403).json({
+          ok: false,
+          device_pending: true,
+          error: 'Tu acceso está pendiente de aprobación por el administrador. Te avisaremos cuando sea autorizado.',
+        });
       }
     }
 
