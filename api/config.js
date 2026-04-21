@@ -19,6 +19,11 @@ module.exports = async function(req, res) {
         await supa.from('pedidos').update({ drop_id: null }).in('drop_id', ids);
         await supa.from('cupos').update({ delivery_id: null }).in('delivery_id', ids);
         await supa.from('dispositivos').delete().in('user_id', ids);
+        // Limpiar mensajes que referencien estos usuarios
+        try {
+          await supa.from('mensajes').delete().in('de_id', ids);
+          await supa.from('mensajes').delete().in('para_id', ids);
+        } catch(_) {}
         await supa.from('usuarios').delete().in('id', ids);
       }
     }
