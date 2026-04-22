@@ -4,7 +4,6 @@
   "description": "Sistema Logístico Iporãve — Paraguay",
   "main": "server.js",
   "scripts": {
-    "build": "node scripts/setup-db.js",
     "start": "node server.js"
   },
   "engines": {
