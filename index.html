@@ -3630,6 +3630,8 @@ function selProductoCatalogo(nombre,presentacion,precioBase,precioVendedor,preci
   closeC();
 }
 
+function toggleVis(id,btn){const i=$(id);if(!i)return;const show=i.type==='password';i.type=show?'text':'password';btn.textContent=show?'🙈':'👁';}
+
 /* ─── CONFIG ─── */
 PAGES.config=function(){
   const cfg=getCfg();
@@ -3638,9 +3640,9 @@ PAGES.config=function(){
     '<div class="lcard2">'+
       '<div class="stitle" style="margin-top:0">🔑 APIs — Claves de servicio</div>'+
       '<div class="alert alrt-i" style="margin-bottom:14px">Todas las claves se guardan localmente. Si no configurás una API, esa función simplemente no estará activa.</div>'+
-      '<div class="fg"><label>Supabase URL</label><input type="text" id="cfgSuU" value="'+(cfg.supabaseUrl||'')+'" placeholder="https://xxxx.supabase.co"></div>'+
-      '<div class="fg"><label>Supabase Anon Key</label><input type="text" id="cfgSuK" value="'+(cfg.supabaseKey||'')+'" placeholder="eyJ..."></div>'+
-      '<div class="fg"><label>Google Maps API Key</label><input type="text" id="cfgGm" value="'+(cfg.googleMapsKey||'')+'" placeholder="AIzaSy..."></div>'+
+      '<div class="fg"><label>Supabase URL</label><div class="pwd-wrap"><input type="password" id="cfgSuU" value="'+(cfg.supabaseUrl||'')+'" placeholder="https://xxxx.supabase.co"><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuU\',this)">👁</button></div></div>'+
+      '<div class="fg"><label>Supabase Anon Key</label><div class="pwd-wrap"><input type="password" id="cfgSuK" value="'+(cfg.supabaseKey||'')+'" placeholder="eyJ..."><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuK\',this)">👁</button></div></div>'+
+      '<div class="fg"><label>Google Maps API Key</label><div class="pwd-wrap"><input type="password" id="cfgGm" value="'+(cfg.googleMapsKey||'')+'" placeholder="AIzaSy..."><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgGm\',this)">👁</button></div></div>'+
       '<button class="btn btn-primary" onclick="saveCfgAPIs()">Guardar y reconectar Supabase</button>'+
     '</div>'+
     '<div class="lcard2">'+
