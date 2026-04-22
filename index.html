@@ -1954,26 +1954,18 @@ async function doForgotPassword(){
   if(!username){showAlert('forgotAlert','e','Ingresá tu nombre de usuario');return;}
   if(btn)btn.textContent='Enviando...';
   try{
-    const users=await DL.getUsers();
-    const found=users.find(u=>u.username===username);
-    if(!found){
-      showAlert('forgotAlert','e','No se encontró ningún usuario con ese nombre');
+    const r=await fetch('/api/forgot-password',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username})
+    });
+    const json=await r.json();
+    if(!r.ok){
+      showAlert('forgotAlert','e',json.error||'Error al enviar solicitud');
       if(btn)btn.textContent='Enviar solicitud';
       return;
     }
-    // Enviar mensaje al admin via mensajes
-    if(_supaConnected&&_supa){
-      const admin=users.find(u=>u.rol==='admin');
-      if(admin){
-        await _supa.from('mensajes').insert({
-          de_id:found.id,de_nombre:found.nombre,
-          para_id:admin.id,para_nombre:admin.nombre,
-          mensaje:'🔑 SOLICITUD DE RECUPERACIÓN: El usuario "'+found.nombre+'" ('+found.username+', '+found.rol+') olvidó su contraseña y necesita asistencia.',
-          leido:false
-        });
-      }
-    }
-    showAlert('forgotAlert','s','✅ Solicitud enviada. El administrador te contactará para ayudarte a recuperar tu acceso. Comunicate también al correo: iporaveparaguay@gmail.com');
+    showAlert('forgotAlert','s','✅ Solicitud enviada. El administrador recibirá un email y te ayudará a recuperar tu acceso. También podés escribir a: iporaveparaguay@gmail.com');
     if(btn)btn.textContent='Solicitud enviada';
   }catch(e){
     showAlert('forgotAlert','e','Error al enviar solicitud: '+e.message);
