@@ -585,8 +585,17 @@ async function loadServerConfig(){
     const r=await fetch('/api/config');
     if(!r.ok)return;
     const cfg=await r.json();
-    if(cfg.supabaseUrl)DEF_CONFIG.supabaseUrl=cfg.supabaseUrl;
-    if(cfg.supabaseKey)DEF_CONFIG.supabaseKey=cfg.supabaseKey;
+    if(cfg.supabaseUrl){DEF_CONFIG.supabaseUrl=cfg.supabaseUrl;}
+    if(cfg.supabaseKey){DEF_CONFIG.supabaseKey=cfg.supabaseKey;}
+    // Forzar claves del servidor sobre cualquier valor viejo en localStorage
+    if(cfg.supabaseUrl||cfg.supabaseKey){
+      try{
+        const saved=JSON.parse(localStorage.getItem('ipv5_cfg')||'{}');
+        if(cfg.supabaseUrl)saved.supabaseUrl=cfg.supabaseUrl;
+        if(cfg.supabaseKey)saved.supabaseKey=cfg.supabaseKey;
+        localStorage.setItem('ipv5_cfg',JSON.stringify(saved));
+      }catch(_){}
+    }
   }catch(e){console.warn('No se pudo cargar config del servidor:',e.message);}
 }
 
@@ -2497,10 +2506,13 @@ function viewOrder(id){
 
   // Foto de entrega: solo visible para admin, vendedor (creador) o proveedor vinculado
   const canSeeFoto=(CU.rol==='admin')||(CU.rol==='vendedor'&&o.vendedorId===CU.id)||(CU.rol==='proveedor'&&(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
-  const fotoSection=canSeeFoto&&o.fotoEntrega
+  const fotoSection=canSeeFoto&&o.fotoEntrega&&o.fotoEntrega!==true
     ?'<div class="stitle">📷 Foto de entrega</div>'+
       '<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;text-align:center;padding:8px">'+
-        '<img src="'+o.fotoEntrega+'" style="max-width:100%;max-height:260px;border-radius:8px;object-fit:contain" alt="Foto entrega">'+
+        '<img src="'+o.fotoEntrega+'" onclick="verFotoCompleta(\''+o.id+'\')" style="max-width:100%;max-height:260px;border-radius:8px;object-fit:contain;cursor:zoom-in" alt="Foto entrega" title="Toca para ver completa">'+
+        '<div style="margin-top:8px">'+
+          '<a href="'+o.fotoEntrega+'" download="entrega-pedido-'+o.id+'.jpg" class="btn btn-secondary btn-sm">⬇ Descargar foto</a>'+
+        '</div>'+
       '</div>'
     :(canSeeFoto&&!o.fotoEntrega?'':'');
 
@@ -4269,6 +4281,19 @@ function dismissDevice(id,username){
   _dismissedDevices.add(id);
   pushNotif('🔒 Dispositivo pendiente: '+username+" — recordatorio guardado en notificaciones","w","nav('dashboard')");
   PAGES.dashboard();
+}
+function verFotoCompleta(orderId){
+  const o=getOrders().find(x=>x.id==orderId);
+  if(!o||!o.fotoEntrega||o.fotoEntrega===true)return;
+  openA('📷 Foto de entrega — Pedido #'+orderId,
+    '<div style="text-align:center">'+
+      '<img src="'+o.fotoEntrega+'" style="max-width:100%;max-height:70vh;border-radius:8px;object-fit:contain" alt="Foto entrega">'+
+      '<div style="margin-top:12px">'+
+        '<a href="'+o.fotoEntrega+'" download="entrega-pedido-'+orderId+'.jpg" class="btn btn-secondary">⬇ Descargar foto</a>'+
+      '</div>'+
+    '</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>'
+  );
 }
 async function marcarPassReset(id){
   if(_supaConnected&&_supa)await _supa.from('mensajes').update({leido:true}).eq('id',id);
