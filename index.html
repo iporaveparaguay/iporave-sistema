@@ -4135,7 +4135,7 @@ async function main(){
 
 async function aprobarDispositivo(id){
   if(!confirm('¿Autorizar este dispositivo?'))return;
-  const r=await fetch('/api/aprobar-dispositivo-admin',{
+  const r=await fetch('/api/aprobar-dispositivo',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
     body:JSON.stringify({device_id:id})
@@ -4146,7 +4146,7 @@ async function aprobarDispositivo(id){
 }
 async function rechazarDispositivo(id){
   if(!confirm('¿Rechazar y eliminar este dispositivo?'))return;
-  const r=await fetch('/api/rechazar-dispositivo-admin',{
+  const r=await fetch('/api/rechazar-dispositivo',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
     body:JSON.stringify({device_id:id})

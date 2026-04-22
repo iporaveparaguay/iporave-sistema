@@ -1,14 +1,25 @@
-const { getSupaAdmin, APP_URL, allowCors } = require('./_utils');
+const { getSupaAdmin, verifyToken, APP_URL, allowCors } = require('./_utils');
 
 module.exports = async function(req, res) {
   allowCors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
 
+  const supa = getSupaAdmin();
+  if (!supa) return res.status(503).json({ error: 'Servidor no configurado' });
+
+  // POST desde el panel admin (JWT)
+  if (req.method === 'POST') {
+    const decoded = verifyToken(req);
+    if (!decoded || decoded.rol !== 'admin') return res.status(403).json({ error: 'Sin permisos' });
+    const { device_id } = req.body || {};
+    if (!device_id) return res.status(400).json({ error: 'ID requerido' });
+    await supa.from('dispositivos').delete().eq('id', device_id);
+    return res.json({ ok: true });
+  }
+
+  // GET desde el link del email (token)
   const token = req.query.token;
   if (!token) return res.status(400).send('<h2>Token inválido</h2>');
-
-  const supa = getSupaAdmin();
-  if (!supa) return res.status(503).send('<h2>Servidor no configurado</h2>');
 
   await supa.from('dispositivos').delete().eq('token_aprobacion', token);
 
