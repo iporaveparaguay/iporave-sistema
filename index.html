@@ -629,6 +629,7 @@ let _mapsLoaded = false;
 let _notifHistory = [];
 let _notifUnread = 0;
 let _pendingQueue = [];
+let _dismissedDevices = new Set();
 
 const $ = id => document.getElementById(id);
 const gv = id => {const e=$(id);return e?e.value:'';}
@@ -2141,26 +2142,30 @@ PAGES.dashboard=async function(){
       const r=await fetch('/api/dispositivos-pendientes',{headers:{'Authorization':'Bearer '+_sessionToken}});
       const d=await r.json();
       if(d.ok&&d.data&&d.data.length>0){
-        html+='<div style="background:#7c3aed22;border:1px solid #7c3aed;border-radius:10px;padding:14px 16px;margin-bottom:16px">';
-        html+='<div style="font-weight:700;color:#a78bfa;margin-bottom:10px">🔒 '+d.data.length+' dispositivo'+(d.data.length>1?'s':'')+' pendiente'+(d.data.length>1?'s':'')+' de aprobación</div>';
-        d.data.forEach(dev=>{
-          const info=dev.device_info||{};
-          const fecha=dev.creado_at?new Date(dev.creado_at).toLocaleString('es-PY',{timeZone:'America/Asuncion',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
-          html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px">';
-          html+='<div style="font-weight:700;margin-bottom:4px">👤 '+dev.username+' — '+dev.nombre+'</div>';
-          html+='<div style="color:var(--text2);line-height:1.7">';
-          html+='📅 <b>Fecha:</b> '+fecha+'<br>';
-          html+='🌐 <b>IP:</b> '+(info.ip||dev.ip||'—')+'<br>';
-          html+='💻 <b>Navegador:</b> <span style="font-size:11px;word-break:break-all">'+(info.userAgent||'—').substring(0,80)+'</span><br>';
-          html+='🖥️ <b>Pantalla:</b> '+(info.screen||'—')+'<br>';
-          html+='🌍 <b>Idioma:</b> '+(info.language||'—');
+        const visibles=d.data.filter(dev=>!_dismissedDevices.has(dev.id));
+        if(visibles.length>0){
+          html+='<div style="background:#7c3aed22;border:1px solid #7c3aed;border-radius:10px;padding:14px 16px;margin-bottom:16px">';
+          html+='<div style="font-weight:700;color:#a78bfa;margin-bottom:10px">🔒 '+visibles.length+' dispositivo'+(visibles.length>1?'s':'')+' pendiente'+(visibles.length>1?'s':'')+' de aprobación</div>';
+          visibles.forEach(dev=>{
+            const info=dev.device_info||{};
+            const fecha=dev.creado_at?new Date(dev.creado_at).toLocaleString('es-PY',{timeZone:'America/Asuncion',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+            html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px">';
+            html+='<div style="font-weight:700;margin-bottom:4px">👤 '+dev.username+' — '+dev.nombre+'</div>';
+            html+='<div style="color:var(--text2);line-height:1.7">';
+            html+='📅 <b>Fecha:</b> '+fecha+'<br>';
+            html+='🌐 <b>IP:</b> '+(info.ip||dev.ip||'—')+'<br>';
+            html+='💻 <b>Navegador:</b> <span style="font-size:11px;word-break:break-all">'+(info.userAgent||'—').substring(0,80)+'</span><br>';
+            html+='🖥️ <b>Pantalla:</b> '+(info.screen||'—')+'<br>';
+            html+='🌍 <b>Idioma:</b> '+(info.language||'—');
+            html+='</div>';
+            html+='<div style="display:flex;gap:8px;margin-top:8px">';
+            html+='<button class="btn btn-primary btn-sm" onclick="aprobarDispositivo(\''+dev.id+'\')">✅ Aprobar</button>';
+            html+='<button class="btn btn-danger btn-sm" onclick="rechazarDispositivo(\''+dev.id+'\')">❌ Rechazar</button>';
+            html+='<button class="btn btn-secondary btn-sm" onclick="dismissDevice(\''+dev.id+'\',\''+dev.username+'\')">✕ Cerrar</button>';
+            html+='</div></div>';
+          });
           html+='</div>';
-          html+='<div style="display:flex;gap:8px;margin-top:8px">';
-          html+='<button class="btn btn-primary btn-sm" onclick="aprobarDispositivo(\''+dev.id+'\')">✅ Aprobar</button>';
-          html+='<button class="btn btn-danger btn-sm" onclick="rechazarDispositivo(\''+dev.id+'\')">❌ Rechazar</button>';
-          html+='</div></div>';
-        });
-        html+='</div>';
+        }
       }
     }catch(e){console.warn('No se pudieron cargar dispositivos pendientes:',e.message);}
     // Solicitudes de recuperación de contraseña (mensajes con 🔑)
@@ -4151,6 +4156,11 @@ async function main(){
   }
 }
 
+function dismissDevice(id,username){
+  _dismissedDevices.add(id);
+  pushNotif('🔒 Dispositivo pendiente: '+username+" — recordatorio guardado en notificaciones","w","nav('dashboard')");
+  PAGES.dashboard();
+}
 async function marcarPassReset(id){
   if(_supaConnected&&_supa)await _supa.from('mensajes').update({leido:true}).eq('id',id);
   PAGES.dashboard();
