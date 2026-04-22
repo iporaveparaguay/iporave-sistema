@@ -2156,13 +2156,31 @@ PAGES.dashboard=async function(){
           html+='🌍 <b>Idioma:</b> '+(info.language||'—');
           html+='</div>';
           html+='<div style="display:flex;gap:8px;margin-top:8px">';
-          html+='<button class="btn btn-primary btn-sm" onclick="aprobarDispositivo('+dev.id+')">✅ Aprobar</button>';
-          html+='<button class="btn btn-danger btn-sm" onclick="rechazarDispositivo('+dev.id+')">❌ Rechazar</button>';
+          html+='<button class="btn btn-primary btn-sm" onclick="aprobarDispositivo(\''+dev.id+'\')">✅ Aprobar</button>';
+          html+='<button class="btn btn-danger btn-sm" onclick="rechazarDispositivo(\''+dev.id+'\')">❌ Rechazar</button>';
           html+='</div></div>';
         });
         html+='</div>';
       }
     }catch(e){console.warn('No se pudieron cargar dispositivos pendientes:',e.message);}
+    // Solicitudes de recuperación de contraseña (mensajes con 🔑)
+    try{
+      if(_supaConnected&&_supa){
+        const{data:msgs}=await _supa.from('mensajes').select('id,de_nombre,mensaje,creado_at').like('mensaje','🔑 SOLICITUD%').eq('leido',false).order('id',{ascending:false}).limit(10);
+        if(msgs&&msgs.length>0){
+          html+='<div style="background:#f59e0b22;border:1px solid #f59e0b;border-radius:10px;padding:14px 16px;margin-bottom:16px">';
+          html+='<div style="font-weight:700;color:#fbbf24;margin-bottom:10px">🔑 '+msgs.length+' solicitud'+(msgs.length>1?'es':'')+' de recuperación de contraseña</div>';
+          msgs.forEach(m=>{
+            const fecha=m.creado_at?new Date(m.creado_at).toLocaleString('es-PY',{timeZone:'America/Asuncion',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+            html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between">';
+            html+='<span>👤 <b>'+m.de_nombre+'</b> — '+fecha+'</span>';
+            html+='<button class="btn btn-secondary btn-sm" onclick="marcarPassReset('+m.id+')">✓ Atendido</button>';
+            html+='</div>';
+          });
+          html+='</div>';
+        }
+      }
+    }catch(e){console.warn('No se pudieron cargar solicitudes contraseña:',e.message);}
   }
 
   if(['admin','vendedor'].includes(CU.rol)){
@@ -4133,6 +4151,10 @@ async function main(){
   }
 }
 
+async function marcarPassReset(id){
+  if(_supaConnected&&_supa)await _supa.from('mensajes').update({leido:true}).eq('id',id);
+  PAGES.dashboard();
+}
 async function aprobarDispositivo(id){
   if(!confirm('¿Autorizar este dispositivo?'))return;
   const r=await fetch('/api/aprobar-dispositivo',{

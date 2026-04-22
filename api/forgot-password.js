@@ -15,6 +15,20 @@ module.exports = async function(req, res) {
   const { data: user } = await supa.from('usuarios').select('id,username,nombre,rol').eq('username', username).maybeSingle();
   if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
+  // Insertar notificación en mensajes para que aparezca en el dashboard del admin
+  try {
+    const { data: admin } = await supa.from('usuarios').select('id,nombre').eq('rol','admin').maybeSingle();
+    if (admin) {
+      await supa.from('mensajes').insert({
+        de_id: user.id, de_nombre: user.nombre,
+        para_id: admin.id, para_nombre: admin.nombre,
+        mensaje: '🔑 SOLICITUD DE RECUPERACIÓN: El usuario "' + user.nombre + '" (' + user.username + ') olvidó su contraseña.',
+        leido: false,
+        creado_at: new Date().toISOString()
+      });
+    }
+  } catch(e) { console.warn('No se pudo insertar notificación:', e.message); }
+
   const gmailUser = process.env.GMAIL_USER;
   const gmailPass = process.env.GMAIL_APP_PASSWORD;
   if (!gmailUser || !gmailPass) return res.status(503).json({ error: 'Email no configurado' });
