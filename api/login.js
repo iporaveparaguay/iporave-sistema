@@ -76,7 +76,7 @@ module.exports = async function(req, res) {
       const ip = getClientIP(req);
       const fullInfo = { ...(device_info || {}), ip };
 
-      const { data: dev } = await supa.from('dispositivos').select('id,autorizado').eq('user_id', user.id).eq('device_hash', device_hash).maybeSingle();
+      const { data: dev } = await supa.from('dispositivos').select('id,autorizado').eq('username', user.username).eq('device_hash', device_hash).maybeSingle();
 
       if (!dev) {
         const approvalToken = crypto.randomBytes(32).toString('hex');
@@ -84,9 +84,9 @@ module.exports = async function(req, res) {
 
         // Intentar insert con distintos fallbacks según columnas disponibles
         const inserts = [
-          { user_id: user.id, username: user.username, nombre: user.nombre, device_hash, device_info: fullInfo, ip, autorizado: false, token_aprobacion: approvalToken, token_expires_at: expiresAt, creado_at: new Date().toISOString() },
-          { user_id: user.id, username: user.username, nombre: user.nombre, device_hash, device_info: fullInfo, ip, autorizado: false, token_aprobacion: approvalToken, created_at: new Date().toISOString() },
-          { user_id: user.id, username: user.username, device_hash, autorizado: false, token_aprobacion: approvalToken },
+          { username: user.username, nombre: user.nombre, device_hash, device_info: fullInfo, ip, autorizado: false, token_aprobacion: approvalToken, token_expires_at: expiresAt, creado_at: new Date().toISOString() },
+          { username: user.username, nombre: user.nombre, device_hash, device_info: fullInfo, ip, autorizado: false, token_aprobacion: approvalToken },
+          { username: user.username, device_hash, autorizado: false, token_aprobacion: approvalToken },
         ];
         let insertOk = false;
         for (const row of inserts) {
