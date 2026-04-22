@@ -2240,12 +2240,12 @@ PAGES.dashboard=async function(){
     // Solicitudes de recuperación de contraseña (mensajes con 🔑)
     try{
       if(_supaConnected&&_supa){
-        const{data:msgs}=await _supa.from('mensajes').select('id,de_nombre,mensaje,creado_at').like('mensaje','🔑 SOLICITUD%').eq('leido',false).order('id',{ascending:false}).limit(10);
+        const{data:msgs}=await _supa.from('mensajes').select('id,de_nombre,mensaje,created_at').like('mensaje','🔑 SOLICITUD%').eq('leido',false).order('id',{ascending:false}).limit(10);
         if(msgs&&msgs.length>0){
           html+='<div style="background:#f59e0b22;border:1px solid #f59e0b;border-radius:10px;padding:14px 16px;margin-bottom:16px">';
           html+='<div style="font-weight:700;color:#fbbf24;margin-bottom:10px">🔑 '+msgs.length+' solicitud'+(msgs.length>1?'es':'')+' de recuperación de contraseña</div>';
           msgs.forEach(m=>{
-            const fecha=m.creado_at?new Date(m.creado_at).toLocaleString('es-PY',{timeZone:'America/Asuncion',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+            const fecha=m.created_at?new Date(m.created_at).toLocaleString('es-PY',{timeZone:'America/Asuncion',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
             html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between">';
             html+='<span>👤 <b>'+m.de_nombre+'</b> — '+fecha+'</span>';
             html+='<button class="btn btn-secondary btn-sm" onclick="marcarPassReset('+m.id+')">✓ Atendido</button>';
@@ -2255,6 +2255,25 @@ PAGES.dashboard=async function(){
         }
       }
     }catch(e){console.warn('No se pudieron cargar solicitudes contraseña:',e.message);}
+    // Pedidos entregados sin confirmar (notificaciones del delivery)
+    try{
+      if(_supaConnected&&_supa){
+        const{data:entMsgs}=await _supa.from('mensajes').select('id,de_nombre,mensaje,created_at').like('mensaje','🚚 ENTREGADO:%').eq('leido',false).order('id',{ascending:false}).limit(20);
+        if(entMsgs&&entMsgs.length>0){
+          html+='<div style="background:#10b98122;border:1px solid #10b981;border-radius:10px;padding:14px 16px;margin-bottom:16px">';
+          html+='<div style="font-weight:700;color:#34d399;margin-bottom:10px">🚚 '+entMsgs.length+' pedido'+(entMsgs.length>1?'s':'')+' entregado'+(entMsgs.length>1?'s':'')+' — pendiente de revisión</div>';
+          entMsgs.forEach(m=>{
+            const fecha=m.created_at?new Date(m.created_at).toLocaleString('es-PY',{timeZone:'America/Asuncion',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+            const detalle=m.mensaje.replace('🚚 ENTREGADO: ','');
+            html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:8px">';
+            html+='<span>'+detalle+'<br><span style="color:var(--text2);font-size:11px">'+fecha+'</span></span>';
+            html+='<button class="btn btn-secondary btn-sm" onclick="marcarEntregaNotif('+m.id+')">✓ Visto</button>';
+            html+='</div>';
+          });
+          html+='</div>';
+        }
+      }
+    }catch(e){console.warn('No se pudieron cargar notificaciones de entrega:',e.message);}
   }
 
   if(['admin','vendedor'].includes(CU.rol)){
@@ -2616,7 +2635,28 @@ function toggleDlvF(){
   const dr=$('dlvOR');if(dr)dr.textContent=ESTADOS_REQ_OBS.has(est)?'(obligatoria)':'(opcional)';
 }
 function selM(m,el){document.querySelectorAll('.mcard').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');if($('dMetodo'))$('dMetodo').value=m;}
-function phOk(inp){if(inp.files&&inp.files[0]){if($('phStatus'))$('phStatus').innerHTML='<span style="color:var(--green)">✓ Foto lista</span>';if($('dFotoOk'))$('dFotoOk').value='1';}}
+let _fotoBase64='';
+function phOk(inp){
+  if(!inp.files||!inp.files[0])return;
+  const file=inp.files[0];
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const img=new Image();
+    img.onload=function(){
+      const MAX=900;
+      let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      _fotoBase64=canvas.toDataURL('image/jpeg',0.75);
+      if($('phStatus'))$('phStatus').innerHTML='<span style="color:var(--green)">✓ Foto lista ('+Math.round(_fotoBase64.length/1024)+' KB)</span>';
+      if($('dFotoOk'))$('dFotoOk').value='1';
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 function startGPS(){
   if(!navigator.geolocation){if($('gpsText'))$('gpsText').textContent='GPS no disponible';return;}
   navigator.geolocation.getCurrentPosition(
@@ -2644,7 +2684,7 @@ async function confirmDlv(id){
   o.historial=o.historial||[];
   o.historial.push({estado,usuario:CU.nombre,fecha:nowStr(),obs:notas});
   o.estado=estado;o.notas=notas;o.gpsLat=gv('gpsLat');o.gpsLng=gv('gpsLng');
-  if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=true;await DL.incCupo(CU.id);waEntregado(o);}
+  if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;await DL.incCupo(CU.id);waEntregado(o);notifEntregaAdmin(o);}
   if(estado.startsWith('No contesta'))waNoContesta(o);
   await DL.saveOrder(o);
   await refreshCache();
@@ -4233,6 +4273,19 @@ function dismissDevice(id,username){
 async function marcarPassReset(id){
   if(_supaConnected&&_supa)await _supa.from('mensajes').update({leido:true}).eq('id',id);
   PAGES.dashboard();
+}
+async function marcarEntregaNotif(id){
+  if(_supaConnected&&_supa)await _supa.from('mensajes').update({leido:true}).eq('id',id);
+  PAGES.dashboard();
+}
+async function notifEntregaAdmin(o){
+  try{
+    await fetch('/api/notif-entrega',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
+      body:JSON.stringify({pedido_id:o.id,cliente:o.cliente,delivery:CU.nombre,metodoCobro:o.metodoCobro})
+    });
+  }catch(e){console.warn('notifEntregaAdmin:',e.message);}
 }
 async function aprobarDispositivo(id){
   if(!confirm('¿Autorizar este dispositivo?'))return;

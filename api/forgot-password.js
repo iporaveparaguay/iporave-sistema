@@ -24,7 +24,7 @@ module.exports = async function(req, res) {
         para_id: admin.id, para_nombre: admin.nombre,
         mensaje: '🔑 SOLICITUD DE RECUPERACIÓN: El usuario "' + user.nombre + '" (' + user.username + ') olvidó su contraseña.',
         leido: false,
-        creado_at: new Date().toISOString()
+        created_at: new Date().toISOString()
       });
     }
   } catch(e) { console.warn('No se pudo insertar notificación:', e.message); }
