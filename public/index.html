@@ -16,6 +16,9 @@
 <meta name="msapplication-TileColor" content="#0b0d12">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<!-- Leaflet — mapas gratis (reemplaza Google Maps) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{
   --bg:#0b0d12;--bg2:#111318;--bg3:#181b24;--bg4:#1f2330;--bg5:#252a38;
@@ -1304,65 +1307,54 @@ window.addEventListener('offline',()=>{
 /* ══════════════════════════════════════════════════
    GOOGLE MAPS
 ══════════════════════════════════════════════════ */
-function loadGoogleMaps(){
-  const cfg=getCfg();
-  if(!cfg.googleMapsKey||_mapsLoaded)return;
-  const s=document.createElement('script');
-  s.src='https://maps.googleapis.com/maps/api/js?key='+cfg.googleMapsKey+'&libraries=places,geometry&callback=onMapsLoaded';
-  s.async=true;s.defer=true;
-  document.head.appendChild(s);
+function loadGoogleMaps(){} // reemplazado por Leaflet
+function onMapsLoaded(){_mapsLoaded=true;}
+async function initAddressAutocomplete(inputId){
+  const input=$(inputId);if(!input)return;
+  let debounce;
+  input.addEventListener('input',function(){
+    clearTimeout(debounce);
+    debounce=setTimeout(async()=>{
+      const q=input.value.trim();if(q.length<4)return;
+      try{
+        const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=py&limit=5&q='+encodeURIComponent(q),{headers:{'Accept-Language':'es'}});
+        const data=await r.json();
+        let box=document.getElementById('__autocomplete_'+inputId);
+        if(!box){box=document.createElement('ul');box.id='__autocomplete_'+inputId;box.style.cssText='position:absolute;z-index:9999;background:#1f2330;border:1px solid #2e344a;border-radius:8px;list-style:none;padding:4px 0;margin:0;min-width:260px;max-width:340px;box-shadow:0 4px 16px #0008';input.parentElement.style.position='relative';input.parentElement.appendChild(box);}
+        box.innerHTML='';
+        data.forEach(place=>{
+          const li=document.createElement('li');
+          li.textContent=place.display_name;
+          li.style.cssText='padding:8px 12px;cursor:pointer;font-size:12px;color:#e2e8f0;border-bottom:1px solid #2e344a;';
+          li.onmouseenter=()=>li.style.background='#252a38';
+          li.onmouseleave=()=>li.style.background='';
+          li.onclick=()=>{input.value=place.display_name;input.dataset.lat=place.lat;input.dataset.lng=place.lon;box.innerHTML='';};
+          box.appendChild(li);
+        });
+      }catch(e){}
+    },400);
+  });
 }
-function onMapsLoaded(){
-  _mapsLoaded=true;
-  console.log('Google Maps cargado');
-}
-function initAddressAutocomplete(inputId){
-  if(!_mapsLoaded||!window.google)return;
-  try{
-    const input=$(inputId);if(!input)return;
-    const auto=new google.maps.places.Autocomplete(input,{
-      componentRestrictions:{country:'py'},
-      fields:['geometry','formatted_address'],
-    });
-    auto.addListener('place_changed',()=>{
-      const place=auto.getPlace();
-      if(place.geometry){
-        input.dataset.lat=place.geometry.location.lat();
-        input.dataset.lng=place.geometry.location.lng();
-      }
-    });
-  }catch(e){console.warn('Autocomplete:',e);}
-}
-function showDeliveryMap(containerId,orderAddr,gpsLat,gpsLng){
+async function showDeliveryMap(containerId,orderAddr,gpsLat,gpsLng){
   const container=$(containerId);if(!container)return;
-  if(!_mapsLoaded||!window.google){
-    container.innerHTML='<div class="map-placeholder"><div style="font-size:28px">🗺️</div><div>'+
-      '<a href="https://maps.google.com/?q='+encodeURIComponent(orderAddr)+'" target="_blank" style="color:var(--cyan)">'+
-      'Abrir en Google Maps ↗</a></div></div>';
-    return;
-  }
+  container.style.height='220px';container.style.borderRadius='8px';container.style.overflow='hidden';
   try{
-    const map=new google.maps.Map(container,{zoom:13,mapTypeId:'roadmap',
-      styles:[{elementType:'geometry',stylers:[{color:'#242f3e'}]},{elementType:'labels.text.stroke',stylers:[{color:'#242f3e'}]},{elementType:'labels.text.fill',stylers:[{color:'#746855'}]}]
-    });
-    const geocoder=new google.maps.Geocoder();
-    geocoder.geocode({address:orderAddr+', Paraguay'},function(results,status){
-      if(status==='OK'){
-        const dest=results[0].geometry.location;
-        map.setCenter(dest);
-        new google.maps.Marker({position:dest,map,icon:{url:'https://maps.google.com/mapfiles/ms/icons/red-dot.png'},title:'Dirección de entrega'});
-        if(gpsLat&&gpsLng){
-          const dlvPos=new google.maps.LatLng(parseFloat(gpsLat),parseFloat(gpsLng));
-          new google.maps.Marker({position:dlvPos,map,icon:{url:'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'},title:'Delivery'});
-          const dirService=new google.maps.DirectionsService();
-          const dirRenderer=new google.maps.DirectionsRenderer({map,suppressMarkers:true});
-          dirService.route({origin:dlvPos,destination:dest,travelMode:google.maps.TravelMode.DRIVING},function(r,s){
-            if(s==='OK')dirRenderer.setDirections(r);
-          });
-        }
-      }
-    });
-  }catch(e){console.warn('Map render:',e);}
+    const geo=await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=py&limit=1&q='+encodeURIComponent(orderAddr+', Paraguay'),{headers:{'Accept-Language':'es'}});
+    const geoData=await geo.json();
+    let destLat=-25.2867,destLng=-57.647;
+    if(geoData.length){destLat=parseFloat(geoData[0].lat);destLng=parseFloat(geoData[0].lon);}
+    const map=L.map(container,{zoomControl:true}).setView([destLat,destLng],14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
+    const redIcon=L.divIcon({html:'<div style="background:#ef4444;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 6px #ef4444"></div>',iconSize:[14,14],className:''});
+    const blueIcon=L.divIcon({html:'<div style="background:#38bdf8;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 6px #38bdf8"></div>',iconSize:[14,14],className:''});
+    L.marker([destLat,destLng],{icon:redIcon}).addTo(map).bindPopup('📦 Entrega: '+orderAddr);
+    if(gpsLat&&gpsLng){
+      const dlvLat=parseFloat(gpsLat),dlvLng=parseFloat(gpsLng);
+      L.marker([dlvLat,dlvLng],{icon:blueIcon}).addTo(map).bindPopup('🛵 Delivery');
+      L.polyline([[dlvLat,dlvLng],[destLat,destLng]],{color:'#f5a623',weight:3,dashArray:'6,8'}).addTo(map);
+      map.fitBounds([[dlvLat,dlvLng],[destLat,destLng]],{padding:[20,20]});
+    }
+  }catch(e){container.innerHTML='<div class="map-placeholder"><a href="https://www.openstreetmap.org/search?query='+encodeURIComponent(orderAddr)+'" target="_blank" style="color:var(--cyan)">Ver en OpenStreetMap ↗</a></div>';}
 }
 
 /* ══════════════════════════════════════════════════
@@ -1736,7 +1728,7 @@ const AI_TOOL_EXEC={
     if(!o.telefono)return`El pedido #${args.pedido_id} no tiene teléfono del cliente registrado.`;
     let gpsLink='';
     if(o.gpsLat&&o.gpsLng){
-      gpsLink=`\n📍 Tu entrega en tiempo real: https://www.google.com/maps?q=${o.gpsLat},${o.gpsLng}`;
+      gpsLink=`\n📍 Tu entrega en tiempo real: https://www.openstreetmap.org/?mlat=${o.gpsLat}&mlon=${o.gpsLng}`;
     }
     const extra=args.mensaje_extra?'\n'+args.mensaje_extra:'';
     const msg=`🚴 Hola ${o.cliente}, tu pedido #${o.id} (${o.producto}) está *${o.estado}*.${gpsLink}${extra}\n\n— Iporãve Paraguay`;
