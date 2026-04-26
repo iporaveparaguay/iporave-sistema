@@ -348,11 +348,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .tbl td{padding:8px 8px;font-size:12px;}
   /* Tablas: scroll solo dentro del contenedor, sin afectar la página */
   .tc{overflow-x:auto;max-width:100%;}
-  /* Truncar celdas largas en tabla usuarios */
-  .tbl td.td-user{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* Ocultar columna usuario en mobile */
+  .tbl td.td-user,.tbl th.th-user{display:none;}
   /* Botones acción tabla usuarios — compactos y apilados en mobile */
-  .tbl td.td-actions{white-space:nowrap;}
-  .tbl td.td-actions .btn{padding:4px 7px;font-size:10px;margin:1px;}
+  .tbl td.td-actions{white-space:normal;}
+  .tbl td.td-actions .btn{display:block;width:100%;padding:6px 8px;font-size:11px;margin:2px 0;text-align:center;}
   /* Modal — evitar desborde en pantallas angostas */
   .moverlay{padding:10px;}
   .mbox{border-radius:var(--radius);max-width:calc(100vw - 20px)!important;width:100%!important;box-sizing:border-box;}
@@ -3188,7 +3188,7 @@ PAGES.usuarios=async function(){
   $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNewUser()">+ Nuevo usuario</button>';
   $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Usuarios ('+_usersCache.length+')</span></div>'+
   '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
-  '<th class="col-hide">ID</th><th>Nombre</th><th>Usuario</th><th>Rol</th>'+
+  '<th class="col-hide">ID</th><th>Nombre</th><th class="th-user">Usuario</th><th>Rol</th>'+
   '<th class="col-hide">Vehículo</th><th class="col-hide">Patente</th>'+
   '<th class="col-hide">WhatsApp</th><th>Acciones</th></tr></thead><tbody>'+
   _usersCache.map(u=>'<tr>'+
