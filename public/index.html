@@ -1351,8 +1351,17 @@ async function showDeliveryMap(containerId,orderAddr,gpsLat,gpsLng){
     if(gpsLat&&gpsLng){
       const dlvLat=parseFloat(gpsLat),dlvLng=parseFloat(gpsLng);
       L.marker([dlvLat,dlvLng],{icon:blueIcon}).addTo(map).bindPopup('🛵 Delivery');
-      L.polyline([[dlvLat,dlvLng],[destLat,destLng]],{color:'#f5a623',weight:3,dashArray:'6,8'}).addTo(map);
       map.fitBounds([[dlvLat,dlvLng],[destLat,destLng]],{padding:[20,20]});
+      try{
+        const rr=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/route',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
+          body:JSON.stringify({fromLat:dlvLat,fromLng:dlvLng,toLat:destLat,toLng:destLng})
+        });
+        if(rr.ok){const rd=await rr.json();if(rd.ok&&rd.coords){L.polyline(rd.coords,{color:'#f5a623',weight:4}).addTo(map);}else{throw 0;}}else{throw 0;}
+      }catch(_){
+        L.polyline([[dlvLat,dlvLng],[destLat,destLng]],{color:'#f5a623',weight:3,dashArray:'6,8'}).addTo(map);
+      }
     }
   }catch(e){container.innerHTML='<div class="map-placeholder"><a href="https://www.openstreetmap.org/search?query='+encodeURIComponent(orderAddr)+'" target="_blank" style="color:var(--cyan)">Ver en OpenStreetMap ↗</a></div>';}
 }
