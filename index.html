@@ -582,7 +582,7 @@ const DEF_USERS_VER = 9;
 ══════════════════════════════════════════════════ */
 async function loadServerConfig(){
   try{
-    const r=await fetch('/api/config');
+    const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/config');
     if(!r.ok)return;
     const cfg=await r.json();
     if(cfg.supabaseUrl){DEF_CONFIG.supabaseUrl=cfg.supabaseUrl;}
@@ -836,7 +836,7 @@ const DL = {
     // Usar endpoint del servidor (service key) en lugar de anon key directamente
     if(_sessionToken){
       try{
-        const r=await fetch('/api/get-users',{headers:{'Authorization':'Bearer '+_sessionToken}});
+        const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/get-users',{headers:{'Authorization':'Bearer '+_sessionToken}});
         if(r.ok){
           const json=await r.json();
           if(json.ok&&json.users){
@@ -863,7 +863,7 @@ const DL = {
     // 2. Si hay contraseña nueva — hashear en el servidor
     if(password&&!password.startsWith('$2')){
       try{
-        const res=await fetch('/api/save-user',{
+        const res=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/save-user',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
           body:JSON.stringify({...uLocal,password})
@@ -887,7 +887,7 @@ const DL = {
     // Eliminar de Supabase via API (service key — anon key bloqueado por RLS)
     if(_sessionToken){
       try{
-        await fetch('/api/delete-user',{
+        await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/delete-user',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
           body:JSON.stringify({id})
@@ -1402,7 +1402,7 @@ function waEntregado(o){
 ══════════════════════════════════════════════════ */
 let _aiHistory = [];
 let _unreadMsgs = 0;
-const AI_PROXY='/api/claude';
+const AI_PROXY='https://iporave-api.iporaveparaguay.workers.dev/api/claude';
 
 function updateAIBadge(){
   const btn=$('aiBtn');if(!btn)return;
@@ -1965,7 +1965,7 @@ async function doLogin(){
   try{
     const device_hash=await getDeviceFingerprint();
     const device_info=getDeviceInfo();
-    const res=await fetch('/api/login',{
+    const res=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({username:u,password:p,device_hash,device_info})
@@ -2030,7 +2030,7 @@ async function doForgotPassword(){
   if(!username){showAlert('forgotAlert','e','Ingresá tu nombre de usuario');return;}
   if(btn)btn.textContent='Enviando...';
   try{
-    const r=await fetch('/api/forgot-password',{
+    const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/forgot-password',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({username})
@@ -2217,7 +2217,7 @@ PAGES.dashboard=async function(){
   // Alerta de dispositivos pendientes (solo admin)
   if(CU.rol==='admin'&&_sessionToken){
     try{
-      const r=await fetch('/api/dispositivos-pendientes',{headers:{'Authorization':'Bearer '+_sessionToken}});
+      const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/dispositivos-pendientes',{headers:{'Authorization':'Bearer '+_sessionToken}});
       const d=await r.json();
       if(d.ok&&d.data&&d.data.length>0){
         const visibles=d.data.filter(dev=>!_dismissedDevices.has(dev.id));
@@ -4305,7 +4305,7 @@ async function marcarEntregaNotif(id){
 }
 async function notifEntregaAdmin(o){
   try{
-    await fetch('/api/notif-entrega',{
+    await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/notif-entrega',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
       body:JSON.stringify({pedido_id:o.id,cliente:o.cliente,delivery:CU.nombre,metodoCobro:o.metodoCobro})
@@ -4314,7 +4314,7 @@ async function notifEntregaAdmin(o){
 }
 async function aprobarDispositivo(id){
   if(!confirm('¿Autorizar este dispositivo?'))return;
-  const r=await fetch('/api/aprobar-dispositivo',{
+  const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/aprobar-dispositivo',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
     body:JSON.stringify({device_id:id})
@@ -4325,7 +4325,7 @@ async function aprobarDispositivo(id){
 }
 async function rechazarDispositivo(id){
   if(!confirm('¿Rechazar y eliminar este dispositivo?'))return;
-  const r=await fetch('/api/rechazar-dispositivo',{
+  const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/rechazar-dispositivo',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
     body:JSON.stringify({device_id:id})
