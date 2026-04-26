@@ -1851,7 +1851,7 @@ async function sendAI(){
     while(iters<6){
       iters++;
       const res=await fetch(AI_PROXY,{
-        method:'POST',headers:{'Content-Type':'application/json'},
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
         body:JSON.stringify({
           model:'claude-haiku-4-5-20251001',
           max_tokens:1200,
