@@ -2079,6 +2079,9 @@ const NAV_CFG={
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
       {id:'config',l:'Configuración',ic:'gear'},{id:'setup',l:'Setup / SQL',ic:'db'},
     ]},
+    {s:'Mapa',items:[
+      {id:'mapa',l:'Mapa en tiempo real',ic:'map'},
+    ]},
     {s:'Reportes',items:[
       {id:'recaudacion',l:'Recaudación Delivery',ic:'truck'},{id:'boletas',l:'Boletas IVA',ic:'receipt'},
       {id:'cierre',l:'Cierre de jornada',ic:'sun'},
@@ -2133,7 +2136,8 @@ const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'
   usuarios:'Usuarios',zonas:'Zonas y Tarifas',config:'Configuración',setup:'Setup / SQL',
   recaudacion:'Recaudación Delivery',boletas:'Boletas IVA',cierre:'Cierre de Jornada',
   neworder:'Nuevo Pedido',entregas:'Mis Entregas',cupo:'Mi Cupo y Premios',mispedidos:'Mis Pedidos',
-  catalogo:'Catálogo de Productos',suministros:'Mis Suministros',mensajes:'Mensajes'};
+  catalogo:'Catálogo de Productos',suministros:'Mis Suministros',mensajes:'Mensajes',
+  mapa:'Mapa en Tiempo Real'};
 
 /* ── SIDEBAR MOBILE ── */
 function toggleSidebar(){
@@ -2178,6 +2182,7 @@ function nav(page){
 let _ordersCache=[];let _usersCache=[];let _zonasCache=[];let _catalogoCache=[];
 let _shownMsgIds=new Set();
 let _pollInterval=null;
+let _ordersLayerInterval=null;
 async function refreshCache(){
   _ordersCache=await DL.getOrders();
   _usersCache=DL._filterDemo(await DL.getUsers());
@@ -4335,6 +4340,75 @@ async function rechazarDispositivo(id){
   if(d.ok){pushNotif('Dispositivo rechazado','w');PAGES.dashboard();}
   else showAlert&&showAlert('','e',d.error||'Error');
 }
+
+/* ─── MAPA EN TIEMPO REAL ─────────────────────────────────────────────────── */
+const _ORDER_COLORS={new:'#ef4444',assigned:'#3b82f6',on_route:'#f97316',delivered:'#22c55e'};
+
+function _makeOrderIcon(status){
+  const c=_ORDER_COLORS[status]||'#6b7280';
+  return L.divIcon({
+    html:'<div style="background:'+c+';width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 6px '+c+'"></div>',
+    iconSize:[14,14],className:''
+  });
+}
+
+async function initOrdersLayer(map){
+  const markersById={};
+
+  async function loadOrders(){
+    if(!document.getElementById('ordersMap')){
+      clearInterval(_ordersLayerInterval);
+      _ordersLayerInterval=null;
+      return;
+    }
+    try{
+      const res=await fetch(
+        'https://iporave-api.iporaveparaguay.workers.dev/api/orders/active',
+        {headers:{Authorization:'Bearer '+_sessionToken}}
+      );
+      if(!res.ok)return;
+      const {orders}=await res.json();
+      console.log('ORDERS LOADED:',orders.length);
+
+      // Limpiar markers anteriores
+      Object.values(markersById).forEach(m=>map.removeLayer(m));
+      Object.keys(markersById).forEach(k=>delete markersById[k]);
+
+      // Crear marker por pedido
+      for(const o of orders){
+        if(!o.lat||!o.lng)continue;
+        const c=_ORDER_COLORS[o.status]||'#6b7280';
+        const m=L.marker([o.lat,o.lng],{icon:_makeOrderIcon(o.status)})
+          .bindPopup(
+            '<b>'+(o.customer_phone||'—')+'</b><br>'+
+            (o.address||'—')+'<br>'+
+            (o.city||'—')+'<br>'+
+            '<span style="color:'+c+'">● '+o.status+'</span>'
+          )
+          .addTo(map);
+        markersById[o.id]=m;
+      }
+    }catch(err){
+      console.error('ORDERS LOAD ERROR:',err.message);
+    }
+  }
+
+  await loadOrders();
+  if(_ordersLayerInterval)clearInterval(_ordersLayerInterval);
+  _ordersLayerInterval=setInterval(loadOrders,12000);
+}
+
+PAGES.mapa=function(){
+  if(_ordersLayerInterval){clearInterval(_ordersLayerInterval);_ordersLayerInterval=null;}
+  $('ca').innerHTML='<div id="ordersMap" style="height:calc(100vh - 120px);border-radius:8px;overflow:hidden"></div>';
+  setTimeout(function(){
+    const map=L.map('ordersMap').setView([-23.4425,-58.44],7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© OpenStreetMap',maxZoom:19
+    }).addTo(map);
+    initOrdersLayer(map);
+  },50);
+};
 
 document.addEventListener('DOMContentLoaded',function(){
   main().then(()=>console.log('Iporãve v5 listo'));
