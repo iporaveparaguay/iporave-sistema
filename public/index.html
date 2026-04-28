@@ -2326,8 +2326,8 @@ PAGES.dashboard=async function(){
     }catch(e){console.warn('No se pudieron cargar notificaciones de entrega:',e.message);}
   }
 
-  if(['admin','vendedor'].includes(CU.rol)){
-    const mine=CU.rol==='admin'?orders:orders.filter(o=>o.vendedorId===CU.id);
+  if(['admin','superadmin','vendedor'].includes(CU.rol)){
+    const mine=['admin','superadmin'].includes(CU.rol)?orders:orders.filter(o=>o.vendedorId===CU.id);
     const ent=mine.filter(o=>o.estado==='Entregado');
     const ing=ent.reduce((a,b)=>a+b.precio*b.qty,0);
     const cos=ent.reduce((a,b)=>a+b.costo*b.qty,0);
@@ -2396,12 +2396,12 @@ PAGES.dashboard=async function(){
 
 /* ─── ORDERS ─── */
 PAGES.orders=PAGES.entregas=PAGES.mispedidos=function(){
-  const canCreate=['admin','vendedor'].includes(CU.rol);
+  const canCreate=['admin','superadmin','vendedor'].includes(CU.rol);
   $('tbActions').innerHTML=
     (canCreate?'<button class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
-    (CU.rol==='admin'?'<button class="btn btn-secondary" onclick="openCSV()">↑ CSV</button>':'')+
-    (CU.rol==='admin'?'<button class="btn btn-secondary" onclick="exportCSV()">↓ CSV</button>':'')+
-    (CU.rol==='admin'?'<button class="btn btn-secondary" onclick="DL.exportBackup()">💾 Backup</button>':'')+
+    (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="openCSV()">↑ CSV</button>':'')+
+    (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportCSV()">↓ CSV</button>':'')+
+    (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="DL.exportBackup()">💾 Backup</button>':'')+
     '<button class="btn btn-secondary" onclick="exportOrdersCSV()" title="Exportar a CSV">📊 CSV</button>'+
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">🖨️ PDF</button>';
   $('ca').innerHTML=
@@ -2431,7 +2431,7 @@ function filtrar(){
 }
 function renderTable(orders,title,showActs){
   if(!orders.length)return '<div style="text-align:center;padding:48px;color:var(--text3)">No hay pedidos</div>';
-  const canEdit=['admin','vendedor'].includes(CU.rol);
+  const canEdit=['admin','superadmin','vendedor'].includes(CU.rol);
   const isDel=CU.rol==='delivery';
   return '<div class="tc"><div class="th2"><span class="tt">'+title+'</span></div>'+
   '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
@@ -2546,7 +2546,7 @@ function viewOrder(id){
   }
 
   // Foto de entrega: solo visible para admin, vendedor (creador) o proveedor vinculado
-  const canSeeFoto=(CU.rol==='admin')||(CU.rol==='vendedor'&&o.vendedorId===CU.id)||(CU.rol==='proveedor'&&(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  const canSeeFoto=(['admin','superadmin'].includes(CU.rol))||(CU.rol==='vendedor'&&o.vendedorId===CU.id)||(CU.rol==='proveedor'&&(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
   const fotoSection=canSeeFoto&&o.fotoEntrega&&o.fotoEntrega!==true
     ?'<div class="stitle">📷 Foto de entrega</div>'+
       '<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;text-align:center;padding:8px">'+
@@ -3485,7 +3485,7 @@ function _renderProductoCard(p,canEdit){
 }
 
 PAGES.catalogo=function(q='',vistaOwner=null){
-  const esAdmin=CU.rol==='admin';
+  const esAdmin=['admin','superadmin'].includes(CU.rol);
   const puedeEditar=CU.rol!=='delivery'&&CU.rol!=='cliente';
   // Botones de acción
   let acciones='';
