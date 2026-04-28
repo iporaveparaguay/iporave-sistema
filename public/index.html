@@ -583,14 +583,15 @@ const DEF_USERS_VER = 9;
 /* ══════════════════════════════════════════════════
    CONFIG DESDE SERVIDOR (sin claves en el código)
 ══════════════════════════════════════════════════ */
-async function loadServerConfig(){
+async function loadServerConfig(token){
   try{
-    const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/config');
+    const headers=token?{'Authorization':'Bearer '+token}:{};
+    const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/config',{headers});
     if(!r.ok)return;
     const cfg=await r.json();
     if(cfg.supabaseUrl){DEF_CONFIG.supabaseUrl=cfg.supabaseUrl;}
     if(cfg.supabaseKey){DEF_CONFIG.supabaseKey=cfg.supabaseKey;}
-    // Forzar claves del servidor sobre cualquier valor viejo en localStorage
+    // Solo guardar en localStorage si el servidor devolvió claves (superadmin)
     if(cfg.supabaseUrl||cfg.supabaseKey){
       try{
         const saved=JSON.parse(localStorage.getItem('ipv5_cfg')||'{}');
@@ -649,7 +650,7 @@ const gv = id => {const e=$(id);return e?e.value:'';}
 const fmt = n => 'Gs. '+Number(n||0).toLocaleString('es-PY');
 const fmtN = n => Number(n||0).toLocaleString('es-PY');
 const fmtDate = d => d?new Date(d+'T12:00').toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
-const capRole = r => ({admin:'Administrador',vendedor:'Vendedor',dropshipper:'Dropshipper',delivery:'Delivery',proveedor:'Proveedor',cliente:'Cliente'}[r]||r);
+const capRole = r => ({superadmin:'Superadmin',admin:'Administrador',vendedor:'Vendedor',dropshipper:'Dropshipper',delivery:'Delivery',proveedor:'Proveedor',cliente:'Cliente'}[r]||r);
 const today = () => new Date().toISOString().slice(0,10);
 const nowStr = () => new Date().toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const mesActual = () => new Date().toISOString().slice(0,7);
@@ -762,6 +763,14 @@ function getCfg(){
 }
 function setCfg(obj){
   try{localStorage.setItem('ipv5_cfg',JSON.stringify({...getCfg(),...obj}));}catch(e){console.error(e);}
+}
+function _clearSensitiveCfg(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('ipv5_cfg')||'{}');
+    delete saved.supabaseUrl;delete saved.supabaseKey;delete saved.googleMapsKey;
+    localStorage.setItem('ipv5_cfg',JSON.stringify(saved));
+    DEF_CONFIG.supabaseUrl='';DEF_CONFIG.supabaseKey='';DEF_CONFIG.googleMapsKey='';
+  }catch(e){}
 }
 
 /* ══════════════════════════════════════════════════
@@ -1750,7 +1759,7 @@ const AI_TOOL_EXEC={
 function getAITools(){
   const rol=CU?CU.rol:'';
   return AI_TOOLS.filter(t=>{
-    if(rol==='admin')return true;
+    if(['admin','superadmin'].includes(rol))return true;
     if(['vendedor','dropshipper'].includes(rol))return[
       'consultar_catalogo','consultar_pedidos','crear_pedido','actualizar_estado_pedido',
       'notificar_administrador','responder_administrador','ver_mensajes'
@@ -1775,7 +1784,7 @@ async function sendAI(){
   addAIMsg(msg,'user');
   addAIMsg('⏳ Pensando…','bot','ai-typing');
 
-  const isAdmin=CU&&CU.rol==='admin';
+  const isAdmin=CU&&['admin','superadmin'].includes(CU.rol);
   const visOrders=getVisibleOrders();
   const ent=visOrders.filter(o=>o.estado==='Entregado');
   const zonasList=_zonasCache.map(z=>`#${z.id} ${z.nombre} (Gs.${z.precio}, extra delivery: Gs.${z.extraDelivery}, tiempo: ${z.tiempoEntrega})`).join('\n');
@@ -2005,9 +2014,16 @@ async function doLogin(){
     _cargarMensajesPrevios();
     if(_pollInterval)clearInterval(_pollInterval);
     _pollInterval=setInterval(_pollMensajes,5000);
-    // Admin: sincronizar catálogo local a Supabase para que todos los roles lo vean
-    if(CU.rol==='admin'&&_supaConnected){
+    // Admin/superadmin: sincronizar catálogo local a Supabase para que todos los roles lo vean
+    if(['admin','superadmin'].includes(CU.rol)&&_supaConnected){
       DL.syncCatalogoToSupa().then(n=>{if(n>0)console.log('Catálogo sincronizado: '+n+' productos');});
+    }
+    // HOTFIX-seguridad: superadmin carga claves técnicas desde servidor;
+    // otros roles limpian claves sensibles del localStorage
+    if(CU.rol==='superadmin'){
+      loadServerConfig(_sessionToken).then(()=>initSupabase());
+    }else{
+      _clearSensitiveCfg();
     }
   }catch(e){
     showAlert('loginAlert','e','Error al iniciar sesión: '+e.message);
@@ -2050,6 +2066,7 @@ async function doForgotPassword(){
   }
 }
 function doLogout(){
+  _clearSensitiveCfg();
   CU=null;
   _sessionToken=null;
   sessionStorage.removeItem('iporave_token');
@@ -2069,7 +2086,7 @@ function doLogout(){
    NAV
 ══════════════════════════════════════════════════ */
 const NAV_CFG={
-  admin:[
+  superadmin:[
     {s:'Principal',items:[
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Todos los pedidos',ic:'pkg'},
       {id:'balance',l:'Balance diario',ic:'dollar'},{id:'liquidacion',l:'Liquidación',ic:'doc'},
@@ -2078,6 +2095,24 @@ const NAV_CFG={
       {id:'usuarios',l:'Usuarios',ic:'users'},{id:'zonas',l:'Zonas y tarifas',ic:'map'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
       {id:'config',l:'Configuración',ic:'gear'},{id:'setup',l:'Setup / SQL',ic:'db'},
+    ]},
+    {s:'Mapa',items:[
+      {id:'mapa',l:'Mapa en tiempo real',ic:'map'},
+    ]},
+    {s:'Reportes',items:[
+      {id:'recaudacion',l:'Recaudación Delivery',ic:'truck'},{id:'boletas',l:'Boletas IVA',ic:'receipt'},
+      {id:'cierre',l:'Cierre de jornada',ic:'sun'},
+    ]},
+    {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
+  ],
+  admin:[
+    {s:'Principal',items:[
+      {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Todos los pedidos',ic:'pkg'},
+      {id:'balance',l:'Balance diario',ic:'dollar'},{id:'liquidacion',l:'Liquidación',ic:'doc'},
+    ]},
+    {s:'Gestión',items:[
+      {id:'usuarios',l:'Usuarios',ic:'users'},{id:'zonas',l:'Zonas y tarifas',ic:'map'},
+      {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
     ]},
     {s:'Mapa',items:[
       {id:'mapa',l:'Mapa en tiempo real',ic:'map'},
@@ -2220,8 +2255,8 @@ PAGES.dashboard=async function(){
   const orders=_ordersCache;
   let html='';
 
-  // Alerta de dispositivos pendientes (solo admin)
-  if(CU.rol==='admin'&&_sessionToken){
+  // Alerta de dispositivos pendientes (admin y superadmin)
+  if(['admin','superadmin'].includes(CU.rol)&&_sessionToken){
     try{
       const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/dispositivos-pendientes',{headers:{'Authorization':'Bearer '+_sessionToken}});
       const d=await r.json();
@@ -3776,6 +3811,10 @@ function toggleVis(id,btn){const i=$(id);if(!i)return;const show=i.type==='passw
 
 /* ─── CONFIG ─── */
 PAGES.config=function(){
+  if(!CU||CU.rol!=='superadmin'){
+    $('ca').innerHTML='<div class="alert alrt-w" style="max-width:500px"><b>Acceso restringido</b><br>Esta sección es exclusiva del Superadmin.</div>';
+    return;
+  }
   const cfg=getCfg();
   $('ca').innerHTML=
     '<div style="max-width:620px">'+
@@ -4085,6 +4124,10 @@ async function _limpiarMensajes24h(){
 
 /* ─── SETUP PAGE ─── */
 PAGES.setup=function(){
+  if(!CU||CU.rol!=='superadmin'){
+    $('ca').innerHTML='<div class="alert alrt-w" style="max-width:500px"><b>Acceso restringido</b><br>Esta sección es exclusiva del Superadmin.</div>';
+    return;
+  }
   const sql=`-- Ejecutá esto en Supabase > SQL Editor
 
 create table if not exists usuarios (
