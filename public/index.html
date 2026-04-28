@@ -2230,7 +2230,7 @@ function getZona(id){return _zonasCache.find(z=>z.id===id)||{nombre:'—',precio
 function getUser(id){return _usersCache.find(u=>u.id===id)||{nombre:'—',vehiculo:'moto'};}
 function getVisibleOrders(){
   const r=CU.rol;
-  if(r==='admin')return _ordersCache;
+  if(r==='admin'||r==='superadmin')return _ordersCache;
   if(r==='vendedor')return _ordersCache.filter(o=>o.vendedorId===CU.id);
   if(r==='dropshipper')return _ordersCache.filter(o=>o.dropId===CU.id);
   if(r==='delivery')return _ordersCache.filter(o=>o.deliveryId===CU.id);
