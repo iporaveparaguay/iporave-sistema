@@ -3293,9 +3293,11 @@ function editUser(id){
     '<div class="fg"><label>Nombre</label><input type="text" id="euNom" value="'+u.nombre+'"></div>'+
     '<div class="frow"><div class="fg"><label>Usuario</label><input type="text" id="euUser" value="'+u.username+'"></div>'+
     '<div class="fg"><label>Nueva contraseña</label>'+pwdField('euPass','(sin cambios)')+'</div></div>'+
-    '<div class="fg"><label>Rol</label><select id="euRol">'+
-    ['vendedor','dropshipper','delivery','proveedor','cliente','admin'].map(r=>'<option value="'+r+'" '+(u.rol===r?'selected':'')+'>'+capRole(r)+'</option>').join('')+
-    '</select></div>'+
+    (u.rol==='superadmin'
+      ?'<div class="fg"><label>Rol</label><div style="padding:8px 0;font-size:13px;color:var(--text2)">Superadministrador <span style="font-size:11px;color:var(--text3)">(rol fijo — no modificable)</span></div></div>'
+      :'<div class="fg"><label>Rol</label><select id="euRol">'+
+       ['vendedor','dropshipper','delivery','proveedor','cliente','admin'].map(r=>'<option value="'+r+'" '+(u.rol===r?'selected':'')+'>'+capRole(r)+'</option>').join('')+
+       '</select></div>')+
     '<div class="frow"><div class="fg"><label>Vehículo</label><select id="euVeh">'+
     '<option value="moto" '+(u.vehiculo==='moto'?'selected':'')+'>Moto</option>'+
     '<option value="auto" '+(u.vehiculo==='auto'?'selected':'')+'>Auto</option>'+
@@ -3314,7 +3316,7 @@ async function saveEditUser(id){
   const newNom=gv('euNom').trim();if(newNom)u.nombre=newNom;
   const newUser=gv('euUser').trim();if(newUser)u.username=newUser;
   const newPass=gv('euPass').trim();if(newPass)u.password=newPass;
-  if(gv('euRol'))u.rol=gv('euRol');
+  if(gv('euRol')&&u.rol!=='superadmin')u.rol=gv('euRol');
   u.vehiculo=gv('euVeh');u.patente=gv('euPat');u.whatsapp=gv('euWa');
   if(!u.contactos)u.contactos=[];
   const idx=_usersCache.findIndex(x=>x.id==id);
