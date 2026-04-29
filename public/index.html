@@ -651,6 +651,7 @@ const fmt = n => 'Gs. '+Number(n||0).toLocaleString('es-PY');
 const fmtN = n => Number(n||0).toLocaleString('es-PY');
 const fmtDate = d => d?new Date(d+'T12:00').toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
 const capRole = r => ({superadmin:'Superadmin',admin:'Administrador',vendedor:'Vendedor',dropshipper:'Dropshipper',delivery:'Delivery',proveedor:'Proveedor',cliente:'Cliente'}[r]||r);
+const isAdminLike = r => ['admin','superadmin'].includes(r);
 const today = () => new Date().toISOString().slice(0,10);
 const nowStr = () => new Date().toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const mesActual = () => new Date().toISOString().slice(0,7);
@@ -1588,7 +1589,7 @@ const AI_TOOL_EXEC={
     return orders.map(o=>`#${o.id} | ${o.fecha} | ${o.cliente} | ${o.producto} | ${o.estado} | Gs. ${(o.precio*o.qty).toLocaleString('es-PY')}`).join('\n');
   },
   async crear_pedido(args){
-    if(!['admin','vendedor'].includes(CU.rol))return'Sin permisos para crear pedidos.';
+    if(!['admin','superadmin','vendedor'].includes(CU.rol))return'Sin permisos para crear pedidos.';
     const zona=_zonasCache.find(z=>z.id===args.zona_id);
     if(!zona)return'Zona no encontrada. Zonas disponibles: '+_zonasCache.map(z=>`${z.id}:${z.nombre}`).join(', ');
     const newId=Math.max(..._ordersCache.map(o=>o.id),1000)+1;
@@ -1626,14 +1627,14 @@ const AI_TOOL_EXEC={
     if(CU.rol==='vendedor'){
       if(o.vendedorId!==CU.id)return'Solo podés eliminar tus propios pedidos.';
       if(o.estado!=='Pendiente')return'Solo podés eliminar pedidos en estado Pendiente.';
-    }else if(CU.rol!=='admin')return'Sin permisos para eliminar pedidos.';
+    }else if(!isAdminLike(CU.rol))return'Sin permisos para eliminar pedidos.';
     _ordersCache=_ordersCache.filter(x=>x.id!==args.pedido_id);
     await DL.deleteOrder(args.pedido_id);
     pushNotif(`Pedido #${args.pedido_id} eliminado por asistente IA`,'w');
     return`Pedido #${args.pedido_id} eliminado.`;
   },
   async crear_usuario(args){
-    if(CU.rol!=='admin')return'Solo el administrador puede crear usuarios.';
+    if(!isAdminLike(CU.rol))return'Solo el administrador puede crear usuarios.';
     if(_usersCache.find(u=>u.username===args.username))return`El usuario "${args.username}" ya existe.`;
     const id=Math.max(..._usersCache.map(u=>u.id),0)+1;
     const u={id,username:args.username,password:args.password,nombre:args.nombre,rol:args.rol,
@@ -1643,7 +1644,7 @@ const AI_TOOL_EXEC={
     return`Usuario "${args.nombre}" creado con rol ${args.rol}.`;
   },
   async editar_usuario(args){
-    if(CU.rol!=='admin')return'Solo el administrador puede editar usuarios.';
+    if(!isAdminLike(CU.rol))return'Solo el administrador puede editar usuarios.';
     const u=_usersCache.find(x=>x.id===args.id);if(!u)return`Usuario #${args.id} no encontrado.`;
     if(args.nombre)u.nombre=args.nombre;if(args.username)u.username=args.username;
     if(args.password)u.password=args.password;if(args.rol)u.rol=args.rol;
@@ -1655,7 +1656,7 @@ const AI_TOOL_EXEC={
     return`Usuario #${args.id} actualizado.`;
   },
   async eliminar_usuario(args){
-    if(CU.rol!=='admin')return'Solo el administrador puede eliminar usuarios.';
+    if(!isAdminLike(CU.rol))return'Solo el administrador puede eliminar usuarios.';
     if(args.id===1||args.id===CU.id)return'No podés eliminar al admin principal ni a vos mismo.';
     const u=_usersCache.find(x=>x.id===args.id);if(!u)return`Usuario #${args.id} no encontrado.`;
     await DL.deleteUser(args.id);_usersCache=_usersCache.filter(x=>x.id!==args.id);
@@ -1663,7 +1664,7 @@ const AI_TOOL_EXEC={
     return`Usuario "${u.nombre}" eliminado.`;
   },
   async crear_zona(args){
-    if(CU.rol!=='admin')return'Solo el administrador puede crear zonas.';
+    if(!isAdminLike(CU.rol))return'Solo el administrador puede crear zonas.';
     const id=Math.max(..._zonasCache.map(z=>z.id),0)+1;
     const z={id,nombre:args.nombre,desc:args.desc||'',precio:args.precio,
       extraDelivery:args.extraDelivery||0,tiempoEntrega:args.tiempoEntrega||''};
@@ -1671,7 +1672,7 @@ const AI_TOOL_EXEC={
     return`Zona "${args.nombre}" creada con tarifa Gs. ${args.precio.toLocaleString('es-PY')}.`;
   },
   async editar_zona(args){
-    if(CU.rol!=='admin')return'Solo el administrador puede editar zonas.';
+    if(!isAdminLike(CU.rol))return'Solo el administrador puede editar zonas.';
     const z=_zonasCache.find(x=>x.id===args.id);if(!z)return`Zona #${args.id} no encontrada.`;
     if(args.nombre)z.nombre=args.nombre;if(args.desc!==undefined)z.desc=args.desc;
     if(args.precio)z.precio=args.precio;if(args.extraDelivery!==undefined)z.extraDelivery=args.extraDelivery;
@@ -1679,29 +1680,29 @@ const AI_TOOL_EXEC={
     await DL.saveZona(z);return`Zona #${args.id} actualizada.`;
   },
   async eliminar_zona(args){
-    if(CU.rol!=='admin')return'Solo el administrador puede eliminar zonas.';
+    if(!isAdminLike(CU.rol))return'Solo el administrador puede eliminar zonas.';
     const z=_zonasCache.find(x=>x.id===args.id);if(!z)return`Zona #${args.id} no encontrada.`;
     _zonasCache=_zonasCache.filter(x=>x.id!==args.id);await DL.deleteZona(args.id);
     return`Zona "${z.nombre}" eliminada.`;
   },
   async crear_proveedor(args){
-    if(CU.rol!=='admin')return'Solo el administrador puede crear proveedores.';
+    if(!isAdminLike(CU.rol))return'Solo el administrador puede crear proveedores.';
     return AI_TOOL_EXEC.crear_usuario({...args,rol:'proveedor'});
   },
   async editar_proveedor(args){
-    if(CU.rol!=='admin')return'Solo el administrador puede editar proveedores.';
+    if(!isAdminLike(CU.rol))return'Solo el administrador puede editar proveedores.';
     const u=_usersCache.find(x=>x.id===args.id&&x.rol==='proveedor');
     if(!u)return`Proveedor #${args.id} no encontrado.`;
     return AI_TOOL_EXEC.editar_usuario(args);
   },
   async eliminar_proveedor(args){
-    if(CU.rol!=='admin')return'Solo el administrador puede eliminar proveedores.';
+    if(!isAdminLike(CU.rol))return'Solo el administrador puede eliminar proveedores.';
     const u=_usersCache.find(x=>x.id===args.id&&x.rol==='proveedor');
     if(!u)return`Proveedor #${args.id} no encontrado.`;
     return AI_TOOL_EXEC.eliminar_usuario(args);
   },
   async notificar_administrador(args){
-    if(CU.rol==='admin')return'Sos el administrador. Usá "responder_usuario" para enviar mensajes a otros usuarios.';
+    if(isAdminLike(CU.rol))return'Sos el administrador. Usá "responder_usuario" para enviar mensajes a otros usuarios.';
     const admin=_usersCache.find(u=>u.rol==='admin');
     if(!admin)return'No se encontró el administrador en el sistema.';
     const m={de_id:CU.id,de_nombre:CU.nombre,para_id:admin.id,para_nombre:admin.nombre,mensaje:args.mensaje,leido:false};
@@ -1710,7 +1711,7 @@ const AI_TOOL_EXEC={
     return`Mensaje enviado al administrador correctamente.`;
   },
   async ver_mensajes(args){
-    const msgs=await DL.getMensajes(CU.id,CU.rol==='admin');
+    const msgs=await DL.getMensajes(CU.id,isAdminLike(CU.rol));
     if(!msgs.length)return'No hay mensajes.';
     const filtrados=args.no_leidos?msgs.filter(m=>!m.leido):msgs;
     if(!filtrados.length)return'No hay mensajes sin leer.';
@@ -1722,7 +1723,7 @@ const AI_TOOL_EXEC={
     }).join('\n\n');
   },
   async responder_usuario(args){
-    if(CU.rol!=='admin')return'Solo el administrador puede usar esta función.';
+    if(!isAdminLike(CU.rol))return'Solo el administrador puede usar esta función.';
     const u=_usersCache.find(x=>x.id===args.usuario_id);
     if(!u)return`Usuario #${args.usuario_id} no encontrado. Usuarios disponibles: `+_usersCache.map(x=>`${x.id}:${x.nombre}`).join(', ');
     const m={de_id:CU.id,de_nombre:CU.nombre,para_id:u.id,para_nombre:u.nombre,mensaje:args.mensaje,leido:false};
@@ -1731,7 +1732,7 @@ const AI_TOOL_EXEC={
     return`Mensaje enviado a ${u.nombre} correctamente.`;
   },
   async responder_administrador(args){
-    if(CU.rol==='admin')return'Sos el administrador. Usá "responder_usuario" para enviar mensajes.';
+    if(isAdminLike(CU.rol))return'Sos el administrador. Usá "responder_usuario" para enviar mensajes.';
     const admin=_usersCache.find(u=>u.rol==='admin');
     if(!admin)return'No se encontró al administrador en el sistema.';
     const m={de_id:CU.id,de_nombre:CU.nombre,para_id:admin.id,para_nombre:admin.nombre,mensaje:args.mensaje,leido:false};
@@ -1740,7 +1741,7 @@ const AI_TOOL_EXEC={
     return'Mensaje enviado al administrador: "'+args.mensaje+'"';
   },
   async notificar_cliente_gps(args){
-    if(!['delivery','admin'].includes(CU.rol))return'Solo delivery o admin pueden usar esta función.';
+    if(!['delivery','admin','superadmin'].includes(CU.rol))return'Solo delivery o admin pueden usar esta función.';
     const o=_ordersCache.find(x=>x.id===args.pedido_id);
     if(!o)return`Pedido #${args.pedido_id} no encontrado.`;
     if(!o.telefono)return`El pedido #${args.pedido_id} no tiene teléfono del cliente registrado.`;
@@ -3905,7 +3906,7 @@ PAGES.mensajes=async function(){
   const msgs=data||[];
   // Botones de acción dentro del contenido (siempre visibles en mobile)
   const nuevoMsgBtn='<div style="padding:10px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-primary btn-full" onclick="openNuevoMensaje()">+ Nuevo mensaje</button></div>';
-  const contactosBtn=CU.rol!=='admin'
+  const contactosBtn=!isAdminLike(CU.rol)
     ?'<div style="padding:8px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-secondary btn-full" onclick="openGestionContactos()">👥 Gestionar mis contactos</button></div>'
     :'';
   if(!msgs.length){
@@ -4018,7 +4019,7 @@ async function sendMsgThread(toId,toNom){
 }
 
 function _contactosPermitidos(){
-  if(CU.rol==='admin')return _usersCache.filter(u=>u.id!==CU.id);
+  if(isAdminLike(CU.rol))return _usersCache.filter(u=>u.id!==CU.id);
   // Para otros roles: admin siempre disponible + sus contactos personales
   const misContactos=CU.contactos||[];
   return _usersCache.filter(u=>u.id!==CU.id&&(u.rol==='admin'||misContactos.includes(u.id)));
@@ -4070,7 +4071,7 @@ function _renderModalContactos(q){
   const misIds=CU.contactos||[];
   const misContactos=_usersCache.filter(u=>misIds.includes(u.id));
   const disponibles=_usersCache.filter(u=>
-    u.id!==CU.id&&u.rol!=='admin'&&!misIds.includes(u.id)&&
+    u.id!==CU.id&&!isAdminLike(u.rol)&&!misIds.includes(u.id)&&
     _rolesAgregables().includes(u.rol)&&
     (!q||u.nombre.toLowerCase().includes(q.toLowerCase())||capRole(u.rol).toLowerCase().includes(q.toLowerCase()))
   );
