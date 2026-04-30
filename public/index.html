@@ -1029,9 +1029,15 @@ const DL = {
     if(i>=0)cat[i]=p;else cat.push(p);
     this._ls('catalogo',cat);
     if(_supaConnected){
-      const row={...p,presentaciones:JSON.stringify(p.presentaciones||[]),owner_user_id:p.owner_user_id||(CU?CU.id:null),visibility:p.visibility||'private'};
-      const{error}=p.id?await _supa.from('catalogo').upsert(row):await _supa.from('catalogo').insert(row);
-      if(error)console.warn('saveProducto:',error.message);
+      const row={
+        id:p.id,
+        nombre:p.nombre,
+        presentaciones:JSON.stringify(p.presentaciones||[]),
+        owner_user_id:p.owner_user_id||p.owner_id||(CU?CU.id:null),
+        visibility:p.visibility||'private',
+      };
+      const{error}=await _supa.from('catalogo').upsert(row,{onConflict:'id'});
+      if(error){console.warn('saveProducto:',error.message);pushNotif('No se pudo guardar el producto en Supabase.','e');}
     }
   },
   // Sincronizar catálogo local del admin hacia Supabase (migración inicial)
@@ -1041,8 +1047,14 @@ const DL = {
     if(!local.length)return 0;
     let ok=0;
     for(const p of local){
-      const row={...p,presentaciones:JSON.stringify(p.presentaciones||[])};
-      const{error}=await _supa.from('catalogo').upsert(row);
+      const row={
+        id:p.id,
+        nombre:p.nombre,
+        presentaciones:JSON.stringify(p.presentaciones||[]),
+        owner_user_id:p.owner_user_id||p.owner_id||(CU?CU.id:null),
+        visibility:p.visibility||'private',
+      };
+      const{error}=await _supa.from('catalogo').upsert(row,{onConflict:'id'});
       if(!error)ok++;
     }
     return ok;
@@ -3596,7 +3608,7 @@ async function saveNuevoProducto(){
   _catalogoCache=[..._catalogoCache,nuevo];
   closeA();PAGES.catalogo();
   pushNotif('Producto "'+nom+'" creado','s');
-  DL.saveProducto(nuevo);
+  await DL.saveProducto(nuevo);
 }
 function editProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
