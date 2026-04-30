@@ -1037,7 +1037,7 @@ const DL = {
         visibility:p.visibility||'private',
       };
       const{error}=await _supa.from('catalogo').upsert(row,{onConflict:'id'});
-      if(error){console.warn('saveProducto:',error.message);pushNotif('No se pudo guardar el producto en Supabase.','e');}
+      if(error){console.warn('saveProducto:',error.message);pushNotif('Error Supabase: '+error.message,'e');}
     }
   },
   // Sincronizar catálogo local del admin hacia Supabase (migración inicial)
