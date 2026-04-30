@@ -915,6 +915,7 @@ const DL = {
   async getOrders(filters){
     if(_supaConnected){
       let q=_supa.from('pedidos').select('*').order('id',{ascending:false});
+      if(CU&&CU.rol==='admin')q=q.eq('created_by',CU.id);
       if(filters){
         if(filters.vendedorId)q=q.eq('vendedor_id',filters.vendedorId);
         if(filters.deliveryId)q=q.eq('delivery_id',filters.deliveryId);
@@ -958,6 +959,8 @@ const DL = {
     }
   },
   async deleteOrder(id){
+    const _o=(_ordersCache||[]).find(x=>x.id===id)||(this._lg('orders')||[]).find(x=>x.id===id);
+    if(_o&&_o.created_by&&CU&&CU.rol==='admin'&&_o.created_by!==CU.id){pushNotif('No podés eliminar pedidos de otro administrador.','e');return;}
     if(_supaConnected)await _supa.from('pedidos').delete().eq('id',id);
     this._ls('orders',(this._lg('orders')||[]).filter(o=>o.id!==id));
   },
@@ -1006,10 +1009,13 @@ const DL = {
   // CATALOGO
   async getCatalogo(){
     if(_supaConnected){
-      const{data,error}=await _supa.from('catalogo').select('*').order('id');
+      let cq=_supa.from('catalogo').select('*').order('id');
+      if(CU&&CU.rol==='admin')cq=cq.eq('owner_user_id',CU.id);
+      const{data,error}=await cq;
       if(!error&&data){
         const remote=data.map(r=>({...r,
-          presentaciones:typeof r.presentaciones==='string'?JSON.parse(r.presentaciones||'[]'):(r.presentaciones||[])
+          presentaciones:typeof r.presentaciones==='string'?JSON.parse(r.presentaciones||'[]'):(r.presentaciones||[]),
+          owner_id:r.owner_user_id||r.owner_id||null,
         }));
         this._ls('catalogo',remote);
         return remote;
@@ -1023,7 +1029,7 @@ const DL = {
     if(i>=0)cat[i]=p;else cat.push(p);
     this._ls('catalogo',cat);
     if(_supaConnected){
-      const row={...p,presentaciones:JSON.stringify(p.presentaciones||[])};
+      const row={...p,presentaciones:JSON.stringify(p.presentaciones||[]),owner_user_id:p.owner_user_id||(CU?CU.id:null),visibility:p.visibility||'private'};
       const{error}=p.id?await _supa.from('catalogo').upsert(row):await _supa.from('catalogo').insert(row);
       if(error)console.warn('saveProducto:',error.message);
     }
@@ -1164,6 +1170,7 @@ const DL = {
       boleta_num:o.boletaNum,num_doc:o.numDoc,
       razon_social:o.razonSocial,ruc:o.ruc,tipo_iva:o.tipoIva,
       historial:JSON.stringify(o.historial||[]),
+      created_by:o.created_by||null,
     };
   },
   _mapFromSupa(r){
@@ -1177,6 +1184,7 @@ const DL = {
       boletaNum:r.boleta_num,numDoc:r.num_doc,
       razonSocial:r.razon_social,ruc:r.ruc,tipoIva:r.tipo_iva,
       historial:typeof r.historial==='string'?JSON.parse(r.historial||'[]'):(r.historial||[]),
+      created_by:r.created_by||null,
     };
   },
 };
@@ -1596,7 +1604,7 @@ const AI_TOOL_EXEC={
     const o={id:newId,fecha:args.fecha||today(),cliente:args.cliente,cedula:args.cedula||'',
       telefono:args.telefono||'',direccion:args.direccion||'',zona:args.zona_id,
       proveedor:args.proveedor,producto:args.producto,qty:args.qty||1,
-      precio:args.precio,costo:args.costo,estado:'Pendiente',vendedorId:CU.id,
+      precio:args.precio,costo:args.costo,estado:'Pendiente',vendedorId:CU.id,created_by:CU.id,
       dropId:null,deliveryId:null,metodoCobro:null,fotoEntrega:false,gpsLat:null,gpsLng:null,
       notas:args.notas||'',boletaNum:'B-'+String(newId).padStart(4,'0'),numDoc:nextDocNum(),
       razonSocial:'',ruc:'',tipoIva:'10%',
@@ -1657,8 +1665,12 @@ const AI_TOOL_EXEC={
   },
   async eliminar_usuario(args){
     if(!isAdminLike(CU.rol))return'Solo el administrador puede eliminar usuarios.';
-    if(args.id===1||args.id===CU.id)return'No podés eliminar al admin principal ni a vos mismo.';
+    if(args.id===CU.id)return'No podés eliminarte a vos mismo.';
     const u=_usersCache.find(x=>x.id===args.id);if(!u)return`Usuario #${args.id} no encontrado.`;
+    if(CU.rol==='admin'){
+      if(['admin','superadmin'].includes(u.rol))return'No podés eliminar administradores.';
+      if(u.created_by!==CU.id)return'No podés eliminar usuarios de otro administrador.';
+    }
     await DL.deleteUser(args.id);_usersCache=_usersCache.filter(x=>x.id!==args.id);
     pushNotif('Usuario eliminado por asistente IA','w');
     return`Usuario "${u.nombre}" eliminado.`;
@@ -2482,6 +2494,7 @@ function waMenu(id){
 /* ─── DELETE ORDER ─── */
 function confirmDeleteOrder(id){
   const o=_ordersCache.find(x=>x.id===id);
+  if(o&&o.created_by&&CU.rol==='admin'&&o.created_by!==CU.id){pushNotif('No podés eliminar pedidos de otro administrador.','e');return;}
   const info=o?'<div style="margin:10px 0;padding:10px 12px;background:var(--bg4);border-radius:8px;font-size:13px">'+
     '<div><b>Pedido #'+id+'</b></div>'+
     '<div style="color:var(--text2);margin-top:3px">'+o.cliente+' — '+o.producto+'</div>'+
@@ -2879,7 +2892,7 @@ async function saveNewOrder(){
     id:newId,fecha:gv('nFecha')||today(),cliente:cli,cedula:gv('nCed'),
     telefono:gv('nTel'),direccion:gv('nDir'),zona,proveedor:prov,producto:prod,
     qty:parseInt(gv('nQty'))||1,precio,costo,estado:'Pendiente',
-    vendedorId:CU.id,
+    vendedorId:CU.id,created_by:CU.id,
     dropId:parseInt(gv('nDrop'))||null,deliveryId:parseInt(gv('nDlv'))||null,
     metodoCobro:null,fotoEntrega:false,gpsLat:null,gpsLng:null,notas:gv('nNotas'),
     boletaNum:'B-'+String(newId).padStart(4,'0'),numDoc:nextDocNum(),
@@ -3254,7 +3267,7 @@ function openNewUser(){
     '<div class="fg"><label>Rol</label><select id="nuRol" onchange="toggleDlvF2()">'+
     '<option value="vendedor">Vendedor</option><option value="dropshipper">Dropshipper</option>'+
     '<option value="delivery">Delivery</option><option value="proveedor">Proveedor</option>'+
-    '<option value="cliente">Cliente</option><option value="admin">Admin</option>'+
+    '<option value="cliente">Cliente</option>'+(CU.rol==='superadmin'?'<option value="admin">Admin</option>':'')+
     '</select></div>'+
     '<div id="dlvXF" style="display:none">'+
     '<div class="frow"><div class="fg"><label>Vehículo</label><select id="nuVeh"><option value="moto">Moto (15/día)</option><option value="auto">Auto (12/día)</option></select></div>'+
@@ -3297,7 +3310,7 @@ function editUser(id){
     (u.rol==='superadmin'
       ?'<div class="fg"><label>Rol</label><div style="padding:8px 0;font-size:13px;color:var(--text2)">Superadministrador <span style="font-size:11px;color:var(--text3)">(rol fijo — no modificable)</span></div></div>'
       :'<div class="fg"><label>Rol</label><select id="euRol">'+
-       ['vendedor','dropshipper','delivery','proveedor','cliente','admin'].map(r=>'<option value="'+r+'" '+(u.rol===r?'selected':'')+'>'+capRole(r)+'</option>').join('')+
+       (CU.rol==='superadmin'?['vendedor','dropshipper','delivery','proveedor','cliente','admin']:['vendedor','dropshipper','delivery','proveedor','cliente']).map(r=>'<option value="'+r+'" '+(u.rol===r?'selected':'')+'>'+capRole(r)+'</option>').join('')+
        '</select></div>')+
     '<div class="frow"><div class="fg"><label>Vehículo</label><select id="euVeh">'+
     '<option value="moto" '+(u.vehiculo==='moto'?'selected':'')+'>Moto</option>'+
@@ -3350,6 +3363,11 @@ function delUser(id){
   );
 }
 async function doDelUser(id){
+  const u=_usersCache.find(x=>x.id===id);
+  if(u&&CU.rol==='admin'){
+    if(['admin','superadmin'].includes(u.rol)){pushNotif('No podés eliminar usuarios de otro administrador.','e');return;}
+    if(u.created_by!==CU.id){pushNotif('No podés eliminar usuarios de otro administrador.','e');return;}
+  }
   await DL.deleteUser(id);
   _usersCache=_usersCache.filter(u=>u.id!==id);
   PAGES.usuarios();
@@ -3495,7 +3513,7 @@ PAGES.catalogo=function(q='',vistaOwner=null){
   $('tbActions').innerHTML=acciones;
 
   // Productos visibles: admin ve los suyos por defecto, otros solo los suyos
-  const misCatalogo=_catalogoCache.filter(p=>(p.owner_id||1)===(esAdmin?1:CU.id));
+  const misCatalogo=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id);
   // Migrar productos sin owner al admin
   _catalogoCache.forEach(p=>{if(!p.owner_id){p.owner_id=1;p.owner_nombre='Administrador';}});
 
@@ -3515,7 +3533,7 @@ PAGES.catalogo=function(q='',vistaOwner=null){
       '<input type="text" placeholder="🔍 Buscar producto…" value="'+q+'" oninput="PAGES.catalogo(this.value)" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
       (rolLabel?'<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:5px 10px">💡 <b style="color:var(--accent)">'+rolLabel+'</b></div>':'')+
     '</div>'+
-    (filtrados.length?filtrados.map(p=>_renderProductoCard(p,puedeEditar&&(p.owner_id||1)===CU.id)).join('')
+    (filtrados.length?filtrados.map(p=>_renderProductoCard(p,puedeEditar&&(p.owner_id||p.owner_user_id)===CU.id)).join('')
       :'<div style="text-align:center;padding:40px;color:var(--text3)">Sin resultados para "'+q+'"</div>')+
   '</div>';
 };
@@ -3570,7 +3588,7 @@ function openNuevoProducto(){
 async function saveNuevoProducto(){
   const nom=gv('npNom').trim();
   if(!nom){showAlert('npAlert','e','Ingresá el nombre del producto');return;}
-  const misProductos=_catalogoCache.filter(p=>(p.owner_id||1)===CU.id);
+  const misProductos=_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id);
   if(misProductos.find(p=>p.nombre.toLowerCase()===nom.toLowerCase())){showAlert('npAlert','w','Ya tenés un producto con ese nombre');return;}
   // ID único: timestamp para evitar colisiones entre usuarios
   const id=Date.now();
