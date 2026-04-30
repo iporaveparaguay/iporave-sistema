@@ -3602,8 +3602,8 @@ async function saveNuevoProducto(){
   if(!nom){showAlert('npAlert','e','Ingresá el nombre del producto');return;}
   const misProductos=_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id);
   if(misProductos.find(p=>p.nombre.toLowerCase()===nom.toLowerCase())){showAlert('npAlert','w','Ya tenés un producto con ese nombre');return;}
-  // ID único: timestamp para evitar colisiones entre usuarios
-  const id=Date.now();
+  // ID secuencial entero seguro para Supabase (tipo integer, max ~2.1B)
+  const id=(_catalogoCache&&_catalogoCache.length)?Math.max(..._catalogoCache.map(p=>Number(p.id)||0))+1:1;
   const nuevo={id,nombre:nom,proveedorNombre:gv('npProv')||'',presentaciones:[],owner_id:CU.id,owner_nombre:CU.nombre};
   _catalogoCache=[..._catalogoCache,nuevo];
   closeA();PAGES.catalogo();
