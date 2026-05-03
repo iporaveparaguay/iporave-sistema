@@ -1009,11 +1009,29 @@ const DL = {
   // CATALOGO
   async getCatalogo(){
     if(_supaConnected){
-      let cq=_supa.from('catalogo').select('*').order('id');
-      if(CU&&CU.rol==='admin')cq=cq.eq('owner_user_id',CU.id);
-      const{data,error}=await cq;
-      if(!error&&data){
-        const remote=data.map(r=>({...r,
+      let propios=[];
+      let compartidos=[];
+      if(CU&&CU.rol==='superadmin'){
+        // Superadmin ve todo sin filtro
+        const{data}=await _supa.from('catalogo').select('*').order('id');
+        propios=data||[];
+      }else if(CU){
+        // Propios: productos donde soy owner
+        const{data:dp}=await _supa.from('catalogo').select('*').eq('owner_user_id',CU.id).order('id');
+        propios=dp||[];
+        // Compartidos: productos que alguien compartió con mi ID
+        const{data:ds}=await _supa.from('catalog_shares').select('producto_id').eq('shared_with',CU.id);
+        if(ds&&ds.length){
+          const ids=ds.map(r=>r.producto_id);
+          const{data:dc}=await _supa.from('catalogo').select('*').in('id',ids);
+          compartidos=dc||[];
+        }
+      }
+      // Unir y deduplicar por id
+      const seen=new Set();
+      const all=[...propios,...compartidos].filter(r=>{if(seen.has(r.id))return false;seen.add(r.id);return true;});
+      if(all.length||CU?.rol!=='superadmin'){
+        const remote=all.map(r=>({...r,
           presentaciones:typeof r.presentaciones==='string'?JSON.parse(r.presentaciones||'[]'):(r.presentaciones||[]),
           owner_id:r.owner_user_id||r.owner_id||null,
           proveedorNombre:r.proveedor_nombre||'',
@@ -3616,10 +3634,17 @@ async function saveNuevoProducto(){
 function editProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
   const provs=_usersCache.filter(u=>u.rol==='proveedor').map(u=>'<option value="'+u.nombre+'" '+(p.proveedorNombre===u.nombre?'selected':'')+'>'+u.nombre+'</option>').join('');
+  // Usuarios con quienes se puede compartir (todos excepto el dueño)
+  const sharesOpts=_usersCache.filter(u=>u.id!==CU.id).map(u=>{
+    const sel=(p._sharedWith||[]).includes(u.id)?'selected':'';
+    return'<option value="'+u.id+'" '+sel+'>'+u.nombre+' ('+u.rol+')</option>';
+  }).join('');
   openA('Editar producto',
     '<div class="fg"><label>Nombre</label><input type="text" id="epNom" value="'+p.nombre+'"></div>'+
     '<div class="fg"><label>Proveedor asignado</label>'+
-      '<select id="epProv"><option value="" '+((!p.proveedorNombre)?'selected':'')+'>Sin asignar</option>'+provs+'</select></div>',
+      '<select id="epProv"><option value="" '+((!p.proveedorNombre)?'selected':'')+'>Sin asignar</option>'+provs+'</select></div>'+
+    (sharesOpts?'<div class="fg"><label>Compartir con (Ctrl+clic para varios)</label>'+
+      '<select id="epShares" multiple style="height:90px">'+sharesOpts+'</select></div>':''),
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveEditProducto('+id+')">Guardar</button>'
   );
@@ -3630,6 +3655,17 @@ async function saveEditProducto(id){
   const nom=gv('epNom').trim();if(!nom)return;
   p.nombre=nom;
   p.proveedorNombre=gv('epProv')||'';
+  // Guardar shares seleccionados (solo insertar, no borrar — safe)
+  if(_supaConnected){
+    const sel=$('epShares');
+    if(sel){
+      const selected=[...sel.selectedOptions].map(o=>Number(o.value)).filter(Boolean);
+      if(selected.length){
+        const rows=selected.map(uid=>({producto_id:id,owner_id:CU.id,shared_with:uid}));
+        await _supa.from('catalog_shares').upsert(rows,{onConflict:'producto_id,shared_with',ignoreDuplicates:true});
+      }
+    }
+  }
   closeA();PAGES.catalogo();
   pushNotif('Producto actualizado','s');
   DL.saveProducto(p);
