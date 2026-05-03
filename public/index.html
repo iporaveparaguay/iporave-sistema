@@ -4346,7 +4346,8 @@ async function exportCSV(){
    INIT
 ══════════════════════════════════════════════════ */
 async function main(){
-  await loadServerConfig();
+  _sessionToken=sessionStorage.getItem('iporave_token')||null;
+  await loadServerConfig(_sessionToken);
   DL._initLocal();
   // Cargar cola pendiente del localStorage
   _pendingQueue=DL._lg('pendingQueue')||[];
