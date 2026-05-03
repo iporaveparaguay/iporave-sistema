@@ -2051,7 +2051,7 @@ async function doLogin(){
     if(CU.rol==='superadmin'){
       loadServerConfig(_sessionToken).then(()=>initSupabase());
     }else{
-      _clearSensitiveCfg();
+      loadServerConfig(_sessionToken).then(()=>initSupabase());
     }
   }catch(e){
     showAlert('loginAlert','e','Error al iniciar sesión: '+e.message);
