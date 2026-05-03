@@ -1019,12 +1019,17 @@ const DL = {
         // Propios: productos donde soy owner
         const{data:dp}=await _supa.from('catalogo').select('*').eq('owner_user_id',CU.id).order('id');
         propios=dp||[];
+        // Cargar con quiénes comparto cada producto propio (_sharedWith)
+        const{data:myShares}=await _supa.from('catalog_shares').select('producto_id,shared_with').eq('owner_id',CU.id);
+        if(myShares&&myShares.length){
+          propios=propios.map(p=>({...p,_sharedWith:(myShares.filter(s=>s.producto_id===p.id).map(s=>s.shared_with))}));
+        }
         // Compartidos: productos que alguien compartió con mi ID
         const{data:ds}=await _supa.from('catalog_shares').select('producto_id').eq('shared_with',CU.id);
         if(ds&&ds.length){
           const ids=ds.map(r=>r.producto_id);
           const{data:dc}=await _supa.from('catalogo').select('*').in('id',ids);
-          compartidos=dc||[];
+          compartidos=(dc||[]).map(r=>({...r,_isShared:true}));
         }
       }
       // Unir y deduplicar por id
@@ -3546,7 +3551,7 @@ PAGES.catalogo=function(q='',vistaOwner=null){
   $('tbActions').innerHTML=acciones;
 
   // Productos visibles: admin ve los suyos por defecto, otros solo los suyos
-  const misCatalogo=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id);
+  const misCatalogo=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id||p._isShared);
   // Migrar productos sin owner al admin
   _catalogoCache.forEach(p=>{if(!p.owner_id){p.owner_id=1;p.owner_nombre='Administrador';}});
 
