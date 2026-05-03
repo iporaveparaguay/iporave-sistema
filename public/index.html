@@ -1016,6 +1016,7 @@ const DL = {
         const remote=data.map(r=>({...r,
           presentaciones:typeof r.presentaciones==='string'?JSON.parse(r.presentaciones||'[]'):(r.presentaciones||[]),
           owner_id:r.owner_user_id||r.owner_id||null,
+          proveedorNombre:r.proveedor_nombre||'',
         }));
         this._ls('catalogo',remote);
         return remote;
@@ -1035,6 +1036,7 @@ const DL = {
         presentaciones:JSON.stringify(p.presentaciones||[]),
         owner_user_id:p.owner_user_id||p.owner_id||(CU?CU.id:null),
         visibility:p.visibility||'private',
+        proveedor_nombre:p.proveedorNombre||'',
       };
       const{error}=await _supa.from('catalogo').upsert(row,{onConflict:'id'});
       if(error){console.warn('saveProducto:',error.message);pushNotif('Error Supabase: '+error.message,'e');}
@@ -1053,6 +1055,7 @@ const DL = {
         presentaciones:JSON.stringify(p.presentaciones||[]),
         owner_user_id:p.owner_user_id||p.owner_id||(CU?CU.id:null),
         visibility:p.visibility||'private',
+        proveedor_nombre:p.proveedorNombre||'',
       };
       const{error}=await _supa.from('catalogo').upsert(row,{onConflict:'id'});
       if(!error)ok++;
