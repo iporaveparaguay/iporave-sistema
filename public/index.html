@@ -1009,11 +1009,34 @@ const DL = {
   // CATALOGO
   async getCatalogo(){
     if(_supaConnected){
-      let cq=_supa.from('catalogo').select('*').order('id');
-      if(CU&&CU.rol==='admin')cq=cq.eq('owner_user_id',CU.id);
-      const{data,error}=await cq;
-      if(!error&&data){
-        const remote=data.map(r=>({...r,
+      let propios=[];
+      let compartidos=[];
+      if(CU&&CU.rol==='superadmin'){
+        // Superadmin ve todo sin filtro
+        const{data}=await _supa.from('catalogo').select('*').order('id');
+        propios=data||[];
+      }else if(CU){
+        // Propios: productos donde soy owner
+        const{data:dp}=await _supa.from('catalogo').select('*').eq('owner_user_id',CU.id).order('id');
+        propios=dp||[];
+        // Cargar con quiénes comparto cada producto propio (_sharedWith)
+        const{data:myShares}=await _supa.from('catalog_shares').select('producto_id,shared_with').eq('owner_id',CU.id);
+        if(myShares&&myShares.length){
+          propios=propios.map(p=>({...p,_sharedWith:(myShares.filter(s=>s.producto_id===p.id).map(s=>s.shared_with))}));
+        }
+        // Compartidos: productos que alguien compartió con mi ID
+        const{data:ds}=await _supa.from('catalog_shares').select('producto_id').eq('shared_with',CU.id);
+        if(ds&&ds.length){
+          const ids=ds.map(r=>r.producto_id);
+          const{data:dc}=await _supa.from('catalogo').select('*').in('id',ids);
+          compartidos=(dc||[]).map(r=>({...r,_isShared:true}));
+        }
+      }
+      // Unir y deduplicar por id
+      const seen=new Set();
+      const all=[...propios,...compartidos].filter(r=>{if(seen.has(r.id))return false;seen.add(r.id);return true;});
+      if(all.length||CU?.rol!=='superadmin'){
+        const remote=all.map(r=>({...r,
           presentaciones:typeof r.presentaciones==='string'?JSON.parse(r.presentaciones||'[]'):(r.presentaciones||[]),
           owner_id:r.owner_user_id||r.owner_id||null,
           proveedorNombre:r.proveedor_nombre||'',
@@ -3528,7 +3551,7 @@ PAGES.catalogo=function(q='',vistaOwner=null){
   $('tbActions').innerHTML=acciones;
 
   // Productos visibles: admin ve los suyos por defecto, otros solo los suyos
-  const misCatalogo=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id);
+  const misCatalogo=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id||p._isShared);
   // Migrar productos sin owner al admin
   _catalogoCache.forEach(p=>{if(!p.owner_id){p.owner_id=1;p.owner_nombre='Administrador';}});
 
@@ -3613,23 +3636,85 @@ async function saveNuevoProducto(){
   pushNotif('Producto "'+nom+'" creado','s');
   await DL.saveProducto(nuevo);
 }
-function editProducto(id){
+function _renderChips(){
+  const c=$('sharesChips');if(!c)return;
+  c.innerHTML=(window._sharesSel||[]).map(u=>'<span style="display:inline-flex;align-items:center;gap:3px;background:var(--accent);color:#fff;padding:2px 8px 2px 10px;border-radius:20px;font-size:12px;white-space:nowrap">'+u.nombre+'<button type="button" onclick="_removeShare('+u.id+')" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;line-height:1;padding:0 0 0 2px">&times;</button></span>').join('');
+}
+function _removeShare(uid){
+  window._sharesSel=(window._sharesSel||[]).filter(u=>u.id!==uid);
+  _renderChips();
+}
+function _addShare(uid){
+  const u=(window._sharesAvail||[]).find(x=>x.id===uid);
+  if(!u||(window._sharesSel||[]).find(x=>x.id===uid))return;
+  window._sharesSel=[...(window._sharesSel||[]),u];
+  _renderChips();
+  const srch=$('sharesSrch');if(srch){srch.value='';srch.focus();}
+  _shareDrop('');
+}
+function _shareDrop(q){
+  const drop=$('sharesDrop');if(!drop)return;
+  const selIds=new Set((window._sharesSel||[]).map(u=>u.id));
+  const opts=(window._sharesAvail||[]).filter(u=>!selIds.has(u.id)&&(!q||u.nombre.toLowerCase().includes(q.toLowerCase())));
+  if(!opts.length){drop.style.display='none';return;}
+  drop.style.display='block';
+  drop.innerHTML=opts.map(u=>'<div onclick="_addShare('+u.id+')" style="padding:8px 12px;cursor:pointer;font-size:13px" onmouseenter="this.style.background=\'var(--bg3)\'" onmouseleave="this.style.background=\'\'">'+u.nombre+' <span style="font-size:11px;color:var(--text3)">('+u.rol+')</span></div>').join('');
+}
+async function editProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
   const provs=_usersCache.filter(u=>u.rol==='proveedor').map(u=>'<option value="'+u.nombre+'" '+(p.proveedorNombre===u.nombre?'selected':'')+'>'+u.nombre+'</option>').join('');
+  let sharesHTML='';
+  if(CU.rol!=='delivery'){
+    let avail=[];
+    if(CU.rol==='superadmin'){
+      avail=_usersCache.filter(u=>u.id!==CU.id);
+    }else{
+      const mine=_usersCache.filter(u=>u.created_by===CU.id);
+      const sups=_usersCache.filter(u=>u.rol==='superadmin');
+      let fromShared=[];
+      if(_supaConnected){
+        const{data}=await _supa.from('catalog_shares').select('owner_id').eq('shared_with',CU.id);
+        if(data){const oids=new Set(data.map(r=>r.owner_id));fromShared=_usersCache.filter(u=>oids.has(u.id)&&u.id!==CU.id);}
+      }
+      const seen=new Set();avail=[];
+      for(const u of[...mine,...sups,...fromShared]){if(!seen.has(u.id)&&u.id!==CU.id){seen.add(u.id);avail.push(u);}}
+    }
+    window._sharesAvail=avail;
+    window._sharesSel=(p._sharedWith||[]).map(uid=>{const u=_usersCache.find(x=>x.id===uid);return u?{id:u.id,nombre:u.nombre,rol:u.rol}:null;}).filter(Boolean);
+    sharesHTML='<div class="fg" style="position:relative"><label>Compartir con usuarios</label>'+
+      '<div id="sharesBox" style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:5px 8px;border:1px solid var(--border);border-radius:6px;min-height:38px;cursor:text;background:var(--bg)" onclick="document.getElementById(\'sharesSrch\').focus()">'+
+      '<span id="sharesChips"></span>'+
+      '<input id="sharesSrch" type="text" placeholder="Buscar usuario..." autocomplete="off" style="border:none;outline:none;background:transparent;min-width:100px;flex:1;font-size:13px;padding:2px 0" oninput="_shareDrop(this.value)" onfocus="_shareDrop(this.value)" onblur="setTimeout(()=>{const d=$(\'sharesDrop\');if(d)d.style.display=\'none\';},150)">'+
+      '</div>'+
+      '<div id="sharesDrop" style="display:none;position:absolute;z-index:999;background:var(--bg2);border:1px solid var(--border);border-radius:6px;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15);left:0;right:0;top:100%"></div>'+
+      '</div>';
+  }
   openA('Editar producto',
     '<div class="fg"><label>Nombre</label><input type="text" id="epNom" value="'+p.nombre+'"></div>'+
     '<div class="fg"><label>Proveedor asignado</label>'+
-      '<select id="epProv"><option value="" '+((!p.proveedorNombre)?'selected':'')+'>Sin asignar</option>'+provs+'</select></div>',
+      '<select id="epProv"><option value="" '+((!p.proveedorNombre)?'selected':'')+'>Sin asignar</option>'+provs+'</select></div>'+
+    sharesHTML,
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveEditProducto('+id+')">Guardar</button>'
   );
   setTimeout(()=>{const e=$('epNom');if(e){e.focus();e.select();}},100);
+  if(CU.rol!=='delivery')setTimeout(()=>_renderChips(),80);
 }
 async function saveEditProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
   const nom=gv('epNom').trim();if(!nom)return;
   p.nombre=nom;
   p.proveedorNombre=gv('epProv')||'';
+  if(_supaConnected&&CU.rol!=='delivery'){
+    const newIds=(window._sharesSel||[]).map(u=>u.id);
+    const{data:cur}=await _supa.from('catalog_shares').select('shared_with').eq('producto_id',id).eq('owner_id',CU.id);
+    const curIds=(cur||[]).map(r=>r.shared_with);
+    const toDel=curIds.filter(uid=>!newIds.includes(uid));
+    const toAdd=newIds.filter(uid=>!curIds.includes(uid));
+    if(toDel.length)await _supa.from('catalog_shares').delete().eq('producto_id',id).eq('owner_id',CU.id).in('shared_with',toDel);
+    if(toAdd.length)await _supa.from('catalog_shares').upsert(toAdd.map(uid=>({producto_id:id,owner_id:CU.id,shared_with:uid})),{onConflict:'producto_id,shared_with',ignoreDuplicates:true});
+    p._sharedWith=newIds;
+  }
   closeA();PAGES.catalogo();
   pushNotif('Producto actualizado','s');
   DL.saveProducto(p);
