@@ -1008,44 +1008,44 @@ const DL = {
 
   // CATALOGO
   async getCatalogo(){
-    if(_supaConnected){
-      let propios=[];
-      let compartidos=[];
-      if(CU&&CU.rol==='superadmin'){
-        // Superadmin ve todo sin filtro
-        const{data}=await _supa.from('catalogo').select('*').order('id');
-        propios=data||[];
-      }else if(CU){
-        // Propios: productos donde soy owner
-        const{data:dp}=await _supa.from('catalogo').select('*').eq('owner_user_id',CU.id).order('id');
-        propios=dp||[];
-        // Cargar con quiénes comparto cada producto propio (_sharedWith)
-        const{data:myShares}=await _supa.from('catalog_shares').select('producto_id,shared_with').eq('owner_id',CU.id);
-        if(myShares&&myShares.length){
-          propios=propios.map(p=>({...p,_sharedWith:(myShares.filter(s=>s.producto_id===p.id).map(s=>s.shared_with))}));
+    if(window.catalogStore.loading)return window.catalogStore.data;
+    if(window.catalogStore.loaded)return window.catalogStore.data;
+    window.catalogStore.loading=true;
+    try{
+      if(_supaConnected&&CU){
+        let propios=[];
+        let compartidos=[];
+        if(CU.rol==='superadmin'){
+          const{data}=await _supa.from('catalogo').select('*').order('id');
+          propios=data||[];
+        }else{
+          const{data:dp}=await _supa.from('catalogo').select('*').eq('owner_user_id',CU.id).order('id');
+          propios=dp||[];
+          const{data:myShares}=await _supa.from('catalog_shares').select('producto_id,shared_with').eq('owner_id',CU.id);
+          if(myShares&&myShares.length){
+            propios=propios.map(p=>({...p,_sharedWith:(myShares.filter(s=>s.producto_id===p.id).map(s=>s.shared_with))}));
+          }
+          const{data:ds}=await _supa.from('catalog_shares').select('producto_id').eq('shared_with',CU.id);
+          if(ds&&ds.length){
+            const ids=ds.map(r=>r.producto_id);
+            const{data:dc}=await _supa.from('catalogo').select('*').in('id',ids);
+            compartidos=(dc||[]).map(r=>({...r,_isShared:true}));
+          }
         }
-        // Compartidos: productos que alguien compartió con mi ID
-        const{data:ds}=await _supa.from('catalog_shares').select('producto_id').eq('shared_with',CU.id);
-        if(ds&&ds.length){
-          const ids=ds.map(r=>r.producto_id);
-          const{data:dc}=await _supa.from('catalogo').select('*').in('id',ids);
-          compartidos=(dc||[]).map(r=>({...r,_isShared:true}));
-        }
-      }
-      // Unir y deduplicar por id
-      const seen=new Set();
-      const all=[...propios,...compartidos].filter(r=>{if(seen.has(r.id))return false;seen.add(r.id);return true;});
-      if(all.length||CU?.rol!=='superadmin'){
-        const remote=all.map(r=>({...r,
+        const seen=new Set();
+        const all=[...propios,...compartidos].filter(r=>{if(seen.has(r.id))return false;seen.add(r.id);return true;});
+        const result=all.map(r=>({...r,
           presentaciones:typeof r.presentaciones==='string'?JSON.parse(r.presentaciones||'[]'):(r.presentaciones||[]),
           owner_id:r.owner_user_id||r.owner_id||null,
           proveedorNombre:r.proveedor_nombre||'',
         }));
-        this._ls('catalogo',remote);
-        return remote;
+        window.catalogStore.data=result;
+        window.catalogStore.loaded=true;
+        return result;
       }
-    }
-    return this._lg('catalogo')||DEF_CATALOGO;
+    }catch(e){console.warn('getCatalogo error:',e.message);}
+    finally{window.catalogStore.loading=false;}
+    return[];
   },
   async saveProducto(p){
     const cat=this._lg('catalogo')||[];
@@ -1064,6 +1064,7 @@ const DL = {
       const{error}=await _supa.from('catalogo').upsert(row,{onConflict:'id'});
       if(error){console.warn('saveProducto:',error.message);pushNotif('Error Supabase: '+error.message,'e');}
     }
+    window.catalogStore.loaded=false;
   },
   // Sincronizar catálogo local del admin hacia Supabase (migración inicial)
   async syncCatalogoToSupa(){
@@ -1088,6 +1089,7 @@ const DL = {
   async deleteProducto(id){
     if(_supaConnected)await _supa.from('catalogo').delete().eq('id',id);
     this._ls('catalogo',(this._lg('catalogo')||[]).filter(p=>p.id!==id));
+    window.catalogStore.loaded=false;
   },
 
   // CUPOS
@@ -2269,7 +2271,9 @@ let _ordersCache=[];let _usersCache=[];let _zonasCache=[];let _catalogoCache=[];
 let _shownMsgIds=new Set();
 let _pollInterval=null;
 let _ordersLayerInterval=null;
+window.catalogStore={loading:false,loaded:false,data:[]};
 async function refreshCache(){
+  window.catalogStore={loading:false,loaded:false,data:[]};
   _ordersCache=await DL.getOrders();
   _usersCache=DL._filterDemo(await DL.getUsers());
   _zonasCache=await DL.getZonas();
@@ -3542,30 +3546,27 @@ function _renderProductoCard(p,canEdit){
 }
 
 PAGES.catalogo=function(q='',vistaOwner=null){
+  if(window.catalogStore.loading){
+    $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Cargando...</div>';
+    return;
+  }
+  if(!window.catalogStore.loaded){
+    $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Cargando...</div>';
+    DL.getCatalogo().then(data=>{_catalogoCache=data;PAGES.catalogo(q,vistaOwner);});
+    return;
+  }
   const esAdmin=['admin','superadmin'].includes(CU.rol);
   const puedeEditar=CU.rol!=='delivery'&&CU.rol!=='cliente';
-  // Botones de acción
   let acciones='';
   if(puedeEditar)acciones+='<button class="btn btn-primary" onclick="openNuevoProducto()">+ Nuevo producto</button>';
   if(esAdmin)acciones='<button class="btn btn-secondary" onclick="PAGES.catalogo_todos()" style="margin-right:6px">📋 Ver todos los catálogos</button>'+acciones;
   $('tbActions').innerHTML=acciones;
 
-  // Productos visibles: admin ve los suyos por defecto, otros solo los suyos
   const misCatalogo=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id||p._isShared);
-  // Migrar productos sin owner al admin
-  _catalogoCache.forEach(p=>{if(!p.owner_id){p.owner_id=1;p.owner_nombre='Administrador';}});
-
   const filtrados=q?misCatalogo.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())):misCatalogo;
   const rolLabel={vendedor:'Tu precio (vendedor)',dropshipper:'Tu precio (dropshipper)',proveedor:'Tu precio (proveedor)',delivery:'Precio base',cliente:'Precio base'}[CU.rol]||'';
 
   if(!filtrados.length&&!q){
-    if(_supaConnected&&_catalogoCache.length===0&&!window._catalogLoading){
-      window._catalogLoading=true;
-      $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Cargando...</div>';
-      refreshCache().then(()=>{window._catalogLoading=false;PAGES.catalogo();});
-      return;
-    }
-    window._catalogLoading=false;
     $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">'+
       '<div style="font-size:44px;margin-bottom:14px">📦</div>'+
       '<div style="font-size:15px;font-weight:700;margin-bottom:6px">Tu catálogo está vacío</div>'+
