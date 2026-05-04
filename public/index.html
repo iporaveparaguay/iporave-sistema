@@ -3559,6 +3559,13 @@ PAGES.catalogo=function(q='',vistaOwner=null){
   const rolLabel={vendedor:'Tu precio (vendedor)',dropshipper:'Tu precio (dropshipper)',proveedor:'Tu precio (proveedor)',delivery:'Precio base',cliente:'Precio base'}[CU.rol]||'';
 
   if(!filtrados.length&&!q){
+    if(_supaConnected&&_catalogoCache.length===0&&!window._catalogLoading){
+      window._catalogLoading=true;
+      $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Cargando...</div>';
+      refreshCache().then(()=>{window._catalogLoading=false;PAGES.catalogo();});
+      return;
+    }
+    window._catalogLoading=false;
     $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">'+
       '<div style="font-size:44px;margin-bottom:14px">📦</div>'+
       '<div style="font-size:15px;font-weight:700;margin-bottom:6px">Tu catálogo está vacío</div>'+
