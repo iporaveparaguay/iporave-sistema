@@ -5637,70 +5637,122 @@ async function rechazarDispositivo(id){
 }
 
 /* ─── MAPA EN TIEMPO REAL ─────────────────────────────────────────────────── */
-const _ORDER_COLORS={new:'#ef4444',assigned:'#3b82f6',on_route:'#f97316',delivered:'#22c55e'};
+const _MAPA_COLORS={'Pendiente':'#f97316','Asignado':'#3b82f6','En camino':'#8b5cf6','Entregado':'#22c55e','Cancelado':'#ef4444','Devuelto':'#9ca3af'};
+window._geocodeCache={};
+window._mapInstance=null;
+window._mapMarkers={};
+window._mapaFiltro=null;
+
+async function _geocodeAddr(addr){
+  if(window._geocodeCache[addr])return window._geocodeCache[addr];
+  try{
+    const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(addr)+'&limit=1',{headers:{'Accept-Language':'es'}});
+    const d=await r.json();
+    if(d.length){const c=[parseFloat(d[0].lat),parseFloat(d[0].lon)];window._geocodeCache[addr]=c;return c;}
+  }catch(e){}
+  return null;
+}
 
 function _makeOrderIcon(status){
-  const c=_ORDER_COLORS[status]||'#6b7280';
+  const c=_MAPA_COLORS[status]||'#6b7280';
   return L.divIcon({
     html:'<div style="background:'+c+';width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 6px '+c+'"></div>',
     iconSize:[14,14],className:''
   });
 }
 
-async function initOrdersLayer(map){
-  const markersById={};
+function _mapaUpdateContadores(){
+  const counts={};
+  _ordersCache.forEach(o=>{counts[o.estado]=(counts[o.estado]||0)+1;});
+  const el=$('mapaContadores');if(!el)return;
+  el.innerHTML=Object.entries(_MAPA_COLORS).map(([estado,color])=>{
+    const n=counts[estado]||0;if(!n)return'';
+    const active=window._mapaFiltro===estado;
+    return'<button onclick="window._mapaFiltro='+(active?'null':JSON.stringify(estado))+';_mapaCargar(window._mapInstance)" '+
+      'style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:2px solid '+color+
+      ';background:'+(active?color:'transparent')+';color:'+(active?'#fff':color)+
+      ';font-size:12px;font-weight:700;cursor:pointer;transition:all .2s">'+
+      '<span style="width:8px;height:8px;background:'+color+';border-radius:50%;display:inline-block"></span>'+
+      estado+' ('+n+')</button>';
+  }).join('');
+}
 
-  async function loadOrders(){
-    if(!document.getElementById('ordersMap')){
-      clearInterval(_ordersLayerInterval);
-      _ordersLayerInterval=null;
-      return;
-    }
-    try{
-      const res=await fetch(
-        'https://iporave-api.iporaveparaguay.workers.dev/api/orders/active',
-        {headers:{Authorization:'Bearer '+_sessionToken}}
-      );
-      if(!res.ok)return;
-      const {orders}=await res.json();
-      console.log('ORDERS LOADED:',orders.length);
+async function _mapaCargar(map){
+  if(!map||!$('ordersMap'))return;
+  Object.values(window._mapMarkers).forEach(m=>map.removeLayer(m));
+  window._mapMarkers={};
+  _mapaUpdateContadores();
+  let orders=_ordersCache.filter(o=>o.estado!=='Cancelado'&&o.estado!=='Devuelto');
+  if(window._mapaFiltro)orders=orders.filter(o=>o.estado===window._mapaFiltro);
+  const bounds=[];
 
-      // Limpiar markers anteriores
-      Object.values(markersById).forEach(m=>map.removeLayer(m));
-      Object.keys(markersById).forEach(k=>delete markersById[k]);
-
-      // Crear marker por pedido
-      for(const o of orders){
-        if(!o.lat||!o.lng)continue;
-        const c=_ORDER_COLORS[o.status]||'#6b7280';
-        const m=L.marker([o.lat,o.lng],{icon:_makeOrderIcon(o.status)})
-          .bindPopup(
-            '<b>'+(o.customer_phone||'—')+'</b><br>'+
-            (o.address||'—')+'<br>'+
-            (o.city||'—')+'<br>'+
-            '<span style="color:'+c+'">● '+o.status+'</span>'
-          )
-          .addTo(map);
-        markersById[o.id]=m;
-      }
-    }catch(err){
-      console.error('ORDERS LOAD ERROR:',err.message);
-    }
+  // Primero mostrar los que tienen GPS (inmediato)
+  for(const o of orders){
+    if(!o.gpsLat||!o.gpsLng)continue;
+    const lat=parseFloat(o.gpsLat),lng=parseFloat(o.gpsLng);
+    _mapaAddMarker(map,o,lat,lng,true);
+    bounds.push([lat,lng]);
   }
+  if(bounds.length)map.fitBounds(bounds,{padding:[40,40],maxZoom:14});
 
-  await loadOrders();
+  // Luego geocodificar los que no tienen GPS (async, throttled)
+  for(const o of orders){
+    if(o.gpsLat&&o.gpsLng)continue;
+    if(!$('ordersMap'))break;
+    const z=getZona(o.zona);
+    const addr=(o.direccion||'')+' '+(z.nombre||'')+' Asuncion Paraguay';
+    const coords=await _geocodeAddr(addr);
+    if(coords){_mapaAddMarker(map,o,coords[0],coords[1],false);}
+    await new Promise(r=>setTimeout(r,1100));
+  }
+}
+
+function _mapaAddMarker(map,o,lat,lng,exact){
+  const color=_MAPA_COLORS[o.estado]||'#6b7280';
+  const sz=exact?18:14;
+  const border=exact?'3px solid #fff':'2px solid #fff';
+  const icon=L.divIcon({
+    html:'<div style="background:'+color+';width:'+sz+'px;height:'+sz+'px;border-radius:50%;border:'+border+
+      ';box-shadow:0 2px 8px '+color+'99;'+(exact?'':'opacity:.85;')+'" title="'+o.cliente+'"></div>',
+    iconSize:[sz,sz],className:''
+  });
+  const wa=o.telefono?'<a href="https://wa.me/595'+o.telefono.replace(/\D/g,'')+'" target="_blank" style="background:#25D366;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;text-decoration:none;font-weight:700">💬 WA</a>':'';
+  const popup=
+    '<div style="min-width:200px;font-family:Arial,sans-serif;font-size:13px">'+
+    '<div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:5px">'+o.cliente+'</div>'+
+    '<div style="color:#475569;margin-bottom:2px">📦 '+o.producto+' × '+o.qty+'</div>'+
+    '<div style="color:#475569;margin-bottom:2px">📍 '+(o.direccion||'—')+'</div>'+
+    '<div style="color:#475569;margin-bottom:8px">📞 '+(o.telefono||'—')+'</div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
+    '<span style="background:'+color+';color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px">'+o.estado+'</span>'+
+    '<button onclick="navegarPedido('+o.id+')" style="background:#ea4335;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">📍 Navegar</button>'+
+    wa+
+    '</div>'+
+    (exact?'':'<div style="font-size:10px;color:#94a3b8;margin-top:6px">⚠ Posición aproximada por dirección</div>')+
+    '</div>';
+  const m=L.marker([lat,lng],{icon}).bindPopup(popup).addTo(map);
+  window._mapMarkers[o.id]=m;
+}
+
+async function initOrdersLayer(map){
+  await _mapaCargar(map);
   if(_ordersLayerInterval)clearInterval(_ordersLayerInterval);
-  _ordersLayerInterval=setInterval(loadOrders,12000);
+  _ordersLayerInterval=setInterval(()=>_mapaCargar(map),60000);
 }
 
 PAGES.mapa=function(){
   if(_ordersLayerInterval){clearInterval(_ordersLayerInterval);_ordersLayerInterval=null;}
-  $('ca').innerHTML='<div id="ordersMap" style="height:calc(100vh - 120px);border-radius:8px;overflow:hidden"></div>';
+  window._mapaFiltro=null;window._mapMarkers={};
+  $('tbTitle').textContent='Mapa de Pedidos';
+  $('tbActions').innerHTML='<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄 Actualizar</button>';
+  $('ca').innerHTML=
+    '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>'+
+    '<div id="ordersMap" style="height:calc(100vh - 190px);border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
+    '<div style="margin-top:6px;font-size:11px;color:var(--text3)">🔵 Pin grande = GPS confirmado · ⚪ Pin pequeño = dirección aproximada · Se actualiza cada 60s</div>';
   setTimeout(function(){
-    const map=L.map('ordersMap').setView([-23.4425,-58.44],7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      attribution:'© OpenStreetMap',maxZoom:19
-    }).addTo(map);
+    const map=L.map('ordersMap').setView([-25.2867,-57.6362],12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
+    window._mapInstance=map;
     initOrdersLayer(map);
   },50);
 };
