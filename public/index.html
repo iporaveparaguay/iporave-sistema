@@ -17,8 +17,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <!-- Leaflet — mapas gratis (reemplaza Google Maps) -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet"/>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -146,10 +146,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mbody{padding:22px;}.mfoot{padding:13px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center;position:sticky;bottom:0;background:var(--bg2);}
 .mfoot-alert{width:100%;margin-bottom:2px;}
 /* MAPA LABELS */
-.map-label{background:rgba(255,255,255,.93)!important;border:none!important;border-radius:5px!important;box-shadow:0 1px 5px rgba(0,0,0,.25)!important;color:#0f172a!important;font-size:10px!important;font-weight:800!important;padding:2px 6px!important;white-space:nowrap!important;}
-.map-label::before{display:none!important;}
-.map-label-dlv{background:rgba(29,78,216,.92)!important;border:none!important;border-radius:5px!important;box-shadow:0 1px 5px rgba(0,0,0,.3)!important;color:#fff!important;font-size:10px!important;font-weight:800!important;padding:2px 6px!important;white-space:nowrap!important;}
-.map-label-dlv::before{display:none!important;}
+.mapboxgl-popup-content{background:#1e293b!important;color:#e2e8f0!important;border-radius:10px!important;padding:12px 14px!important;box-shadow:0 4px 20px rgba(0,0,0,.5)!important;border:1px solid rgba(255,255,255,.08)!important;}
+.mapboxgl-popup-close-button{color:#94a3b8!important;font-size:16px!important;top:6px!important;right:8px!important;}
+.mapboxgl-popup-tip{border-top-color:#1e293b!important;border-bottom-color:#1e293b!important;}
+.mapboxgl-ctrl-attrib{font-size:9px!important;}
 /* GPS */
 .gpsw{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;margin-bottom:12px;}
 .gpss{display:flex;align-items:center;gap:8px;font-size:13px;}
@@ -634,6 +634,7 @@ async function loadServerConfig(token){
     const cfg=await r.json();
     if(cfg.supabaseUrl){DEF_CONFIG.supabaseUrl=cfg.supabaseUrl;}
     if(cfg.supabaseKey){DEF_CONFIG.supabaseKey=cfg.supabaseKey;}
+    if(cfg.mapboxToken){mapboxgl.accessToken=cfg.mapboxToken;}
     // Solo guardar en localStorage si el servidor devolvió claves (superadmin)
     if(cfg.supabaseUrl||cfg.supabaseKey){
       try{
@@ -1467,27 +1468,28 @@ async function showDeliveryMap(containerId,orderAddr,gpsLat,gpsLng){
     const geoData=await geo.json();
     let destLat=-25.2867,destLng=-57.647;
     if(geoData.length){destLat=parseFloat(geoData[0].lat);destLng=parseFloat(geoData[0].lon);}
-    const map=L.map(container,{zoomControl:true}).setView([destLat,destLng],14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
-    const redIcon=L.divIcon({html:'<div style="background:#ef4444;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 6px #ef4444"></div>',iconSize:[14,14],className:''});
-    const blueIcon=L.divIcon({html:'<div style="background:#38bdf8;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 6px #38bdf8"></div>',iconSize:[14,14],className:''});
-    L.marker([destLat,destLng],{icon:redIcon}).addTo(map).bindPopup('📦 Entrega: '+orderAddr);
-    if(gpsLat&&gpsLng){
-      const dlvLat=parseFloat(gpsLat),dlvLng=parseFloat(gpsLng);
-      L.marker([dlvLat,dlvLng],{icon:blueIcon}).addTo(map).bindPopup('🛵 Delivery');
-      map.fitBounds([[dlvLat,dlvLng],[destLat,destLng]],{padding:[20,20]});
-      try{
-        const rr=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/route',{
-          method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
-          body:JSON.stringify({fromLat:dlvLat,fromLng:dlvLng,toLat:destLat,toLng:destLng})
-        });
-        if(rr.ok){const rd=await rr.json();if(rd.ok&&rd.coords){L.polyline(rd.coords,{color:'#f5a623',weight:4}).addTo(map);}else{throw 0;}}else{throw 0;}
-      }catch(_){
-        L.polyline([[dlvLat,dlvLng],[destLat,destLng]],{color:'#f5a623',weight:3,dashArray:'6,8'}).addTo(map);
+    const map=new mapboxgl.Map({container,style:'mapbox://styles/mapbox/dark-v11',center:[destLng,destLat],zoom:14});
+    map.on('load',function(){
+      const mkR=document.createElement('div');mkR.style.cssText='background:#ef4444;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px #ef4444';
+      new mapboxgl.Marker(mkR).setLngLat([destLng,destLat]).setPopup(new mapboxgl.Popup({offset:10}).setHTML('📦 Entrega: '+orderAddr)).addTo(map);
+      if(gpsLat&&gpsLng){
+        const dlvLat=parseFloat(gpsLat),dlvLng=parseFloat(gpsLng);
+        const mkB=document.createElement('div');mkB.style.cssText='background:#38bdf8;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px #38bdf8';
+        new mapboxgl.Marker(mkB).setLngLat([dlvLng,dlvLat]).setPopup(new mapboxgl.Popup({offset:10}).setHTML('🛵 Delivery')).addTo(map);
+        map.fitBounds([[Math.min(dlvLng,destLng),Math.min(dlvLat,destLat)],[Math.max(dlvLng,destLng),Math.max(dlvLat,destLat)]],{padding:30});
+        (async()=>{
+          let coords=null;
+          try{
+            const rr=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/route',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},body:JSON.stringify({fromLat:dlvLat,fromLng:dlvLng,toLat:destLat,toLng:destLng})});
+            if(rr.ok){const rd=await rr.json();if(rd.ok&&rd.coords)coords=rd.coords.map(([a,b])=>[b,a]);}
+          }catch(_){}
+          if(!coords)coords=[[dlvLng,dlvLat],[destLng,destLat]];
+          map.addSource('dlvRoute',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:coords}}});
+          map.addLayer({id:'dlvRoute',type:'line',source:'dlvRoute',paint:{'line-color':'#f5a623','line-width':3,'line-dasharray':coords.length===2?[4,3]:[1]}});
+        })();
       }
-    }
-  }catch(e){container.innerHTML='<div class="map-placeholder"><a href="https://www.openstreetmap.org/search?query='+encodeURIComponent(orderAddr)+'" target="_blank" style="color:var(--cyan)">Ver en OpenStreetMap ↗</a></div>';}
+    });
+  }catch(e){container.innerHTML='<div style="padding:20px;text-align:center"><a href="https://www.google.com/maps/search/'+encodeURIComponent(orderAddr+' Paraguay')+'" target="_blank" style="color:var(--cyan)">Ver en Google Maps ↗</a></div>';}
 }
 
 /* ══════════════════════════════════════════════════
@@ -5938,20 +5940,25 @@ function _trackUpdateUI(data){
   if(!_trackMapInst)return;
   const dlv=data.delivery;
   if(dlv&&dlv.lat&&dlv.lng){
-    const ll=L.latLng(parseFloat(dlv.lat),parseFloat(dlv.lng));
-    if(_trackDlvMarker){_trackDlvMarker.setLatLng(ll);}
+    const lngLat=[parseFloat(dlv.lng),parseFloat(dlv.lat)];
+    if(_trackDlvMarker){_trackDlvMarker.setLngLat(lngLat);}
     else{
-      const ic=L.divIcon({html:'<div style="background:#1d4ed8;color:#fff;width:46px;height:46px;border-radius:50%;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:22px">🛵</div>',iconSize:[46,46],iconAnchor:[23,23],className:''});
-      _trackDlvMarker=L.marker(ll,{icon:ic}).bindPopup('<b>'+dlv.nombre+'</b><br>Delivery en camino').addTo(_trackMapInst);
+      const ic=document.createElement('div');
+      ic.innerHTML='<div style="background:#1d4ed8;color:#fff;width:46px;height:46px;border-radius:50%;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:22px">🛵</div>';
+      _trackDlvMarker=new mapboxgl.Marker(ic.firstChild).setLngLat(lngLat).setPopup(new mapboxgl.Popup({offset:28}).setHTML('<b>'+dlv.nombre+'</b><br>Delivery en camino')).addTo(_trackMapInst);
     }
-    if(!_trackDestMarker)_trackMapInst.setView(ll,15,{animate:true});
+    if(!_trackDestMarker)_trackMapInst.flyTo({center:lngLat,zoom:15});
   }
   if(data.destLat&&data.destLng&&!_trackDestMarker){
-    const dl=L.latLng(parseFloat(data.destLat),parseFloat(data.destLng));
-    const dic=L.divIcon({html:'<div style="background:#ef4444;color:#fff;width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:18px">🏠</div>',iconSize:[38,38],iconAnchor:[19,19],className:''});
-    _trackDestMarker=L.marker(dl,{icon:dic}).bindPopup('📍 Dirección de entrega').addTo(_trackMapInst);
-    if(_trackDlvMarker)_trackMapInst.fitBounds([_trackDlvMarker.getLatLng(),dl],{padding:[40,40],maxZoom:15});
-    else _trackMapInst.setView(dl,15);
+    const destLngLat=[parseFloat(data.destLng),parseFloat(data.destLat)];
+    const ic=document.createElement('div');
+    ic.innerHTML='<div style="background:#ef4444;color:#fff;width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:18px">🏠</div>';
+    _trackDestMarker=new mapboxgl.Marker(ic.firstChild).setLngLat(destLngLat).setPopup(new mapboxgl.Popup({offset:24}).setHTML('📍 Dirección de entrega')).addTo(_trackMapInst);
+    if(_trackDlvMarker){
+      const bb=new mapboxgl.LngLatBounds();
+      bb.extend(_trackDlvMarker.getLngLat());bb.extend(destLngLat);
+      _trackMapInst.fitBounds(bb,{padding:60,maxZoom:15,animate:true});
+    } else {_trackMapInst.flyTo({center:destLngLat,zoom:15});}
   }
 }
 
@@ -5981,25 +5988,34 @@ async function _initTrackingPublico(){
     '<div style="text-align:center;margin-top:14px;font-size:11px;color:#94a3b8">Se actualiza automáticamente cada 15 segundos</div>';
   document.body.appendChild(wrap);
 
-  // Inicializar mapa
+  // Cargar token Mapbox (página pública, sin login)
+  await loadServerConfig(null);
+  // Inicializar mapa Mapbox
   await new Promise(r=>setTimeout(r,100));
-  _trackMapInst=L.map('trackMap',{zoomControl:true}).setView([-23.5,-58.5],7);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(_trackMapInst);
+  _trackMapInst=new mapboxgl.Map({
+    container:'trackMap',
+    style:'mapbox://styles/mapbox/dark-v11',
+    center:[-58.5,-23.5],
+    zoom:7,
+    attributionControl:false
+  });
+  _trackMapInst.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-left');
 
-  // Primera carga
-  const data=await _fetchTrackData(trackId);
-  if(data&&!data.error){
-    _trackUpdateUI(data);
-  } else {
-    const c=$('trackCard');
-    if(c)c.innerHTML='<div style="text-align:center;padding:20px;color:#ef4444"><div style="font-size:28px">❌</div><div style="margin-top:8px;font-weight:700">Pedido no encontrado</div><div style="font-size:13px;color:#64748b;margin-top:4px">Revisá el enlace o contactá a Iporãve</div></div>';
-  }
-
-  // Refresco automático cada 15s
-  _trackRefreshTimer=setInterval(async()=>{
-    const d=await _fetchTrackData(trackId);
-    if(d&&!d.error)_trackUpdateUI(d);
-  },15000);
+  _trackMapInst.on('load',async function(){
+    // Primera carga
+    const data=await _fetchTrackData(trackId);
+    if(data&&!data.error){
+      _trackUpdateUI(data);
+    } else {
+      const c=$('trackCard');
+      if(c)c.innerHTML='<div style="text-align:center;padding:20px;color:#ef4444"><div style="font-size:28px">❌</div><div style="margin-top:8px;font-weight:700">Pedido no encontrado</div><div style="font-size:13px;color:#64748b;margin-top:4px">Revisá el enlace o contactá a Iporãve</div></div>';
+    }
+    // Refresco automático cada 15s
+    _trackRefreshTimer=setInterval(async()=>{
+      const d=await _fetchTrackData(trackId);
+      if(d&&!d.error)_trackUpdateUI(d);
+    },15000);
+  });
 
   return true;
 }
@@ -6205,13 +6221,7 @@ async function _geocodeAddr(addr){
   return null;
 }
 
-function _makeOrderIcon(status){
-  const c=_MAPA_COLORS[status]||'#6b7280';
-  return L.divIcon({
-    html:'<div style="background:'+c+';width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 6px '+c+'"></div>',
-    iconSize:[14,14],className:''
-  });
-}
+
 
 function _mapaUpdateContadores(){
   const counts={};
@@ -6231,7 +6241,7 @@ function _mapaUpdateContadores(){
 
 async function _mapaCargar(map){
   if(!map||!$('ordersMap'))return;
-  Object.values(window._mapMarkers).forEach(m=>map.removeLayer(m));
+  Object.values(window._mapMarkers).forEach(m=>m.remove());
   window._mapMarkers={};
   _mapaUpdateContadores();
   let orders=_ordersCache.filter(o=>o.estado!=='Cancelado'&&o.estado!=='Devuelto');
@@ -6239,19 +6249,18 @@ async function _mapaCargar(map){
   if(window._mapaFiltroZona)orders=orders.filter(o=>String(o.zona)===String(window._mapaFiltroZona));
   if(window._mapaFiltroVend)orders=orders.filter(o=>String(o.vendedorId)===String(window._mapaFiltroVend));
   if(window._mapaFiltroDelivery)orders=orders.filter(o=>String(o.deliveryId)===String(window._mapaFiltroDelivery));
-  const bounds=[];
+  const bbox=new mapboxgl.LngLatBounds();
+  let hasBounds=false;
 
-  // Primero mostrar los que tienen GPS (inmediato)
   for(const o of orders){
     if(!o.gpsLat||!o.gpsLng)continue;
     const lat=parseFloat(o.gpsLat),lng=parseFloat(o.gpsLng);
     _mapaAddMarker(map,o,lat,lng,true);
-    bounds.push([lat,lng]);
+    bbox.extend([lng,lat]);hasBounds=true;
   }
-  if(bounds.length)map.fitBounds(bounds,{padding:[40,40],maxZoom:14});
-  else if(!window._mapaFiltroZona)map.setView([-23.5,-58.5],7);
+  if(hasBounds)map.fitBounds(bbox,{padding:60,maxZoom:14,animate:true});
+  else if(!window._mapaFiltroZona)map.flyTo({center:[-58.5,-23.5],zoom:7});
 
-  // Luego geocodificar los que no tienen GPS (async, throttled)
   for(const o of orders){
     if(o.gpsLat&&o.gpsLng)continue;
     if(!$('ordersMap'))break;
@@ -6260,56 +6269,49 @@ async function _mapaCargar(map){
     const coords=await _geocodeAddr(addr);
     if(coords){
       _mapaAddMarker(map,o,coords[0],coords[1],false);
-      bounds.push(coords);
+      bbox.extend([coords[1],coords[0]]);hasBounds=true;
     }
     await new Promise(r=>setTimeout(r,1100));
   }
-  if(bounds.length>1)map.fitBounds(bounds,{padding:[50,50],maxZoom:13});
+  if(hasBounds)map.fitBounds(bbox,{padding:60,maxZoom:13,animate:true});
 }
 
 function _mapaAddMarker(map,o,lat,lng,exact){
   const color=_MAPA_COLORS[o.estado]||'#6b7280';
   const abbr=(o.proveedor||'IPRV').substring(0,4).toUpperCase();
   const num='#'+String(o.id).padStart(3,'0');
-  const opacity=exact?1:.82;
-  const icon=L.divIcon({
-    html:'<div style="display:flex;flex-direction:column;align-items:center;opacity:'+opacity+'">'+
-      '<div style="background:'+color+';color:#fff;width:44px;height:44px;border-radius:50%;'+
-      'border:3px solid rgba(255,255,255,.95);box-shadow:0 3px 12px rgba(0,0,0,.4),0 0 0 2px '+color+';'+
-      'display:flex;flex-direction:column;align-items:center;justify-content:center;'+
-      'font-weight:900;line-height:1.15;text-align:center">'+
-      '<span style="font-size:9px">'+num+'</span>'+
-      '<span style="font-size:8.5px">'+abbr+'</span>'+
-      '</div>'+
-      '</div>',
-    iconSize:[44,44],iconAnchor:[22,22],popupAnchor:[0,-26],className:''
-  });
+  const opacity=exact?1:.8;
+  const shortName=(o.cliente||'').length>18?(o.cliente||'').substring(0,17)+'…':(o.cliente||'');
+  const el=document.createElement('div');
+  el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer;opacity:'+opacity;
+  el.innerHTML=
+    '<div style="font-size:10px;font-weight:800;color:#fff;background:rgba(0,0,0,.65);padding:2px 6px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px);letter-spacing:.2px">'+shortName+'</div>'+
+    '<div style="background:'+color+';color:#fff;width:44px;height:44px;border-radius:50%;'+
+    'border:3px solid rgba(255,255,255,.95);box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 2px '+color+';'+
+    'display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;line-height:1.15;text-align:center">'+
+    '<span style="font-size:9px">'+num+'</span><span style="font-size:8.5px">'+abbr+'</span>'+
+    '</div>';
   const wa=o.telefono?'<a href="https://wa.me/595'+o.telefono.replace(/\D/g,'')+'" target="_blank" style="background:#25D366;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;text-decoration:none;font-weight:700">💬 WA</a>':'';
   const dlvNombre=(_usersCache.find(u=>u.id===o.deliveryId)||{}).nombre||'Sin asignar';
   const vendNombre=(_usersCache.find(u=>u.id===o.vendedorId)||{}).nombre||'—';
-  const popup=
-    '<div style="min-width:210px;font-family:Arial,sans-serif;font-size:13px">'+
-    '<div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:4px">'+o.cliente+'</div>'+
-    '<div style="color:#475569;margin-bottom:2px">📦 '+o.producto+' × '+o.qty+'</div>'+
-    '<div style="color:#475569;margin-bottom:2px">🏭 '+( o.proveedor||'—')+'</div>'+
-    '<div style="color:#475569;margin-bottom:2px">📍 '+(o.direccion||'—')+'</div>'+
-    '<div style="color:#475569;margin-bottom:2px">📞 '+(o.telefono||'—')+'</div>'+
-    '<div style="color:#475569;margin-bottom:6px">🛵 '+dlvNombre+' · 👤 '+vendNombre+'</div>'+
+  const popupHtml=
+    '<div style="min-width:210px;font-family:Arial,sans-serif;font-size:13px;color:#e2e8f0">'+
+    '<div style="font-weight:800;font-size:14px;color:#f1f5f9;margin-bottom:4px">'+o.cliente+'</div>'+
+    '<div style="color:#94a3b8;margin-bottom:2px">📦 '+o.producto+' × '+o.qty+'</div>'+
+    '<div style="color:#94a3b8;margin-bottom:2px">🏭 '+(o.proveedor||'—')+'</div>'+
+    '<div style="color:#94a3b8;margin-bottom:2px">📍 '+(o.direccion||'—')+'</div>'+
+    '<div style="color:#94a3b8;margin-bottom:2px">📞 '+(o.telefono||'—')+'</div>'+
+    '<div style="color:#94a3b8;margin-bottom:6px">🛵 '+dlvNombre+' · 👤 '+vendNombre+'</div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
     '<span style="background:'+color+';color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px">'+o.estado+'</span>'+
     (CU.rol==='delivery'
       ?'<button onclick="navegarPedido('+o.id+')" style="background:#ea4335;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">📍 Navegar</button>'
       :(o.deliveryId?'<button onclick="verDeliveryEnMapa('+o.deliveryId+')" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">🛵 Seguir delivery</button>':'')
-    )+
-    wa+
+    )+wa+
     '</div>'+
-    (exact?'':'<div style="font-size:10px;color:#94a3b8;margin-top:6px">⚠ Posición aproximada por dirección</div>')+
+    (exact?'':'<div style="font-size:10px;color:#64748b;margin-top:6px">⚠ Posición aproximada por dirección</div>')+
     '</div>';
-  const shortName=(o.cliente||'').length>18?(o.cliente||'').substring(0,17)+'…':(o.cliente||'');
-  const m=L.marker([lat,lng],{icon})
-    .bindTooltip(shortName,{permanent:true,direction:'top',offset:[0,-26],className:'map-label'})
-    .bindPopup(popup)
-    .addTo(map);
+  const m=new mapboxgl.Marker(el).setLngLat([lng,lat]).setPopup(new mapboxgl.Popup({offset:30,maxWidth:'260px'}).setHTML(popupHtml)).addTo(map);
   window._mapMarkers[o.id]=m;
 }
 
@@ -6339,7 +6341,7 @@ function _mapaRenderSelects(){
 }
 
 function _mapaCargarDlvs(map){
-  Object.values(window._dlvMapMarkers).forEach(m=>map.removeLayer(m));
+  Object.values(window._dlvMapMarkers).forEach(m=>m.remove());
   window._dlvMapMarkers={};
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
   for(const dlv of dlvs){
@@ -6347,17 +6349,13 @@ function _mapaCargarDlvs(map){
     if(!recent.length)continue;
     const o=recent[0];
     const lat=parseFloat(o.gpsLat),lng=parseFloat(o.gpsLng);
-    const icon=L.divIcon({
-      html:'<div style="background:#1d4ed8;color:#fff;width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.95);'+
-        'box-shadow:0 3px 12px rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;line-height:1">🛵</div>',
-      iconSize:[42,42],iconAnchor:[21,21],popupAnchor:[0,-25],className:''
-    });
-    const m=L.marker([lat,lng],{icon})
-      .bindTooltip(dlv.nombre,{permanent:true,direction:'top',offset:[0,-25],className:'map-label-dlv'})
-      .bindPopup('<div style="font-family:Arial;font-size:13px"><b>🛵 '+dlv.nombre+'</b><br>Último pedido: <b>#'+o.id+'</b><br>'+
-        '<span style="color:#475569">'+o.direccion+'</span><br>'+
-        '<span style="color:#94a3b8;font-size:11px">GPS de última actualización</span></div>')
-      .addTo(map);
+    const el=document.createElement('div');
+    el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer';
+    el.innerHTML=
+      '<div style="font-size:10px;font-weight:800;color:#fff;background:rgba(29,78,216,.88);padding:2px 7px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px)">'+dlv.nombre+'</div>'+
+      '<div style="background:#1d4ed8;color:#fff;width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.95);box-shadow:0 3px 14px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:20px">🛵</div>';
+    const popupHtml='<div style="font-family:Arial;font-size:13px;color:#e2e8f0"><b style="color:#f1f5f9">🛵 '+dlv.nombre+'</b><br>Último pedido: <b>#'+o.id+'</b><br><span style="color:#94a3b8">'+o.direccion+'</span><br><span style="color:#64748b;font-size:11px">GPS de última actualización</span></div>';
+    const m=new mapboxgl.Marker(el).setLngLat([lng,lat]).setPopup(new mapboxgl.Popup({offset:28}).setHTML(popupHtml)).addTo(map);
     window._dlvMapMarkers[dlv.id]=m;
   }
 }
@@ -6375,7 +6373,7 @@ async function _gpsSendPos(lat,lng){
       body:JSON.stringify({lat,lng})
     });
     if(window._mapInstance&&window._dlvMapMarkers[CU.id]){
-      window._dlvMapMarkers[CU.id].setLatLng(L.latLng(lat,lng));
+      window._dlvMapMarkers[CU.id].setLngLat([lng,lat]);
     }
   }catch(e){console.warn('GPS send:',e.message);}
 }
@@ -6420,8 +6418,8 @@ function verDeliveryEnMapa(deliveryId){
   // Hacer zoom al delivery en el mapa
   const m=window._dlvMapMarkers[deliveryId];
   if(m){
-    window._mapInstance.setView(m.getLatLng(),15,{animate:true});
-    setTimeout(()=>m.openPopup(),400);
+    window._mapInstance.flyTo({center:m.getLngLat(),zoom:15});
+    setTimeout(()=>m.togglePopup(),600);
     pushNotif('Mostrando posición de '+dlv.nombre,'s');
   } else {
     pushNotif(dlv.nombre+' no tiene GPS registrado aún','w');
@@ -6433,7 +6431,7 @@ function _mapaToggleDlvs(){
   const btn=$('btnMapaDlvs');
   if(btn){btn.style.background=window._mapaShowDlvs?'#1d4ed8':'';btn.style.color=window._mapaShowDlvs?'#fff':'';}
   if(window._mapaShowDlvs)_mapaCargarDlvs(window._mapInstance);
-  else{Object.values(window._dlvMapMarkers).forEach(m=>window._mapInstance.removeLayer(m));window._dlvMapMarkers={};}
+  else{Object.values(window._dlvMapMarkers).forEach(m=>m.remove());window._dlvMapMarkers={};}
 }
 
 PAGES.mapa=function(){
@@ -6460,11 +6458,20 @@ PAGES.mapa=function(){
     '</div>'+
     '<div style="margin-top:5px;font-size:11px;color:var(--text3)">🔴 Pin = GPS confirmado · ⚪ semitransparente = dirección aproximada · Se actualiza cada 60s</div>';
   setTimeout(function(){
-    const map=L.map('ordersMap').setView([-23.5,-58.5],7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
+    const map=new mapboxgl.Map({
+      container:'ordersMap',
+      style:'mapbox://styles/mapbox/dark-v11',
+      center:[-58.5,-23.5],
+      zoom:7,
+      attributionControl:false
+    });
+    map.addControl(new mapboxgl.AttributionControl({compact:true}));
+    map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-left');
     window._mapInstance=map;
-    _mapaRenderSelects();
-    initOrdersLayer(map);
+    map.on('load',function(){
+      _mapaRenderSelects();
+      initOrdersLayer(map);
+    });
   },50);
 };
 

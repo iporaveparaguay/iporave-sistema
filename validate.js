@@ -64,7 +64,7 @@ if (!html.endsWith('</html>') && !html.trimEnd().endsWith('</html>')) {
 }
 
 // 5. Verificar CDN críticos presentes
-const cdns = ['supabase', 'leaflet'];
+const cdns = ['supabase', 'mapbox-gl'];
 cdns.forEach(cdn => {
   if (html.includes(cdn)) ok('CDN ' + cdn + ' presente');
   else fail('CDN ' + cdn + ' FALTA');
