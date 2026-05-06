@@ -2563,6 +2563,7 @@ function renderTable(orders,title,showActs){
       (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button class="btn btn-success btn-sm" onclick="dlvModal('+o.id+')">Actualizar</button>':'')+
       '<button class="btn btn-secondary btn-sm" onclick="openBoleta('+o.id+')">IVA</button>'+
       '<button class="btn btn-secondary btn-sm" onclick="imprimirGuia('+o.id+')" title="Guía de entrega">🖨️</button>'+
+      '<button class="btn btn-secondary btn-sm" onclick="imprimirTicket('+o.id+')" title="Ticket de envío">🏷️</button>'+
       '<button class="btn btn-blue btn-sm" onclick="waMenu('+o.id+')">WA</button>'+
       (canEdit?'<span style="display:inline-block;width:10px"></span><button class="btn btn-danger btn-sm" onclick="confirmDeleteOrder('+o.id+')" title="Eliminar pedido">✕</button>':'')+
     '</div></td>':'')+'</tr>'
@@ -4678,6 +4679,159 @@ function guardarPerfilEmpresa(){
   });
   closeA();
   pushNotif('Datos de empresa guardados','s');
+}
+
+/* ─── TICKET DE ENVÍO (etiqueta pegable, editable antes de imprimir) ─── */
+function imprimirTicket(id){
+  const o=_ordersCache.find(x=>x.id===id);if(!o){pushNotif('Pedido no encontrado','e');return;}
+  const emp=_getEmpresa();
+  const z=getZona(o.zona);
+  const delivery=_usersCache.find(u=>u.id===o.deliveryId)||{nombre:'Sin asignar'};
+  // QR: si tiene GPS lo abre en Google Maps, si no muestra el ID del pedido
+  const qrData=o.gpsLat&&o.gpsLng
+    ?'https://www.google.com/maps?q='+o.gpsLat+','+o.gpsLng
+    :'Pedido%20%23'+o.id+'%20%7C%20'+encodeURIComponent(o.cliente||'');
+  const qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+qrData;
+  const logoHtml=emp.logo
+    ?'<img src="'+emp.logo+'" style="height:40px;object-fit:contain">'
+    :'<span style="font-size:18px;font-weight:900;color:#f5a623;letter-spacing:2px">'+(emp.nombre||'IPORÃVE')+'</span>';
+
+  openA('🏷️ Ticket de envío — Pedido #'+o.id,
+    '<div style="background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:14px">'+
+      '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">Editá los campos antes de imprimir — hacé clic en cualquier texto subrayado</div>'+
+
+      // Preview del ticket editable
+      '<div id="ticketPreview" style="background:#fff;border:2px solid #0f172a;border-radius:8px;max-width:360px;margin:0 auto;overflow:hidden;font-family:-apple-system,sans-serif;">'+
+
+        // Header con logo y número
+        '<div style="background:#0f172a;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">'+
+          '<div id="tk_logo">'+logoHtml+'</div>'+
+          '<div style="text-align:right">'+
+            '<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">PEDIDO</div>'+
+            '<div style="font-size:22px;font-weight:900;color:#f5a623;font-family:monospace">#'+String(o.id).padStart(4,'0')+'</div>'+
+          '</div>'+
+        '</div>'+
+
+        // QR + Datos cliente
+        '<div style="display:flex;gap:0;border-bottom:1px dashed #e2e8f0">'+
+          '<div style="padding:12px;border-right:1px dashed #e2e8f0;display:flex;align-items:center;justify-content:center">'+
+            '<div>'+
+              '<img src="'+qrUrl+'" style="width:100px;height:100px;display:block" alt="QR">'+
+              '<div style="font-size:8px;color:#94a3b8;text-align:center;margin-top:4px">'+(o.gpsLat?'GPS Cliente':'ID Pedido')+'</div>'+
+            '</div>'+
+          '</div>'+
+          '<div style="padding:12px;flex:1">'+
+            '<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-bottom:3px">DESTINATARIO</div>'+
+            '<div contenteditable="true" style="font-size:14px;font-weight:800;color:#0f172a;border-bottom:1px dashed #cbd5e1;outline:none;margin-bottom:4px" id="tk_cliente">'+o.cliente+'</div>'+
+            '<div contenteditable="true" style="font-size:12px;color:#3b82f6;border-bottom:1px dashed #cbd5e1;outline:none;margin-bottom:4px" id="tk_tel">📞 '+o.telefono+'</div>'+
+            '<div contenteditable="true" style="font-size:11px;color:#475569;border-bottom:1px dashed #cbd5e1;outline:none;margin-bottom:4px" id="tk_dir">📍 '+(o.direccion||'Sin dirección')+'</div>'+
+            '<div style="font-size:10px;color:#94a3b8">Zona: '+z.nombre+'</div>'+
+          '</div>'+
+        '</div>'+
+
+        // Producto + monto
+        '<div style="padding:10px 14px;border-bottom:1px dashed #e2e8f0;display:flex;justify-content:space-between;align-items:center">'+
+          '<div>'+
+            '<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:700">PRODUCTO</div>'+
+            '<div contenteditable="true" style="font-size:12px;font-weight:600;color:#0f172a;border-bottom:1px dashed #cbd5e1;outline:none" id="tk_prod">'+o.producto+' x'+o.qty+'</div>'+
+          '</div>'+
+          '<div style="text-align:right">'+
+            '<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:700">COBRAR</div>'+
+            '<div contenteditable="true" style="font-size:18px;font-weight:900;color:#16a34a;border-bottom:1px dashed #cbd5e1;outline:none" id="tk_monto">'+fmt(o.precio*o.qty)+'</div>'+
+          '</div>'+
+        '</div>'+
+
+        // Delivery + método
+        '<div style="padding:8px 14px;background:#f8fafc;display:flex;justify-content:space-between;align-items:center">'+
+          '<div>'+
+            '<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:700">DELIVERY</div>'+
+            '<div contenteditable="true" style="font-size:11px;font-weight:600;color:#0f172a;border-bottom:1px dashed #cbd5e1;outline:none" id="tk_delivery">'+delivery.nombre+'</div>'+
+          '</div>'+
+          '<div style="text-align:right">'+
+            '<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:700">COBRO</div>'+
+            '<div contenteditable="true" style="font-size:11px;font-weight:600;color:#0f172a;border-bottom:1px dashed #cbd5e1;outline:none" id="tk_cobro">'+(o.metodoCobro||'Efectivo')+'</div>'+
+          '</div>'+
+          '<div style="text-align:right">'+
+            '<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:700">FECHA</div>'+
+            '<div style="font-size:10px;color:#475569">'+(o.fecha||today())+'</div>'+
+          '</div>'+
+        '</div>'+
+
+        // Footer empresa
+        '<div style="padding:6px 14px;border-top:1px solid #e2e8f0;text-align:center">'+
+          '<div style="font-size:9px;color:#94a3b8">'+(emp.tel||'')+(emp.tel&&emp.web?' · ':'')+''+(emp.web||'iporaveparaguay.com')+'</div>'+
+        '</div>'+
+
+      '</div>'+ // fin ticketPreview
+    '</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-primary" onclick="confirmarImprimirTicket('+id+')">🖨️ Imprimir etiqueta</button>',
+    'lg'
+  );
+}
+
+function confirmarImprimirTicket(id){
+  const o=_ordersCache.find(x=>x.id===id);if(!o)return;
+  const emp=_getEmpresa();
+  const z=getZona(o.zona);
+  const delivery=_usersCache.find(u=>u.id===o.deliveryId)||{nombre:'Sin asignar'};
+  const qrData=o.gpsLat&&o.gpsLng
+    ?'https://www.google.com/maps?q='+o.gpsLat+','+o.gpsLng
+    :'Pedido%20%23'+o.id+'%20%7C%20'+encodeURIComponent(o.cliente||'');
+  const qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+qrData;
+  const logoHtml=emp.logo
+    ?'<img src="'+emp.logo+'" style="height:44px;object-fit:contain">'
+    :'<span style="font-size:20px;font-weight:900;color:#f5a623;letter-spacing:2px">'+(emp.nombre||'IPORÃVE')+'</span>';
+  // Tomar valores editados del preview
+  const cliente=($('tk_cliente')&&$('tk_cliente').innerText)||o.cliente;
+  const tel=($('tk_tel')&&$('tk_tel').innerText.replace(/📞\s*/,''))||o.telefono;
+  const dir=($('tk_dir')&&$('tk_dir').innerText.replace(/📍\s*/,''))||o.direccion||'';
+  const prod=($('tk_prod')&&$('tk_prod').innerText)||o.producto+' x'+o.qty;
+  const monto=($('tk_monto')&&$('tk_monto').innerText)||fmt(o.precio*o.qty);
+  const dlv=($('tk_delivery')&&$('tk_delivery').innerText)||delivery.nombre;
+  const cobro=($('tk_cobro')&&$('tk_cobro').innerText)||o.metodoCobro||'Efectivo';
+  const css='*{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,Segoe UI,sans-serif;background:#fff;display:flex;justify-content:center;padding:8mm;}'+
+    '.ticket{width:90mm;border:2px solid #0f172a;border-radius:6px;overflow:hidden;}'+
+    '.t-head{background:#0f172a;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;}'+
+    '.t-num{font-size:24px;font-weight:900;color:#f5a623;font-family:monospace;}'+
+    '.t-body{display:flex;border-bottom:1px dashed #e2e8f0;}'+
+    '.t-qr{padding:10px;border-right:1px dashed #e2e8f0;display:flex;flex-direction:column;align-items:center;justify-content:center;}'+
+    '.t-info{padding:10px;flex:1;}'+
+    '.t-lbl{font-size:7px;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-bottom:2px;letter-spacing:.5px;}'+
+    '.t-val{font-size:11px;font-weight:700;color:#0f172a;margin-bottom:5px;}'+
+    '.t-val.lg{font-size:13px;font-weight:900;}'+
+    '.t-prod{padding:8px 12px;border-bottom:1px dashed #e2e8f0;display:flex;justify-content:space-between;align-items:center;}'+
+    '.t-foot{padding:6px 12px;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;}'+
+    '.t-cobro{padding:6px 12px;border-top:1px solid #e2e8f0;font-size:8px;color:#94a3b8;text-align:center;}'+
+    '@media print{body{padding:0;background:#fff;}@page{margin:4mm;size:100mm 160mm;}}';
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket #'+o.id+'</title><style>'+css+'</style></head><body>'+
+    '<div class="ticket">'+
+      '<div class="t-head">'+logoHtml+'<div style="text-align:right"><div style="font-size:8px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">PEDIDO</div><div class="t-num">#'+String(o.id).padStart(4,'0')+'</div></div></div>'+
+      '<div class="t-body">'+
+        '<div class="t-qr"><img src="'+qrUrl+'" style="width:90px;height:90px"><div style="font-size:7px;color:#94a3b8;text-align:center;margin-top:3px">'+(o.gpsLat?'📍 GPS':'ID Pedido')+'</div></div>'+
+        '<div class="t-info">'+
+          '<div class="t-lbl">Destinatario</div><div class="t-val lg">'+cliente+'</div>'+
+          '<div class="t-lbl">Teléfono</div><div class="t-val" style="color:#3b82f6">'+tel+'</div>'+
+          '<div class="t-lbl">Dirección</div><div class="t-val" style="font-size:10px;font-weight:600">'+dir+'</div>'+
+          '<div class="t-lbl">Zona</div><div class="t-val" style="font-size:10px">'+z.nombre+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="t-prod">'+
+        '<div><div class="t-lbl">Producto</div><div class="t-val">'+prod+'</div></div>'+
+        '<div style="text-align:right"><div class="t-lbl">A cobrar</div><div class="t-val" style="font-size:16px;color:#16a34a">'+monto+'</div></div>'+
+      '</div>'+
+      '<div class="t-foot">'+
+        '<div><div class="t-lbl">Delivery</div><div class="t-val">'+dlv+'</div></div>'+
+        '<div><div class="t-lbl">Cobro</div><div class="t-val">'+cobro+'</div></div>'+
+        '<div><div class="t-lbl">Fecha</div><div class="t-val">'+(o.fecha||today())+'</div></div>'+
+      '</div>'+
+      '<div class="t-cobro">'+(emp.tel||'')+(emp.tel?' · ':'')+''+(emp.web||'iporaveparaguay.com')+'</div>'+
+    '</div>'+
+    '<script>window.onload=function(){setTimeout(function(){window.print();},350);}<\/script></body></html>';
+  closeA();
+  const w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();}
+  else pushNotif('Permitir popups para imprimir','w');
 }
 
 /* ─── GUÍA DE ENTREGA (imprimible) ─── */
