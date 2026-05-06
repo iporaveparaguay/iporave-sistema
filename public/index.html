@@ -500,6 +500,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <nav class="snav" id="snav"></nav>
     <div class="sfooter">
+      <button class="btn btn-secondary btn-full" style="margin-bottom:6px" onclick="openPerfilEmpresa()">
+        🏢 Mi empresa / Perfil
+      </button>
       <button class="btn btn-secondary btn-full" onclick="doLogout()">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
         Cerrar sesión
@@ -2559,6 +2562,7 @@ function renderTable(orders,title,showActs){
       (canEdit?'<button class="btn btn-primary btn-sm" onclick="editOrder('+o.id+')">Editar</button>':'')+
       (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button class="btn btn-success btn-sm" onclick="dlvModal('+o.id+')">Actualizar</button>':'')+
       '<button class="btn btn-secondary btn-sm" onclick="openBoleta('+o.id+')">IVA</button>'+
+      '<button class="btn btn-secondary btn-sm" onclick="imprimirGuia('+o.id+')" title="Guía de entrega">🖨️</button>'+
       '<button class="btn btn-blue btn-sm" onclick="waMenu('+o.id+')">WA</button>'+
       (canEdit?'<span style="display:inline-block;width:10px"></span><button class="btn btn-danger btn-sm" onclick="confirmDeleteOrder('+o.id+')" title="Eliminar pedido">✕</button>':'')+
     '</div></td>':'')+'</tr>'
@@ -3660,7 +3664,12 @@ function _parseCSV(text){
 // Importar catálogo desde CSV de Shopify o Dropi
 function importarCatalogoCSV(){
   openA('⬆ Importar catálogo CSV',
-    '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Aceptado: CSV de <b>Shopify</b> (exportado desde Admin → Productos → Exportar) o CSV propio.</div>'+
+    '<div class="fg"><label>Formato del archivo</label>'+
+      '<select id="csvImportFormato" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 13px;color:var(--text);width:100%;font-size:13px">'+
+        '<option value="shopify">Shopify (Handle, Title, Variant Price...)</option>'+
+        '<option value="dropi">Dropi / Similar (nombre, precio, stock...)</option>'+
+        '<option value="generico">CSV Genérico (nombre, precio, categoria, stock, codigo)</option>'+
+      '</select></div>'+
     '<div class="fg"><label>Seleccionar archivo CSV</label>'+
       '<input type="file" id="csvImportFile" accept=".csv,text/csv" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);width:100%;box-sizing:border-box">'+
     '</div>'+
@@ -3674,28 +3683,38 @@ function importarCatalogoCSV(){
     const r=new FileReader();
     r.onload=async e=>{
       const rows=_parseCSV(e.target.result);
+      const formato=gv('csvImportFormato')||'shopify';
       window._csvImportRows=rows;
-      // Agrupar por Handle
       const grupos={};
-      rows.forEach(row=>{
-        const h=row['Handle']||row['handle']||row['HANDLE']||'';
-        if(!h)return;
-        if(!grupos[h])grupos[h]=[];
-        grupos[h].push(row);
-      });
+      if(formato==='shopify'){
+        rows.forEach(row=>{
+          const h=row['Handle']||row['handle']||row['HANDLE']||'';
+          if(!h)return;
+          if(!grupos[h])grupos[h]=[];
+          grupos[h].push(row);
+        });
+      }else{
+        // Dropi / Genérico: cada fila es un producto
+        rows.forEach((row,i)=>{
+          const n=row['nombre']||row['Nombre']||row['title']||row['Title']||row['NOMBRE']||('producto_'+i);
+          if(n){grupos[n]=[row];}
+        });
+      }
       window._csvImportGrupos=grupos;
       const keys=Object.keys(grupos);
-      $('csvPreview').innerHTML=
-        '<div style="background:var(--bg4);border-radius:8px;padding:12px;font-size:13px">'+
-        '<div style="font-weight:700;margin-bottom:8px">📦 '+keys.length+' productos encontrados:</div>'+
-        keys.slice(0,5).map(h=>{
-          const r=grupos[h][0];
-          return '<div style="padding:4px 0;border-bottom:1px solid var(--border2)">'+
-            (r['Image Src']?'<img src="'+r['Image Src']+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px">':'')+
-            '<b>'+(r['Title']||h)+'</b> — '+grupos[h].length+' variante(s)'+
-            (r['Variant Price']?' — Gs.'+r['Variant Price']:'')+'</div>';
-        }).join('')+
-        (keys.length>5?'<div style="font-size:11px;color:var(--text3);margin-top:6px">...y '+(keys.length-5)+' más</div>':'')+
+      const sample=keys.slice(0,5).map(h=>{
+        const r=grupos[h][0];
+        const nom=r['Title']||r['nombre']||r['Nombre']||h;
+        const precio=r['Variant Price']||r['precio']||r['Precio']||'';
+        const img=r['Image Src']||r['foto']||r['imagen']||'';
+        return '<div style="padding:4px 0;border-bottom:1px solid var(--border2)">'+
+          (img?'<img src="'+img+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px">':'')+
+          '<b>'+nom+'</b>'+(grupos[h].length>1?' — '+grupos[h].length+' variantes':'')+
+          (precio?' — Gs.'+precio:'')+'</div>';
+      }).join('');
+      $('csvPreview').innerHTML='<div style="background:var(--bg4);border-radius:8px;padding:12px;font-size:13px">'+
+        '<div style="font-weight:700;margin-bottom:8px">📦 '+keys.length+' productos encontrados (formato: '+formato+'):</div>'+
+        sample+(keys.length>5?'<div style="font-size:11px;color:var(--text3);margin-top:6px">...y '+(keys.length-5)+' más</div>':'')+
         '</div>';
       const btn=$('btnImportar');if(btn)btn.style.display='inline-flex';
     };
@@ -3705,6 +3724,7 @@ function importarCatalogoCSV(){
 
 async function procesarImportCSV(){
   const grupos=window._csvImportGrupos;if(!grupos)return;
+  const formato=gv('csvImportFormato')||'shopify';
   const keys=Object.keys(grupos);
   const btn=$('btnImportar');if(btn){btn.disabled=true;btn.textContent='Importando...';}
   let ok=0;
@@ -3712,39 +3732,52 @@ async function procesarImportCSV(){
   let nextId=maxId+1;
   for(const h of keys){
     const rows=grupos[h];const r0=rows[0];
-    const nombre=r0['Title']||h;
-    if(_catalogoCache.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase()))continue;
-    const presentaciones=rows.filter(r=>r['Option1 Value']).map((r,i)=>({
-      id:i+1,
-      nombre:r['Option1 Value']||r['Title']||'Unidad',
-      precio:parseFloat(r['Variant Price']||r['Variant Retail Price']||0)||0,
-      precioVendedor:0,precioDropshipper:0,
-      precioProveedor:parseFloat(r['Variant Cost']||0)||0,
-    }));
-    const nuevo={
-      id:nextId++,nombre,
-      descripcion_html:r0['Body (HTML)']||r0['Body']||'',
-      categoria:r0['Type']||r0['Product Category']||'',
-      proveedorNombre:r0['Vendor']||'',
-      foto:r0['Image Src']||null,
-      fotos:r0['Image Src']?[r0['Image Src']]:[],
-      videos:[],
-      precio_comparacion:parseFloat(r0['Variant Compare At Price']||0)||0,
-      stock:parseInt(r0['Variant Inventory Qty']||0)||0,
-      codigo_barras:r0['Variant Barcode']||r0['Barcode']||'',
-      publicar_tienda:false,
-      presentaciones,
-      owner_id:CU.id,owner_nombre:CU.nombre,
-    };
+    let nombre,presentaciones,nuevo;
+    if(formato==='shopify'){
+      nombre=r0['Title']||h;
+      if(_catalogoCache.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase()))continue;
+      presentaciones=rows.filter(r=>r['Option1 Value']).map((r,i)=>({
+        id:i+1,nombre:r['Option1 Value']||'Unidad',
+        precio:parseFloat(r['Variant Price']||0)||0,
+        precioVendedor:0,precioDropshipper:0,
+        precioProveedor:parseFloat(r['Variant Cost']||0)||0,
+      }));
+      nuevo={id:nextId++,nombre,
+        descripcion_html:r0['Body (HTML)']||r0['Body']||'',
+        categoria:r0['Type']||r0['Product Category']||'',
+        proveedorNombre:r0['Vendor']||'',
+        foto:r0['Image Src']||null,fotos:r0['Image Src']?[r0['Image Src']]:[],
+        videos:[],precio_comparacion:parseFloat(r0['Variant Compare At Price']||0)||0,
+        stock:parseInt(r0['Variant Inventory Qty']||0)||0,
+        codigo_barras:r0['Variant Barcode']||r0['Barcode']||'',
+        publicar_tienda:false,presentaciones,owner_id:CU.id,owner_nombre:CU.nombre};
+    }else{
+      // Formato Dropi o Genérico — columnas flexibles
+      nombre=r0['nombre']||r0['Nombre']||r0['title']||r0['Title']||r0['NOMBRE']||h;
+      if(!nombre||_catalogoCache.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase()))continue;
+      const precio=parseFloat(r0['precio']||r0['Precio']||r0['price']||r0['Price']||r0['precio_publico']||0)||0;
+      const pCosto=parseFloat(r0['precio_proveedor']||r0['precio_costo']||r0['costo']||r0['cost']||0)||0;
+      const pComp=parseFloat(r0['precio_comparacion']||r0['precio_anterior']||r0['compare_at']||0)||0;
+      presentaciones=precio>0?[{id:1,nombre:'Unidad',precio,precioVendedor:0,precioDropshipper:0,precioProveedor:pCosto}]:[];
+      nuevo={id:nextId++,nombre,
+        descripcion_html:r0['descripcion']||r0['description']||r0['Descripcion']||'',
+        categoria:r0['categoria']||r0['Categoria']||r0['type']||r0['Type']||r0['category']||'',
+        proveedorNombre:r0['proveedor']||r0['Proveedor']||r0['vendor']||r0['Vendor']||'',
+        foto:r0['foto']||r0['imagen']||r0['image']||r0['Image Src']||null,
+        fotos:[],videos:[],
+        precio_comparacion:pComp,
+        stock:parseInt(r0['stock']||r0['Stock']||r0['inventory']||r0['qty']||0)||0,
+        codigo_barras:r0['codigo_barras']||r0['barcode']||r0['Barcode']||r0['ean']||'',
+        publicar_tienda:false,presentaciones,owner_id:CU.id,owner_nombre:CU.nombre};
+    }
+    if(nuevo.foto&&!nuevo.fotos.length)nuevo.fotos=[nuevo.foto];
     _catalogoCache=[..._catalogoCache,nuevo];
     await DL.saveProducto(nuevo);
     ok++;
   }
-  closeA();
-  PAGES.catalogo();
-  pushNotif('✅ '+ok+' producto(s) importados correctamente','s');
-  window._csvImportGrupos=null;
-  window._csvImportRows=null;
+  closeA();PAGES.catalogo();
+  pushNotif('✅ '+ok+' producto(s) importados','s');
+  window._csvImportGrupos=null;window._csvImportRows=null;
 }
 
 // Exportar catálogo a CSV compatible con Shopify
@@ -4592,7 +4625,132 @@ function sendOrderChatMsg(orderId){
 }
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-function escQ(s){return s.replace(/'/g,"\\'");}
+function escQ(s){return s.replace(/'/g,"\\'")}
+
+/* ─── PERFIL / EMPRESA ─── */
+function _getEmpresa(){
+  try{return JSON.parse(localStorage.getItem('ipv_empresa_'+CU.id)||'{}');}catch{return{};}
+}
+function _saveEmpresa(obj){
+  localStorage.setItem('ipv_empresa_'+CU.id,JSON.stringify({..._getEmpresa(),...obj}));
+}
+function openPerfilEmpresa(){
+  const e=_getEmpresa();
+  openA('🏢 Mi empresa / Perfil',
+    '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Logo de empresa</div>'+
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'+
+      '<div id="empLogoPreview" style="width:72px;height:72px;border-radius:10px;background:var(--bg3);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer" onclick="$(\'empLogoFile\').click()">'+
+        (e.logo?'<img src="'+e.logo+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:24px">🏢</span>')+
+      '</div>'+
+      '<div><input type="file" id="empLogoFile" accept="image/*" style="display:none" onchange="subirLogoEmpresa(this)"><button class="btn btn-secondary btn-sm" onclick="$(\'empLogoFile\').click()">📷 Subir logo</button><div style="font-size:10px;color:var(--text3);margin-top:4px">Aparece en guías y PDFs</div></div>'+
+    '</div>'+
+    '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Datos de empresa</div>'+
+    '<div class="fg"><label>Nombre comercial / Empresa</label><input type="text" id="empNombre" value="'+(e.nombre||'')+'" placeholder="Ej: Distribuidora Iporãve E.A.S."></div>'+
+    '<div class="frow">'+
+      '<div class="fg"><label>RUC</label><input type="text" id="empRuc" value="'+(e.ruc||'')+'" placeholder="80012345-6"></div>'+
+      '<div class="fg"><label>Teléfono empresa</label><input type="text" id="empTel" value="'+(e.tel||'')+'" placeholder="+595 21 000000"></div>'+
+    '</div>'+
+    '<div class="fg"><label>Dirección</label><input type="text" id="empDir" value="'+(e.dir||'')+'" placeholder="Av. España 1234, Asunción"></div>'+
+    '<div class="fg"><label>Email empresa</label><input type="text" id="empEmail" value="'+(e.email||'')+'" placeholder="contacto@empresa.com"></div>'+
+    '<div class="fg"><label>Sitio web / Red social</label><input type="text" id="empWeb" value="'+(e.web||'')+'" placeholder="www.empresa.com.py"></div>'+
+    '<div id="empAlert"></div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-primary" onclick="guardarPerfilEmpresa()">Guardar</button>',
+    'lg'
+  );
+}
+async function subirLogoEmpresa(input){
+  const f=input.files[0];if(!f)return;
+  showAlert('empAlert','i','Subiendo logo...');
+  const url=await subirArchivo(f,'logos');
+  if(url){
+    _saveEmpresa({logo:url});
+    const p=$('empLogoPreview');
+    if(p)p.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">';
+    showAlert('empAlert','s','Logo guardado');
+  }else{showAlert('empAlert','e','Error al subir el logo');}
+}
+function guardarPerfilEmpresa(){
+  _saveEmpresa({
+    nombre:gv('empNombre')||'',ruc:gv('empRuc')||'',
+    tel:gv('empTel')||'',dir:gv('empDir')||'',
+    email:gv('empEmail')||'',web:gv('empWeb')||'',
+  });
+  closeA();
+  pushNotif('Datos de empresa guardados','s');
+}
+
+/* ─── GUÍA DE ENTREGA (imprimible) ─── */
+function imprimirGuia(id){
+  const o=_ordersCache.find(x=>x.id===id)||(_ordersCache,getOrders().find(x=>x.id===id));
+  if(!o){pushNotif('Pedido no encontrado','e');return;}
+  const emp=_getEmpresa();
+  const z=getZona(o.zona);
+  const delivery=_usersCache.find(u=>u.id===o.deliveryId)||{nombre:'Sin asignar'};
+  const logoHtml=emp.logo?'<img src="'+emp.logo+'" style="height:56px;object-fit:contain">':'<div style="font-size:26px;font-weight:900;color:#f5a623;letter-spacing:3px">IPORÃVE</div>';
+  const css='*{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,Segoe UI,sans-serif;background:#fff;color:#0f172a;}'+
+    '.guia{width:100%;max-width:400px;margin:0 auto;border:2px solid #0f172a;border-radius:8px;overflow:hidden;}'+
+    '.g-head{background:#0f172a;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}'+
+    '.g-num{font-size:28px;font-weight:900;color:#f5a623;font-family:monospace;letter-spacing:2px;}'+
+    '.g-sub{font-size:10px;color:#94a3b8;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}'+
+    '.g-body{padding:14px 16px;}'+
+    '.g-sec{margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed #e2e8f0;}'+
+    '.g-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:3px;}'+
+    '.g-val{font-size:13px;font-weight:600;color:#0f172a;}'+
+    '.g-val.big{font-size:16px;font-weight:800;}'+
+    '.g-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}'+
+    '.g-cod{background:#f1f5f9;border-radius:6px;padding:10px;text-align:center;margin-bottom:10px;}'+
+    '.g-cod .num{font-size:32px;font-weight:900;font-family:monospace;letter-spacing:4px;color:#0f172a;}'+
+    '.g-cod .lbl{font-size:10px;color:#64748b;margin-top:2px;}'+
+    '.g-estado{display:inline-block;background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}'+
+    '.g-foot{background:#f8fafc;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;}'+
+    '.g-foot p{font-size:10px;color:#94a3b8;}'+
+    '@media print{body{margin:0;}@page{margin:8mm;size:A5;}}';
+  const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Guía #'+o.id+'</title><style>'+css+'</style></head><body>'+
+    '<div class="guia">'+
+    '<div class="g-head">'+
+      '<div>'+logoHtml+'<div class="g-sub">'+(emp.nombre||'Sistema Iporãve')+'</div></div>'+
+      '<div style="text-align:right"><div style="font-size:10px;color:#94a3b8">GUÍA DE ENTREGA</div><div class="g-num">#'+String(o.id).padStart(4,'0')+'</div></div>'+
+    '</div>'+
+    '<div class="g-body">'+
+      '<div class="g-cod"><div class="num">'+String(o.id).padStart(6,'0')+'</div><div class="lbl">Código de seguimiento</div></div>'+
+      '<div class="g-sec">'+
+        '<div class="g-lbl">Destinatario</div>'+
+        '<div class="g-val big">'+o.cliente+'</div>'+
+        '<div class="g-val" style="margin-top:3px;color:#3b82f6">📞 '+o.telefono+'</div>'+
+        '<div class="g-val" style="margin-top:3px;font-size:12px;color:#64748b">📍 '+(o.direccion||'—')+'</div>'+
+        '<div class="g-val" style="margin-top:2px;font-size:11px;color:#94a3b8">Zona: '+z.nombre+'</div>'+
+      '</div>'+
+      '<div class="g-sec">'+
+        '<div class="g-lbl">Producto</div>'+
+        '<div class="g-val">'+o.producto+'</div>'+
+        '<div class="g-row" style="margin-top:8px">'+
+          '<div><div class="g-lbl">Cantidad</div><div class="g-val">'+o.qty+' unid.</div></div>'+
+          '<div><div class="g-lbl">Método de cobro</div><div class="g-val">'+(o.metodoCobro||'—')+'</div></div>'+
+        '</div>'+
+        '<div class="g-row">'+
+          '<div><div class="g-lbl">Monto a cobrar</div><div class="g-val" style="color:#16a34a;font-size:16px;font-weight:900">'+fmt(o.precio*o.qty)+'</div></div>'+
+          '<div><div class="g-lbl">Estado</div><span class="g-estado">'+o.estado+'</span></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="g-row">'+
+        '<div><div class="g-lbl">Delivery asignado</div><div class="g-val">'+delivery.nombre+'</div></div>'+
+        '<div><div class="g-lbl">Fecha</div><div class="g-val">'+(o.fecha||today())+'</div></div>'+
+      '</div>'+
+      (emp.tel||emp.dir?'<div style="margin-top:6px;padding:8px;background:#fefce8;border-radius:6px;font-size:11px;color:#78350f">'+
+        (emp.tel?'📞 '+emp.tel+'  ':'')+
+        (emp.dir?'📍 '+emp.dir:'')+'</div>':'')+
+    '</div>'+
+    '<div class="g-foot">'+
+      '<p>'+(emp.web||'iporaveparaguay.com')+'</p>'+
+      '<p>'+nowStr()+'</p>'+
+    '</div>'+
+    '</div>'+
+    '<script>window.onload=function(){setTimeout(function(){window.print();},300);}<\/script></body></html>';
+  const w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();}
+  else pushNotif('Permití popups para imprimir la guía','w');
+}
 function selProductoCatalogo(nombre,presentacion,precioBase,precioVendedor,precioDropshipper,precioProveedor){
   const full=presentacion?nombre+' — '+presentacion:nombre;
   const inp=$('nProd');
