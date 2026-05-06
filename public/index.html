@@ -5689,6 +5689,8 @@ async function exportCSV(){
    INIT
 ══════════════════════════════════════════════════ */
 async function main(){
+  // Si la URL tiene ?track=ID, mostrar página de seguimiento sin login
+  if(await _initTrackingPublico())return;
   // Si la URL tiene ?vendedor=USERNAME, mostrar catálogo público sin login
   if(await _initCatalogoPublico())return;
   _sessionToken=sessionStorage.getItem('iporave_token')||null;
@@ -5718,6 +5720,126 @@ function copiarLinkCatalogo(){
   }).catch(()=>{
     prompt('Copiá este link:',link);
   });
+}
+
+/* ══════════════════════════════════════════════════
+   TRACKING PÚBLICO — ?track=ID
+══════════════════════════════════════════════════ */
+const TRACK_API='https://iporave-api.iporaveparaguay.workers.dev/api/track';
+const _TRACK_ESTADO_COLOR={
+  'Pendiente':'#f59e0b','Despachado':'#3b82f6','En ruta':'#16a34a',
+  'Entregado':'#22c55e','Cancelado':'#ef4444','Devuelto':'#8b5cf6',
+};
+const _TRACK_ESTADO_ICON={
+  'Pendiente':'⏳','Despachado':'📦','En ruta':'🛵','Entregado':'✅','Cancelado':'❌','Devuelto':'↩️',
+};
+let _trackRefreshTimer=null;
+let _trackDlvMarker=null;
+let _trackDestMarker=null;
+let _trackMapInst=null;
+
+async function _fetchTrackData(id){
+  const r=await fetch(TRACK_API+'?id='+id);
+  if(!r.ok)return null;
+  return r.json();
+}
+
+function _trackMinsAgo(atStr){
+  if(!atStr)return null;
+  const diff=Math.floor((Date.now()-new Date(atStr).getTime())/60000);
+  if(diff<1)return'hace menos de 1 min';
+  if(diff===1)return'hace 1 min';
+  if(diff<60)return'hace '+diff+' min';
+  return'hace '+(Math.floor(diff/60))+'h '+(diff%60)+'min';
+}
+
+function _trackUpdateUI(data){
+  const ec=_TRACK_ESTADO_COLOR[data.estado]||'#64748b';
+  const ei=_TRACK_ESTADO_ICON[data.estado]||'📦';
+  const card=$('trackCard');if(!card)return;
+  card.innerHTML=
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">'+
+      '<div style="font-size:36px">'+ei+'</div>'+
+      '<div>'+
+        '<div style="font-size:11px;color:#64748b;font-weight:600;letter-spacing:.5px;text-transform:uppercase">Pedido #'+data.id+'</div>'+
+        '<div style="font-size:20px;font-weight:800;color:#0f172a;line-height:1.2">'+data.cliente+'</div>'+
+        '<div style="font-size:13px;color:#475569;margin-top:2px">📦 '+data.producto+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+      '<span style="background:'+ec+';color:#fff;font-size:13px;font-weight:700;padding:4px 14px;border-radius:20px">'+ei+' '+data.estado+'</span>'+
+      (data.delivery?'<span style="font-size:12px;color:#64748b">🛵 '+data.delivery.nombre+'</span>':'')+
+    '</div>'+
+    (data.direccion?'<div style="margin-top:8px;font-size:12px;color:#64748b">📍 '+data.direccion+'</div>':'')+
+    (data.delivery&&data.delivery.at?'<div style="margin-top:6px;font-size:11px;color:#94a3b8">GPS actualizado '+_trackMinsAgo(data.delivery.at)+'</div>':'');
+
+  if(!_trackMapInst)return;
+  const dlv=data.delivery;
+  if(dlv&&dlv.lat&&dlv.lng){
+    const ll=L.latLng(parseFloat(dlv.lat),parseFloat(dlv.lng));
+    if(_trackDlvMarker){_trackDlvMarker.setLatLng(ll);}
+    else{
+      const ic=L.divIcon({html:'<div style="background:#1d4ed8;color:#fff;width:46px;height:46px;border-radius:50%;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:22px">🛵</div>',iconSize:[46,46],iconAnchor:[23,23],className:''});
+      _trackDlvMarker=L.marker(ll,{icon:ic}).bindPopup('<b>'+dlv.nombre+'</b><br>Delivery en camino').addTo(_trackMapInst);
+    }
+    if(!_trackDestMarker)_trackMapInst.setView(ll,15,{animate:true});
+  }
+  if(data.destLat&&data.destLng&&!_trackDestMarker){
+    const dl=L.latLng(parseFloat(data.destLat),parseFloat(data.destLng));
+    const dic=L.divIcon({html:'<div style="background:#ef4444;color:#fff;width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:18px">🏠</div>',iconSize:[38,38],iconAnchor:[19,19],className:''});
+    _trackDestMarker=L.marker(dl,{icon:dic}).bindPopup('📍 Dirección de entrega').addTo(_trackMapInst);
+    if(_trackDlvMarker)_trackMapInst.fitBounds([_trackDlvMarker.getLatLng(),dl],{padding:[40,40],maxZoom:15});
+    else _trackMapInst.setView(dl,15);
+  }
+}
+
+async function _initTrackingPublico(){
+  const params=new URLSearchParams(window.location.search);
+  const trackId=params.get('track');
+  if(!trackId)return false;
+
+  const ls=$('loginScreen');if(ls)ls.style.display='none';
+  document.body.style.background='#f1f5f9';
+  document.body.style.margin='0';
+
+  const wrap=document.createElement('div');
+  wrap.id='trackWrap';
+  wrap.style.cssText='min-height:100vh;font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding-bottom:40px;background:#f1f5f9';
+  wrap.innerHTML=
+    '<div style="background:#0f172a;padding:14px 20px;display:flex;align-items:center;gap:10px">'+
+      '<div style="font-size:22px">🛵</div>'+
+      '<div style="color:#fff;font-weight:800;font-size:18px">Iporãve <span style="color:#94a3b8;font-weight:400;font-size:13px">— Seguimiento en vivo</span></div>'+
+    '</div>'+
+    '<div id="trackCard" style="background:#fff;margin:16px;border-radius:14px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.08)">'+
+      '<div style="text-align:center;padding:20px;color:#64748b"><div style="font-size:28px">⏳</div><div style="margin-top:6px;font-size:14px">Cargando seguimiento…</div></div>'+
+    '</div>'+
+    '<div id="trackMapWrap" style="margin:0 16px;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.1)">'+
+      '<div id="trackMap" style="height:380px"></div>'+
+    '</div>'+
+    '<div style="text-align:center;margin-top:14px;font-size:11px;color:#94a3b8">Se actualiza automáticamente cada 15 segundos</div>';
+  document.body.appendChild(wrap);
+
+  // Inicializar mapa
+  await new Promise(r=>setTimeout(r,100));
+  _trackMapInst=L.map('trackMap',{zoomControl:true}).setView([-23.5,-58.5],7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(_trackMapInst);
+
+  // Primera carga
+  const data=await _fetchTrackData(trackId);
+  if(data&&!data.error){
+    _trackUpdateUI(data);
+  } else {
+    const c=$('trackCard');
+    if(c)c.innerHTML='<div style="text-align:center;padding:20px;color:#ef4444"><div style="font-size:28px">❌</div><div style="margin-top:8px;font-weight:700">Pedido no encontrado</div><div style="font-size:13px;color:#64748b;margin-top:4px">Revisá el enlace o contactá a Iporãve</div></div>';
+  }
+
+  // Refresco automático cada 15s
+  _trackRefreshTimer=setInterval(async()=>{
+    const d=await _fetchTrackData(trackId);
+    if(d&&!d.error)_trackUpdateUI(d);
+  },15000);
+
+  return true;
 }
 
 async function _initCatalogoPublico(){
