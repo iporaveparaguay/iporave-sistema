@@ -5954,6 +5954,7 @@ async function _mapaCargar(map){
   if(window._mapaFiltro)orders=orders.filter(o=>o.estado===window._mapaFiltro);
   if(window._mapaFiltroZona)orders=orders.filter(o=>String(o.zona)===String(window._mapaFiltroZona));
   if(window._mapaFiltroVend)orders=orders.filter(o=>String(o.vendedorId)===String(window._mapaFiltroVend));
+  if(window._mapaFiltroDelivery)orders=orders.filter(o=>String(o.deliveryId)===String(window._mapaFiltroDelivery));
   const bounds=[];
 
   // Primero mostrar los que tienen GPS (inmediato)
@@ -6047,7 +6048,7 @@ function _mapaRenderSelects(){
   const vs=$('mapaVendSel');
   if(vs){
     const cur=window._mapaFiltroVend;
-    const vends=_usersCache.filter(u=>['vendedor','administrador','superadmin','dropshipper','proveedor'].includes(u.rol));
+    const vends=_usersCache.filter(u=>['vendedor','admin','superadmin','dropshipper','proveedor'].includes(u.rol));
     vs.innerHTML='<option value="">👤 Todos</option>'+
       vends.map(u=>'<option value="'+u.id+'" '+(String(cur)===String(u.id)?'selected':'')+'>'+u.nombre+'</option>').join('');
   }
@@ -6153,16 +6154,20 @@ function _mapaToggleDlvs(){
 
 PAGES.mapa=function(){
   if(_ordersLayerInterval){clearInterval(_ordersLayerInterval);_ordersLayerInterval=null;}
-  window._mapaFiltro=null;window._mapaFiltroZona=null;window._mapaFiltroVend=null;
-  window._mapaShowDlvs=false;window._mapMarkers={};window._dlvMapMarkers={};
+  window._mapaFiltro=null;window._mapaFiltroZona=null;window._mapaShowDlvs=false;
+  window._mapMarkers={};window._dlvMapMarkers={};
+  // Auto-filtro por rol
+  const esDelivery=CU.rol==='delivery';
+  const esLimitado=['vendedor','proveedor','dropshipper'].includes(CU.rol);
+  window._mapaFiltroDelivery=esDelivery?String(CU.id):null;
+  window._mapaFiltroVend=esLimitado?String(CU.id):null;
   $('tbTitle').textContent='Mapa de Pedidos';
-  $('tbActions').innerHTML=
-    '<select id="mapaZonaSel" onchange="window._mapaFiltroZona=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'">'+
-    '<option value="">🌎 Todo Paraguay</option></select>'+
-    '<select id="mapaVendSel" onchange="window._mapaFiltroVend=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'">'+
-    '<option value="">👤 Todos</option></select>'+
-    '<button id="btnMapaDlvs" class="btn btn-secondary btn-sm" onclick="_mapaToggleDlvs()" title="Ver posición de deliverys">🛵 Deliverys</button>'+
-    '<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄</button>';
+  const zonaSel='<select id="mapaZonaSel" onchange="window._mapaFiltroZona=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'"><option value="">🌎 Todo Paraguay</option></select>';
+  const vendSel=esDelivery
+    ?'<span style="font-size:12px;padding:5px 10px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--text2)">🛵 Mis pedidos</span>'
+    :'<select id="mapaVendSel" onchange="window._mapaFiltroVend=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'"><option value="">👤 Todos</option></select>';
+  const dlvBtn=!esDelivery?'<button id="btnMapaDlvs" class="btn btn-secondary btn-sm" onclick="_mapaToggleDlvs()" title="Ver posición de deliverys">🛵 Deliverys</button>':'';
+  $('tbActions').innerHTML=zonaSel+vendSel+dlvBtn+'<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄</button>';
   $('ca').innerHTML=
     '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>'+
     '<div style="position:relative">'+
