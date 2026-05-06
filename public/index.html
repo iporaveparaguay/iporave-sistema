@@ -3767,8 +3767,8 @@ function openNuevoProducto(){
       '<div class="fg"><label>Código de barras</label><input type="text" id="npCodigo" placeholder="EAN-13, QR..."></div>'+
     '</div>'+
     // DESCRIPCIÓN
-    '<div class="fg"><label>Descripción HTML <span style="font-size:10px;color:var(--text3)">(igual que Crystal Gloss en Shopify)</span></label>'+
-      '<textarea id="npDesc" rows="4" placeholder="<p>Descripción del producto...</p>"></textarea></div>'+
+    '<div class="fg"><label>Descripción del producto <span style="font-size:10px;color:var(--text3)">— pegá desde Shopify o escribí</span></label>'+
+      _richEditorHTML('npDesc')+'</div>'+
     // PRECIOS
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">💰 Precios</div>'+
     '<div class="fg"><label>Precio anterior (tachado) <span style="font-size:10px;color:var(--text3)">— el precio "antes" que aparece tachado</span></label><input type="number" id="npPrecioComp" placeholder="0" min="0"></div>'+
@@ -3788,8 +3788,8 @@ function openNuevoProducto(){
     '<button class="btn btn-primary" onclick="saveNuevoProducto()">Crear producto</button>'
   );
   window._presEdit=[];
-  setTimeout(()=>{const e=$('npNom');if(e)e.focus();},100);
-  setTimeout(()=>_renderPresForm(),80);
+  setTimeout(()=>{const e=$('npNom');if(e)e.focus();_renderPresForm();},120);
+  setTimeout(()=>_setRichContent('npDesc',''),130);
 }
 async function saveNuevoProducto(){
   const nom=gv('npNom').trim();
@@ -3818,7 +3818,7 @@ async function saveNuevoProducto(){
     proveedorNombre:gv('npProv')||'',
     categoria:gv('npCat')||'',
     codigo_barras:gv('npCodigo')||'',
-    descripcion_html:gv('npDesc')||'',
+    descripcion_html:_getRichContent('npDesc')||'',
     precio_comparacion:parseFloat(gv('npPrecioComp'))||0,
     stock:parseInt(gv('npStock'))||0,
     publicar_tienda:!!$('npPublicar')?.checked,
@@ -3910,7 +3910,7 @@ async function editProducto(id){
       '<div class="fg"><label>Categoría</label><select id="epCat"><option value="">Sin categoría</option>'+cats+'</select></div>'+
       '<div class="fg"><label>Código de barras</label><input type="text" id="epCodigo" value="'+(p.codigo_barras||'')+'"></div>'+
     '</div>'+
-    '<div class="fg"><label>Descripción HTML</label><textarea id="epDesc" rows="4">'+(p.descripcion_html||'').replace(/</g,'&lt;')+'</textarea></div>'+
+    '<div class="fg"><label>Descripción del producto</label>'+_richEditorHTML('epDesc')+'</div>'+
     '<div class="frow">'+
       '<div class="fg"><label>Precio anterior (tachado)</label><input type="number" id="epPrecioComp" value="'+(p.precio_comparacion||0)+'" min="0"></div>'+
       '<div class="fg"><label>Stock</label><input type="number" id="epStock" value="'+(p.stock||0)+'" min="0"></div>'+
@@ -3928,8 +3928,8 @@ async function editProducto(id){
     '<button class="btn btn-primary" onclick="saveEditProducto('+id+')">Guardar</button>'
   );
   window._presEdit=JSON.parse(JSON.stringify(p.presentaciones||[]));
-  setTimeout(()=>{const e=$('epNom');if(e){e.focus();e.select();}},100);
-  setTimeout(()=>{_renderPresForm();if(CU.rol!=='delivery')_renderChips();},80);
+  setTimeout(()=>{const e=$('epNom');if(e){e.focus();e.select();}},120);
+  setTimeout(()=>{_renderPresForm();if(CU.rol!=='delivery')_renderChips();_setRichContent('epDesc',p.descripcion_html||'');},130);
 }
 async function saveEditProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
@@ -3952,7 +3952,7 @@ async function saveEditProducto(id){
   p.proveedorNombre=gv('epProv')||'';
   p.categoria=gv('epCat')||'';
   p.codigo_barras=gv('epCodigo')||'';
-  p.descripcion_html=gv('epDesc')||'';
+  p.descripcion_html=_getRichContent('epDesc')||'';
   p.precio_comparacion=parseFloat(gv('epPrecioComp'))||0;
   p.stock=parseInt(gv('epStock'))||0;
   p.publicar_tienda=!!$('epPublicar')?.checked;
@@ -3979,6 +3979,65 @@ async function delProducto(id){
   PAGES.catalogo();
   pushNotif('Producto eliminado','w');
   DL.deleteProducto(id);
+}
+
+/* ─── EDITOR DE DESCRIPCIÓN ENRIQUECIDA ─── */
+function _richEditorHTML(editorId){
+  const btnStyle='background:var(--bg3);border:1px solid var(--border2);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:var(--text2)';
+  return '<div style="border:1px solid var(--border2);border-radius:8px;overflow:hidden">'+
+    '<div style="background:var(--bg4);padding:6px 8px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border2)">'+
+      '<button type="button" onclick="document.execCommand(\'bold\')" style="'+btnStyle+'"><b>B</b></button>'+
+      '<button type="button" onclick="document.execCommand(\'italic\')" style="'+btnStyle+'"><i>I</i></button>'+
+      '<button type="button" onclick="document.execCommand(\'underline\')" style="'+btnStyle+'"><u>U</u></button>'+
+      '<button type="button" onclick="document.execCommand(\'insertUnorderedList\')" style="'+btnStyle+'">• Lista</button>'+
+      '<span style="width:1px;height:18px;background:var(--border2);display:inline-block;margin:0 2px"></span>'+
+      '<button type="button" onclick="$(\''+editorId+'_imgFile\').click()" style="'+btnStyle+'">📷 Imagen</button>'+
+      '<button type="button" onclick="$(\''+editorId+'_vidFile\').click()" style="'+btnStyle+'">🎬 Video</button>'+
+      '<span style="font-size:10px;color:var(--text3);margin-left:4px;flex:1">Pegá desde Shopify directamente</span>'+
+      '<button type="button" onclick="_toggleHTMLMode(\''+editorId+'\')" id="'+editorId+'_toggleBtn" style="'+btnStyle+'"></> HTML</button>'+
+    '</div>'+
+    '<div id="'+editorId+'_visual" contenteditable="true" style="min-height:140px;padding:12px;outline:none;font-size:13px;line-height:1.7;background:var(--bg2);color:var(--text)"></div>'+
+    '<textarea id="'+editorId+'_html" style="display:none;width:100%;box-sizing:border-box;min-height:140px;padding:12px;background:var(--bg2);border:none;outline:none;font-size:12px;font-family:\'JetBrains Mono\',monospace;color:var(--text);resize:vertical"></textarea>'+
+    '<input type="file" id="'+editorId+'_imgFile" accept="image/*" style="display:none" onchange="_insertMediaInEditor(\''+editorId+'_visual\',this,\'img\')">'+
+    '<input type="file" id="'+editorId+'_vidFile" accept="video/mp4,video/webm" style="display:none" onchange="_insertMediaInEditor(\''+editorId+'_visual\',this,\'video\')">'+
+  '</div>';
+}
+function _setRichContent(editorId,content){
+  const v=$(editorId+'_visual');const h=$(editorId+'_html');
+  if(v)v.innerHTML=content||'';
+  if(h)h.value=content||'';
+}
+function _getRichContent(editorId){
+  const h=$(editorId+'_html');const v=$(editorId+'_visual');
+  if(h&&h.style.display!=='none')return h.value;
+  return v?v.innerHTML:'';
+}
+function _toggleHTMLMode(editorId){
+  const v=$(editorId+'_visual');const h=$(editorId+'_html');const btn=$(editorId+'_toggleBtn');
+  if(!v||!h)return;
+  if(h.style.display==='none'){
+    h.value=v.innerHTML;v.style.display='none';h.style.display='block';
+    if(btn)btn.style.color='var(--accent)';
+  }else{
+    v.innerHTML=h.value;h.style.display='none';v.style.display='block';
+    if(btn)btn.style.color='';
+  }
+}
+async function _insertMediaInEditor(visualId,input,tipo){
+  const file=input.files[0];if(!file)return;
+  if(tipo==='video'&&file.size>30*1024*1024){pushNotif('Video muy grande — máximo 30MB','w');return;}
+  pushNotif('Subiendo '+tipo+'...','i');
+  const folder=tipo==='img'?'desc-imgs':'desc-vids';
+  const url=await subirArchivo(file,folder);
+  if(!url){pushNotif('Error al subir archivo','e');return;}
+  const v=$(visualId);if(!v)return;
+  v.focus();
+  const tag=tipo==='img'
+    ?'<img src="'+url+'" style="max-width:100%;border-radius:8px;margin:6px 0;display:block">'
+    :'<video src="'+url+'" controls playsinline style="max-width:100%;border-radius:8px;margin:6px 0;display:block"></video>';
+  document.execCommand('insertHTML',false,tag);
+  input.value='';
+  pushNotif('Archivo insertado en la descripción','s');
 }
 
 /* ─── PRESENTACIONES INLINE EN FORMULARIO ─── */
