@@ -4551,7 +4551,7 @@ function exportOrdersPDF(){
     +'<th>Zona</th><th>Estado</th><th>Cobro</th><th>Proveedor</th>'
     +'</tr></thead><tbody>'+filas+'</tbody></table></div>'
     +'<div class="card ft"><p>Iporave Connect - iporaveparaguay.com</p><div class="seal">IPORAVE</div><p>Confidencial - '+today()+'</p></div>'
-    +'</div><script>window.onload=function(){setTimeout(function(){window.print();},400);}</script></body></html>';
+    +'</div><scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<'+'/script></body></html>';
   const w=window.open('','_blank');
   if(w){w.document.write(html);w.document.close();}
   else pushNotif('Permiti popups para ver el PDF','w');
