@@ -2562,6 +2562,7 @@ function renderTable(orders,title,showActs){
       '<button class="btn btn-secondary btn-sm" onclick="viewOrder('+o.id+')">Ver</button>'+
       (canEdit?'<button class="btn btn-primary btn-sm" onclick="editOrder('+o.id+')">Editar</button>':'')+
       (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button class="btn btn-success btn-sm" onclick="dlvModal('+o.id+')">Actualizar</button>':'')+
+      '<button class="btn btn-sm" onclick="navegarPedido('+o.id+')" title="Abrir navegación en Google Maps" style="background:#ea4335;color:#fff;border:none;border-radius:4px;padding:3px 7px;cursor:pointer;font-size:12px">📍</button>'+
       '<button class="btn btn-secondary btn-sm" onclick="openBoleta('+o.id+')">IVA</button>'+
       '<button class="btn btn-secondary btn-sm" onclick="imprimirGuia('+o.id+')" title="Guia">🖨️</button>'+
       '<button class="btn btn-secondary btn-sm" onclick="imprimirTicket('+o.id+')" title="Ticket">🏷</button>'+
@@ -4835,6 +4836,15 @@ function imprimirTicket(id){
   else{pushNotif('Permiti popups para imprimir el ticket','w');}
 }
 
+function navegarPedido(id){
+  const o=_ordersCache.find(x=>x.id===id);
+  if(!o){pushNotif('Pedido no encontrado','e');return;}
+  const z=getZona(o.zona);
+  const url=o.gpsLat&&o.gpsLng
+    ?'https://www.google.com/maps/dir/?api=1&destination='+o.gpsLat+','+o.gpsLng
+    :'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent((o.direccion||'')+' '+(z.nombre||'')+' Paraguay');
+  window.open(url,'_blank');
+}
 function imprimirGuia(id){
   const o=_ordersCache.find(x=>x.id===id)||(_ordersCache,getOrders().find(x=>x.id===id));
   if(!o){pushNotif('Pedido no encontrado','e');return;}
