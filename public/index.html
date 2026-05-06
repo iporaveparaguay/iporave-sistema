@@ -1700,7 +1700,7 @@ const AI_TOOL_EXEC={
     return orders.map(o=>`#${o.id} | ${o.fecha} | ${o.cliente} | ${o.producto} | ${o.estado} | Gs. ${(o.precio*o.qty).toLocaleString('es-PY')}`).join('\n');
   },
   async crear_pedido(args){
-    if(!['admin','superadmin','vendedor'].includes(CU.rol))return'Sin permisos para crear pedidos.';
+    if(!['admin','superadmin','vendedor','proveedor','dropshipper'].includes(CU.rol))return'Sin permisos para crear pedidos.';
     const zona=_zonasCache.find(z=>z.id===args.zona_id);
     if(!zona)return'Zona no encontrada. Zonas disponibles: '+_zonasCache.map(z=>`${z.id}:${z.nombre}`).join(', ');
     const newId=Math.max(..._ordersCache.map(o=>o.id),1000)+1;
@@ -1722,7 +1722,8 @@ const AI_TOOL_EXEC={
     if(CU.rol==='vendedor'&&o.vendedorId!==CU.id)return'Solo podés actualizar tus propios pedidos.';
     if(CU.rol==='dropshipper'&&o.dropId!==CU.id)return'Solo podés actualizar tus propios pedidos.';
     if(CU.rol==='delivery'&&o.deliveryId!==CU.id)return'Solo podés actualizar pedidos asignados a vos.';
-    if(['proveedor','cliente'].includes(CU.rol))return'Sin permisos para actualizar estados.';
+    if(CU.rol==='proveedor'&&o.vendedorId!==CU.id&&(o.proveedor||'').toLowerCase()!==CU.nombre.toLowerCase())return'Solo podés actualizar tus propios pedidos.';
+    if(CU.rol==='cliente')return'Sin permisos para actualizar estados.';
     const prev=o.estado;
     o.estado=args.estado;o.notas=args.notas||o.notas;
     o.historial=o.historial||[];
@@ -2355,7 +2356,7 @@ function getVisibleOrders(){
   if(r==='dropshipper')return _ordersCache.filter(o=>o.dropId===CU.id);
   if(r==='delivery')return _ordersCache.filter(o=>o.deliveryId===CU.id);
   if(r==='cliente')return _ordersCache.filter(o=>o.cliente===CU.nombre);
-  if(r==='proveedor')return _ordersCache.filter(o=>(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  if(r==='proveedor')return _ordersCache.filter(o=>o.vendedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
   return[];
 }
 function nextDocNum(){
@@ -2516,7 +2517,7 @@ PAGES.dashboard=async function(){
 
 /* ─── ORDERS ─── */
 PAGES.orders=PAGES.entregas=PAGES.mispedidos=function(){
-  const canCreate=['admin','superadmin','vendedor'].includes(CU.rol);
+  const canCreate=['admin','superadmin','vendedor','proveedor','dropshipper'].includes(CU.rol);
   $('tbActions').innerHTML=
     (canCreate?'<button class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="openCSV()">↑ CSV</button>':'')+
@@ -2759,7 +2760,8 @@ function editOrder(id){
     '<option value="manual" '+(esManualEdit?'selected':'')+'>✏️ Otra ubicación (manual)...</option>';
   const dlvOpts='<option value="">Sin asignar</option>'+dlvs.map(d=>'<option value="'+d.id+'" '+(o.deliveryId===d.id?'selected':'')+'>'+d.nombre+' ('+(d.vehiculo||'moto')+')</option>').join('');
   const dropOpts='<option value="">Sin asignar</option>'+drops.map(d=>'<option value="'+d.id+'" '+(o.dropId===d.id?'selected':'')+'>'+d.nombre+'</option>').join('');
-  const vendOpts='<option value="">Sin asignar</option>'+vends.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+d.nombre+'</option>').join('');
+  const allSales=_usersCache.filter(u=>['vendedor','proveedor','dropshipper','administrador','superadmin'].includes(u.rol));
+  const vendOpts='<option value="">Sin asignar</option>'+allSales.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+d.nombre+' ('+capRole(d.rol)+')</option>').join('');
   openA('✏️ Editar pedido #'+id,
     '<div class="stitle">Datos del cliente</div>'+
     '<div class="frow"><div class="fg"><label>Nombre cliente *</label><input type="text" id="eCli" value="'+escHtml(o.cliente||'')+'"></div>'+
@@ -2929,6 +2931,10 @@ function openNewOrder(){
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
   openB('Nuevo Pedido',
     '<div class="stitle">Datos del cliente</div>'+
+    (isAdminLike(CU.rol)?'<div class="fg"><label>👤 ¿De quién es este pedido?</label>'+
+    '<select id="nVendedorId" style="width:100%"><option value="'+CU.id+'" selected>'+CU.nombre+' (yo)</option>'+
+    _usersCache.filter(u=>['vendedor','proveedor','dropshipper'].includes(u.rol)&&u.id!==CU.id).map(u=>'<option value="'+u.id+'">'+u.nombre+' ('+capRole(u.rol)+')</option>').join('')+
+    '</select></div>':'')+
     '<div class="frow"><div class="fg"><label>Nombre cliente *</label>'+
     '<input type="text" id="nCli" placeholder="Nombre del cliente" oninput="sugerirClienteAnterior()">'+
     '<div id="nCliSug" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:140px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div>'+
@@ -2938,10 +2944,14 @@ function openNewOrder(){
     '<div class="fg"><label>Fecha</label><input type="date" id="nFecha" value="'+today()+'"></div></div>'+
     '<div class="fg">'+
     '<label style="display:flex;justify-content:space-between;align-items:center">'+
-    '<span>Dirección</span>'+
-    '<button type="button" id="nGpsBtn" onclick="captureGpsForOrder()" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer">📍 Capturar GPS</button>'+
+    '<span>Dirección del cliente</span>'+
+    '<button type="button" id="nGpsBtn" onclick="captureGpsForOrder()" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer">📍 GPS actual</button>'+
     '</label>'+
-    '<input type="text" id="nDir" placeholder="Calle, número, ciudad" onchange="calcNT()">'+
+    '<input type="text" id="nDir" placeholder="Calle, número, barrio, ciudad..." onchange="calcNT()">'+
+    '</div>'+
+    '<div class="fg">'+
+    '<label>🔗 Pegar enlace o coordenadas <span style="font-weight:400;color:var(--text3);font-size:11px">(Google Maps, WhatsApp, lat,lng)</span></label>'+
+    '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="procesarUbicacion(this.value)">'+
     '<input type="hidden" id="nGpsLat"><input type="hidden" id="nGpsLng">'+
     '<div id="nGpsStatus" style="font-size:11px;color:var(--text3);margin-top:3px"></div>'+
     '</div>'+
@@ -3007,6 +3017,54 @@ function openNewOrder(){
   );
   setTimeout(()=>initAddressAutocomplete('nDir'),400);
 }
+function parseLocationInput(text){
+  if(!text)return null;
+  const t=text.trim();
+  // @lat,lng en URL de Google Maps
+  const m1=t.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if(m1)return{lat:parseFloat(m1[1]),lng:parseFloat(m1[2])};
+  // ?q=lat,lng o destination=lat,lng o &ll=lat,lng
+  const m2=t.match(/[?&](?:q|destination|ll)=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if(m2)return{lat:parseFloat(m2[1]),lng:parseFloat(m2[2])};
+  // lat,lng directo (mínimo 4 decimales para no confundir con otros números)
+  const m3=t.match(/(-?\d{1,3}\.\d{4,})[,\s]+(-?\d{1,3}\.\d{4,})/);
+  if(m3){const lat=parseFloat(m3[1]),lng=parseFloat(m3[2]);if(lat>=-90&&lat<=90&&lng>=-180&&lng<=180)return{lat,lng};}
+  // lat,lng corto sin decimales largos (ej: -25.28,-57.63)
+  const m4=t.match(/^(-?\d{1,3}\.\d+)[,\s]+(-?\d{1,3}\.\d+)$/);
+  if(m4){const lat=parseFloat(m4[1]),lng=parseFloat(m4[2]);if(lat>=-90&&lat<=90&&lng>=-180&&lng<=180)return{lat,lng};}
+  return null;
+}
+
+async function procesarUbicacion(text){
+  if(!text||text.length<5)return;
+  const status=$('nGpsStatus'),btn=$('nGpsBtn');
+  const coords=parseLocationInput(text);
+  if(coords){
+    if($('nGpsLat'))$('nGpsLat').value=coords.lat.toFixed(6);
+    if($('nGpsLng'))$('nGpsLng').value=coords.lng.toFixed(6);
+    if(btn){btn.textContent='✅ GPS OK';btn.style.color='var(--green)';}
+    if(status)status.innerHTML='<span style="color:var(--green)">📍 Coordenadas extraídas: '+coords.lat.toFixed(5)+', '+coords.lng.toFixed(5)+'</span>';
+    return;
+  }
+  if(text.includes('goo.gl')||text.includes('maps.app')){
+    if(status)status.textContent='⏳ Resolviendo enlace corto...';
+    try{
+      const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/resolve-link?url='+encodeURIComponent(text));
+      const d=await r.json();
+      if(d.lat&&d.lng){
+        if($('nGpsLat'))$('nGpsLat').value=d.lat;
+        if($('nGpsLng'))$('nGpsLng').value=d.lng;
+        if(btn){btn.textContent='✅ GPS OK';btn.style.color='var(--green)';}
+        if(status)status.innerHTML='<span style="color:var(--green)">📍 GPS resuelto: '+d.lat+', '+d.lng+'</span>';
+      }else{
+        if(status)status.innerHTML='<span style="color:var(--accent)">⚠ No se pudo extraer el GPS. Abrí el link → copiá las coordenadas del URL</span>';
+      }
+    }catch(e){if(status)status.textContent='Error al resolver el enlace.';}
+    return;
+  }
+  if(status)status.innerHTML='<span style="color:var(--text3)">📝 Dirección de texto — se geocodificará al mostrar en el mapa</span>';
+}
+
 function captureGpsForOrder(){
   const btn=$('nGpsBtn'),status=$('nGpsStatus');
   if(!navigator.geolocation){pushNotif('GPS no disponible en este dispositivo','w');return;}
@@ -3154,12 +3212,13 @@ async function saveNewOrder(){
   const orders=_ordersCache;
   const newId=Math.max(...orders.map(o=>o.id),1000)+1;
   const gpsLat=gv('nGpsLat')||null,gpsLng=gv('nGpsLng')||null;
+  const vendedorIdSel=parseInt(gv('nVendedorId'))||CU.id;
   const o={
     id:newId,fecha:gv('nFecha')||today(),cliente:cli,cedula:gv('nCed'),
     telefono:gv('nTel'),direccion:gv('nDir'),zona,zonaCustomNombre,zonaCustomPrecio,
     proveedor:prov,producto:prod,
     qty:parseInt(gv('nQty'))||1,precio,costo,estado:'Pendiente',
-    vendedorId:CU.id,created_by:CU.id,
+    vendedorId:vendedorIdSel,created_by:CU.id,
     dropId:parseInt(gv('nDrop'))||null,deliveryId:parseInt(gv('nDlv'))||null,
     metodoCobro:null,fotoEntrega:false,gpsLat,gpsLng,notas:gv('nNotas'),
     boletaNum:'B-'+String(newId).padStart(4,'0'),numDoc:nextDocNum(),
@@ -5958,7 +6017,7 @@ function _mapaRenderSelects(){
   const vs=$('mapaVendSel');
   if(vs){
     const cur=window._mapaFiltroVend;
-    const vends=_usersCache.filter(u=>['vendedor','administrador','superadmin','dropshipper'].includes(u.rol));
+    const vends=_usersCache.filter(u=>['vendedor','administrador','superadmin','dropshipper','proveedor'].includes(u.rol));
     vs.innerHTML='<option value="">👤 Todos</option>'+
       vends.map(u=>'<option value="'+u.id+'" '+(String(cur)===String(u.id)?'selected':'')+'>'+u.nombre+'</option>').join('');
   }
