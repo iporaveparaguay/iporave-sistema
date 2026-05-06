@@ -6,6 +6,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 const HTML = path.join(__dirname, 'public', 'index.html');
 let errors = 0;
@@ -69,7 +70,17 @@ cdns.forEach(cdn => {
   else fail('CDN ' + cdn + ' FALTA');
 });
 
-// 6. Verificar funciones críticas presentes
+// 6. Verificar sintaxis JavaScript real (detecta SyntaxError antes de deployar)
+try {
+  new vm.Script(mainScript);
+  ok('Sintaxis JavaScript válida (vm.Script)');
+} catch (e) {
+  const lineMatch = e.stack ? e.stack.match(/:(\d+)/) : null;
+  const lineNum = lineMatch ? lineMatch[1] : '?';
+  fail('SyntaxError en línea ~' + lineNum + ': ' + e.message + ' — NO deployar');
+}
+
+// 7. Verificar funciones críticas presentes
 const funcs = ['doLogin', 'PAGES.catalogo', 'DL.saveProducto', 'exportOrdersPDF'];
 funcs.forEach(fn => {
   if (mainScript.includes(fn)) ok('Función ' + fn + ' presente');
