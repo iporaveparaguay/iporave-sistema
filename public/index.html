@@ -5985,7 +5985,10 @@ function _mapaAddMarker(map,o,lat,lng,exact){
     '<div style="color:#475569;margin-bottom:6px">🛵 '+dlvNombre+' · 👤 '+vendNombre+'</div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
     '<span style="background:'+color+';color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px">'+o.estado+'</span>'+
-    '<button onclick="navegarPedido('+o.id+')" style="background:#ea4335;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">📍 Navegar</button>'+
+    (CU.rol==='delivery'
+      ?'<button onclick="navegarPedido('+o.id+')" style="background:#ea4335;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">📍 Navegar</button>'
+      :(o.deliveryId?'<button onclick="verDeliveryEnMapa('+o.deliveryId+')" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">🛵 Seguir delivery</button>':'')
+    )+
     wa+
     '</div>'+
     (exact?'':'<div style="font-size:10px;color:#94a3b8;margin-top:6px">⚠ Posición aproximada por dirección</div>')+
@@ -6044,6 +6047,27 @@ function _mapaCargarDlvs(map){
         '<span style="color:#94a3b8;font-size:11px">GPS de última actualización</span></div>')
       .addTo(map);
     window._dlvMapMarkers[dlv.id]=m;
+  }
+}
+
+function verDeliveryEnMapa(deliveryId){
+  const dlv=_usersCache.find(u=>u.id===deliveryId);
+  if(!dlv){pushNotif('Delivery no encontrado','e');return;}
+  // Activar capa de deliverys si no está activa
+  if(!window._mapaShowDlvs){
+    window._mapaShowDlvs=true;
+    const btn=$('btnMapaDlvs');
+    if(btn){btn.style.background='#1d4ed8';btn.style.color='#fff';}
+    _mapaCargarDlvs(window._mapInstance);
+  }
+  // Hacer zoom al delivery en el mapa
+  const m=window._dlvMapMarkers[deliveryId];
+  if(m){
+    window._mapInstance.setView(m.getLatLng(),15,{animate:true});
+    setTimeout(()=>m.openPopup(),400);
+    pushNotif('Mostrando posición de '+dlv.nombre,'s');
+  } else {
+    pushNotif(dlv.nombre+' no tiene GPS registrado aún','w');
   }
 }
 
