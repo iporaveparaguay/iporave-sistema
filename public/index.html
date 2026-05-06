@@ -132,8 +132,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* MODALS */
 .moverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;align-items:center;justify-content:center;padding:14px;}
 .moverlay.open{display:flex;}
-.mbox{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);width:100%;max-width:540px;max-height:93vh;overflow-y:auto;box-shadow:var(--shadow);}
+.mbox{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);width:100%;max-width:540px;max-height:93vh;overflow-y:auto;overflow-x:hidden;box-shadow:var(--shadow);}
 .mbox.lg{max-width:800px;}.mbox.xl{max-width:1020px;}
+.mbody img{max-width:100%;height:auto;}
+.mbody video{max-width:100%;}
 .mhead{padding:17px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:2;}
 .mtitle{font-size:15px;font-weight:700;}
 .mclose{cursor:pointer;color:var(--text2);font-size:20px;line-height:1;transition:color .15s;padding:2px 4px;}
@@ -775,7 +777,7 @@ function bE(e){
     'No contesta 1°':'bn1','No contesta 2°':'bn2','No contesta 3°':'bn3',Reprogramado:'brp',Devuelto:'bret'};
   return '<span class="badge '+(m[e]||'bp')+'">'+e+'</span>';
 }
-function openA(t,b,f){$('mATitle').textContent=t;$('mABody').innerHTML=b;$('mAFoot').innerHTML=f||'';$('mA').classList.add('open');}
+function openA(t,b,f,size=''){$('mABox').className='mbox'+(size?' '+size:'');$('mATitle').textContent=t;$('mABody').innerHTML=b;$('mAFoot').innerHTML=f||'';$('mA').classList.add('open');}
 function closeA(){$('mA').classList.remove('open');}
 function openB(t,b,f){$('mBTitle').textContent=t;$('mBBody').innerHTML=b;$('mBFoot').innerHTML=f||'';$('mB').classList.add('open');}
 function closeB(){$('mB').classList.remove('open');}
@@ -3790,7 +3792,8 @@ function openNuevoProducto(){
     (isAdminLike(CU.rol)?'<div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="npPublicar"> Publicar en tienda pública</label></div>':'')+
     '<div id="npAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveNuevoProducto()">Crear producto</button>'
+    '<button class="btn btn-primary" onclick="saveNuevoProducto()">Crear producto</button>',
+    'lg'
   );
   window._presEdit=[];
   setTimeout(()=>{const e=$('npNom');if(e)e.focus();_renderPresForm();},120);
@@ -3940,7 +3943,8 @@ async function editProducto(id){
     (isAdminLike(CU.rol)?'<div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="epPublicar" '+(p.publicar_tienda?'checked':'')+'>Publicar en tienda pública</label></div>':'')+
     '<div id="epAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveEditProducto('+id+')">Guardar</button>'
+    '<button class="btn btn-primary" onclick="saveEditProducto('+id+')">Guardar</button>',
+    'lg'
   );
   window._presEdit=JSON.parse(JSON.stringify(p.presentaciones||[]));
   window._fotosEdit=[...(p.fotos||[])].filter(Boolean);
@@ -4171,7 +4175,8 @@ function verProducto(id){
     '</div>'+
     (p.stock>0?'<div style="font-size:11px;color:var(--text2);margin-top:4px">📦 Stock: '+p.stock+'</div>':'')+
     presHtml+descHtml,
-    '<button class="btn btn-secondary" onclick="closeA()" style="flex:1">Cerrar</button>'
+    '<button class="btn btn-secondary" onclick="closeA()" style="flex:1">Cerrar</button>',
+    'lg'
   );
 }
 
