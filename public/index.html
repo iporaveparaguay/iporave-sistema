@@ -144,6 +144,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mclose:hover{color:var(--red);}
 .mbody{padding:22px;}.mfoot{padding:13px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center;position:sticky;bottom:0;background:var(--bg2);}
 .mfoot-alert{width:100%;margin-bottom:2px;}
+/* MAPA LABELS */
+.map-label{background:rgba(255,255,255,.93)!important;border:none!important;border-radius:5px!important;box-shadow:0 1px 5px rgba(0,0,0,.25)!important;color:#0f172a!important;font-size:10px!important;font-weight:800!important;padding:2px 6px!important;white-space:nowrap!important;}
+.map-label::before{display:none!important;}
+.map-label-dlv{background:rgba(29,78,216,.92)!important;border:none!important;border-radius:5px!important;box-shadow:0 1px 5px rgba(0,0,0,.3)!important;color:#fff!important;font-size:10px!important;font-weight:800!important;padding:2px 6px!important;white-space:nowrap!important;}
+.map-label-dlv::before{display:none!important;}
 /* GPS */
 .gpsw{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;margin-bottom:12px;}
 .gpss{display:flex;align-items:center;gap:8px;font-size:13px;}
@@ -2737,32 +2742,69 @@ function viewOrder(id){
 function editOrder(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
-  openA('Editar pedido #'+id,
+  const drops=_usersCache.filter(u=>u.rol==='dropshipper');
+  const vends=_usersCache.filter(u=>u.rol==='vendedor');
+  const zonaOpts=_zonasCache.map(z=>'<option value="'+z.id+'" '+(o.zona===z.id?'selected':'')+'>'+z.nombre+' (Gs. '+fmtN(z.precio)+')</option>').join('');
+  const dlvOpts='<option value="">Sin asignar</option>'+dlvs.map(d=>'<option value="'+d.id+'" '+(o.deliveryId===d.id?'selected':'')+'>'+d.nombre+' ('+(d.vehiculo||'moto')+')</option>').join('');
+  const dropOpts='<option value="">Sin asignar</option>'+drops.map(d=>'<option value="'+d.id+'" '+(o.dropId===d.id?'selected':'')+'>'+d.nombre+'</option>').join('');
+  const vendOpts='<option value="">Sin asignar</option>'+vends.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+d.nombre+'</option>').join('');
+  openA('✏️ Editar pedido #'+id,
+    '<div class="stitle">Datos del cliente</div>'+
+    '<div class="frow"><div class="fg"><label>Nombre cliente *</label><input type="text" id="eCli" value="'+escHtml(o.cliente||'')+'"></div>'+
+    '<div class="fg"><label>Cédula</label><input type="text" id="eCed" value="'+(o.cedula||'')+'"></div></div>'+
+    '<div class="frow"><div class="fg"><label>Teléfono</label><input type="text" id="eTel" value="'+(o.telefono||'')+'"></div>'+
+    '<div class="fg"><label>Fecha</label><input type="date" id="eFecha" value="'+(o.fecha||today())+'"></div></div>'+
+    '<div class="fg"><label>Dirección</label><input type="text" id="eDir" value="'+escHtml(o.direccion||'')+'"></div>'+
+    '<div class="fg"><label>Zona de entrega</label><select id="eZona">'+zonaOpts+'</select></div>'+
+    '<div class="stitle">Producto</div>'+
+    '<div class="frow"><div class="fg"><label>Proveedor</label><input type="text" id="eProv" value="'+escHtml(o.proveedor||'')+'"></div>'+
+    '<div class="fg"><label>Producto *</label><input type="text" id="eProd" value="'+escHtml(o.producto||'')+'"></div></div>'+
+    '<div class="frow3"><div class="fg"><label>Cantidad</label><input type="number" id="eQty" value="'+(o.qty||1)+'" min="1"></div>'+
+    '<div class="fg"><label>Precio venta (Gs.)</label><input type="number" id="ePrec" value="'+(o.precio||0)+'"></div>'+
+    '<div class="fg"><label>Costo (Gs.)</label><input type="number" id="eCost" value="'+(o.costo||0)+'"></div></div>'+
+    '<div class="stitle">Logística</div>'+
     '<div class="fg"><label>Estado</label><select id="eEst">'+ESTADOS.map(e=>'<option value="'+e+'" '+(o.estado===e?'selected':'')+'>'+e+'</option>').join('')+'</select></div>'+
-    '<div class="fg"><label>Proveedor</label><input type="text" id="eProv" value="'+(o.proveedor||'')+'"></div>'+
-    '<div class="fg"><label>Delivery asignado</label><select id="eDlv"><option value="">Sin asignar</option>'+dlvs.map(d=>'<option value="'+d.id+'" '+(o.deliveryId===d.id?'selected':'')+'>'+d.nombre+' ('+(d.vehiculo||'moto')+')</option>').join('')+'</select></div>'+
-    '<div class="fg"><label>Observación <span id="eObsReq" style="color:var(--red)"></span></label><textarea id="eNotas">'+(o.notas||'')+'</textarea></div>'+
+    '<div class="fg"><label>Método de cobro</label><select id="eMetodo"><option value="">Sin definir</option>'+METODOS.map(m=>'<option value="'+m+'" '+(o.metodoCobro===m?'selected':'')+'>'+m+'</option>').join('')+'</select></div>'+
+    '<div class="frow"><div class="fg"><label>Delivery asignado</label><select id="eDlv">'+dlvOpts+'</select></div>'+
+    '<div class="fg"><label>Dropshipper</label><select id="eDrop">'+dropOpts+'</select></div></div>'+
+    '<div class="fg"><label>Vendedor</label><select id="eVend">'+vendOpts+'</select></div>'+
+    '<div class="stitle">Datos IVA <span style="font-weight:400;color:var(--text3)">(opcional)</span></div>'+
+    '<div class="frow"><div class="fg"><label>Razón social</label><input type="text" id="eRazon" value="'+escHtml(o.razonSocial||'')+'"></div>'+
+    '<div class="fg"><label>RUC</label><input type="text" id="eRuc" value="'+(o.ruc||'')+'"></div></div>'+
+    '<div class="fg"><label>Tipo IVA</label><select id="eIva"><option '+(o.tipoIva==='10%'?'selected':'')+'>10%</option><option '+(o.tipoIva==='5%'?'selected':'')+'>5%</option><option '+(o.tipoIva==='Exento'?'selected':'')+'>Exento</option></select></div>'+
+    '<div class="fg"><label>Notas / Observación</label><textarea id="eNotas">'+(o.notas||'')+'</textarea></div>'+
     '<div id="eAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveEditOrder('+id+')">Guardar</button>'
+    '<button class="btn btn-primary" onclick="saveEditOrder('+id+')">Guardar cambios</button>'
   );
 }
 async function saveEditOrder(id){
-  const orders=_ordersCache;
-  const o=orders.find(x=>x.id===id);if(!o)return;
+  const o=_ordersCache.find(x=>x.id===id);if(!o)return;
   const ns=gv('eEst').trim(),obs=gv('eNotas').trim();
+  const cli=gv('eCli').trim(),prod=gv('eProd').trim();
+  if(!cli||!prod){showAlert('eAlert','e','Cliente y Producto son obligatorios');return;}
   if(ESTADOS_REQ_OBS.has(ns)&&!obs){showAlert('eAlert','e','La observación es obligatoria para este estado');return;}
   if(ns!==o.estado){
     o.historial=o.historial||[];
     o.historial.push({estado:ns,usuario:CU.nombre,fecha:nowStr(),obs});
   }
-  o.estado=ns;o.proveedor=gv('eProv')||o.proveedor;
-  const d=parseInt(gv('eDlv'));if(d)o.deliveryId=d;
-  o.notas=obs;
+  o.cliente=cli;o.cedula=gv('eCed');o.telefono=gv('eTel');
+  o.fecha=gv('eFecha')||o.fecha;o.direccion=gv('eDir');
+  const zona=parseInt(gv('eZona'));if(zona)o.zona=zona;
+  o.proveedor=gv('eProv');o.producto=prod;
+  o.qty=parseInt(gv('eQty'))||o.qty;
+  o.precio=parseFloat(gv('ePrec'))||o.precio;
+  o.costo=parseFloat(gv('eCost'))||o.costo;
+  o.estado=ns;o.notas=obs;
+  o.metodoCobro=gv('eMetodo')||o.metodoCobro;
+  const dlv=parseInt(gv('eDlv'));if(dlv)o.deliveryId=dlv;else if(gv('eDlv')==='')o.deliveryId=null;
+  const drop=parseInt(gv('eDrop'));if(drop)o.dropId=drop;else if(gv('eDrop')==='')o.dropId=null;
+  const vend=parseInt(gv('eVend'));if(vend)o.vendedorId=vend;
+  o.razonSocial=gv('eRazon');o.ruc=gv('eRuc');o.tipoIva=gv('eIva')||o.tipoIva;
   await DL.saveOrder(o);
   await refreshCache();
   closeA();filtrar();
-  pushNotif('Pedido #'+id+' actualizado a '+ns,'s');
+  pushNotif('Pedido #'+id+' actualizado','s');
 }
 
 /* ─── DELIVERY MODAL ─── */
@@ -5637,11 +5679,21 @@ async function rechazarDispositivo(id){
 }
 
 /* ─── MAPA EN TIEMPO REAL ─────────────────────────────────────────────────── */
-const _MAPA_COLORS={'Pendiente':'#f97316','Asignado':'#3b82f6','En camino':'#8b5cf6','Entregado':'#22c55e','Cancelado':'#ef4444','Devuelto':'#9ca3af'};
+const _MAPA_COLORS={
+  'Pendiente':'#991b1b','Despachado':'#b91c1c','En ruta':'#c2410c',
+  'Entregado':'#15803d',
+  'No contesta 1°':'#7e22ce','No contesta 2°':'#6b21a8','No contesta 3°':'#581c87',
+  'Reprogramado':'#1d4ed8',
+  'Cancelado':'#6b7280','Devuelto':'#4b5563'
+};
 window._geocodeCache={};
 window._mapInstance=null;
 window._mapMarkers={};
+window._dlvMapMarkers={};
 window._mapaFiltro=null;
+window._mapaFiltroZona=null;
+window._mapaFiltroVend=null;
+window._mapaShowDlvs=false;
 
 async function _geocodeAddr(addr){
   if(window._geocodeCache[addr])return window._geocodeCache[addr];
@@ -5684,6 +5736,8 @@ async function _mapaCargar(map){
   _mapaUpdateContadores();
   let orders=_ordersCache.filter(o=>o.estado!=='Cancelado'&&o.estado!=='Devuelto');
   if(window._mapaFiltro)orders=orders.filter(o=>o.estado===window._mapaFiltro);
+  if(window._mapaFiltroZona)orders=orders.filter(o=>String(o.zona)===String(window._mapaFiltroZona));
+  if(window._mapaFiltroVend)orders=orders.filter(o=>String(o.vendedorId)===String(window._mapaFiltroVend));
   const bounds=[];
 
   // Primero mostrar los que tienen GPS (inmediato)
@@ -5694,35 +5748,52 @@ async function _mapaCargar(map){
     bounds.push([lat,lng]);
   }
   if(bounds.length)map.fitBounds(bounds,{padding:[40,40],maxZoom:14});
+  else if(!window._mapaFiltroZona)map.setView([-23.5,-58.5],7);
 
   // Luego geocodificar los que no tienen GPS (async, throttled)
   for(const o of orders){
     if(o.gpsLat&&o.gpsLng)continue;
     if(!$('ordersMap'))break;
     const z=getZona(o.zona);
-    const addr=(o.direccion||'')+' '+(z.nombre||'')+' Asuncion Paraguay';
+    const addr=(o.direccion||'')+' '+(z.nombre||'')+' Paraguay';
     const coords=await _geocodeAddr(addr);
-    if(coords){_mapaAddMarker(map,o,coords[0],coords[1],false);}
+    if(coords){
+      _mapaAddMarker(map,o,coords[0],coords[1],false);
+      bounds.push(coords);
+    }
     await new Promise(r=>setTimeout(r,1100));
   }
+  if(bounds.length>1)map.fitBounds(bounds,{padding:[50,50],maxZoom:13});
 }
 
 function _mapaAddMarker(map,o,lat,lng,exact){
   const color=_MAPA_COLORS[o.estado]||'#6b7280';
-  const sz=exact?18:14;
-  const border=exact?'3px solid #fff':'2px solid #fff';
+  const abbr=(o.proveedor||'IPRV').substring(0,4).toUpperCase();
+  const num='#'+String(o.id).padStart(3,'0');
+  const opacity=exact?1:.82;
   const icon=L.divIcon({
-    html:'<div style="background:'+color+';width:'+sz+'px;height:'+sz+'px;border-radius:50%;border:'+border+
-      ';box-shadow:0 2px 8px '+color+'99;'+(exact?'':'opacity:.85;')+'" title="'+o.cliente+'"></div>',
-    iconSize:[sz,sz],className:''
+    html:'<div style="display:flex;flex-direction:column;align-items:center;opacity:'+opacity+'">'+
+      '<div style="background:'+color+';color:#fff;width:44px;height:44px;border-radius:50%;'+
+      'border:3px solid rgba(255,255,255,.95);box-shadow:0 3px 12px rgba(0,0,0,.4),0 0 0 2px '+color+';'+
+      'display:flex;flex-direction:column;align-items:center;justify-content:center;'+
+      'font-weight:900;line-height:1.15;text-align:center">'+
+      '<span style="font-size:9px">'+num+'</span>'+
+      '<span style="font-size:8.5px">'+abbr+'</span>'+
+      '</div>'+
+      '</div>',
+    iconSize:[44,44],iconAnchor:[22,22],popupAnchor:[0,-26],className:''
   });
   const wa=o.telefono?'<a href="https://wa.me/595'+o.telefono.replace(/\D/g,'')+'" target="_blank" style="background:#25D366;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;text-decoration:none;font-weight:700">💬 WA</a>':'';
+  const dlvNombre=(_usersCache.find(u=>u.id===o.deliveryId)||{}).nombre||'Sin asignar';
+  const vendNombre=(_usersCache.find(u=>u.id===o.vendedorId)||{}).nombre||'—';
   const popup=
-    '<div style="min-width:200px;font-family:Arial,sans-serif;font-size:13px">'+
-    '<div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:5px">'+o.cliente+'</div>'+
+    '<div style="min-width:210px;font-family:Arial,sans-serif;font-size:13px">'+
+    '<div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:4px">'+o.cliente+'</div>'+
     '<div style="color:#475569;margin-bottom:2px">📦 '+o.producto+' × '+o.qty+'</div>'+
+    '<div style="color:#475569;margin-bottom:2px">🏭 '+( o.proveedor||'—')+'</div>'+
     '<div style="color:#475569;margin-bottom:2px">📍 '+(o.direccion||'—')+'</div>'+
-    '<div style="color:#475569;margin-bottom:8px">📞 '+(o.telefono||'—')+'</div>'+
+    '<div style="color:#475569;margin-bottom:2px">📞 '+(o.telefono||'—')+'</div>'+
+    '<div style="color:#475569;margin-bottom:6px">🛵 '+dlvNombre+' · 👤 '+vendNombre+'</div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
     '<span style="background:'+color+';color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px">'+o.estado+'</span>'+
     '<button onclick="navegarPedido('+o.id+')" style="background:#ea4335;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">📍 Navegar</button>'+
@@ -5730,7 +5801,11 @@ function _mapaAddMarker(map,o,lat,lng,exact){
     '</div>'+
     (exact?'':'<div style="font-size:10px;color:#94a3b8;margin-top:6px">⚠ Posición aproximada por dirección</div>')+
     '</div>';
-  const m=L.marker([lat,lng],{icon}).bindPopup(popup).addTo(map);
+  const shortName=(o.cliente||'').length>18?(o.cliente||'').substring(0,17)+'…':(o.cliente||'');
+  const m=L.marker([lat,lng],{icon})
+    .bindTooltip(shortName,{permanent:true,direction:'top',offset:[0,-26],className:'map-label'})
+    .bindPopup(popup)
+    .addTo(map);
   window._mapMarkers[o.id]=m;
 }
 
@@ -5740,19 +5815,78 @@ async function initOrdersLayer(map){
   _ordersLayerInterval=setInterval(()=>_mapaCargar(map),60000);
 }
 
+function _mapaSelStyle(){
+  return 'padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:12px;background:var(--card);color:var(--text1);cursor:pointer;max-width:160px';
+}
+function _mapaRenderSelects(){
+  const zs=$('mapaZonaSel');
+  if(zs){
+    const cur=window._mapaFiltroZona;
+    zs.innerHTML='<option value="">🌎 Todo Paraguay</option>'+
+      _zonasCache.map(z=>'<option value="'+z.id+'" '+(String(cur)===String(z.id)?'selected':'')+'>'+z.nombre+'</option>').join('');
+  }
+  const vs=$('mapaVendSel');
+  if(vs){
+    const cur=window._mapaFiltroVend;
+    const vends=_usersCache.filter(u=>['vendedor','administrador'].includes(u.rol));
+    vs.innerHTML='<option value="">👤 Todos los vendedores</option>'+
+      vends.map(u=>'<option value="'+u.id+'" '+(String(cur)===String(u.id)?'selected':'')+'>'+u.nombre+'</option>').join('');
+  }
+}
+
+function _mapaCargarDlvs(map){
+  Object.values(window._dlvMapMarkers).forEach(m=>map.removeLayer(m));
+  window._dlvMapMarkers={};
+  const dlvs=_usersCache.filter(u=>u.rol==='delivery');
+  for(const dlv of dlvs){
+    const recent=_ordersCache.filter(o=>o.deliveryId===dlv.id&&o.gpsLat&&o.gpsLng).sort((a,b)=>b.id-a.id);
+    if(!recent.length)continue;
+    const o=recent[0];
+    const lat=parseFloat(o.gpsLat),lng=parseFloat(o.gpsLng);
+    const icon=L.divIcon({
+      html:'<div style="background:#1d4ed8;color:#fff;width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.95);'+
+        'box-shadow:0 3px 12px rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;line-height:1">🛵</div>',
+      iconSize:[42,42],iconAnchor:[21,21],popupAnchor:[0,-25],className:''
+    });
+    const m=L.marker([lat,lng],{icon})
+      .bindTooltip(dlv.nombre,{permanent:true,direction:'top',offset:[0,-25],className:'map-label-dlv'})
+      .bindPopup('<div style="font-family:Arial;font-size:13px"><b>🛵 '+dlv.nombre+'</b><br>Último pedido: <b>#'+o.id+'</b><br>'+
+        '<span style="color:#475569">'+o.direccion+'</span><br>'+
+        '<span style="color:#94a3b8;font-size:11px">GPS de última actualización</span></div>')
+      .addTo(map);
+    window._dlvMapMarkers[dlv.id]=m;
+  }
+}
+
+function _mapaToggleDlvs(){
+  window._mapaShowDlvs=!window._mapaShowDlvs;
+  const btn=$('btnMapaDlvs');
+  if(btn){btn.style.background=window._mapaShowDlvs?'#1d4ed8':'';btn.style.color=window._mapaShowDlvs?'#fff':'';}
+  if(window._mapaShowDlvs)_mapaCargarDlvs(window._mapInstance);
+  else{Object.values(window._dlvMapMarkers).forEach(m=>window._mapInstance.removeLayer(m));window._dlvMapMarkers={};}
+}
+
 PAGES.mapa=function(){
   if(_ordersLayerInterval){clearInterval(_ordersLayerInterval);_ordersLayerInterval=null;}
-  window._mapaFiltro=null;window._mapMarkers={};
+  window._mapaFiltro=null;window._mapaFiltroZona=null;window._mapaFiltroVend=null;
+  window._mapaShowDlvs=false;window._mapMarkers={};window._dlvMapMarkers={};
   $('tbTitle').textContent='Mapa de Pedidos';
-  $('tbActions').innerHTML='<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄 Actualizar</button>';
+  $('tbActions').innerHTML=
+    '<select id="mapaZonaSel" onchange="window._mapaFiltroZona=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'">'+
+    '<option value="">🌎 Todo Paraguay</option></select>'+
+    '<select id="mapaVendSel" onchange="window._mapaFiltroVend=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'">'+
+    '<option value="">👤 Todos</option></select>'+
+    '<button id="btnMapaDlvs" class="btn btn-secondary btn-sm" onclick="_mapaToggleDlvs()" title="Ver posición de deliverys">🛵 Deliverys</button>'+
+    '<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄</button>';
   $('ca').innerHTML=
-    '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>'+
-    '<div id="ordersMap" style="height:calc(100vh - 190px);border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
-    '<div style="margin-top:6px;font-size:11px;color:var(--text3)">🔵 Pin grande = GPS confirmado · ⚪ Pin pequeño = dirección aproximada · Se actualiza cada 60s</div>';
+    '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>'+
+    '<div id="ordersMap" style="height:calc(100vh - 210px);border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
+    '<div style="margin-top:5px;font-size:11px;color:var(--text3)">🔴 Pin = GPS confirmado · ⚪ semitransparente = dirección aproximada · Se actualiza cada 60s</div>';
   setTimeout(function(){
-    const map=L.map('ordersMap').setView([-25.2867,-57.6362],12);
+    const map=L.map('ordersMap').setView([-23.5,-58.5],7);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
     window._mapInstance=map;
+    _mapaRenderSelects();
     initOrdersLayer(map);
   },50);
 };
