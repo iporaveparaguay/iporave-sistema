@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 :root{
   --bg:#0b0d12;--bg2:#111318;--bg3:#181b24;--bg4:#1f2330;--bg5:#252a38;
@@ -2506,7 +2507,7 @@ PAGES.orders=PAGES.entregas=PAGES.mispedidos=function(){
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="openCSV()">↑ CSV</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportCSV()">↓ CSV</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="DL.exportBackup()">💾 Backup</button>':'')+
-    '<button class="btn btn-secondary" onclick="exportOrdersCSV()" title="Exportar a CSV">📊 CSV</button>'+
+    '<button class="btn btn-secondary" onclick="exportOrdersCSV()" title="Exportar a Excel">📊 Excel</button>'+
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">🖨️ PDF</button>';
   $('ca').innerHTML=
     '<div class="fbar">'+
@@ -3002,7 +3003,7 @@ async function saveNewOrder(){
 
 /* ─── BALANCE ─── */
 PAGES.balance=function(){
-  $('tbActions').innerHTML='<button class="btn btn-secondary" onclick="exportBalanceCSV()" title="Exportar a CSV">📊 CSV</button>'+
+  $('tbActions').innerHTML='<button class="btn btn-secondary" onclick="exportBalanceCSV()" title="Exportar a Excel">📊 Excel</button>'+
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">🖨️ PDF</button>';
   const orders=getVisibleOrders();
   const ent=orders.filter(o=>o.estado==='Entregado');
@@ -4557,25 +4558,61 @@ function exportOrdersPDF(){
   else pushNotif('Permiti popups para ver el PDF','w');
   pushNotif('Reporte PDF profesional generado','s');
 }
+function _xlsxHdrStyle(){
+  return{font:{bold:true,color:{rgb:'FFFFFF'},sz:11},fill:{fgColor:{rgb:'1B3A6B'}},alignment:{horizontal:'center',vertical:'center'},border:{top:{style:'thin',color:{rgb:'FFFFFF'}},bottom:{style:'thin',color:{rgb:'FFFFFF'}},left:{style:'thin',color:{rgb:'FFFFFF'}},right:{style:'thin',color:{rgb:'FFFFFF'}}}};
+}
+function _xlsxCellStyle(even,right){
+  return{fill:{fgColor:{rgb:even?'EEF3FB':'FFFFFF'}},alignment:{horizontal:right?'right':'left',vertical:'center'},border:{top:{style:'thin',color:{rgb:'D0D8E8'}},bottom:{style:'thin',color:{rgb:'D0D8E8'}},left:{style:'thin',color:{rgb:'D0D8E8'}},right:{style:'thin',color:{rgb:'D0D8E8'}}}};
+}
+function _xlsxTotStyle(right){
+  return{font:{bold:true,color:{rgb:'FFFFFF'},sz:11},fill:{fgColor:{rgb:'1B3A6B'}},alignment:{horizontal:right?'right':'center',vertical:'center'},border:{top:{style:'medium',color:{rgb:'0D2444'}},bottom:{style:'medium',color:{rgb:'0D2444'}},left:{style:'thin',color:{rgb:'1B3A6B'}},right:{style:'thin',color:{rgb:'1B3A6B'}}}};
+}
+function _xlsxApplyStyles(ws,headers,rows,moneyIdx,totRow){
+  const hs=_xlsxHdrStyle();
+  headers.forEach((_,i)=>{const c=XLSX.utils.encode_cell({r:0,c:i});if(ws[c])ws[c].s=hs;});
+  rows.forEach((row,ri)=>{
+    row.forEach((v,ci)=>{
+      const c=XLSX.utils.encode_cell({r:ri+1,c:ci});
+      if(!ws[c])return;
+      const money=moneyIdx.includes(ci);
+      ws[c].s=_xlsxCellStyle(ri%2===0,money);
+      if(money&&typeof ws[c].v==='number'){ws[c].t='n';ws[c].z='#,##0';}
+    });
+  });
+  if(totRow){
+    const tr=rows.length+1;
+    totRow.forEach((v,ci)=>{
+      const c=XLSX.utils.encode_cell({r:tr,c:ci});
+      if(!ws[c])return;
+      const money=moneyIdx.includes(ci);
+      ws[c].s=_xlsxTotStyle(money);
+      if(money&&typeof ws[c].v==='number'){ws[c].t='n';ws[c].z='#,##0';}
+    });
+  }
+}
 function exportOrdersCSV(){
   const orders=getVisibleOrders();
   if(!orders.length){pushNotif('No hay pedidos para exportar','w');return;}
-  const h=['Codigo','Fecha','Boleta','Cliente','Cedula','Telefono','Direccion','Zona','Producto','Cantidad','Precio Unitario','Total Venta','Costo Unitario','Total Costo','Precio Logistica','Ganancia Neta','Margen %','Proveedor','Vendedor ID','Delivery ID','Dropshipper ID','Estado','Metodo Cobro','GPS Lat','GPS Lng','Notas','Razon Social','RUC','IVA'];
+  if(typeof XLSX==='undefined'){pushNotif('Librer\u00eda Excel no disponible a\u00fan, reintent\u00e1 en segundos','w');return;}
+  const headers=['Codigo','Fecha','Boleta','Cliente','Cedula','Telefono','Direccion','Zona','Producto','Cant.','Precio Unit.','Total Venta','Costo Unit.','Total Costo','Logistica','Ganancia','Margen %','Proveedor','Vendedor','Delivery','Dropshipper','Estado','Cobro','GPS Lat','GPS Lng','Notas','Razon Social','RUC','IVA'];
   const rows=orders.map(o=>{
     const z=getZona(o.zona);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const log=z.precio||0;const gan=tv-cp-log;
     return[o.id,o.fecha,o.boletaNum||'',o.cliente,o.cedula||'',o.telefono||'',o.direccion||'',z.nombre||'',o.producto,o.qty,o.precio,tv,o.costo,cp,log,gan,tv>0?Math.round(gan/tv*100)+'%':'',o.proveedor||'',o.vendedorId||'',o.deliveryId||'',o.dropId||'',o.estado,o.metodoCobro||'',o.gpsLat||'',o.gpsLng||'',o.notas||'',o.razonSocial||'',o.ruc||'',o.tipoIva||''];
   });
-  const csv=[h,...rows].map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\n');
-  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='iporave_pedidos_'+today()+'.csv';a.click();
-  URL.revokeObjectURL(url);
-  pushNotif('CSV exportado - '+orders.length+' pedidos','s');
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  ws['!cols']=[{wch:8},{wch:12},{wch:10},{wch:22},{wch:12},{wch:14},{wch:28},{wch:15},{wch:24},{wch:6},{wch:13},{wch:13},{wch:13},{wch:13},{wch:13},{wch:13},{wch:9},{wch:18},{wch:10},{wch:10},{wch:13},{wch:13},{wch:10},{wch:10},{wch:10},{wch:28},{wch:18},{wch:10},{wch:8}];
+  ws['!rows']=[{hpt:22}];
+  _xlsxApplyStyles(ws,headers,rows,[10,11,12,13,14,15],null);
+  XLSX.utils.book_append_sheet(wb,ws,'Pedidos');
+  XLSX.writeFile(wb,'iporave_pedidos_'+today()+'.xlsx');
+  pushNotif('Excel exportado \u2014 '+orders.length+' pedidos','s');
 }
 function exportBalanceCSV(){
   const orders=getVisibleOrders().filter(o=>o.estado==='Entregado');
   if(!orders.length){pushNotif('No hay pedidos entregados','w');return;}
-  const h=['Codigo','Fecha','Boleta','Cliente','Producto','Cantidad','Total Venta','Costo Producto','Costo Logistica','Ganancia Neta','Margen %','Zona','Proveedor','Metodo Cobro'];
+  if(typeof XLSX==='undefined'){pushNotif('Librer\u00eda Excel no disponible a\u00fan, reintent\u00e1 en segundos','w');return;}
+  const headers=['Codigo','Fecha','Boleta','Cliente','Producto','Cant.','Total Venta','Costo Producto','Costo Logistica','Ganancia Neta','Margen %','Zona','Proveedor','Metodo Cobro'];
   const rows=orders.map(o=>{
     const z=getZona(o.zona);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const cl=z.precio||0;const gan=tv-cp-cl;
     return[o.id,o.fecha,o.boletaNum||'',o.cliente,o.producto,o.qty,tv,cp,cl,gan,tv>0?Math.round(gan/tv*100)+'%':'',z.nombre||'',o.proveedor||'',o.metodoCobro||''];
@@ -4584,13 +4621,15 @@ function exportBalanceCSV(){
   const totC=orders.reduce((a,o)=>a+o.costo*o.qty,0);
   const totL=orders.reduce((a,o)=>a+getZona(o.zona).precio,0);
   const totG=totV-totC-totL;
-  rows.push(['','','','TOTALES','',orders.length,totV,totC,totL,totG,totV>0?Math.round(totG/totV*100)+'%':'','','','']);
-  const csv=[h,...rows].map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\n');
-  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='iporave_balance_'+today()+'.csv';a.click();
-  URL.revokeObjectURL(url);
-  pushNotif('Balance exportado - '+orders.length+' entregados','s');
+  const totRow=['','','','TOTALES','',orders.length,totV,totC,totL,totG,totV>0?Math.round(totG/totV*100)+'%':'','','',''];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows,totRow]);
+  ws['!cols']=[{wch:8},{wch:12},{wch:10},{wch:22},{wch:24},{wch:6},{wch:14},{wch:14},{wch:14},{wch:14},{wch:9},{wch:16},{wch:18},{wch:13}];
+  ws['!rows']=[{hpt:22}];
+  _xlsxApplyStyles(ws,headers,rows,[6,7,8,9],totRow);
+  XLSX.utils.book_append_sheet(wb,ws,'Balance');
+  XLSX.writeFile(wb,'iporave_balance_'+today()+'.xlsx');
+  pushNotif('Balance Excel exportado \u2014 '+orders.length+' entregados','s');
 }
 
 /* ══════════════════════════════════════════════════
