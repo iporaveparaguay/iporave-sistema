@@ -4558,52 +4558,97 @@ function exportOrdersPDF(){
   else pushNotif('Permiti popups para ver el PDF','w');
   pushNotif('Reporte PDF profesional generado','s');
 }
-function _xlsxHdrStyle(){
-  return{font:{bold:true,color:{rgb:'FFFFFF'},sz:11},fill:{fgColor:{rgb:'1B3A6B'}},alignment:{horizontal:'center',vertical:'center'},border:{top:{style:'thin',color:{rgb:'FFFFFF'}},bottom:{style:'thin',color:{rgb:'FFFFFF'}},left:{style:'thin',color:{rgb:'FFFFFF'}},right:{style:'thin',color:{rgb:'FFFFFF'}}}};
+/* \u2500\u2500 XLSX helpers \u2500\u2500 */
+function _xlsxAutoWidth(allRows){
+  if(!allRows.length)return[];
+  return allRows[0].map((_,ci)=>{
+    const max=allRows.reduce((m,row)=>Math.max(m,String(row[ci]==null?'':row[ci]).length),8);
+    return{wch:Math.min(max+3,50)};
+  });
 }
-function _xlsxCellStyle(even,right){
-  return{fill:{fgColor:{rgb:even?'EEF3FB':'FFFFFF'}},alignment:{horizontal:right?'right':'left',vertical:'center'},border:{top:{style:'thin',color:{rgb:'D0D8E8'}},bottom:{style:'thin',color:{rgb:'D0D8E8'}},left:{style:'thin',color:{rgb:'D0D8E8'}},right:{style:'thin',color:{rgb:'D0D8E8'}}}};
+function _xlsxStyle(fill,fontColor,bold,right,sz){
+  return{
+    font:{bold:!!bold,color:{rgb:fontColor||'333333'},sz:sz||10},
+    fill:{fgColor:{rgb:fill||'FFFFFF'}},
+    alignment:{horizontal:right?'right':'left',vertical:'center',wrapText:false},
+    border:{top:{style:'thin',color:{rgb:'C8D4E8'}},bottom:{style:'thin',color:{rgb:'C8D4E8'}},left:{style:'thin',color:{rgb:'C8D4E8'}},right:{style:'thin',color:{rgb:'C8D4E8'}}}
+  };
 }
-function _xlsxTotStyle(right){
-  return{font:{bold:true,color:{rgb:'FFFFFF'},sz:11},fill:{fgColor:{rgb:'1B3A6B'}},alignment:{horizontal:right?'right':'center',vertical:'center'},border:{top:{style:'medium',color:{rgb:'0D2444'}},bottom:{style:'medium',color:{rgb:'0D2444'}},left:{style:'thin',color:{rgb:'1B3A6B'}},right:{style:'thin',color:{rgb:'1B3A6B'}}}};
-}
-function _xlsxApplyStyles(ws,headers,rows,moneyIdx,totRow){
-  const hs=_xlsxHdrStyle();
-  headers.forEach((_,i)=>{const c=XLSX.utils.encode_cell({r:0,c:i});if(ws[c])ws[c].s=hs;});
+function _xlsxBuildSheet(headers,rows,moneyIdx,finIdx,totRow){
+  const allData=[headers,...rows,...(totRow?[totRow]:[])];
+  const ws=XLSX.utils.aoa_to_sheet(allData);
+  ws['!cols']=_xlsxAutoWidth([headers,...rows]);
+  ws['!freeze']={xSplit:0,ySplit:1};
+  ws['!rows']=[{hpt:24}];
+  // encabezados
+  headers.forEach((_,i)=>{
+    const c=XLSX.utils.encode_cell({r:0,c:i});
+    if(!ws[c])return;
+    const isFin=finIdx&&finIdx.includes(i);
+    ws[c].s=_xlsxStyle(isFin?'1A5C2A':'1B3A6B','FFFFFF',true,moneyIdx.includes(i),11);
+  });
+  // filas de datos
   rows.forEach((row,ri)=>{
+    const even=ri%2===0;
     row.forEach((v,ci)=>{
       const c=XLSX.utils.encode_cell({r:ri+1,c:ci});
       if(!ws[c])return;
-      const money=moneyIdx.includes(ci);
-      ws[c].s=_xlsxCellStyle(ri%2===0,money);
-      if(money&&typeof ws[c].v==='number'){ws[c].t='n';ws[c].z='#,##0';}
+      const isMoney=moneyIdx.includes(ci);
+      const isFin=finIdx&&finIdx.includes(ci);
+      const bg=isFin?(even?'EBF5EE':'F5FAF6'):(even?'EEF3FB':'FFFFFF');
+      ws[c].s=_xlsxStyle(bg,'333333',false,isMoney||isFin,10);
+      if(isMoney&&typeof ws[c].v==='number'){ws[c].t='n';ws[c].z='#,##0';}
     });
   });
+  // fila totales
   if(totRow){
     const tr=rows.length+1;
     totRow.forEach((v,ci)=>{
       const c=XLSX.utils.encode_cell({r:tr,c:ci});
       if(!ws[c])return;
-      const money=moneyIdx.includes(ci);
-      ws[c].s=_xlsxTotStyle(money);
-      if(money&&typeof ws[c].v==='number'){ws[c].t='n';ws[c].z='#,##0';}
+      const isMoney=moneyIdx.includes(ci);
+      ws[c].s={
+        font:{bold:true,color:{rgb:'FFFFFF'},sz:11},
+        fill:{fgColor:{rgb:'0D2444'}},
+        alignment:{horizontal:isMoney?'right':(ci===3?'center':'left'),vertical:'center'},
+        border:{top:{style:'medium',color:{rgb:'0D2444'}},bottom:{style:'medium',color:{rgb:'0D2444'}},left:{style:'thin',color:{rgb:'0D2444'}},right:{style:'thin',color:{rgb:'0D2444'}}}
+      };
+      if(isMoney&&typeof ws[c].v==='number'){ws[c].t='n';ws[c].z='#,##0';}
     });
   }
+  return ws;
 }
 function exportOrdersCSV(){
   const orders=getVisibleOrders();
   if(!orders.length){pushNotif('No hay pedidos para exportar','w');return;}
   if(typeof XLSX==='undefined'){pushNotif('Librer\u00eda Excel no disponible a\u00fan, reintent\u00e1 en segundos','w');return;}
-  const headers=['Codigo','Fecha','Boleta','Cliente','Cedula','Telefono','Direccion','Zona','Producto','Cant.','Precio Unit.','Total Venta','Costo Unit.','Total Costo','Logistica','Ganancia','Margen %','Proveedor','Vendedor','Delivery','Dropshipper','Estado','Cobro','GPS Lat','GPS Lng','Notas','Razon Social','RUC','IVA'];
+  // Columnas agrupadas por secci\u00f3n: Info pedido | Cliente | Datos fiscales | Producto | \u2500\u2500FINANCIERO\u2500\u2500 | Equipo | Notas
+  const headers=[
+    'Codigo','Fecha','Boleta','Estado','Cobro',
+    'Cliente','Cedula','Telefono','Direccion','Zona',
+    'Razon Social','RUC','IVA',
+    'Producto','Proveedor','Cant.',
+    'Precio Unit.','Total Venta','Costo Unit.','Total Costo','Logistica','Ganancia','Margen %',
+    'Vendedor','Delivery','Dropshipper',
+    'Notas'
+  ];
   const rows=orders.map(o=>{
     const z=getZona(o.zona);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const log=z.precio||0;const gan=tv-cp-log;
-    return[o.id,o.fecha,o.boletaNum||'',o.cliente,o.cedula||'',o.telefono||'',o.direccion||'',z.nombre||'',o.producto,o.qty,o.precio,tv,o.costo,cp,log,gan,tv>0?Math.round(gan/tv*100)+'%':'',o.proveedor||'',o.vendedorId||'',o.deliveryId||'',o.dropId||'',o.estado,o.metodoCobro||'',o.gpsLat||'',o.gpsLng||'',o.notas||'',o.razonSocial||'',o.ruc||'',o.tipoIva||''];
+    return[
+      o.id,o.fecha,o.boletaNum||'',o.estado,o.metodoCobro||'',
+      o.cliente,o.cedula||'',o.telefono||'',o.direccion||'',z.nombre||'',
+      o.razonSocial||'',o.ruc||'',o.tipoIva||'',
+      o.producto,o.proveedor||'',o.qty,
+      o.precio,tv,o.costo,cp,log,gan,tv>0?Math.round(gan/tv*100)+'%':'',
+      o.vendedorId||'',o.deliveryId||'',o.dropId||'',
+      o.notas||''
+    ];
   });
+  // moneyIdx: columnas con n\u00fameros Gs (sin margen%) | finIdx: todas las financieras (para color verde)
+  const moneyIdx=[16,17,18,19,20,21];
+  const finIdx=[16,17,18,19,20,21,22];
   const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
-  ws['!cols']=[{wch:8},{wch:12},{wch:10},{wch:22},{wch:12},{wch:14},{wch:28},{wch:15},{wch:24},{wch:6},{wch:13},{wch:13},{wch:13},{wch:13},{wch:13},{wch:13},{wch:9},{wch:18},{wch:10},{wch:10},{wch:13},{wch:13},{wch:10},{wch:10},{wch:10},{wch:28},{wch:18},{wch:10},{wch:8}];
-  ws['!rows']=[{hpt:22}];
-  _xlsxApplyStyles(ws,headers,rows,[10,11,12,13,14,15],null);
+  const ws=_xlsxBuildSheet(headers,rows,moneyIdx,finIdx,null);
   XLSX.utils.book_append_sheet(wb,ws,'Pedidos');
   XLSX.writeFile(wb,'iporave_pedidos_'+today()+'.xlsx');
   pushNotif('Excel exportado \u2014 '+orders.length+' pedidos','s');
@@ -4612,21 +4657,33 @@ function exportBalanceCSV(){
   const orders=getVisibleOrders().filter(o=>o.estado==='Entregado');
   if(!orders.length){pushNotif('No hay pedidos entregados','w');return;}
   if(typeof XLSX==='undefined'){pushNotif('Librer\u00eda Excel no disponible a\u00fan, reintent\u00e1 en segundos','w');return;}
-  const headers=['Codigo','Fecha','Boleta','Cliente','Producto','Cant.','Total Venta','Costo Producto','Costo Logistica','Ganancia Neta','Margen %','Zona','Proveedor','Metodo Cobro'];
+  // Columnas: Info pedido | Cliente | Producto | \u2500\u2500FINANCIERO\u2500\u2500 | Operativo
+  const headers=[
+    'Codigo','Fecha','Boleta',
+    'Cliente','Zona',
+    'Producto','Proveedor','Cant.',
+    'Total Venta','Costo Producto','Costo Logistica','Ganancia Neta','Margen %',
+    'Metodo Cobro'
+  ];
   const rows=orders.map(o=>{
     const z=getZona(o.zona);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const cl=z.precio||0;const gan=tv-cp-cl;
-    return[o.id,o.fecha,o.boletaNum||'',o.cliente,o.producto,o.qty,tv,cp,cl,gan,tv>0?Math.round(gan/tv*100)+'%':'',z.nombre||'',o.proveedor||'',o.metodoCobro||''];
+    return[
+      o.id,o.fecha,o.boletaNum||'',
+      o.cliente,z.nombre||'',
+      o.producto,o.proveedor||'',o.qty,
+      tv,cp,cl,gan,tv>0?Math.round(gan/tv*100)+'%':'',
+      o.metodoCobro||''
+    ];
   });
   const totV=orders.reduce((a,o)=>a+o.precio*o.qty,0);
   const totC=orders.reduce((a,o)=>a+o.costo*o.qty,0);
   const totL=orders.reduce((a,o)=>a+getZona(o.zona).precio,0);
   const totG=totV-totC-totL;
-  const totRow=['','','','TOTALES','',orders.length,totV,totC,totL,totG,totV>0?Math.round(totG/totV*100)+'%':'','','',''];
+  const totRow=['','','','TOTALES','','',orders.length+'  pedidos','',totV,totC,totL,totG,totV>0?Math.round(totG/totV*100)+'%':'',''];
+  const moneyIdx=[8,9,10,11];
+  const finIdx=[8,9,10,11,12];
   const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet([headers,...rows,totRow]);
-  ws['!cols']=[{wch:8},{wch:12},{wch:10},{wch:22},{wch:24},{wch:6},{wch:14},{wch:14},{wch:14},{wch:14},{wch:9},{wch:16},{wch:18},{wch:13}];
-  ws['!rows']=[{hpt:22}];
-  _xlsxApplyStyles(ws,headers,rows,[6,7,8,9],totRow);
+  const ws=_xlsxBuildSheet(headers,rows,moneyIdx,finIdx,totRow);
   XLSX.utils.book_append_sheet(wb,ws,'Balance');
   XLSX.writeFile(wb,'iporave_balance_'+today()+'.xlsx');
   pushNotif('Balance Excel exportado \u2014 '+orders.length+' entregados','s');
