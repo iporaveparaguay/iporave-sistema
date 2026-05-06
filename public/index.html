@@ -4563,7 +4563,7 @@ function exportOrdersCSV(){
   const h=['Codigo','Fecha','Boleta','Cliente','Cedula','Telefono','Direccion','Zona','Producto','Cantidad','Precio Unitario','Total Venta','Costo Unitario','Total Costo','Precio Logistica','Ganancia Neta','Margen %','Proveedor','Vendedor ID','Delivery ID','Dropshipper ID','Estado','Metodo Cobro','GPS Lat','GPS Lng','Notas','Razon Social','RUC','IVA'];
   const rows=orders.map(o=>{
     const z=getZona(o.zona);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const log=z.precio||0;const gan=tv-cp-log;
-    return[o.id,o.fecha,o.boletaNum||'',o.cliente,o.cedula||'',o.telefono||'',o.direccion||'',z.nombre||'',o.producto,o.qty,o.precio,tv,o.costo,cp,log,gan,tv>0?Math.round(gan/tv*100)+'%',o.proveedor||'',o.vendedorId||'',o.deliveryId||'',o.dropId||'',o.estado,o.metodoCobro||'',o.gpsLat||'',o.gpsLng||'',o.notas||'',o.razonSocial||'',o.ruc||'',o.tipoIva||''];
+    return[o.id,o.fecha,o.boletaNum||'',o.cliente,o.cedula||'',o.telefono||'',o.direccion||'',z.nombre||'',o.producto,o.qty,o.precio,tv,o.costo,cp,log,gan,tv>0?Math.round(gan/tv*100)+'%':'',o.proveedor||'',o.vendedorId||'',o.deliveryId||'',o.dropId||'',o.estado,o.metodoCobro||'',o.gpsLat||'',o.gpsLng||'',o.notas||'',o.razonSocial||'',o.ruc||'',o.tipoIva||''];
   });
   const csv=[h,...rows].map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
@@ -4578,13 +4578,13 @@ function exportBalanceCSV(){
   const h=['Codigo','Fecha','Boleta','Cliente','Producto','Cantidad','Total Venta','Costo Producto','Costo Logistica','Ganancia Neta','Margen %','Zona','Proveedor','Metodo Cobro'];
   const rows=orders.map(o=>{
     const z=getZona(o.zona);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const cl=z.precio||0;const gan=tv-cp-cl;
-    return[o.id,o.fecha,o.boletaNum||'',o.cliente,o.producto,o.qty,tv,cp,cl,gan,tv>0?Math.round(gan/tv*100)+'%',z.nombre||'',o.proveedor||'',o.metodoCobro||''];
+    return[o.id,o.fecha,o.boletaNum||'',o.cliente,o.producto,o.qty,tv,cp,cl,gan,tv>0?Math.round(gan/tv*100)+'%':'',z.nombre||'',o.proveedor||'',o.metodoCobro||''];
   });
   const totV=orders.reduce((a,o)=>a+o.precio*o.qty,0);
   const totC=orders.reduce((a,o)=>a+o.costo*o.qty,0);
   const totL=orders.reduce((a,o)=>a+getZona(o.zona).precio,0);
   const totG=totV-totC-totL;
-  rows.push(['','','','TOTALES','',orders.length,totV,totC,totL,totG,totV>0?Math.round(totG/totV*100)+'%','','','']);
+  rows.push(['','','','TOTALES','',orders.length,totV,totC,totL,totG,totV>0?Math.round(totG/totV*100)+'%':'','','','']);
   const csv=[h,...rows].map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
