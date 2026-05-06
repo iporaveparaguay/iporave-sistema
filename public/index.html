@@ -292,6 +292,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .prod-actions{margin-top:auto;padding-top:9px;display:flex;flex-direction:column;gap:5px;}
 .prod-pres-grid{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
 .prod-pres-chip{background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:11px;}
+/* Imágenes dentro de descripciones HTML */
+.desc-html img{max-width:100%;height:auto;border-radius:8px;margin:6px 0;display:block;}
+.desc-html video{max-width:100%;border-radius:8px;margin:6px 0;display:block;}
+.desc-html p{margin-bottom:8px;}
+.desc-html h1,.desc-html h2,.desc-html h3{margin-bottom:6px;margin-top:12px;}
 /* PRINT */
 /* Botón hamburger oculto en desktop, visible solo en mobile */
 #menuBtn{display:none;}
@@ -3941,7 +3946,7 @@ async function editProducto(id){
   window._fotosEdit=[...(p.fotos||[])].filter(Boolean);
   if(p.foto&&!window._fotosEdit.includes(p.foto))window._fotosEdit.unshift(p.foto);
   setTimeout(()=>{const e=$('epNom');if(e){e.focus();e.select();}},120);
-  setTimeout(()=>{_renderPresForm();if(CU.rol!=='delivery')_renderChips();_setRichContent('epDesc',p.descripcion_html||'');},130);
+  setTimeout(()=>{_renderPresForm();_renderGaleriaEdit();if(CU.rol!=='delivery')_renderChips();_setRichContent('epDesc',p.descripcion_html||'');},130);
 }
 async function saveEditProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
@@ -4155,7 +4160,7 @@ function verProducto(id){
       }).join('')+'</div>':'';
   const descHtml=p.descripcion_html?'<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">'+
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Descripción</div>'+
-    '<div style="font-size:13px;line-height:1.7">'+p.descripcion_html+'</div></div>':'';
+    '<div class="desc-html" style="font-size:13px;line-height:1.7">'+p.descripcion_html+'</div></div>':'';
   openA(p.nombre,
     mainImgHtml+galeria+videoHtml+
     (p.categoria?'<div style="margin-top:10px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">'+p.categoria+'</div>':'')+
