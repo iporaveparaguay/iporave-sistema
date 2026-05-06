@@ -19,6 +19,7 @@
 <!-- Leaflet — mapas gratis (reemplaza Google Maps) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 :root{
   --bg:#0b0d12;--bg2:#111318;--bg3:#181b24;--bg4:#1f2330;--bg5:#252a38;
@@ -3588,6 +3589,164 @@ function previewVid(inputId,previewId){
   d.innerHTML='<video src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px" muted playsinline controls></video>';
 }
 
+// Crear pedido pre-cargado desde un producto del catálogo
+function crearPedidoDesdeProducto(id){
+  const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
+  nav('pedidos');
+  setTimeout(()=>{
+    openNewOrder();
+    setTimeout(()=>{
+      const ep=$('noProducto');if(ep)ep.value=p.nombre;
+      const epProv=$('noProveedor');if(epProv&&p.proveedorNombre)epProv.value=p.proveedorNombre;
+      if(p.presentaciones&&p.presentaciones.length){
+        const pr=p.presentaciones[0];
+        const ep2=$('noPrecio');if(ep2)ep2.value=_getPrecioRol(pr,CU.rol)||pr.precio||0;
+        const ep3=$('noCosto');if(ep3)ep3.value=pr.precioProveedor||0;
+      }
+    },300);
+  },200);
+}
+
+// Escanear código de barras para buscar producto
+let _scannerInstance=null;
+function abrirScannerCatalogo(){
+  openA('📷 Escanear código de barras',
+    '<div id="qr-reader" style="width:100%"></div>'+
+    '<div id="qr-result" style="margin-top:12px;font-size:13px;color:var(--text2);text-align:center">Apuntá la cámara al código del producto</div>',
+    '<button class="btn btn-secondary" onclick="cerrarScannerCatalogo()">Cerrar</button>'
+  );
+  setTimeout(()=>{
+    try{
+      _scannerInstance=new Html5Qrcode('qr-reader');
+      _scannerInstance.start({facingMode:'environment'},{fps:10,qrbox:250},codigo=>{
+        const prod=_catalogoCache.find(p=>p.codigo_barras===codigo);
+        if(prod){
+          cerrarScannerCatalogo();
+          verProducto(prod.id);
+        }else{
+          const r=$('qr-result');
+          if(r)r.innerHTML='<span style="color:var(--accent)">Código: '+codigo+'</span> — producto no encontrado. <a onclick="cerrarScannerCatalogo();PAGES.catalogo(\''+codigo+'\')" style="color:var(--blue);cursor:pointer">Buscar igual</a>';
+        }
+      });
+    }catch(e){const r=$('qr-result');if(r)r.textContent='Error al acceder a la cámara: '+e.message;}
+  },300);
+}
+function cerrarScannerCatalogo(){
+  if(_scannerInstance){try{_scannerInstance.stop();}catch(e){}  _scannerInstance=null;}
+  closeA();
+}
+
+// Parser CSV robusto (maneja comillas y comas dentro de campos)
+function _parseCSVLine(line){
+  const res=[];let cur='';let inQ=false;
+  for(let i=0;i<line.length;i++){
+    if(line[i]==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(line[i]===','&&!inQ){res.push(cur);cur='';}
+    else cur+=line[i];
+  }
+  res.push(cur);return res;
+}
+function _parseCSV(text){
+  const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  const headers=_parseCSVLine(lines[0]).map(h=>h.trim());
+  return lines.slice(1).filter(l=>l.trim()).map(l=>{
+    const vals=_parseCSVLine(l);
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=((vals[i]||'').trim()));
+    return obj;
+  });
+}
+
+// Importar catálogo desde CSV de Shopify o Dropi
+function importarCatalogoCSV(){
+  openA('⬆ Importar catálogo CSV',
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Aceptado: CSV de <b>Shopify</b> (exportado desde Admin → Productos → Exportar) o CSV propio.</div>'+
+    '<div class="fg"><label>Seleccionar archivo CSV</label>'+
+      '<input type="file" id="csvImportFile" accept=".csv,text/csv" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);width:100%;box-sizing:border-box">'+
+    '</div>'+
+    '<div id="csvPreview" style="margin-top:10px"></div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-primary" onclick="procesarImportCSV()" id="btnImportar" style="display:none">✅ Importar todos</button>',
+    'lg'
+  );
+  $('csvImportFile').addEventListener('change',function(){
+    const f=this.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=async e=>{
+      const rows=_parseCSV(e.target.result);
+      window._csvImportRows=rows;
+      // Agrupar por Handle
+      const grupos={};
+      rows.forEach(row=>{
+        const h=row['Handle']||row['handle']||row['HANDLE']||'';
+        if(!h)return;
+        if(!grupos[h])grupos[h]=[];
+        grupos[h].push(row);
+      });
+      window._csvImportGrupos=grupos;
+      const keys=Object.keys(grupos);
+      $('csvPreview').innerHTML=
+        '<div style="background:var(--bg4);border-radius:8px;padding:12px;font-size:13px">'+
+        '<div style="font-weight:700;margin-bottom:8px">📦 '+keys.length+' productos encontrados:</div>'+
+        keys.slice(0,5).map(h=>{
+          const r=grupos[h][0];
+          return '<div style="padding:4px 0;border-bottom:1px solid var(--border2)">'+
+            (r['Image Src']?'<img src="'+r['Image Src']+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px">':'')+
+            '<b>'+(r['Title']||h)+'</b> — '+grupos[h].length+' variante(s)'+
+            (r['Variant Price']?' — Gs.'+r['Variant Price']:'')+'</div>';
+        }).join('')+
+        (keys.length>5?'<div style="font-size:11px;color:var(--text3);margin-top:6px">...y '+(keys.length-5)+' más</div>':'')+
+        '</div>';
+      const btn=$('btnImportar');if(btn)btn.style.display='inline-flex';
+    };
+    r.readAsText(f);
+  });
+}
+
+async function procesarImportCSV(){
+  const grupos=window._csvImportGrupos;if(!grupos)return;
+  const keys=Object.keys(grupos);
+  const btn=$('btnImportar');if(btn){btn.disabled=true;btn.textContent='Importando...';}
+  let ok=0;
+  const maxId=(_catalogoCache&&_catalogoCache.length)?Math.max(..._catalogoCache.map(p=>Number(p.id)||0),0):0;
+  let nextId=maxId+1;
+  for(const h of keys){
+    const rows=grupos[h];const r0=rows[0];
+    const nombre=r0['Title']||h;
+    if(_catalogoCache.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase()))continue;
+    const presentaciones=rows.filter(r=>r['Option1 Value']).map((r,i)=>({
+      id:i+1,
+      nombre:r['Option1 Value']||r['Title']||'Unidad',
+      precio:parseFloat(r['Variant Price']||r['Variant Retail Price']||0)||0,
+      precioVendedor:0,precioDropshipper:0,
+      precioProveedor:parseFloat(r['Variant Cost']||0)||0,
+    }));
+    const nuevo={
+      id:nextId++,nombre,
+      descripcion_html:r0['Body (HTML)']||r0['Body']||'',
+      categoria:r0['Type']||r0['Product Category']||'',
+      proveedorNombre:r0['Vendor']||'',
+      foto:r0['Image Src']||null,
+      fotos:r0['Image Src']?[r0['Image Src']]:[],
+      videos:[],
+      precio_comparacion:parseFloat(r0['Variant Compare At Price']||0)||0,
+      stock:parseInt(r0['Variant Inventory Qty']||0)||0,
+      codigo_barras:r0['Variant Barcode']||r0['Barcode']||'',
+      publicar_tienda:false,
+      presentaciones,
+      owner_id:CU.id,owner_nombre:CU.nombre,
+    };
+    _catalogoCache=[..._catalogoCache,nuevo];
+    await DL.saveProducto(nuevo);
+    ok++;
+  }
+  closeA();
+  PAGES.catalogo();
+  pushNotif('✅ '+ok+' producto(s) importados correctamente','s');
+  window._csvImportGrupos=null;
+  window._csvImportRows=null;
+}
+
 // Exportar catálogo a CSV compatible con Shopify
 function exportarCatalogoCSV(){
   const rows=[['Handle','Title','Body (HTML)','Vendor','Type','Tags','Published',
@@ -3629,7 +3788,7 @@ function _getPrecioRol(pr,rol){
   if(rol==='proveedor')return pr.precioProveedor||pr.precio||0;
   return pr.precio||0;
 }
-function _renderProductoCard(p,canEdit){
+function _renderProductoCard(p,canEdit,canOrder=false){
   const esAdmin=isAdminLike(CU.rol);
   const tieneOferta=p.precio_comparacion>0;
   const fotoHtml=p.foto
@@ -3674,44 +3833,62 @@ function _renderProductoCard(p,canEdit){
           '<button class="btn btn-secondary btn-sm" style="flex:1;font-size:11px" onclick="editProducto('+p.id+')">✎ Editar</button>'+
           '<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="delProducto('+p.id+')">✕</button>'+
         '</div>':'')+
+        (canOrder&&p.presentaciones&&p.presentaciones.length?'<button class="btn btn-primary btn-sm btn-full" style="font-size:12px" onclick="crearPedidoDesdeProducto('+p.id+')">🛒 Crear pedido</button>':'')+
       '</div>'+
     '</div>'+
   '</div>';
 }
 
-PAGES.catalogo=function(q='',vistaOwner=null){
+PAGES.catalogo=function(q=''){
   const esAdmin=['admin','superadmin'].includes(CU.rol);
   const puedeEditar=CU.rol!=='delivery'&&CU.rol!=='cliente';
-  // Botones de acción
+  const puedeVender=['vendedor','dropshipper','proveedor'].includes(CU.rol);
+  // Botones topbar
   let acciones='';
-  if(puedeEditar)acciones+='<button class="btn btn-primary" onclick="openNuevoProducto()">+ Nuevo producto</button>';
-  if(esAdmin)acciones='<button class="btn btn-secondary" onclick="PAGES.catalogo_todos()" style="margin-right:6px">📋 Ver todos los catálogos</button>'+acciones;
+  if(puedeEditar)acciones+='<button class="btn btn-primary btn-sm" onclick="openNuevoProducto()">+ Nuevo</button>';
+  if(esAdmin){
+    acciones+='<button class="btn btn-secondary btn-sm" onclick="importarCatalogoCSV()">⬆ Importar</button>';
+    acciones+='<button class="btn btn-secondary btn-sm" onclick="exportarCatalogoCSV()">⬇ Exportar</button>';
+    acciones='<button class="btn btn-secondary btn-sm" onclick="PAGES.catalogo_todos()">📋 Todos</button>'+acciones;
+  }
+  acciones+='<button class="btn btn-secondary btn-sm" onclick="abrirScannerCatalogo()">📷 Escanear</button>';
   $('tbActions').innerHTML=acciones;
 
-  // Productos visibles: admin ve los suyos por defecto, otros solo los suyos
-  const misCatalogo=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id||p._isShared);
-  // Migrar productos sin owner al admin
+  const base=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id||p._isShared);
   _catalogoCache.forEach(p=>{if(!p.owner_id){p.owner_id=1;p.owner_nombre='Administrador';}});
-
-  const filtrados=q?misCatalogo.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())):misCatalogo;
-  const rolLabel={vendedor:'Tu precio (vendedor)',dropshipper:'Tu precio (dropshipper)',proveedor:'Tu precio (proveedor)',delivery:'Precio base',cliente:'Precio base'}[CU.rol]||'';
-
-  if(!filtrados.length&&!q){
+  const f=window._catFiltros||{};
+  let lista=base;
+  if(q)lista=lista.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())||
+    (p.codigo_barras&&p.codigo_barras.includes(q)));
+  if(f.cat)lista=lista.filter(p=>p.categoria===f.cat);
+  if(f.soloStock)lista=lista.filter(p=>(p.stock||0)>0);
+  if(f.soloTienda)lista=lista.filter(p=>p.publicar_tienda);
+  const rolLabel={vendedor:'Tu precio (vendedor)',dropshipper:'Tu precio (dropshipper)',proveedor:'Tu precio (proveedor)'}[CU.rol]||'';
+  const cats=[...new Set(_catalogoCache.map(p=>p.categoria).filter(Boolean))];
+  if(!lista.length&&!q&&!Object.keys(f).length){
     $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">'+
       '<div style="font-size:44px;margin-bottom:14px">📦</div>'+
-      '<div style="font-size:15px;font-weight:700;margin-bottom:6px">Tu catálogo está vacío</div>'+
-      '<div style="font-size:13px;margin-bottom:18px">'+(puedeEditar?'Agregá tu primer producto con el botón de arriba':'No hay productos en el catálogo.')+'</div>'+
+      '<div style="font-size:15px;font-weight:700;margin-bottom:6px">Catálogo vacío</div>'+
+      '<div style="font-size:13px;margin-bottom:18px">'+(puedeEditar?'Agregá tu primer producto arriba':'No hay productos.')+'</div>'+
       (puedeEditar?'<button class="btn btn-primary" onclick="openNuevoProducto()">+ Nuevo producto</button>':'')+'</div>';
     return;
   }
   $('ca').innerHTML='<div style="max-width:1100px">'+
-    '<div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
-      '<input type="text" placeholder="🔍 Buscar producto…" value="'+q+'" oninput="PAGES.catalogo(this.value)" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
+    // Barra búsqueda + filtros
+    '<div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+      '<input type="text" placeholder="🔍 Buscar por nombre o código…" value="'+q+'" oninput="PAGES.catalogo(this.value)" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
       (rolLabel?'<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:5px 10px">💡 <b style="color:var(--accent)">'+rolLabel+'</b></div>':'')+
-      (esAdmin?'<button class="btn btn-secondary btn-sm" onclick="exportarCatalogoCSV()">⬇ Exportar</button>':'')+
     '</div>'+
-    (filtrados.length?'<div class="prod-grid">'+filtrados.map(p=>_renderProductoCard(p,puedeEditar&&(p.owner_id||p.owner_user_id)===CU.id)).join('')+'</div>'
-      :'<div style="text-align:center;padding:40px;color:var(--text3)">Sin resultados para "'+q+'"</div>')+
+    // Filtros rápidos tipo Dropi
+    '<div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+      (cats.length?'<select onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.cat=this.value||null;PAGES.catalogo()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;color:var(--text);font-size:12px"><option value="">Todas las categorías</option>'+cats.map(c=>'<option value="'+c+'" '+(f.cat===c?'selected':'')+'>'+c+'</option>').join('')+'</select>':'')+
+      '<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px"><input type="checkbox" '+(f.soloStock?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloStock=this.checked||null;PAGES.catalogo()"> Con stock</label>'+
+      (esAdmin?'<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px"><input type="checkbox" '+(f.soloTienda?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloTienda=this.checked||null;PAGES.catalogo()"> En tienda pública</label>':'')+
+      (Object.values(f).some(Boolean)?'<button class="btn btn-sm" onclick="window._catFiltros={};PAGES.catalogo()" style="background:var(--red);color:#fff;font-size:11px;padding:4px 10px;border:none;border-radius:6px;cursor:pointer">✕ Limpiar filtros</button>':'')+
+      '<span style="margin-left:auto;font-size:11px;color:var(--text3)">'+lista.length+' producto(s)</span>'+
+    '</div>'+
+    (lista.length?'<div class="prod-grid">'+lista.map(p=>_renderProductoCard(p,puedeEditar&&(p.owner_id||p.owner_user_id)===CU.id,puedeVender)).join('')+'</div>'
+      :'<div style="text-align:center;padding:40px;color:var(--text3)">Sin resultados</div>')+
   '</div>';
 };
 
