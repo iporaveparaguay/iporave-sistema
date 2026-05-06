@@ -2562,7 +2562,8 @@ function renderTable(orders,title,showActs){
       (canEdit?'<button class="btn btn-primary btn-sm" onclick="editOrder('+o.id+')">Editar</button>':'')+
       (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button class="btn btn-success btn-sm" onclick="dlvModal('+o.id+')">Actualizar</button>':'')+
       '<button class="btn btn-secondary btn-sm" onclick="openBoleta('+o.id+')">IVA</button>'+
-      '<button class="btn btn-secondary btn-sm" onclick="imprimirGuia('+o.id+')" title="Guía de entrega">🖨️</button>'+
+      '<button class="btn btn-secondary btn-sm" onclick="imprimirGuia('+o.id+')" title="Guia">🖨️</button>'+
+      '<button class="btn btn-secondary btn-sm" onclick="imprimirTicket('+o.id+')" title="Ticket">🏷</button>'+
       '<button class="btn btn-blue btn-sm" onclick="waMenu('+o.id+')">WA</button>'+
       (canEdit?'<span style="display:inline-block;width:10px"></span><button class="btn btn-danger btn-sm" onclick="confirmDeleteOrder('+o.id+')" title="Eliminar pedido">✕</button>':'')+
     '</div></td>':'')+'</tr>'
@@ -4681,6 +4682,60 @@ function guardarPerfilEmpresa(){
 }
 
 /* ─── GUÍA DE ENTREGA (imprimible) ─── */
+/* --- TICKET DE ENVIO --- */
+function imprimirTicket(id){
+  var o=_ordersCache.find(function(x){return x.id===id;});
+  if(!o){pushNotif('Pedido no encontrado','e');return;}
+  var emp=_getEmpresa();
+  var z=getZona(o.zona);
+  var dlv=_usersCache.find(function(u){return u.id===o.deliveryId;})||{nombre:'Sin asignar'};
+  var qrBase=o.gpsLat&&o.gpsLng?('https://www.google.com/maps?q='+o.gpsLat+','+o.gpsLng):('Pedido%20%23'+o.id);
+  var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=110x110&data='+encodeURIComponent(qrBase);
+  var logoH=emp.logo?('<img src="'+emp.logo+'" style="height:38px;object-fit:contain">'):('<b style="font-size:17px;color:#f5a623;letter-spacing:2px">'+(emp.nombre||'IPORAVE')+'</b>');
+  var num=String(o.id).padStart(4,'0');
+  var css='*{margin:0;padding:0;box-sizing:border-box;}'
+    +'body{font-family:Arial,sans-serif;background:#fff;display:flex;justify-content:center;padding:6mm;}'
+    +'.tk{width:88mm;border:2px solid #0f172a;border-radius:5px;overflow:hidden;font-size:12px;}'
+    +'.tkh{background:#0f172a;padding:7px 11px;display:flex;align-items:center;justify-content:space-between;}'
+    +'.tkn{font-size:20px;font-weight:900;color:#f5a623;font-family:monospace;letter-spacing:2px;}'
+    +'.tkb{display:flex;border-bottom:1px dashed #ddd;}'
+    +'.tkq{padding:9px;border-right:1px dashed #ddd;display:flex;flex-direction:column;align-items:center;justify-content:center;}'
+    +'.tki{padding:9px;flex:1;}'
+    +'.lb{font-size:7px;color:#999;text-transform:uppercase;font-weight:700;margin-bottom:2px;letter-spacing:.5px;}'
+    +'.vl{font-size:11px;font-weight:700;color:#0f172a;margin-bottom:4px;}'
+    +'.lg{font-size:13px;font-weight:900;}'
+    +'.tkp{padding:7px 11px;border-bottom:1px dashed #ddd;display:flex;justify-content:space-between;align-items:center;}'
+    +'.tkf{padding:6px 11px;background:#f9f9f9;display:flex;justify-content:space-between;align-items:center;}'
+    +'.tkft{padding:4px 11px;border-top:1px solid #eee;text-align:center;font-size:7px;color:#999;}'
+    +'@media print{body{padding:0;}@page{margin:2mm;size:100mm 150mm;}}';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket #'+o.id+'</title><style>'+css+'</style></head><body>'
+    +'<div class="tk">'
+    +'<div class="tkh">'+logoH+'<div style="text-align:right"><div style="font-size:7px;color:#94a3b8;text-transform:uppercase">PEDIDO</div><div class="tkn">#'+num+'</div></div></div>'
+    +'<div class="tkb">'
+    +'<div class="tkq"><img src="'+qrUrl+'" style="width:88px;height:88px"><div style="font-size:7px;color:#999;text-align:center;margin-top:2px">'+(o.gpsLat?'GPS Cliente':'N. Pedido')+'</div></div>'
+    +'<div class="tki">'
+    +'<div class="lb">Destinatario</div><div class="vl lg">'+(o.cliente||'')+'</div>'
+    +'<div class="lb">Telefono</div><div class="vl" style="color:#3b82f6">'+(o.telefono||'')+'</div>'
+    +'<div class="lb">Direccion</div><div class="vl" style="font-size:10px;font-weight:600">'+(o.direccion||'')+'</div>'
+    +'<div class="lb">Zona</div><div class="vl" style="font-size:10px">'+z.nombre+'</div>'
+    +'</div></div>'
+    +'<div class="tkp">'
+    +'<div><div class="lb">Producto</div><div class="vl">'+(o.producto||'')+' x'+(o.qty||1)+'</div></div>'
+    +'<div style="text-align:right"><div class="lb">A cobrar</div><div class="vl" style="font-size:16px;color:#16a34a">'+fmt(o.precio*(o.qty||1))+'</div></div>'
+    +'</div>'
+    +'<div class="tkf">'
+    +'<div><div class="lb">Delivery</div><div class="vl">'+dlv.nombre+'</div></div>'
+    +'<div><div class="lb">Cobro</div><div class="vl">'+(o.metodoCobro||'Efectivo')+'</div></div>'
+    +'<div><div class="lb">Fecha</div><div class="vl">'+(o.fecha||today())+'</div></div>'
+    +'</div>'
+    +'<div class="tkft">'+(emp.tel||'')+((emp.tel&&emp.web)?' | ':'')+''+(emp.web||'iporaveparaguay.com')+'</div>'
+    +'</div>'
+    +'</body></html>';
+  var w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();setTimeout(function(){w.print();},400);}
+  else{pushNotif('Permiti popups para imprimir el ticket','w');}
+}
+
 function imprimirGuia(id){
   const o=_ordersCache.find(x=>x.id===id)||(_ordersCache,getOrders().find(x=>x.id===id));
   if(!o){pushNotif('Pedido no encontrado','e');return;}
