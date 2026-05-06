@@ -614,6 +614,7 @@ const DEF_CONFIG = {
   waMsgPedido:'✅ ¡Tu pedido #{id} fue confirmado! Producto: {producto}. Te avisamos cuando salga a entrega. 📦 Iporãve',
   waMsgNoContesta:'📞 Hola {cliente}, intentamos entregarte tu pedido #{id} pero no te encontramos. ¿Podés coordinar una nueva entrega? Iporãve',
   waMsgEntregado:'🎉 ¡Tu pedido #{id} fue entregado! Gracias por comprar en Iporãve. ¡Hasta la próxima! 😊',
+  waMsgEnRuta:'🛵 ¡Hola {cliente}! Tu pedido #{id} ya está en camino. Seguí al delivery en tiempo real aquí: {trackUrl} — Iporãve',
 };
 const DEF_ORDERS = [];
 const DEF_CATALOGO = [];
@@ -679,6 +680,7 @@ let CU = null;
 let _sessionToken = null;
 let _supa = null;
 let _supaConnected = false;
+let _gpsLoopTimer=null,_gpsLoopOrder=null,_gpsLoopStartTime=0,_gpsLoopFast=true;
 let _realtimeSub = null;
 let _mapsLoaded = false;
 let _notifHistory = [];
@@ -1517,6 +1519,29 @@ function waEntregado(o){
   const msg=(cfg.waMsgEntregado||DEF_CONFIG.waMsgEntregado)
     .replace('{id}',o.id).replace('{cliente}',o.cliente);
   waSend(tel,msg);
+}
+function waEnRuta(o){
+  const cfg=getCfg();if(!cfg.waEnabled)return;
+  const tel=o.telefono;if(!tel)return;
+  const trackUrl='https://iporave-sistema.vercel.app/?track='+o.id;
+  const msg=(cfg.waMsgEnRuta||DEF_CONFIG.waMsgEnRuta)
+    .replace('{id}',o.id).replace('{cliente}',o.cliente).replace('{trackUrl}',trackUrl);
+  waSend(tel,msg);
+}
+async function notifEnRutaAdmin(o){
+  if(!_supa)return;
+  const {data:admins}=await _supa.from('usuarios').select('username').in('rol',['admin','superadmin']);
+  const destinos=new Set((admins||[]).map(a=>a.username));
+  if(o.vendedorId){
+    const vend=_usersCache.find(u=>u.id===o.vendedorId);
+    if(vend&&vend.username&&vend.rol!=='delivery')destinos.add(vend.username);
+  }
+  destinos.delete(CU.username);
+  const msgs=[...destinos].map(para=>({
+    de:CU.username,para,
+    mensaje:'🛵 EN RUTA: Pedido #'+o.id+' — '+o.cliente+' | Delivery: '+CU.nombre
+  }));
+  if(msgs.length)await _supa.from('mensajes').insert(msgs);
 }
 
 /* ══════════════════════════════════════════════════
@@ -2916,7 +2941,9 @@ async function confirmDlv(id){
   o.historial=o.historial||[];
   o.historial.push({estado,usuario:CU.nombre,fecha:nowStr(),obs:notas});
   o.estado=estado;o.notas=notas;o.gpsLat=gv('gpsLat');o.gpsLng=gv('gpsLng');
-  if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;await DL.incCupo(CU.id);waEntregado(o);notifEntregaAdmin(o);}
+  if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;await DL.incCupo(CU.id);waEntregado(o);notifEntregaAdmin(o);_gpsLoopStop();}
+  if(estado==='En ruta'){waEnRuta(o);notifEnRutaAdmin(o);_gpsLoopStart(o);}
+  if(['Cancelado','Devuelto'].includes(estado))_gpsLoopStop();
   if(estado.startsWith('No contesta'))waNoContesta(o);
   await DL.saveOrder(o);
   await refreshCache();
@@ -6050,6 +6077,51 @@ function _mapaCargarDlvs(map){
   }
 }
 
+function _gpsHaversine(lat1,lng1,lat2,lng2){
+  const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+async function _gpsSendPos(lat,lng){
+  try{
+    await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/tracking',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
+      body:JSON.stringify({lat,lng})
+    });
+    if(window._mapInstance&&window._dlvMapMarkers[CU.id]){
+      window._dlvMapMarkers[CU.id].setLatLng(L.latLng(lat,lng));
+    }
+  }catch(e){console.warn('GPS send:',e.message);}
+}
+function _gpsLoopTick(){
+  if(!navigator.geolocation)return;
+  const elapsed=(Date.now()-_gpsLoopStartTime)/1000;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat=pos.coords.latitude,lng=pos.coords.longitude;
+    _gpsSendPos(lat,lng);
+    let nearDest=false;
+    if(_gpsLoopOrder&&_gpsLoopOrder.gpsLat&&_gpsLoopOrder.gpsLng){
+      nearDest=_gpsHaversine(lat,lng,parseFloat(_gpsLoopOrder.gpsLat),parseFloat(_gpsLoopOrder.gpsLng))<500;
+    }
+    const wantFast=elapsed<120||nearDest;
+    if(wantFast!==_gpsLoopFast){
+      _gpsLoopFast=wantFast;
+      clearInterval(_gpsLoopTimer);
+      _gpsLoopTimer=setInterval(_gpsLoopTick,wantFast?5000:30000);
+    }
+  },null,{enableHighAccuracy:true,timeout:8000,maximumAge:0});
+}
+function _gpsLoopStart(order){
+  _gpsLoopStop();
+  _gpsLoopOrder=order;_gpsLoopStartTime=Date.now();_gpsLoopFast=true;
+  _gpsLoopTick();
+  _gpsLoopTimer=setInterval(_gpsLoopTick,5000);
+}
+function _gpsLoopStop(){
+  if(_gpsLoopTimer){clearInterval(_gpsLoopTimer);_gpsLoopTimer=null;}
+  _gpsLoopOrder=null;
+}
 function verDeliveryEnMapa(deliveryId){
   const dlv=_usersCache.find(u=>u.id===deliveryId);
   if(!dlv){pushNotif('Delivery no encontrado','e');return;}
