@@ -3887,6 +3887,7 @@ PAGES.catalogo=function(q=''){
     acciones='<button class="btn btn-secondary btn-sm" onclick="PAGES.catalogo_todos()">📋 Todos</button>'+acciones;
   }
   acciones+='<button class="btn btn-secondary btn-sm" onclick="abrirScannerCatalogo()">📷 Escanear</button>';
+  if(puedeEditar)acciones+='<button class="btn btn-sm" onclick="copiarLinkCatalogo()" style="background:var(--green,#16a34a);color:#fff;border:none;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600">🔗 Mi link</button>';
   $('tbActions').innerHTML=acciones;
 
   const base=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id||p._isShared);
@@ -5420,6 +5421,8 @@ async function exportCSV(){
    INIT
 ══════════════════════════════════════════════════ */
 async function main(){
+  // Si la URL tiene ?vendedor=USERNAME, mostrar catálogo público sin login
+  if(await _initCatalogoPublico())return;
   _sessionToken=sessionStorage.getItem('iporave_token')||null;
   await loadServerConfig(_sessionToken);
   DL._initLocal();
@@ -5435,6 +5438,134 @@ async function main(){
     for(const o of DEF_ORDERS.map(o=>({...o}))){await DL.saveOrder(o);}
     await refreshCache();
   }
+}
+
+/* ══════════════════════════════════════════════════
+   CATÁLOGO PÚBLICO
+══════════════════════════════════════════════════ */
+function copiarLinkCatalogo(){
+  const link='https://iporave-sistema.vercel.app/?vendedor='+encodeURIComponent(CU.username);
+  navigator.clipboard.writeText(link).then(()=>{
+    pushNotif('Link copiado — compartilo por WhatsApp 🔗','s');
+  }).catch(()=>{
+    prompt('Copiá este link:',link);
+  });
+}
+
+async function _initCatalogoPublico(){
+  const params=new URLSearchParams(window.location.search);
+  const vendedor=params.get('vendedor');
+  if(!vendedor)return false;
+
+  // Ocultar login y mostrar pantalla pública
+  const ls=$('loginScreen');if(ls)ls.style.display='none';
+  document.body.style.background='#f1f5f9';
+
+  const wrap=document.createElement('div');
+  wrap.id='catalogoPublicoWrap';
+  wrap.style.cssText='min-height:100vh;font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding-bottom:60px';
+  wrap.innerHTML='<div style="text-align:center;padding:60px 20px;color:#64748b"><div style="font-size:32px">⏳</div><div style="margin-top:8px">Cargando catálogo…</div></div>';
+  document.body.appendChild(wrap);
+
+  try{
+    const res=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/catalogo-publico?u='+encodeURIComponent(vendedor));
+    const data=await res.json();
+    if(!data.ok||!data.productos){
+      wrap.innerHTML='<div style="text-align:center;padding:60px 20px;color:#64748b"><div style="font-size:40px">😕</div><div style="margin-top:10px;font-weight:700">Catálogo no encontrado</div></div>';
+      return true;
+    }
+    _renderCatalogoPublico(wrap,data);
+  }catch(e){
+    wrap.innerHTML='<div style="text-align:center;padding:60px 20px;color:#ef4444"><div style="font-size:32px">⚠️</div><div>Error al cargar el catálogo</div></div>';
+  }
+  return true;
+}
+
+function _renderCatalogoPublico(wrap,data){
+  const v=data.vendedor;
+  const prods=data.productos;
+  const cats=[...new Set(prods.map(p=>p.categoria).filter(Boolean))];
+  const wa=v.whatsapp?v.whatsapp.replace(/\D/g,''):'';
+
+  function renderProds(lista){
+    if(!lista.length)return '<div style="text-align:center;padding:40px;color:#94a3b8">No hay productos en esta categoría</div>';
+    return lista.map(p=>{
+      const foto=p.foto||(p.fotos&&p.fotos[0])||'';
+      const tieneOferta=p.precio_comparacion&&p.precio_comparacion>p.precio;
+      const waMsg=encodeURIComponent('Hola! Me interesa el producto: *'+p.nombre+'* — Precio: Gs. '+p.precio.toLocaleString('es-PY')+'. ¿Está disponible?');
+      const waLink=wa?'https://wa.me/595'+wa+'?text='+waMsg:'';
+      return '<div style="background:#fff;border-radius:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden">'+
+        (foto?'<img src="'+foto+'" style="width:100%;height:200px;object-fit:cover" onerror="this.style.display=\'none\'">':
+          '<div style="width:100%;height:120px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:40px">📦</div>')+
+        '<div style="padding:14px">'+
+          (p.categoria?'<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">'+p.categoria+'</div>':'')+
+          '<div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:6px">'+p.nombre+'</div>'+
+          (p.descripcion?'<div style="font-size:13px;color:#64748b;margin-bottom:10px;line-height:1.4">'+p.descripcion+'</div>':'')+
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+
+            '<div style="font-size:22px;font-weight:900;color:#16a34a">Gs. '+p.precio.toLocaleString('es-PY')+'</div>'+
+            (tieneOferta?'<div style="font-size:13px;color:#94a3b8;text-decoration:line-through">Gs. '+p.precio_comparacion.toLocaleString('es-PY')+'</div>':'')+
+          '</div>'+
+          (waLink?'<a href="'+waLink+'" target="_blank" style="display:block;text-align:center;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:11px;border-radius:10px;text-decoration:none">💬 Pedir por WhatsApp</a>':'<div style="text-align:center;font-size:13px;color:#94a3b8;padding:8px;border:1px dashed #e2e8f0;border-radius:8px">Contactar al vendedor</div>')+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  let catActiva='';
+  function html(cat){
+    const lista=cat?prods.filter(p=>p.categoria===cat):prods;
+    return renderProds(lista);
+  }
+
+  wrap.innerHTML=
+    // Header
+    '<div style="background:linear-gradient(135deg,#0f172a,#1e3a6b);padding:24px 20px 20px;color:#fff;text-align:center">'+
+      '<div style="font-size:28px;font-weight:900;letter-spacing:1px">'+v.nombre+'</div>'+
+      '<div style="font-size:12px;color:#94a3b8;margin-top:4px">'+prods.length+' producto'+(prods.length!==1?'s':'')+' disponible'+(prods.length!==1?'s':'')+'</div>'+
+      (wa?'<a href="https://wa.me/595'+wa+'" target="_blank" style="display:inline-block;margin-top:12px;background:#25D366;color:#fff;font-size:13px;font-weight:700;padding:8px 18px;border-radius:20px;text-decoration:none">💬 Contactar por WhatsApp</a>':'')+
+    '</div>'+
+    // Filtros categoría
+    (cats.length?
+      '<div id="cpCats" style="display:flex;gap:8px;overflow-x:auto;padding:12px 16px;background:#fff;border-bottom:1px solid #e2e8f0;scrollbar-width:none">'+
+        '<button onclick="_cpFiltrar(\'\')" id="cpCat_" style="flex-shrink:0;padding:6px 14px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:#0f172a;color:#fff">Todos</button>'+
+        cats.map(c=>'<button onclick="_cpFiltrar(\''+c.replace(/'/g,'\\\'')+'\')" id="cpCat_'+c.replace(/[^a-z0-9]/gi,'_')+'" style="flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;cursor:pointer;font-size:12px;font-weight:600;background:#f8fafc;color:#475569">'+c+'</button>').join('')+
+      '</div>':'')+
+    // Búsqueda
+    '<div style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0">'+
+      '<input id="cpSearch" type="text" placeholder="🔍 Buscar producto…" oninput="_cpBuscar(this.value)" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;background:#fff;box-sizing:border-box">'+
+    '</div>'+
+    // Productos
+    '<div id="cpLista" style="padding:16px">'+html('')+'</div>'+
+    // Footer
+    '<div style="text-align:center;padding:20px;font-size:11px;color:#94a3b8">Powered by Iporãve</div>';
+
+  window._cpProds=prods;
+  window._cpCatActiva='';
+  window._cpQuery='';
+  window._cpWa=wa;
+  window._cpVendedor=v;
+
+  window._cpFiltrar=function(cat){
+    window._cpCatActiva=cat;
+    _cpActualizar();
+    document.querySelectorAll('[id^="cpCat_"]').forEach(b=>{
+      const active=b.id==='cpCat_'+(cat?cat.replace(/[^a-z0-9]/gi,'_'):'');
+      b.style.background=active?'#0f172a':'#f8fafc';
+      b.style.color=active?'#fff':'#475569';
+      b.style.border=active?'none':'1px solid #e2e8f0';
+    });
+  };
+  window._cpBuscar=function(q){
+    window._cpQuery=q;
+    _cpActualizar();
+  };
+  window._cpActualizar=function(){
+    let lista=window._cpProds;
+    if(window._cpCatActiva)lista=lista.filter(p=>p.categoria===window._cpCatActiva);
+    if(window._cpQuery)lista=lista.filter(p=>p.nombre.toLowerCase().includes(window._cpQuery.toLowerCase()));
+    const l=$('cpLista');
+    if(l)l.innerHTML=renderProds(lista);
+  };
 }
 
 function dismissDevice(id,username){
