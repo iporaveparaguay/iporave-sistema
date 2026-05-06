@@ -4785,7 +4785,9 @@ function imprimirTicket(id){
   var emp=_getEmpresa();
   var z=getZona(o.zona);
   var dlv=_usersCache.find(function(u){return u.id===o.deliveryId;})||{nombre:'Sin asignar'};
-  var qrBase=o.gpsLat&&o.gpsLng?('https://www.google.com/maps?q='+o.gpsLat+','+o.gpsLng):('Pedido%20%23'+o.id);
+  var qrBase=o.gpsLat&&o.gpsLng
+    ?('https://www.google.com/maps?q='+o.gpsLat+','+o.gpsLng)
+    :('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((o.direccion||'')+' '+(z.nombre||'')+' Paraguay'));
   var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=110x110&data='+encodeURIComponent(qrBase);
   var logoH=emp.logo?('<img src="'+emp.logo+'" style="height:38px;object-fit:contain">'):('<b style="font-size:17px;color:#f5a623;letter-spacing:2px">'+(emp.nombre||'IPORAVE')+'</b>');
   var num=String(o.id).padStart(4,'0');
