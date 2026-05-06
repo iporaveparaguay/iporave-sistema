@@ -2635,7 +2635,75 @@ function _renderCharts(){
 }
 
 /* ─── ORDERS ─── */
-PAGES.orders=PAGES.entregas=PAGES.mispedidos=function(){
+/* ─── VISTA APP DELIVERY ─── */
+const _DLV_EC={'Pendiente':'#f59e0b','Despachado':'#3b82f6','En ruta':'#16a34a','Entregado':'#22c55e','Cancelado':'#ef4444','No contesta 1°':'#f97316','No contesta 2°':'#ef4444','No contesta 3°':'#dc2626','Reprogramado':'#8b5cf6','Devuelto':'#6b7280'};
+PAGES.entregas=function(){
+  $('tbTitle').textContent='Mis Entregas';
+  $('tbActions').innerHTML='<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">🔄</button>';
+  const mis=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+  const entHoy=_ordersCache.filter(o=>o.deliveryId===CU.id&&o.estado==='Entregado'&&o.fecha===today());
+  const cfg=getCfg();const u=getUser(CU.id);
+  const max=u.vehiculo==='auto'?cfg.cupoAuto:cfg.cupoMoto;
+  const cupos=DL._lg('cupos')||[];
+  const used=(cupos.find(c=>c.did===CU.id&&c.fecha===today())||{used:0}).used;
+  const pct=Math.min(Math.round(used/max*100),100);
+  const fc=pct<60?'#22c55e':pct<85?'#f59e0b':'#ef4444';
+  let html=
+    '<div style="background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.08)">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+    '<span style="font-weight:700;font-size:14px">🏆 Cupo hoy — '+(u.vehiculo||'moto')+'</span>'+
+    '<span style="font-size:14px;font-weight:800;color:'+fc+'">'+used+' / '+max+'</span></div>'+
+    '<div style="background:var(--bg4);border-radius:20px;height:12px;overflow:hidden">'+
+    '<div style="background:'+fc+';width:'+pct+'%;height:100%;border-radius:20px;transition:width .4s"></div></div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:5px">'+
+    '<span>'+entHoy.length+' entregados hoy</span><span>'+(used>=max?'🏆 Cupo completo!':(max-used)+' restantes')+'</span></div></div>';
+  if(!mis.length){
+    html+='<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:700">Sin entregas pendientes</div><div style="font-size:13px;margin-top:6px">Todos los pedidos están al día</div></div>';
+    $('ca').innerHTML=html;return;
+  }
+  html+='<div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:600">'+mis.length+' pedido'+(mis.length>1?'s':'')+' asignado'+(mis.length>1?'s':'')+(mis.length>1?' — ordenados por proximidad':'')+' <span id="dlvGpsTag" style="color:#f59e0b"></span></div>';
+  html+='<div id="dlvCardsWrap">'+mis.map(o=>_renderDlvCard(o,null)).join('')+'</div>';
+  $('ca').innerHTML=html;
+  // Ordenar por proximidad si hay GPS
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const lat=pos.coords.latitude,lng=pos.coords.longitude;
+      const sorted=[...mis].map(o=>{
+        if(!o.gpsLat||!o.gpsLng)return{o,dist:99999};
+        return{o,dist:_gpsHaversine(lat,lng,parseFloat(o.gpsLat),parseFloat(o.gpsLng))};
+      }).sort((a,b)=>a.dist-b.dist);
+      const wrap=$('dlvCardsWrap');
+      if(wrap)wrap.innerHTML=sorted.map(({o,dist})=>_renderDlvCard(o,dist)).join('');
+      const tag=$('dlvGpsTag');
+      if(tag)tag.textContent='📍 ordenados por distancia desde tu posición';
+    },null,{enableHighAccuracy:true,timeout:8000});
+  }
+};
+function _renderDlvCard(o,dist){
+  const ec=_DLV_EC[o.estado]||'#64748b';
+  const tel=o.telefono?(o.telefono+'').replace(/\D/g,''):'';
+  const waNum=tel.startsWith('595')?tel:'595'+tel.replace(/^0/,'');
+  const distStr=dist&&dist<99999?(dist<1000?Math.round(dist)+'m':(dist/1000).toFixed(1)+'km'):'';
+  return '<div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.08);border-left:4px solid '+ec+'">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
+      '<div>'+
+        '<div style="font-size:11px;font-family:monospace;color:var(--text2)">#'+o.id+(o.fecha?' · '+fmtDate(o.fecha):'')+'</div>'+
+        '<div style="font-size:18px;font-weight:800;line-height:1.2;margin-top:2px">'+o.cliente+'</div>'+
+      '</div>'+
+      '<span style="background:'+ec+';color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap">'+o.estado+'</span>'+
+    '</div>'+
+    '<div style="font-size:13px;color:var(--text1);margin-bottom:4px">📦 '+o.producto+(o.qty>1?' × '+o.qty:'')+(o.proveedor?' · '+o.proveedor:'')+'</div>'+
+    '<div style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:4px">📍 '+(o.direccion||'Sin dirección')+
+      (distStr?'<span style="font-size:12px;color:'+ec+';font-weight:700;margin-left:8px">~'+distStr+'</span>':'')+'</div>'+
+    (o.telefono?'<div style="font-size:13px;color:var(--text2);margin-bottom:10px">📞 '+o.telefono+'</div>':'')+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button onclick="dlvModal('+o.id+')" style="flex:1;min-width:110px;padding:10px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-size:13px;font-weight:700;cursor:pointer">✅ Actualizar</button>'+
+      '<button onclick="navegarPedido('+o.id+')" style="padding:10px 14px;border:none;border-radius:10px;background:#ea4335;color:#fff;font-size:13px;font-weight:700;cursor:pointer">🗺️</button>'+
+      (tel?'<a href="https://wa.me/'+waNum+'" target="_blank" style="padding:10px 14px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center">💬</a>':'')+
+    '</div>'+
+  '</div>';
+}
+PAGES.orders=PAGES.mispedidos=function(){
   const canCreate=['admin','superadmin','vendedor','proveedor','dropshipper'].includes(CU.rol);
   $('tbActions').innerHTML=
     (canCreate?'<button class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
