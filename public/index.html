@@ -694,7 +694,7 @@ const isAdminLike = r => ['admin','superadmin'].includes(r);
 const today = () => new Date().toISOString().slice(0,10);
 const nowStr = () => new Date().toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const mesActual = () => new Date().toISOString().slice(0,7);
-const ganVend = o => (o.precio*o.qty)-(o.costo*o.qty)-getZona(o.zona).precio;
+const ganVend = o => (o.precio*o.qty)-(o.costo*o.qty)-_getZonaO(o).precio;
 
 function togglePwd(inputId,btn){
   const el=$(inputId);if(!el)return;
@@ -1266,6 +1266,8 @@ const DL = {
       gps_lat:o.gpsLat,gps_lng:o.gpsLng,notas:o.notas,
       boleta_num:o.boletaNum,num_doc:o.numDoc,
       razon_social:o.razonSocial,ruc:o.ruc,tipo_iva:o.tipoIva,
+      zona_custom_nombre:o.zonaCustomNombre||null,
+      zona_custom_precio:o.zonaCustomPrecio||null,
       historial:JSON.stringify(o.historial||[]),
       created_by:o.created_by||null,
     };
@@ -1280,6 +1282,8 @@ const DL = {
       gpsLat:r.gps_lat,gpsLng:r.gps_lng,notas:r.notas,
       boletaNum:r.boleta_num,numDoc:r.num_doc,
       razonSocial:r.razon_social,ruc:r.ruc,tipoIva:r.tipo_iva,
+      zonaCustomNombre:r.zona_custom_nombre||null,
+      zonaCustomPrecio:r.zona_custom_precio||0,
       historial:typeof r.historial==='string'?JSON.parse(r.historial||'[]'):(r.historial||[]),
       created_by:r.created_by||null,
     };
@@ -2337,6 +2341,10 @@ async function refreshCache(){
 function getOrders(){return _ordersCache;}
 function getUsers(){return _usersCache;}
 function getZona(id){return _zonasCache.find(z=>z.id===id)||{nombre:'—',precio:0,extraDelivery:0,desc:'',tiempoEntrega:'—'};}
+function _getZonaO(o){
+  if(!o.zona&&o.zonaCustomNombre)return{nombre:o.zonaCustomNombre,precio:o.zonaCustomPrecio||0,extraDelivery:0,desc:'',tiempoEntrega:'Manual'};
+  return _getZonaO(o);
+}
 function getUser(id){return _usersCache.find(u=>u.id===id)||{nombre:'—',vehiculo:'moto'};}
 function getVisibleOrders(){
   const r=CU.rol;
@@ -2441,7 +2449,7 @@ PAGES.dashboard=async function(){
     const ent=mine.filter(o=>o.estado==='Entregado');
     const ing=ent.reduce((a,b)=>a+b.precio*b.qty,0);
     const cos=ent.reduce((a,b)=>a+b.costo*b.qty,0);
-    const tar=ent.reduce((a,b)=>a+getZona(b.zona).precio,0);
+    const tar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
     html+='<div class="sgrid">'+
       '<div class="sc ac"><div class="slabel">Total pedidos</div><div class="sval">'+mine.length+'</div></div>'+
       '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+(mine.length?Math.round(ent.length/mine.length*100):0)+'% éxito</div></div>'+
@@ -2560,7 +2568,7 @@ function renderTable(orders,title,showActs){
     '</td>'+
     '<td class="col-hide"><div>'+o.producto+'</div><div style="font-size:11px;color:var(--text2)">x'+o.qty+'</div></td>'+
     '<td class="col-hide" style="font-size:12px;color:var(--text2)">'+(o.proveedor||'—')+'</td>'+
-    '<td class="col-hide" style="font-size:12px">'+getZona(o.zona).nombre+'</td>'+
+    '<td class="col-hide" style="font-size:12px">'+_getZonaO(o).nombre+'</td>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--green)">'+fmt(o.precio*o.qty)+'</td>'+
     '<td class="col-hide">'+bE(o.estado)+'</td>'+
     (showActs?'<td><div class="act-btns">'+
@@ -2622,7 +2630,7 @@ async function deleteOrder(id){
 /* ─── VIEW ORDER ─── */
 function viewOrder(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
-  const zona=getZona(o.zona);
+  const zona=_getZonaO(o);
   const gan=ganVend(o);
   const dlv=getUser(o.deliveryId);
   const isMoving=['En ruta','Despachado'].includes(o.estado)&&o.deliveryId;
@@ -2744,7 +2752,9 @@ function editOrder(id){
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
   const drops=_usersCache.filter(u=>u.rol==='dropshipper');
   const vends=_usersCache.filter(u=>u.rol==='vendedor');
-  const zonaOpts=_zonasCache.map(z=>'<option value="'+z.id+'" '+(o.zona===z.id?'selected':'')+'>'+z.nombre+' (Gs. '+fmtN(z.precio)+')</option>').join('');
+  const esManualEdit=!o.zona&&o.zonaCustomNombre;
+  const zonaOpts=_zonasCache.map(z=>'<option value="'+z.id+'" '+(o.zona===z.id?'selected':'')+'>'+z.nombre+' (Gs. '+fmtN(z.precio)+')</option>').join('')+
+    '<option value="manual" '+(esManualEdit?'selected':'')+'>✏️ Otra ubicación (manual)...</option>';
   const dlvOpts='<option value="">Sin asignar</option>'+dlvs.map(d=>'<option value="'+d.id+'" '+(o.deliveryId===d.id?'selected':'')+'>'+d.nombre+' ('+(d.vehiculo||'moto')+')</option>').join('');
   const dropOpts='<option value="">Sin asignar</option>'+drops.map(d=>'<option value="'+d.id+'" '+(o.dropId===d.id?'selected':'')+'>'+d.nombre+'</option>').join('');
   const vendOpts='<option value="">Sin asignar</option>'+vends.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+d.nombre+'</option>').join('');
@@ -2755,7 +2765,14 @@ function editOrder(id){
     '<div class="frow"><div class="fg"><label>Teléfono</label><input type="text" id="eTel" value="'+(o.telefono||'')+'"></div>'+
     '<div class="fg"><label>Fecha</label><input type="date" id="eFecha" value="'+(o.fecha||today())+'"></div></div>'+
     '<div class="fg"><label>Dirección</label><input type="text" id="eDir" value="'+escHtml(o.direccion||'')+'"></div>'+
-    '<div class="fg"><label>Zona de entrega</label><select id="eZona">'+zonaOpts+'</select></div>'+
+    '<div class="fg"><label>Zona de entrega</label><select id="eZona" onchange="toggleEditZonaManual(this.value)">'+zonaOpts+'</select></div>'+
+    '<div id="eZonaManualDiv" style="display:'+(esManualEdit?'':'none')+';padding:10px;background:var(--bg3);border-radius:8px;border:1px dashed var(--accent);margin-bottom:8px">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">✏️ Zona personalizada</div>'+
+      '<div class="frow">'+
+        '<div class="fg"><label>Nombre del lugar</label><input type="text" id="eZonaCustomNombre" value="'+escHtml(o.zonaCustomNombre||'')+'" placeholder="Ej: Luque Centro..."></div>'+
+        '<div class="fg"><label>Costo envío (Gs.)</label><input type="number" id="eZonaCustomPrecio" value="'+(o.zonaCustomPrecio||0)+'"></div>'+
+      '</div>'+
+    '</div>'+
     '<div class="stitle">Producto</div>'+
     '<div class="frow"><div class="fg"><label>Proveedor</label><input type="text" id="eProv" value="'+escHtml(o.proveedor||'')+'"></div>'+
     '<div class="fg"><label>Producto *</label><input type="text" id="eProd" value="'+escHtml(o.producto||'')+'"></div></div>'+
@@ -2790,7 +2807,14 @@ async function saveEditOrder(id){
   }
   o.cliente=cli;o.cedula=gv('eCed');o.telefono=gv('eTel');
   o.fecha=gv('eFecha')||o.fecha;o.direccion=gv('eDir');
-  const zona=parseInt(gv('eZona'));if(zona)o.zona=zona;
+  const eZonaVal=gv('eZona');
+  if(eZonaVal==='manual'){
+    o.zona=null;
+    o.zonaCustomNombre=(gv('eZonaCustomNombre')||'').trim();
+    o.zonaCustomPrecio=parseFloat(gv('eZonaCustomPrecio'))||0;
+  } else {
+    const zona=parseInt(eZonaVal);if(zona){o.zona=zona;o.zonaCustomNombre=null;o.zonaCustomPrecio=null;}
+  }
   o.proveedor=gv('eProv');o.producto=prod;
   o.qty=parseInt(gv('eQty'))||o.qty;
   o.precio=parseFloat(gv('ePrec'))||o.precio;
@@ -2903,11 +2927,22 @@ function openNewOrder(){
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
   openB('Nuevo Pedido',
     '<div class="stitle">Datos del cliente</div>'+
-    '<div class="frow"><div class="fg"><label>Nombre cliente *</label><input type="text" id="nCli"></div>'+
+    '<div class="frow"><div class="fg"><label>Nombre cliente *</label>'+
+    '<input type="text" id="nCli" placeholder="Nombre del cliente" oninput="sugerirClienteAnterior()">'+
+    '<div id="nCliSug" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:140px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div>'+
+    '</div>'+
     '<div class="fg"><label>Cédula</label><input type="text" id="nCed"></div></div>'+
     '<div class="frow"><div class="fg"><label>Teléfono</label><input type="text" id="nTel"></div>'+
     '<div class="fg"><label>Fecha</label><input type="date" id="nFecha" value="'+today()+'"></div></div>'+
-    '<div class="fg"><label>Dirección</label><input type="text" id="nDir" placeholder="Calle, número, ciudad" onchange="calcNT()"></div>'+
+    '<div class="fg">'+
+    '<label style="display:flex;justify-content:space-between;align-items:center">'+
+    '<span>Dirección</span>'+
+    '<button type="button" id="nGpsBtn" onclick="captureGpsForOrder()" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer">📍 Capturar GPS</button>'+
+    '</label>'+
+    '<input type="text" id="nDir" placeholder="Calle, número, ciudad" onchange="calcNT()">'+
+    '<input type="hidden" id="nGpsLat"><input type="hidden" id="nGpsLng">'+
+    '<div id="nGpsStatus" style="font-size:11px;color:var(--text3);margin-top:3px"></div>'+
+    '</div>'+
     '<div class="stitle">Producto y proveedor</div>'+
     '<div class="frow"><div class="fg"><label>Proveedor *</label><input type="text" id="nProv"></div>'+
     '<div class="fg"><label>Producto *</label>'+
@@ -2925,6 +2960,7 @@ function openNewOrder(){
       '<select id="nZonaSelect" onchange="selZonaFromSelect(this.value)" style="width:100%">'+
         '<option value="">— Elegí la zona de entrega —</option>'+
         _zonasCache.map(z=>'<option value="'+z.id+'">'+z.nombre+' — '+fmt(z.precio)+(z.extraDelivery>0?' (+'+fmtN(z.extraDelivery)+' delivery)':'')+'</option>').join('')+
+        '<option value="manual">✏️ Otra ubicación (ingresar manualmente)...</option>'+
       '</select>'+
     '</div>'+
     '<div class="zgrid" id="zG">'+_zonasCache.map(z=>
@@ -2936,6 +2972,13 @@ function openNewOrder(){
       '</div>'
     ).join('')+'</div>'+
     '<input type="hidden" id="nZona">'+
+    '<div id="zonaManualDiv" style="display:none;padding:10px;background:var(--bg3);border-radius:8px;border:1px dashed var(--accent);margin-bottom:8px">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">✏️ Zona personalizada</div>'+
+      '<div class="frow">'+
+        '<div class="fg"><label>Nombre del lugar / zona</label><input type="text" id="nZonaCustomNombre" placeholder="Ej: Luque Centro, San Lorenzo..." oninput="calcNT()"></div>'+
+        '<div class="fg"><label>Costo de envío (Gs.)</label><input type="number" id="nZonaCustomPrecio" placeholder="0" oninput="calcNT()"></div>'+
+      '</div>'+
+    '</div>'+
     '<div id="zCambiarDiv" style="display:none;margin:-4px 0 10px">'+
       '<button type="button" class="btn btn-secondary btn-sm" onclick="expandZonas()">↕ Cambiar zona seleccionada</button>'+
     '</div>'+
@@ -2962,6 +3005,69 @@ function openNewOrder(){
   );
   setTimeout(()=>initAddressAutocomplete('nDir'),400);
 }
+function captureGpsForOrder(){
+  const btn=$('nGpsBtn'),status=$('nGpsStatus');
+  if(!navigator.geolocation){pushNotif('GPS no disponible en este dispositivo','w');return;}
+  if(btn)btn.textContent='⏳ Buscando...';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const lat=pos.coords.latitude.toFixed(5),lng=pos.coords.longitude.toFixed(5);
+      if($('nGpsLat'))$('nGpsLat').value=lat;
+      if($('nGpsLng'))$('nGpsLng').value=lng;
+      if(btn){btn.textContent='✅ GPS OK';btn.style.color='var(--green)';}
+      if(status)status.innerHTML='<span style="color:var(--green)">📍 GPS capturado: '+lat+', '+lng+'</span>';
+    },
+    ()=>{
+      if(btn){btn.textContent='📍 Capturar GPS';btn.style.color='';}
+      if(status)status.textContent='No se pudo obtener GPS — continuá sin él';
+    },
+    {enableHighAccuracy:true,timeout:10000}
+  );
+}
+
+function sugerirClienteAnterior(){
+  const q=(gv('nCli')||'').trim().toLowerCase();
+  const sug=$('nCliSug');if(!sug)return;
+  if(q.length<2){sug.style.display='none';return;}
+  const vistos={};
+  const matches=_ordersCache.filter(o=>{
+    if(!o.cliente)return false;
+    const k=o.cliente.toLowerCase();
+    if(!k.includes(q)||vistos[k])return false;
+    vistos[k]=true;return true;
+  }).slice(0,5);
+  if(!matches.length){sug.style.display='none';return;}
+  sug.style.display='';
+  sug.innerHTML=matches.map(o=>
+    '<div onclick="autoFillCliente('+o.id+')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px" '+
+    'onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'\'">'+
+    '<div style="font-weight:700">'+o.cliente+'</div>'+
+    '<div style="color:var(--text3)">📍 '+(o.direccion||'Sin dirección')+(o.gpsLat?' · 📡 GPS':'')+'</div>'+
+    '</div>'
+  ).join('');
+}
+
+function autoFillCliente(pedidoId){
+  const o=_ordersCache.find(x=>x.id===pedidoId);if(!o)return;
+  if($('nCli'))$('nCli').value=o.cliente||'';
+  if($('nCed'))$('nCed').value=o.cedula||'';
+  if($('nTel'))$('nTel').value=o.telefono||'';
+  if($('nDir'))$('nDir').value=o.direccion||'';
+  if(o.gpsLat&&o.gpsLng){
+    if($('nGpsLat'))$('nGpsLat').value=o.gpsLat;
+    if($('nGpsLng'))$('nGpsLng').value=o.gpsLng;
+    const btn=$('nGpsBtn'),status=$('nGpsStatus');
+    if(btn){btn.textContent='✅ GPS OK';btn.style.color='var(--green)';}
+    if(status)status.innerHTML='<span style="color:var(--green)">📍 GPS del pedido #'+o.id+' cargado</span>';
+  }
+  const sug=$('nCliSug');if(sug)sug.style.display='none';
+}
+
+function toggleEditZonaManual(val){
+  const d=$('eZonaManualDiv');if(!d)return;
+  d.style.display=val==='manual'?'':'none';
+}
+
 function selZona(id,el){
   document.querySelectorAll('.zcard').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel');
@@ -2977,6 +3083,15 @@ function selZona(id,el){
   calcNT();
 }
 function selZonaFromSelect(val){
+  const manualDiv=$('zonaManualDiv');
+  if(val==='manual'){
+    if(manualDiv)manualDiv.style.display='';
+    if($('nZona'))$('nZona').value='manual';
+    document.querySelectorAll('.zcard').forEach(c=>c.classList.remove('sel'));
+    calcNT();
+    return;
+  }
+  if(manualDiv)manualDiv.style.display='none';
   if(!val)return;
   const id=parseInt(val);
   const el=document.querySelector('.zcard[data-zona-id="'+id+'"]');
@@ -2985,7 +3100,6 @@ function selZonaFromSelect(val){
     el.classList.add('sel');
     if($('nZona'))$('nZona').value=id;
     calcNT();
-    // En mobile colapsar también
     if(window.innerWidth<=768){
       const grid=$('zG');
       if(grid)grid.classList.add('collapsed');
@@ -3004,8 +3118,14 @@ function expandZonas(){
 }
 function calcNT(){
   const p=parseFloat(gv('nPrec'))||0,c=parseFloat(gv('nCost'))||0,q=parseFloat(gv('nQty'))||1;
-  const z=getZona(parseInt(gv('nZona')));
-  const tar=z.precio||0,ext=z.extraDelivery||0,gan=(p-c)*q-tar;
+  let tar=0,ext=0;
+  if(gv('nZona')==='manual'){
+    tar=parseFloat(gv('nZonaCustomPrecio'))||0;
+  } else {
+    const z=getZona(parseInt(gv('nZona')));
+    tar=z.precio||0;ext=z.extraDelivery||0;
+  }
+  const gan=(p-c)*q-tar;
   if($('cPrec'))$('cPrec').textContent=fmt(p*q);
   if($('cCost'))$('cCost').textContent=fmt(c*q);
   if($('cTar'))$('cTar').textContent=fmt(tar);
@@ -3014,24 +3134,32 @@ function calcNT(){
 }
 async function saveNewOrder(){
   const cli=gv('nCli').trim(),prod=gv('nProd').trim(),prov=gv('nProv').trim();
-  const precio=parseFloat(gv('nPrec')),costo=parseFloat(gv('nCost')),zona=parseInt(gv('nZona'));
+  const precio=parseFloat(gv('nPrec')),costo=parseFloat(gv('nCost'));
+  const zonaVal=gv('nZona');
+  const esManual=zonaVal==='manual';
+  const zona=esManual?null:parseInt(zonaVal)||null;
+  const zonaCustomNombre=esManual?(gv('nZonaCustomNombre')||'').trim():null;
+  const zonaCustomPrecio=esManual?parseFloat(gv('nZonaCustomPrecio'))||0:null;
   const faltantes=[];
   if(!cli)faltantes.push('Nombre cliente');
   if(!prov)faltantes.push('Proveedor');
   if(!prod)faltantes.push('Producto');
   if(!precio)faltantes.push('Precio de venta');
   if(!costo)faltantes.push('Costo proveedor');
-  if(!zona)faltantes.push('Zona de entrega');
+  if(!esManual&&!zona)faltantes.push('Zona de entrega');
+  if(esManual&&!zonaCustomNombre)faltantes.push('Nombre de zona (manual)');
   if(faltantes.length){showAlert('noAlert','e','⚠️ Campos obligatorios faltantes: <b>'+faltantes.join(', ')+'</b>');return;}
   const orders=_ordersCache;
   const newId=Math.max(...orders.map(o=>o.id),1000)+1;
+  const gpsLat=gv('nGpsLat')||null,gpsLng=gv('nGpsLng')||null;
   const o={
     id:newId,fecha:gv('nFecha')||today(),cliente:cli,cedula:gv('nCed'),
-    telefono:gv('nTel'),direccion:gv('nDir'),zona,proveedor:prov,producto:prod,
+    telefono:gv('nTel'),direccion:gv('nDir'),zona,zonaCustomNombre,zonaCustomPrecio,
+    proveedor:prov,producto:prod,
     qty:parseInt(gv('nQty'))||1,precio,costo,estado:'Pendiente',
     vendedorId:CU.id,created_by:CU.id,
     dropId:parseInt(gv('nDrop'))||null,deliveryId:parseInt(gv('nDlv'))||null,
-    metodoCobro:null,fotoEntrega:false,gpsLat:null,gpsLng:null,notas:gv('nNotas'),
+    metodoCobro:null,fotoEntrega:false,gpsLat,gpsLng,notas:gv('nNotas'),
     boletaNum:'B-'+String(newId).padStart(4,'0'),numDoc:nextDocNum(),
     razonSocial:gv('nRazon'),ruc:gv('nRuc'),tipoIva:gv('nIva')||'10%',
     historial:[{estado:'Pendiente',usuario:CU.nombre,fecha:nowStr(),obs:'Pedido creado'}],
@@ -3052,13 +3180,13 @@ PAGES.balance=function(){
   const ent=orders.filter(o=>o.estado==='Entregado');
   const ing=ent.reduce((a,b)=>a+b.precio*b.qty,0);
   const cos=ent.reduce((a,b)=>a+b.costo*b.qty,0);
-  const tar=ent.reduce((a,b)=>a+getZona(b.zona).precio,0);
+  const tar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
   const byDate={};
   ent.forEach(o=>{
     const d=o.fecha||today();
     if(!byDate[d])byDate[d]={ing:0,cos:0,tar:0,gan:0,n:0};
     byDate[d].ing+=o.precio*o.qty;byDate[d].cos+=o.costo*o.qty;
-    byDate[d].tar+=getZona(o.zona).precio;byDate[d].gan+=ganVend(o);byDate[d].n++;
+    byDate[d].tar+=_getZonaO(o).precio;byDate[d].gan+=ganVend(o);byDate[d].n++;
   });
   $('ca').innerHTML=
     '<div class="sgrid">'+
@@ -3095,7 +3223,7 @@ PAGES.liquidacion=function(){
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
   const tIng=ent.reduce((a,b)=>a+b.precio*b.qty,0);
   const tCos=ent.reduce((a,b)=>a+b.costo*b.qty,0);
-  const tTar=ent.reduce((a,b)=>a+getZona(b.zona).precio,0);
+  const tTar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
   $('ca').innerHTML=
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">'+
     '<div><h2 style="font-family:\'Bebas Neue\',sans-serif;font-size:26px;letter-spacing:2px">LIQUIDACIÓN GENERAL</h2>'+
@@ -3126,8 +3254,8 @@ PAGES.liquidacion=function(){
     '<div class="stitle">Por Delivery</div>'+
     dlvs.map(d=>{
       const dO=ent.filter(o=>o.deliveryId===d.id);
-      const tar=dO.reduce((a,b)=>a+getZona(b.zona).precio,0);
-      const ext=dO.reduce((a,b)=>a+(getZona(b.zona).extraDelivery||0),0);
+      const tar=dO.reduce((a,b)=>a+_getZonaO(b).precio,0);
+      const ext=dO.reduce((a,b)=>a+(_getZonaO(b).extraDelivery||0),0);
       const rec=dO.reduce((a,b)=>a+b.precio*b.qty,0);
       const max=d.vehiculo==='auto'?cfg.cupoAuto:cfg.cupoMoto;
       return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px">🚴 '+d.nombre+' <span style="font-size:11px;font-weight:400;color:var(--text2)">'+(d.vehiculo||'moto')+' · cupo '+max+'/día</span></div>'+
@@ -3164,8 +3292,8 @@ PAGES.recaudacion=function(){
     const byM={};METODOS.forEach(m=>{byM[m]=0;});
     dO.forEach(o=>{if(o.metodoCobro)byM[o.metodoCobro]=(byM[o.metodoCobro]||0)+(o.precio*o.qty);});
     const tRec=dO.reduce((a,b)=>a+b.precio*b.qty,0);
-    const tTar=dO.reduce((a,b)=>a+getZona(b.zona).precio,0);
-    const tExt=dO.reduce((a,b)=>a+(getZona(b.zona).extraDelivery||0),0);
+    const tTar=dO.reduce((a,b)=>a+_getZonaO(b).precio,0);
+    const tExt=dO.reduce((a,b)=>a+(_getZonaO(b).extraDelivery||0),0);
     html+='<div class="tc" style="margin-bottom:18px">'+
     '<div class="th2"><span class="tt">🚴 '+d.nombre+' <span style="font-size:11px;font-weight:400;color:var(--text2)">'+(d.vehiculo||'moto')+'</span></span></div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;padding:12px 15px;border-bottom:1px solid var(--border)">'+
@@ -3185,10 +3313,10 @@ PAGES.recaudacion=function(){
     (dO.length?dO.map(o=>'<tr>'+
       '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">#'+o.id+'</td>'+
       '<td>'+fmtDate(o.fecha)+'</td><td>'+o.cliente+'</td>'+
-      '<td class="col-hide" style="font-size:11px">'+getZona(o.zona).nombre+'</td>'+
+      '<td class="col-hide" style="font-size:11px">'+_getZonaO(o).nombre+'</td>'+
       '<td>'+(o.metodoCobro?'<span class="badge be">'+MICON[o.metodoCobro]+' '+o.metodoCobro+'</span>':'—')+'</td>'+
-      '<td class="col-hide" style="color:var(--blue);font-size:12px">'+fmt(getZona(o.zona).precio)+'</td>'+
-      '<td class="col-hide" style="color:var(--purple);font-size:12px">'+((getZona(o.zona).extraDelivery||0)>0?fmt(getZona(o.zona).extraDelivery):'—')+'</td>'+
+      '<td class="col-hide" style="color:var(--blue);font-size:12px">'+fmt(_getZonaO(o).precio)+'</td>'+
+      '<td class="col-hide" style="color:var(--purple);font-size:12px">'+((_getZonaO(o).extraDelivery||0)>0?fmt(_getZonaO(o).extraDelivery):'—')+'</td>'+
       '<td style="color:var(--green);font-size:12px">'+fmt(o.precio*o.qty)+'</td>'+
       '<td>'+(o.fotoEntrega?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--red)">✗</span>')+'</td>'+
     '</tr>').join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text3)">Sin entregas</td></tr>')+
@@ -3264,7 +3392,7 @@ PAGES.boletas=function(){
 
 function openBoleta(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
-  const zona=getZona(o.zona);
+  const zona=_getZonaO(o);
   const total=o.precio*o.qty;
   const flete=zona.precio;
   const totalFact=total+flete;
@@ -3340,7 +3468,7 @@ async function ejecutarCierre(){
   const ent=hoyO.filter(o=>o.estado==='Entregado');
   const ing=ent.reduce((a,b)=>a+b.precio*b.qty,0);
   const cos=ent.reduce((a,b)=>a+b.costo*b.qty,0);
-  const tar=ent.reduce((a,b)=>a+getZona(b.zona).precio,0);
+  const tar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
   const byM={};METODOS.forEach(m=>{byM[m]=0;});
   ent.forEach(o=>{if(o.metodoCobro)byM[o.metodoCobro]=(byM[o.metodoCobro]||0)+(o.precio*o.qty);});
   const j={fecha:today(),timestamp:nowStr(),total:hoyO.length,entregados:ent.length,
@@ -4556,10 +4684,10 @@ function exportOrdersPDF(){
   const ent=orders.filter(o=>o.estado==='Entregado');
   const totV=orders.reduce((a,o)=>a+o.precio*o.qty,0);
   const totC=orders.reduce((a,o)=>a+o.costo*o.qty,0);
-  const totL=orders.reduce((a,o)=>a+getZona(o.zona).precio,0);
+  const totL=orders.reduce((a,o)=>a+_getZonaO(o).precio,0);
   const gan=totV-totC-totL;
   const filas=orders.map((o,i)=>{
-    const z=getZona(o.zona);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const g=tv-cp-z.precio;
+    const z=_getZonaO(o);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const g=tv-cp-z.precio;
     const ec={'Entregado':'#16a34a','Cancelado':'#dc2626','Pendiente':'#d97706'}[o.estado]||'#6b7280';
     return'<tr style="background:'+(i%2?'#f8fafc':'#fff')+'">'
       +'<td style="color:#94a3b8;font-size:11px">'+o.id+'</td>'
@@ -4677,7 +4805,7 @@ function exportOrdersCSV(){
     'Notas'
   ];
   const rows=orders.map(o=>{
-    const z=getZona(o.zona);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const log=z.precio||0;const gan=tv-cp-log;
+    const z=_getZonaO(o);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const log=z.precio||0;const gan=tv-cp-log;
     return[
       o.id,o.fecha,o.boletaNum||'',o.estado,o.metodoCobro||'',
       o.cliente,o.cedula||'',o.telefono||'',o.direccion||'',z.nombre||'',
@@ -4710,7 +4838,7 @@ function exportBalanceCSV(){
     'Metodo Cobro'
   ];
   const rows=orders.map(o=>{
-    const z=getZona(o.zona);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const cl=z.precio||0;const gan=tv-cp-cl;
+    const z=_getZonaO(o);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const cl=z.precio||0;const gan=tv-cp-cl;
     return[
       o.id,o.fecha,o.boletaNum||'',
       o.cliente,z.nombre||'',
@@ -4721,7 +4849,7 @@ function exportBalanceCSV(){
   });
   const totV=orders.reduce((a,o)=>a+o.precio*o.qty,0);
   const totC=orders.reduce((a,o)=>a+o.costo*o.qty,0);
-  const totL=orders.reduce((a,o)=>a+getZona(o.zona).precio,0);
+  const totL=orders.reduce((a,o)=>a+_getZonaO(o).precio,0);
   const totG=totV-totC-totL;
   const totRow=['','','','TOTALES','','',orders.length+'  pedidos','',totV,totC,totL,totG,totV>0?Math.round(totG/totV*100)+'%':'',''];
   const moneyIdx=[8,9,10,11];
@@ -4827,7 +4955,7 @@ function imprimirTicket(id){
   var o=_ordersCache.find(function(x){return x.id===id;});
   if(!o){pushNotif('Pedido no encontrado','e');return;}
   var emp=_getEmpresa();
-  var z=getZona(o.zona);
+  var z=_getZonaO(o);
   var dlv=_usersCache.find(function(u){return u.id===o.deliveryId;})||{nombre:'Sin asignar'};
   var qrBase=o.gpsLat&&o.gpsLng
     ?('https://www.google.com/maps?q='+o.gpsLat+','+o.gpsLng)
@@ -4881,7 +5009,7 @@ function imprimirTicket(id){
 function navegarPedido(id){
   const o=_ordersCache.find(x=>x.id===id);
   if(!o){pushNotif('Pedido no encontrado','e');return;}
-  const z=getZona(o.zona);
+  const z=_getZonaO(o);
   const url=o.gpsLat&&o.gpsLng
     ?'https://www.google.com/maps/dir/?api=1&destination='+o.gpsLat+','+o.gpsLng
     :'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent((o.direccion||'')+' '+(z.nombre||'')+' Paraguay');
@@ -4891,7 +5019,7 @@ function imprimirGuia(id){
   const o=_ordersCache.find(x=>x.id===id)||(_ordersCache,getOrders().find(x=>x.id===id));
   if(!o){pushNotif('Pedido no encontrado','e');return;}
   const emp=_getEmpresa();
-  const z=getZona(o.zona);
+  const z=_getZonaO(o);
   const delivery=_usersCache.find(u=>u.id===o.deliveryId)||{nombre:'Sin asignar'};
   const logoHtml=emp.logo?'<img src="'+emp.logo+'" style="height:56px;object-fit:contain">':'<div style="font-size:26px;font-weight:900;color:#f5a623;letter-spacing:3px">IPORÃVE</div>';
   const css='*{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,Segoe UI,sans-serif;background:#fff;color:#0f172a;}'+
@@ -5460,7 +5588,7 @@ async function exportCSV(){
   const orders=getVisibleOrders();
   const header='id,fecha,cliente,cedula,telefono,direccion,zona,proveedor,producto,qty,precio,costo,estado,metodoCobro';
   const rows=orders.map(o=>[o.id,o.fecha,'"'+o.cliente+'"',o.cedula||'',o.telefono||'','"'+(o.direccion||'')+'"',
-    getZona(o.zona).nombre,'"'+(o.proveedor||'')+'"','"'+o.producto+'"',o.qty,o.precio,o.costo,o.estado,o.metodoCobro||''].join(','));
+    _getZonaO(o).nombre,'"'+(o.proveedor||'')+'"','"'+o.producto+'"',o.qty,o.precio,o.costo,o.estado,o.metodoCobro||''].join(','));
   const csv=[header,...rows].join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
@@ -5754,7 +5882,7 @@ async function _mapaCargar(map){
   for(const o of orders){
     if(o.gpsLat&&o.gpsLng)continue;
     if(!$('ordersMap'))break;
-    const z=getZona(o.zona);
+    const z=_getZonaO(o);
     const addr=(o.direccion||'')+' '+(z.nombre||'')+' Paraguay';
     const coords=await _geocodeAddr(addr);
     if(coords){
