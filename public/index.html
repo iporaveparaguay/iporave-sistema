@@ -387,6 +387,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .tbl td{padding:8px 8px;font-size:12px;}
   /* Tablas: scroll solo dentro del contenedor, sin afectar la página */
   .tc{overflow-x:auto;max-width:100%;}
+  #mapaBackBtn{display:block!important;}
+  #ordersMap{height:calc(100vh - 260px)!important;min-height:280px!important;}
   /* Ocultar columna usuario en mobile */
   .tbl td.td-user,.tbl th.th-user{display:none;}
   /* Botones acción tabla usuarios — compactos y apilados en mobile */
@@ -2343,7 +2345,7 @@ function getUsers(){return _usersCache;}
 function getZona(id){return _zonasCache.find(z=>z.id===id)||{nombre:'—',precio:0,extraDelivery:0,desc:'',tiempoEntrega:'—'};}
 function _getZonaO(o){
   if(!o.zona&&o.zonaCustomNombre)return{nombre:o.zonaCustomNombre,precio:o.zonaCustomPrecio||0,extraDelivery:0,desc:'',tiempoEntrega:'Manual'};
-  return _getZonaO(o);
+  return getZona(o.zona);
 }
 function getUser(id){return _usersCache.find(u=>u.id===id)||{nombre:'—',vehiculo:'moto'};}
 function getVisibleOrders(){
@@ -5956,8 +5958,8 @@ function _mapaRenderSelects(){
   const vs=$('mapaVendSel');
   if(vs){
     const cur=window._mapaFiltroVend;
-    const vends=_usersCache.filter(u=>['vendedor','administrador'].includes(u.rol));
-    vs.innerHTML='<option value="">👤 Todos los vendedores</option>'+
+    const vends=_usersCache.filter(u=>['vendedor','administrador','superadmin','dropshipper'].includes(u.rol));
+    vs.innerHTML='<option value="">👤 Todos</option>'+
       vends.map(u=>'<option value="'+u.id+'" '+(String(cur)===String(u.id)?'selected':'')+'>'+u.nombre+'</option>').join('');
   }
 }
@@ -6008,7 +6010,10 @@ PAGES.mapa=function(){
     '<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄</button>';
   $('ca').innerHTML=
     '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>'+
-    '<div id="ordersMap" style="height:calc(100vh - 210px);border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
+    '<div style="position:relative">'+
+      '<div id="ordersMap" style="height:calc(100vh - 220px);min-height:320px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
+      '<button onclick="nav(\'orders\')" style="display:none;position:absolute;top:10px;right:10px;z-index:999;background:rgba(0,0,0,.75);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer" id="mapaBackBtn">← Volver</button>'+
+    '</div>'+
     '<div style="margin-top:5px;font-size:11px;color:var(--text3)">🔴 Pin = GPS confirmado · ⚪ semitransparente = dirección aproximada · Se actualiza cada 60s</div>';
   setTimeout(function(){
     const map=L.map('ordersMap').setView([-23.5,-58.5],7);
