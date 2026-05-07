@@ -638,6 +638,7 @@ const DEF_CONFIG = {
   waMsgNoContesta:'📞 Hola {cliente}, intentamos entregarte tu pedido #{id} pero no te encontramos. ¿Podés coordinar una nueva entrega? Iporãve',
   waMsgEntregado:'🎉 ¡Tu pedido #{id} fue entregado! Gracias por comprar en Iporãve. ¡Hasta la próxima! 😊',
   waMsgEnRuta:'🛵 ¡Hola {cliente}! Tu pedido #{id} ya está en camino. Seguí al delivery en tiempo real aquí: {trackUrl} — Iporãve',
+  waMsgDespachado:'📦 ¡Hola {cliente}! Tu pedido #{id} fue despachado y pronto saldrá a entrega. Te avisamos cuando el delivery esté en camino. — Iporãve',
 };
 const DEF_ORDERS = [];
 const DEF_CATALOGO = [];
@@ -1548,9 +1549,16 @@ function waEntregado(o){
 function waEnRuta(o){
   const cfg=getCfg();if(!cfg.waEnabled)return;
   const tel=o.telefono;if(!tel)return;
-  const trackUrl='https://iporave-sistema.vercel.app/?track='+o.id;
+  const trackUrl='https://iporave-sistema.vercel.app/track.html?id='+o.id;
   const msg=(cfg.waMsgEnRuta||DEF_CONFIG.waMsgEnRuta)
     .replace('{id}',o.id).replace('{cliente}',o.cliente).replace('{trackUrl}',trackUrl);
+  waSend(tel,msg);
+}
+function waDespachado(o){
+  const cfg=getCfg();if(!cfg.waEnabled)return;
+  const tel=o.telefono;if(!tel)return;
+  const msg=(cfg.waMsgDespachado||DEF_CONFIG.waMsgDespachado)
+    .replace('{id}',o.id).replace('{cliente}',o.cliente);
   waSend(tel,msg);
 }
 async function notifEnRutaAdmin(o){
@@ -3129,6 +3137,7 @@ async function confirmDlv(id){
   o.historial.push({estado,usuario:CU.nombre,fecha:nowStr(),obs:notas});
   o.estado=estado;o.notas=notas;o.gpsLat=gv('gpsLat');o.gpsLng=gv('gpsLng');
   if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;await DL.incCupo(CU.id);waEntregado(o);notifEntregaAdmin(o);_gpsLoopStop();}
+  if(estado==='Despachado'){waDespachado(o);}
   if(estado==='En ruta'){waEnRuta(o);notifEnRutaAdmin(o);_gpsLoopStart(o);}
   if(['Cancelado','Devuelto'].includes(estado))_gpsLoopStop();
   if(estado.startsWith('No contesta'))waNoContesta(o);
@@ -3448,8 +3457,6 @@ async function saveNewOrder(){
   await refreshCache();
   closeB();nav('orders');
   pushNotif('Pedido #'+newId+' creado','s');
-  // WhatsApp al cliente
-  setTimeout(()=>waPedidoCreado(o),500);
 }
 
 /* ─── BALANCE ─── */
