@@ -1299,7 +1299,7 @@ const DL = {
       qty:o.qty,precio:o.precio,costo:o.costo,estado:o.estado,
       vendedor_id:o.vendedorId,drop_id:o.dropId,delivery_id:o.deliveryId,
       metodo_cobro:o.metodoCobro,foto_entrega:o.fotoEntrega,
-      gps_lat:o.gpsLat,gps_lng:o.gpsLng,notas:o.notas,
+      gps_lat:o.gpsLat,gps_lng:o.gpsLng,sitio:o.sitio||null,notas:o.notas,
       boleta_num:o.boletaNum,num_doc:o.numDoc,
       razon_social:o.razonSocial,ruc:o.ruc,tipo_iva:o.tipoIva,
       zona_custom_nombre:o.zonaCustomNombre||null,
@@ -1315,7 +1315,7 @@ const DL = {
       qty:r.qty,precio:r.precio,costo:r.costo,estado:r.estado,
       vendedorId:r.vendedor_id,dropId:r.drop_id,deliveryId:r.delivery_id,
       metodoCobro:r.metodo_cobro,fotoEntrega:r.foto_entrega,
-      gpsLat:r.gps_lat,gpsLng:r.gps_lng,notas:r.notas,
+      gpsLat:r.gps_lat,gpsLng:r.gps_lng,sitio:r.sitio||null,notas:r.notas,
       boletaNum:r.boleta_num,numDoc:r.num_doc,
       razonSocial:r.razon_social,ruc:r.ruc,tipoIva:r.tipo_iva,
       zonaCustomNombre:r.zona_custom_nombre||null,
@@ -2995,7 +2995,20 @@ function editOrder(id){
     '<div class="fg"><label>Cédula</label><input type="text" id="eCed" value="'+(o.cedula||'')+'"></div></div>'+
     '<div class="frow"><div class="fg"><label>Teléfono</label><input type="text" id="eTel" value="'+(o.telefono||'')+'"></div>'+
     '<div class="fg"><label>Fecha</label><input type="date" id="eFecha" value="'+(o.fecha||today())+'"></div></div>'+
-    '<div class="fg"><label>Dirección</label><input type="text" id="eDir" value="'+escHtml(o.direccion||'')+'"></div>'+
+    '<div class="fg">'+
+    '<label style="display:flex;justify-content:space-between;align-items:center"><span>Dirección</span>'+
+    '<button type="button" id="nGpsBtn" onclick="captureGpsForOrder()" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:'+(o.gpsLat?'var(--green)':'var(--text2)')+';cursor:pointer">'+(o.gpsLat?'✅ GPS OK':'📍 GPS actual')+'</button>'+
+    '</label>'+
+    '<input type="text" id="eDir" value="'+escHtml(o.direccion||'')+'">'+
+    '</div>'+
+    '<div class="fg"><label>📍 Nombre del sitio de entrega <span style="font-weight:400;color:var(--text3);font-size:11px">(ej: Shopping Salema, Hospital Regional...)</span></label>'+
+    '<input type="text" id="eSitio" value="'+escHtml(o.sitio||'')+'" placeholder="Referencia del lugar"></div>'+
+    '<div class="fg">'+
+    '<label>🔗 Pegar enlace o coordenadas <span style="font-weight:400;color:var(--text3);font-size:11px">(Google Maps, WhatsApp, lat,lng)</span></label>'+
+    '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="procesarUbicacion(this.value)">'+
+    '<input type="hidden" id="nGpsLat" value="'+escHtml(o.gpsLat||'')+'"><input type="hidden" id="nGpsLng" value="'+escHtml(o.gpsLng||'')+'">'+
+    '<div id="nGpsStatus" style="font-size:11px;color:var(--text3);margin-top:3px">'+(o.gpsLat?'<span style="color:var(--green)">📍 GPS guardado: '+o.gpsLat+', '+o.gpsLng+'</span>':'')+'</div>'+
+    '</div>'+
     '<div class="fg"><label>Zona de entrega</label><select id="eZona" onchange="toggleEditZonaManual(this.value)">'+zonaOpts+'</select></div>'+
     '<div id="eZonaManualDiv" style="display:'+(esManualEdit?'':'none')+';padding:10px;background:var(--bg3);border-radius:8px;border:1px dashed var(--accent);margin-bottom:8px">'+
       '<div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">✏️ Zona personalizada</div>'+
@@ -3038,6 +3051,9 @@ async function saveEditOrder(id){
   }
   o.cliente=cli;o.cedula=gv('eCed');o.telefono=gv('eTel');
   o.fecha=gv('eFecha')||o.fecha;o.direccion=gv('eDir');
+  o.sitio=gv('eSitio')||o.sitio||null;
+  const _eLat=gv('nGpsLat'),_eLng=gv('nGpsLng');
+  if(_eLat&&_eLng){o.gpsLat=_eLat;o.gpsLng=_eLng;}
   const eZonaVal=gv('eZona');
   if(eZonaVal==='manual'){
     o.zona=null;
@@ -3186,6 +3202,8 @@ function openNewOrder(){
     '</label>'+
     '<input type="text" id="nDir" placeholder="Calle, número, barrio, ciudad..." onchange="calcNT()">'+
     '</div>'+
+    '<div class="fg"><label>📍 Nombre del sitio de entrega <span style="font-weight:400;color:var(--text3);font-size:11px">(ej: Shopping Salema, Hospital Regional, Shell Luque...)</span></label>'+
+    '<input type="text" id="nSitio" placeholder="Referencia del lugar — más certero que la dirección en muchos casos"></div>'+
     '<div class="fg">'+
     '<label>🔗 Pegar enlace o coordenadas <span style="font-weight:400;color:var(--text3);font-size:11px">(Google Maps, WhatsApp, lat,lng)</span></label>'+
     '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="procesarUbicacion(this.value)">'+
@@ -3457,7 +3475,7 @@ async function saveNewOrder(){
     qty:parseInt(gv('nQty'))||1,precio,costo,estado:'Pendiente',
     vendedorId:vendedorIdSel,created_by:CU.id,
     dropId:parseInt(gv('nDrop'))||null,deliveryId:parseInt(gv('nDlv'))||null,
-    metodoCobro:null,fotoEntrega:false,gpsLat,gpsLng,notas:gv('nNotas'),
+    metodoCobro:null,fotoEntrega:false,gpsLat,gpsLng,sitio:gv('nSitio')||null,notas:gv('nNotas'),
     boletaNum:'B-'+String(newId).padStart(4,'0'),numDoc:nextDocNum(),
     razonSocial:gv('nRazon'),ruc:gv('nRuc'),tipoIva:gv('nIva')||'10%',
     historial:[{estado:'Pendiente',usuario:CU.nombre,fecha:nowStr(),obs:'Pedido creado'}],
