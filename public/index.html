@@ -6710,8 +6710,29 @@ PAGES.mapa=function(){
 document.addEventListener('DOMContentLoaded',function(){
   main().then(()=>console.log('Iporãve Connect v7 listo'));
 
-  // Register Service Worker for PWA
-  if('serviceWorker' in navigator){
+  // Register Service Worker + Push Notifications
+  if('serviceWorker' in navigator && 'PushManager' in window){
+    navigator.serviceWorker.register('/sw.js').then(async reg=>{
+      console.log('SW registrado:', reg.scope);
+      const token = localStorage.getItem('token');
+      if(!token) return;
+      const permission = await Notification.requestPermission();
+      if(permission !== 'granted') return;
+      try {
+        const VAPID_PUBLIC_KEY = 'BGsJSh2Ethpl-uNUqQu7HoE5J6Uaejeoe4eM0BW2_EkB_QLSkC3AwRcZ7koXfBrcOo0-V3EWWBpVZRyrKBS2p78';
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: VAPID_PUBLIC_KEY,
+        });
+        await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/push-subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ subscription: sub }),
+        });
+        console.log('Push subscription registrada');
+      } catch(e) { console.warn('Push subscription error:', e); }
+    }).catch(err=>console.warn('SW error:', err));
+  } else if('serviceWorker' in navigator){
     navigator.serviceWorker.register('/sw.js')
       .then(reg=>console.log('SW registrado:', reg.scope))
       .catch(err=>console.warn('SW error:', err));
