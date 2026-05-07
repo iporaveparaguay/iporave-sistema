@@ -1047,6 +1047,14 @@ const DL = {
       const{error}=await _supa.from('pedidos').upsert(row,{onConflict:'id'});
       if(error)console.warn('Supa saveOrder:',error.message);
     }
+    // Push al delivery si el estado cambió a Despachado o En ruta
+    if(_prev?.estado!==o.estado&&o.deliveryId&&['Despachado','En ruta'].includes(o.estado)&&_sessionToken){
+      fetch('https://iporave-api.iporaveparaguay.workers.dev/api/push-send',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
+        body:JSON.stringify({user_id:o.deliveryId,title:o.estado==='Despachado'?'📦 Pedido despachado':'🛵 Pedido en ruta',body:'Pedido #'+o.id+(o.cliente?' — '+o.cliente:''),url:'/pedidos'})
+      }).catch(e=>console.warn('[PUSH DELIVERY]',e.message));
+    }
   },
   async deleteOrder(id){
     const _o=(_ordersCache||[]).find(x=>x.id===id)||(this._lg('orders')||[]).find(x=>x.id===id);
@@ -2235,6 +2243,8 @@ async function doLogin(){
     await refreshCache();
     nav('dashboard');
     initRealtime();
+    if(window._ordersPolling)clearInterval(window._ordersPolling);
+    window._ordersPolling=setInterval(()=>{if(_sessionToken)_rtRefreshOrders().catch(()=>{});},30000);
     loadGoogleMaps();
     _aiHistory=[];
     const aib=$('aiBtn');if(aib)aib.style.display='flex';
