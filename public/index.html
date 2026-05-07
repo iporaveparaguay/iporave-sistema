@@ -1021,6 +1021,21 @@ const DL = {
     return orders;
   },
   async saveOrder(o){
+    // Delivery no puede modificar un pedido ya Entregado
+    const _prev=(this._lg('orders')||[]).find(x=>x.id===o.id);
+    if(_prev?.estado==='Entregado'&&o.estado!=='Entregado'&&CU?.rol==='delivery'){
+      console.warn('saveOrder bloqueado: delivery no puede revertir Entregado');
+      return;
+    }
+    // Si delivery intenta poner "Entregado" directamente sin pasar por confirmDlv, bloquear
+    if(o.estado==='Entregado'&&CU?.rol==='delivery'){
+      const _sinFoto=!o.fotoEntrega;
+      const _sinMetodo=!o.metodoCobro;
+      if(_sinFoto||_sinMetodo){
+        console.warn('saveOrder: Entregado requiere foto y método de cobro');
+        return;
+      }
+    }
     // localStorage primero — garantiza que el dato no se pierda
     const orders=this._lg('orders')||[];
     const i=orders.findIndex(x=>x.id===o.id);
@@ -2762,26 +2777,30 @@ function _renderDlvCard(o,dist){
   const waNum=tel.startsWith('595')?tel:'595'+tel.replace(/^0/,'');
   const distStr=dist&&dist<99999?(dist<1000?Math.round(dist)+'m':(dist/1000).toFixed(1)+'km'):'';
   const entregado=o.estado==='Entregado';
-  const btnColor=o.estado==='En Ruta'?'#16a34a':'#f59e0b';
-  const btnLabel=o.estado==='En Ruta'?'✅ Actualizar':'🔄 Actualizar';
-  return '<div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.08);border-left:4px solid '+ec+';'+(entregado?'opacity:.55':'')+'">'+
+  const enRuta=o.estado==='En Ruta';
+  const cardBg=enRuta?'#39ff14':'var(--card)';
+  const cardBorder=enRuta?'border:3px solid #00aa00':'border-left:4px solid '+ec;
+  const btnColor=enRuta?'#004d00':'#2563eb';
+  const btnLabel=enRuta?'✅ Actualizar':'🔄 Actualizar';
+  return '<div style="background:'+cardBg+';border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.15);'+cardBorder+';'+(entregado?'opacity:.6':'')+'">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
       '<div>'+
-        '<div style="font-size:11px;font-family:monospace;color:var(--text2)">#'+o.id+(o.fecha?' · '+fmtDate(o.fecha):'')+'</div>'+
-        '<div style="font-size:18px;font-weight:800;line-height:1.2;margin-top:2px">'+o.cliente+'</div>'+
+        '<div style="font-size:11px;font-family:monospace;'+(enRuta?'color:#1a4d1a':'color:var(--text2)')+'">'+
+          '#'+o.id+(o.fecha?' · '+fmtDate(o.fecha):'')+'</div>'+
+        '<div style="font-size:18px;font-weight:800;line-height:1.2;margin-top:2px;'+(enRuta?'color:#000':'')+'">'+o.cliente+'</div>'+
       '</div>'+
-      '<span style="background:'+ec+';color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap">'+o.estado+'</span>'+
+      '<span style="background:'+ec+';color:'+(enRuta?'#000':'#fff')+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap">'+o.estado+'</span>'+
     '</div>'+
-    '<div style="font-size:13px;color:var(--text1);margin-bottom:4px">📦 '+o.producto+(o.qty>1?' × '+o.qty:'')+(o.proveedor?' · '+o.proveedor:'')+'</div>'+
-    '<div style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:4px">📍 '+(o.direccion||'Sin dirección')+
-      (distStr?'<span style="font-size:12px;color:'+ec+';font-weight:700;margin-left:8px">~'+distStr+'</span>':'')+'</div>'+
-    (o.telefono?'<div style="font-size:13px;color:var(--text2);margin-bottom:10px">📞 '+o.telefono+'</div>':'')+
+    '<div style="font-size:13px;'+(enRuta?'color:#000;font-weight:600':'color:var(--text1)')+';margin-bottom:4px">📦 '+o.producto+(o.qty>1?' × '+o.qty:'')+(o.proveedor?' · '+o.proveedor:'')+'</div>'+
+    '<div style="font-size:14px;font-weight:700;'+(enRuta?'color:#000':'color:var(--text1)')+';margin-bottom:4px">📍 '+(o.direccion||'Sin dirección')+
+      (distStr?'<span style="font-size:12px;color:'+(enRuta?'#004d00':ec)+';font-weight:700;margin-left:8px">~'+distStr+'</span>':'')+'</div>'+
+    (o.telefono?'<div style="font-size:13px;'+(enRuta?'color:#1a4d1a':'color:var(--text2)')+';margin-bottom:10px">📞 '+o.telefono+'</div>':'')+
     (entregado
-      ?'<div style="font-size:12px;color:var(--text3);padding-top:2px">✅ Entregado — sin acciones disponibles</div>'
+      ?'<div style="text-align:center;padding:8px 0;font-size:13px;font-weight:700;color:var(--text2)">✅ Entregado</div>'
       :'<div style="display:flex;gap:8px;flex-wrap:wrap">'+
-        '<button onclick="dlvModal('+o.id+')" style="flex:1;min-width:110px;padding:10px;border:none;border-radius:10px;background:'+btnColor+';color:#fff;font-size:13px;font-weight:700;cursor:pointer">'+btnLabel+'</button>'+
-        '<button onclick="navegarPedido('+o.id+')" style="padding:10px 14px;border:none;border-radius:10px;background:#ea4335;color:#fff;font-size:13px;font-weight:700;cursor:pointer">🗺️</button>'+
-        (tel?'<a href="https://wa.me/'+waNum+'" target="_blank" style="padding:10px 14px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center">💬</a>':'')+
+        '<button onclick="dlvModal('+o.id+')" style="flex:1;min-width:110px;padding:12px;border:none;border-radius:10px;background:'+btnColor+';color:#fff;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px">'+btnLabel+'</button>'+
+        '<button onclick="navegarPedido('+o.id+')" style="padding:12px 16px;border:none;border-radius:10px;background:#ea4335;color:#fff;font-size:14px;font-weight:800;cursor:pointer">🗺️</button>'+
+        (tel?'<a href="https://wa.me/'+waNum+'" target="_blank" style="padding:12px 16px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:14px;font-weight:800;cursor:pointer;text-decoration:none;display:flex;align-items:center">💬</a>':'')+
       '</div>')+
   '</div>';
 }
@@ -3140,6 +3159,7 @@ async function saveEditOrder(id){
 /* ─── DELIVERY MODAL ─── */
 function dlvModal(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
+  if(o.estado==='Entregado'){pushNotif('Este pedido ya fue entregado y no se puede modificar','e');return;}
   openA('Actualizar entrega #'+id,
     '<div id="dlvAlert"></div>'+
     '<div class="gpsw"><div class="gpss"><div class="gpsd" id="gpsDot"></div><span style="margin-left:5px" id="gpsText">Obteniendo GPS...</span></div><div class="gpsc" id="gpsCrd">—</div></div>'+
@@ -3212,6 +3232,7 @@ async function confirmDlv(id){
   if(ESTADOS_REQ_OBS.has(estado)&&!notas){showAlert('dlvAlert','e','La observación es obligatoria para este estado');return;}
   if(estado==='Entregado'&&!metodo){showAlert('dlvAlert','e','Seleccioná el método de cobro');return;}
   if(estado==='Entregado'&&!fotoOk){showAlert('dlvAlert','e','La foto de entrega es obligatoria');return;}
+  if(!confirm('¿Confirmar cambio de estado a "'+estado+'"?\n\nEsta acción quedará registrada en el historial del pedido.')){return;}
   const orders=_ordersCache;
   const o=orders.find(x=>x.id===id);if(!o)return;
   o.historial=o.historial||[];
@@ -6809,6 +6830,8 @@ function _mapaToggleDlvs(){
 
 async function _mapaCambiarEstado(id,nuevoEstado){
   const o=_ordersCache.find(x=>x.id===id);if(!o)return;
+  if(o.estado==='Entregado'){pushNotif('El pedido ya está Entregado y no se puede modificar','e');return;}
+  if(!confirm('¿Cambiar pedido #'+id+' a "'+nuevoEstado+'"?'))return;
   o.historial=o.historial||[];
   o.historial.push({estado:nuevoEstado,usuario:CU.nombre,fecha:nowStr(),obs:'Cambio desde mapa'});
   o.estado=nuevoEstado;
