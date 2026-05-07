@@ -2725,11 +2725,12 @@ function _renderCharts(){
 const _DLV_EC={'Pendiente':'#f59e0b','Despachado':'#3b82f6','En ruta':'#16a34a','Entregado':'#22c55e','Cancelado':'#ef4444','No contesta 1°':'#f97316','No contesta 2°':'#ef4444','No contesta 3°':'#dc2626','Reprogramado':'#8b5cf6','Devuelto':'#6b7280'};
 PAGES.entregas=function(){
   $('tbTitle').textContent='Mis Entregas';
-  const pushActivo=Notification?.permission==='granted';
-  const pushBtn='PushManager' in window
-    ?'<button id="btnPushNotif" class="btn btn-sm" onclick="_activarPush()" style="background:'+(pushActivo?'#16a34a':'#f59e0b')+';color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">'+(pushActivo?'🔔 Notif ON':'🔔 Activar notif')+'</button>'
-    :'';
-  $('tbActions').innerHTML=pushBtn+'<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">🔄</button>';
+  let _pushBtn='';
+  try{
+    const _pushOk=Notification?.permission==='granted';
+    if('PushManager' in window)_pushBtn='<button id="btnPushNotif" class="btn btn-sm" onclick="_activarPush()" style="background:'+(_pushOk?'#16a34a':'#f59e0b')+';color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">'+(_pushOk?'🔔 Notif ON':'🔔 Activar notif')+'</button>';
+  }catch(e){}
+  $('tbActions').innerHTML=_pushBtn+'<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">🔄</button>';
   const mis=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
   const entHoy=_ordersCache.filter(o=>o.deliveryId===CU.id&&o.estado==='Entregado'&&o.fecha===today());
   const cfg=getCfg();const u=getUser(CU.id);
@@ -6914,7 +6915,7 @@ async function _activarPush(){
     if(!sub){
       sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:VAPID_KEY});
     }
-    const token=localStorage.getItem('token');
+    const token=sessionStorage.getItem('iporave_token');
     await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/push-subscribe',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
