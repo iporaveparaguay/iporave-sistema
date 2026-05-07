@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguí tu pedido — Iporãve</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',system-ui,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;}
+  header{background:#1a1d2e;padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #2d3148;}
+  header img{width:36px;height:36px;border-radius:8px;}
+  header h1{font-size:18px;font-weight:700;color:#fff;}
+  header span{font-size:13px;color:#94a3b8;}
+  #info{padding:16px 20px;background:#1a1d2e;border-bottom:1px solid #2d3148;}
+  .info-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;}
+  .info-row:last-child{margin-bottom:0;}
+  .info-icon{font-size:18px;min-width:24px;text-align:center;}
+  .info-label{font-size:12px;color:#64748b;margin-bottom:2px;}
+  .info-val{font-size:14px;color:#e2e8f0;font-weight:500;}
+  #status-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-top:4px;}
+  .s-new{background:#1e3a5f;color:#60a5fa;}
+  .s-in_progress{background:#14532d;color:#4ade80;}
+  .s-delivered{background:#1e1e3a;color:#a78bfa;}
+  .s-cancelled{background:#3b1a1a;color:#f87171;}
+  #map{flex:1;min-height:300px;}
+  #delivery-card{padding:14px 20px;background:#1a1d2e;border-top:1px solid #2d3148;display:flex;align-items:center;gap:12px;}
+  .dlv-avatar{width:42px;height:42px;border-radius:50%;background:#2d3148;display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .dlv-name{font-size:15px;font-weight:600;color:#fff;}
+  .dlv-at{font-size:12px;color:#64748b;}
+  #no-delivery{padding:14px 20px;background:#1a1d2e;border-top:1px solid #2d3148;text-align:center;color:#64748b;font-size:13px;}
+  #loading{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:12px;color:#64748b;}
+  .spinner{width:32px;height:32px;border:3px solid #2d3148;border-top-color:#6366f1;border-radius:50%;animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #error{padding:32px 20px;text-align:center;color:#f87171;}
+</style>
+</head>
+<body>
+<header>
+  <div style="width:36px;height:36px;background:#6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;">I</div>
+  <div><h1>Iporãve</h1><span>Seguimiento de pedido</span></div>
+</header>
+
+<div id="loading"><div class="spinner"></div><span>Cargando pedido...</span></div>
+<div id="error" style="display:none"></div>
+<div id="content" style="display:none;flex:1;flex-direction:column;display:none;">
+  <div id="info"></div>
+  <div id="map"></div>
+  <div id="delivery-card" style="display:none"></div>
+  <div id="no-delivery" style="display:none">🛵 Esperando asignación de repartidor...</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const API = 'https://iporave-api.iporaveparaguay.workers.dev';
+const params = new URLSearchParams(location.search);
+const orderId = params.get('id');
+
+const ESTADOS = {
+  new: ['📦 Pedido recibido', 's-new'],
+  in_progress: ['🛵 En camino', 's-in_progress'],
+  delivered: ['✅ Entregado', 's-delivered'],
+  cancelled: ['❌ Cancelado', 's-cancelled'],
+  waiting_location: ['📍 Esperando ubicación', 's-new'],
+  waiting_photo: ['📷 Esperando foto', 's-new'],
+};
+
+let map, deliveryMarker, destMarker;
+
+function initMap(destLat, destLng) {
+  map = L.map('map', { zoomControl: true }).setView([destLat || -25.28, destLng || -57.63], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  if (destLat && destLng) {
+    const destIcon = L.divIcon({
+      html: '<div style="background:#6366f1;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>',
+      iconSize: [20, 20], iconAnchor: [10, 10], className: ''
+    });
+    destMarker = L.marker([destLat, destLng], { icon: destIcon })
+      .addTo(map)
+      .bindPopup('📍 Destino del pedido');
+  }
+}
+
+function updateDeliveryMarker(lat, lng, nombre) {
+  if (!map) return;
+  const dlvIcon = L.divIcon({
+    html: '<div style="background:#4ade80;width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;">🛵</div>',
+    iconSize: [22, 22], iconAnchor: [11, 11], className: ''
+  });
+  if (deliveryMarker) {
+    deliveryMarker.setLatLng([lat, lng]);
+  } else {
+    deliveryMarker = L.marker([lat, lng], { icon: dlvIcon })
+      .addTo(map)
+      .bindPopup(`🛵 ${nombre}`);
+    if (destMarker) {
+      const group = L.featureGroup([deliveryMarker, destMarker]);
+      map.fitBounds(group.getBounds().pad(0.3));
+    } else {
+      map.setView([lat, lng], 14);
+    }
+  }
+}
+
+async function load() {
+  if (!orderId) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = 'No se especificó un pedido.';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/track?id=${orderId}`);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Pedido no encontrado');
+
+    document.getElementById('loading').style.display = 'none';
+    const content = document.getElementById('content');
+    content.style.display = 'flex';
+    content.style.flexDirection = 'column';
+    content.style.flex = '1';
+
+    const [estadoLabel, estadoClass] = ESTADOS[data.estado] || ['📋 ' + data.estado, 's-new'];
+    document.getElementById('info').innerHTML = `
+      <div class="info-row">
+        <span class="info-icon">📦</span>
+        <div><div class="info-label">Pedido</div><div class="info-val">#${data.id}</div></div>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">👤</span>
+        <div><div class="info-label">Cliente</div><div class="info-val">${data.cliente}</div></div>
+      </div>
+      ${data.direccion ? `<div class="info-row">
+        <span class="info-icon">📍</span>
+        <div><div class="info-label">Dirección</div><div class="info-val">${data.direccion}</div></div>
+      </div>` : ''}
+      <div class="info-row">
+        <span class="info-icon">🔄</span>
+        <div><div class="info-label">Estado</div><div class="info-val"><span id="status-badge" class="${estadoClass}">${estadoLabel}</span></div></div>
+      </div>
+    `;
+
+    initMap(data.destLat, data.destLng);
+
+    if (data.delivery?.lat && data.delivery?.lng) {
+      updateDeliveryMarker(data.delivery.lat, data.delivery.lng, data.delivery.nombre || 'Repartidor');
+      const at = data.delivery.at ? new Date(data.delivery.at).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }) : '';
+      document.getElementById('delivery-card').style.display = 'flex';
+      document.getElementById('delivery-card').innerHTML = `
+        <div class="dlv-avatar">🛵</div>
+        <div><div class="dlv-name">${data.delivery.nombre || 'Repartidor'}</div><div class="dlv-at">${at ? 'Última posición: ' + at : 'En camino...'}</div></div>
+      `;
+    } else {
+      document.getElementById('no-delivery').style.display = 'block';
+    }
+
+    // Refresca posición cada 30 segundos si está en progreso
+    if (data.estado === 'in_progress') {
+      setTimeout(() => refreshDelivery(orderId), 30000);
+    }
+  } catch (err) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = '❌ ' + err.message;
+  }
+}
+
+async function refreshDelivery(id) {
+  try {
+    const res = await fetch(`${API}/api/track?id=${id}`);
+    const data = await res.json();
+    if (data.delivery?.lat && data.delivery?.lng) {
+      updateDeliveryMarker(data.delivery.lat, data.delivery.lng, data.delivery.nombre || 'Repartidor');
+      const at = data.delivery.at ? new Date(data.delivery.at).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }) : '';
+      const card = document.getElementById('delivery-card');
+      if (card) card.querySelector('.dlv-at').textContent = at ? 'Última posición: ' + at : 'En camino...';
+    }
+    if (data.estado === 'in_progress') setTimeout(() => refreshDelivery(id), 30000);
+  } catch {}
+}
+
+load();
+</script>
+</body>
+</html>
