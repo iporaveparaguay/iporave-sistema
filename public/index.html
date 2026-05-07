@@ -6641,7 +6641,10 @@ function _mapaAddMarker(map,o,lat,lng,exact){
     '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
     '<span style="background:'+color+';color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px">'+o.estado+'</span>'+
     (CU.rol==='delivery'
-      ?'<button onclick="navegarPedido('+o.id+')" style="background:#ea4335;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">📍 Navegar</button>'
+      ?'<button onclick="navegarPedido('+o.id+')" style="background:#ea4335;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">📍 Navegar</button>'+
+       (['Pendiente','Despachado'].includes(o.estado)?'<button onclick="_mapaCambiarEstado('+o.id+',\'En Ruta\')" style="background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">🚀 En Ruta</button>':'')+
+       (o.estado==='En Ruta'?'<button onclick="_mapaCambiarEstado('+o.id+',\'Entregado\')" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">✅ Entregado</button>':'')+
+       '<button onclick="editOrder('+o.id+')" style="background:#374151;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">⬆ Ampliar</button>'
       :(o.deliveryId?'<button onclick="verDeliveryEnMapa('+o.deliveryId+')" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">🛵 Seguir delivery</button>':'')
     )+wa+
     '</div>'+
@@ -6654,7 +6657,10 @@ function _mapaAddMarker(map,o,lat,lng,exact){
 async function initOrdersLayer(map){
   await _mapaCargar(map);
   if(_ordersLayerInterval)clearInterval(_ordersLayerInterval);
-  _ordersLayerInterval=setInterval(()=>_mapaCargar(map),60000);
+  _ordersLayerInterval=setInterval(()=>{
+    _mapaCargar(map);
+    if(window._mapaShowDlvs)_mapaCargarDlvs(map);
+  },60000);
 }
 
 function _mapaSelStyle(){
@@ -6681,17 +6687,38 @@ function _mapaCargarDlvs(map){
   window._dlvMapMarkers={};
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
   for(const dlv of dlvs){
-    const recent=_ordersCache.filter(o=>o.deliveryId===dlv.id&&o.gpsLat&&o.gpsLng).sort((a,b)=>b.id-a.id);
-    if(!recent.length)continue;
-    const o=recent[0];
-    const lat=parseFloat(o.gpsLat),lng=parseFloat(o.gpsLng);
+    // Posición real del tracking si está disponible y reciente (últimos 10 min)
+    let lat=null,lng=null,posLabel='Sin GPS activo',online=false;
+    if(dlv.tracking_lat&&dlv.tracking_lng){
+      const age=Date.now()-new Date(dlv.tracking_at||0).getTime();
+      if(age<600000){lat=parseFloat(dlv.tracking_lat);lng=parseFloat(dlv.tracking_lng);online=true;posLabel='En línea';}
+    }
+    // Fallback al GPS del último pedido asignado
+    if(!lat||!lng){
+      const recent=_ordersCache.filter(o=>o.deliveryId===dlv.id&&o.gpsLat&&o.gpsLng).sort((a,b)=>b.id-a.id);
+      if(!recent.length)continue;
+      lat=parseFloat(recent[0].gpsLat);lng=parseFloat(recent[0].gpsLng);posLabel='Última dirección conocida';
+    }
+    // Pedidos activos del delivery
+    const activos=_ordersCache.filter(o=>o.deliveryId===dlv.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+    const trackTime=dlv.tracking_at?new Date(dlv.tracking_at).toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'}):'—';
+    const bg=online?'#1d4ed8':'#475569';
     const el=document.createElement('div');
     el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer';
     el.innerHTML=
-      '<div style="font-size:10px;font-weight:800;color:#fff;background:rgba(29,78,216,.88);padding:2px 7px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px)">'+dlv.nombre+'</div>'+
-      '<div style="background:#1d4ed8;color:#fff;width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.95);box-shadow:0 3px 14px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:20px">🛵</div>';
-    const popupHtml='<div style="font-family:Arial;font-size:13px;color:#e2e8f0"><b style="color:#f1f5f9">🛵 '+dlv.nombre+'</b><br>Último pedido: <b>#'+o.id+'</b><br><span style="color:#94a3b8">'+o.direccion+'</span><br><span style="color:#64748b;font-size:11px">GPS de última actualización</span></div>';
-    const m=new mapboxgl.Marker(el).setLngLat([lng,lat]).setPopup(new mapboxgl.Popup({offset:28}).setHTML(popupHtml)).addTo(map);
+      '<div style="font-size:10px;font-weight:800;color:#fff;background:'+(online?'rgba(29,78,216,.92)':'rgba(71,85,105,.92)')+';padding:2px 7px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px)">'+dlv.nombre+(online?' 🟢':' ⚫')+'</div>'+
+      '<div style="background:'+bg+';color:#fff;width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.95);box-shadow:0 3px 14px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:20px">🛵</div>';
+    const pedidosHtml=activos.map(p=>{
+      const c=_MAPA_COLORS[p.estado]||'#6b7280';
+      return'<div style="border-top:1px solid #2d3748;padding:5px 0;font-size:11px"><b style="color:#f1f5f9">#'+p.id+'</b> '+p.cliente+' <span style="background:'+c+';color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">'+p.estado+'</span><br><span style="color:#64748b">'+p.direccion+'</span></div>';
+    }).join('')||'<div style="color:#64748b;font-size:11px;padding:4px 0">Sin pedidos activos</div>';
+    const popupHtml=
+      '<div style="min-width:230px;font-family:Arial;font-size:13px;color:#e2e8f0">'+
+      '<b style="color:#f1f5f9;font-size:14px">🛵 '+dlv.nombre+'</b><br>'+
+      '<span style="color:'+(online?'#4ade80':'#64748b')+';font-size:11px">'+posLabel+(online?' · últ: '+trackTime:'')+'</span>'+
+      '<div style="margin-top:6px">'+pedidosHtml+'</div>'+
+      '</div>';
+    const m=new mapboxgl.Marker(el).setLngLat([lng,lat]).setPopup(new mapboxgl.Popup({offset:28,maxWidth:'290px'}).setHTML(popupHtml)).addTo(map);
     window._dlvMapMarkers[dlv.id]=m;
   }
 }
@@ -6770,22 +6797,48 @@ function _mapaToggleDlvs(){
   else{Object.values(window._dlvMapMarkers).forEach(m=>m.remove());window._dlvMapMarkers={};}
 }
 
+async function _mapaCambiarEstado(id,nuevoEstado){
+  const o=_ordersCache.find(x=>x.id===id);if(!o)return;
+  o.historial=o.historial||[];
+  o.historial.push({estado:nuevoEstado,usuario:CU.nombre,fecha:nowStr(),obs:'Cambio desde mapa'});
+  o.estado=nuevoEstado;
+  await DL.saveOrder(o);
+  if(window._mapMarkers[id])window._mapMarkers[id].getPopup().remove();
+  _mapaCargar(window._mapInstance);
+  pushNotif('Pedido #'+id+' → '+nuevoEstado,'s');
+}
+
+function _toggleTurno(){
+  const btn=$('btnTurno');
+  if(window._gpsLoopTimer){
+    _gpsLoopStop();
+    if(btn){btn.textContent='📡 Iniciar turno';btn.style.background='#16a34a';}
+    pushNotif('Turno finalizado — ya no se comparte tu posición','w');
+  } else {
+    const misPedidos=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+    _gpsLoopStart(misPedidos[0]||null);
+    if(btn){btn.textContent='🔴 Finalizar turno';btn.style.background='#dc2626';}
+    pushNotif('Turno iniciado — compartiendo tu posición en tiempo real','s');
+  }
+}
+
 PAGES.mapa=function(){
   if(_ordersLayerInterval){clearInterval(_ordersLayerInterval);_ordersLayerInterval=null;}
   window._mapaFiltro=null;window._mapaFiltroZona=null;window._mapaShowDlvs=false;
   window._mapMarkers={};window._dlvMapMarkers={};
-  // Auto-filtro por rol
   const esDelivery=CU.rol==='delivery';
+  const esAdmin=isAdminLike(CU.rol);
   const esLimitado=['vendedor','proveedor','dropshipper'].includes(CU.rol);
   window._mapaFiltroDelivery=esDelivery?String(CU.id):null;
   window._mapaFiltroVend=esLimitado?String(CU.id):null;
-  $('tbTitle').textContent='Mapa de Pedidos';
-  const zonaSel='<select id="mapaZonaSel" onchange="window._mapaFiltroZona=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'"><option value="">🌎 Todo Paraguay</option></select>';
+  $('tbTitle').textContent=esDelivery?'Mis pedidos — Mapa':'Mapa de Pedidos';
+  const zonaSel=!esDelivery?'<select id="mapaZonaSel" onchange="window._mapaFiltroZona=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'"><option value="">🌎 Todo Paraguay</option></select>':'';
   const vendSel=esDelivery
-    ?'<span style="font-size:12px;padding:5px 10px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--text2)">🛵 Mis pedidos</span>'
+    ?''
     :'<select id="mapaVendSel" onchange="window._mapaFiltroVend=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'"><option value="">👤 Todos</option></select>';
-  const dlvBtn=!esDelivery?'<button id="btnMapaDlvs" class="btn btn-secondary btn-sm" onclick="_mapaToggleDlvs()" title="Ver posición de deliverys">🛵 Deliverys</button>':'';
-  $('tbActions').innerHTML=zonaSel+vendSel+dlvBtn+'<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄</button>';
+  const dlvBtn=esAdmin?'<button id="btnMapaDlvs" class="btn btn-secondary btn-sm" onclick="_mapaToggleDlvs()" style="background:#1d4ed8;color:#fff">🛵 Deliverys</button>':'';
+  const turnoBtn=esDelivery?'<button id="btnTurno" class="btn btn-sm" onclick="_toggleTurno()" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">📡 Iniciar turno</button>':'';
+  $('tbActions').innerHTML=zonaSel+vendSel+dlvBtn+turnoBtn+'<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄</button>';
   $('ca').innerHTML=
     '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>'+
     '<div style="position:relative">'+
@@ -6807,6 +6860,8 @@ PAGES.mapa=function(){
     map.on('load',function(){
       _mapaRenderSelects();
       initOrdersLayer(map);
+      // Admin: mostrar pines de deliverys automáticamente
+      if(esAdmin){window._mapaShowDlvs=true;_mapaCargarDlvs(map);}
     });
   },50);
 };
