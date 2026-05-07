@@ -1476,6 +1476,7 @@ async function geocodeMapbox(query){
   }catch(e){return null;}
 }
 
+function _validGps(lat,lng){const a=parseFloat(lat),b=parseFloat(lng);return!isNaN(a)&&!isNaN(b)&&a>=-90&&a<=90&&b>=-180&&b<=180;}
 function _setGpsFields(lat,lng,label,latId,lngId,statusId,btnId){
   latId=latId||'nGpsLat';lngId=lngId||'nGpsLng';statusId=statusId||'nGpsStatus';btnId=btnId||'nGpsBtn';
   if($(latId))$(latId).value=lat.toFixed?lat.toFixed(6):lat;
@@ -3038,8 +3039,8 @@ function editOrder(id){
     '<div class="fg">'+
     '<label>🔗 Pegar enlace o coordenadas <span style="font-weight:400;color:var(--text3);font-size:11px">(Google Maps, WhatsApp, lat,lng)</span></label>'+
     '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="procesarUbicacion(this.value)">'+
-    '<input type="hidden" id="nGpsLat" value="'+escHtml(o.gpsLat||'')+'"><input type="hidden" id="nGpsLng" value="'+escHtml(o.gpsLng||'')+'">'+
-    '<div id="nGpsStatus" style="font-size:11px;color:var(--text3);margin-top:3px">'+(o.gpsLat?'<span style="color:var(--green)">📍 GPS guardado: '+o.gpsLat+', '+o.gpsLng+'</span>':'')+'</div>'+
+    '<input type="hidden" id="nGpsLat" value="'+escHtml(_validGps(o.gpsLat,o.gpsLng)?o.gpsLat:'')+'"><input type="hidden" id="nGpsLng" value="'+escHtml(_validGps(o.gpsLat,o.gpsLng)?o.gpsLng:'')+'">'+
+    '<div id="nGpsStatus" style="font-size:11px;color:var(--text3);margin-top:3px">'+(_validGps(o.gpsLat,o.gpsLng)?'<span style="color:var(--green)">📍 GPS guardado: '+parseFloat(o.gpsLat).toFixed(5)+', '+parseFloat(o.gpsLng).toFixed(5)+'</span>':'')+'</div>'+
     '</div>'+
     '<div class="fg"><label>Zona de entrega</label><select id="eZona" onchange="toggleEditZonaManual(this.value)">'+zonaOpts+'</select></div>'+
     '<div id="eZonaManualDiv" style="display:'+(esManualEdit?'':'none')+';padding:10px;background:var(--bg3);border-radius:8px;border:1px dashed var(--accent);margin-bottom:8px">'+
@@ -3085,7 +3086,7 @@ async function saveEditOrder(id){
   o.fecha=gv('eFecha')||o.fecha;o.direccion=gv('eDir');
   o.sitio=gv('eSitio')||o.sitio||null;
   const _eLat=gv('nGpsLat'),_eLng=gv('nGpsLng');
-  if(_eLat&&_eLng){o.gpsLat=_eLat;o.gpsLng=_eLng;}
+  if(_validGps(_eLat,_eLng)){o.gpsLat=_eLat;o.gpsLng=_eLng;}else if(_eLat||_eLng){o.gpsLat=null;o.gpsLng=null;}
   if(!o.gpsLat||!o.gpsLng){
     const searchQ=(o.sitio||gv('eDir')||'').trim();
     if(searchQ){const geo=await geocodeMapbox(searchQ);if(geo){o.gpsLat=String(geo.lat.toFixed(6));o.gpsLng=String(geo.lng.toFixed(6));}}
@@ -3510,7 +3511,7 @@ async function saveNewOrder(){
   if(faltantes.length){showAlert('noAlert','e','⚠️ Campos obligatorios faltantes: <b>'+faltantes.join(', ')+'</b>');return;}
   const orders=_ordersCache;
   const newId=Math.max(...orders.map(o=>o.id),1000)+1;
-  let gpsLat=gv('nGpsLat')||null,gpsLng=gv('nGpsLng')||null;
+  let gpsLat=_validGps(gv('nGpsLat'),gv('nGpsLng'))?gv('nGpsLat'):null,gpsLng=_validGps(gv('nGpsLat'),gv('nGpsLng'))?gv('nGpsLng'):null;
   if(!gpsLat||!gpsLng){
     const searchQ=(gv('nSitio')||gv('nDir')||'').trim();
     if(searchQ){
