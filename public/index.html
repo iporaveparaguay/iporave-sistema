@@ -1464,40 +1464,71 @@ window.addEventListener('offline',()=>{
 ══════════════════════════════════════════════════ */
 function loadGoogleMaps(){} // reemplazado por Leaflet
 function onMapsLoaded(){_mapsLoaded=true;}
-async function initAddressAutocomplete(inputId){
+async function geocodeMapbox(query){
+  const token=mapboxgl.accessToken;if(!token||!query||query.length<3)return null;
+  try{
+    const q=encodeURIComponent(query+' Paraguay');
+    const r=await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/'+q+'.json?access_token='+token+'&country=py&language=es&limit=1&types=poi,address,place,locality,neighborhood');
+    const d=await r.json();
+    const f=d.features&&d.features[0];
+    if(!f)return null;
+    return{lat:f.geometry.coordinates[1],lng:f.geometry.coordinates[0],name:f.place_name};
+  }catch(e){return null;}
+}
+
+function _setGpsFields(lat,lng,label,latId,lngId,statusId,btnId){
+  latId=latId||'nGpsLat';lngId=lngId||'nGpsLng';statusId=statusId||'nGpsStatus';btnId=btnId||'nGpsBtn';
+  if($(latId))$(latId).value=lat.toFixed?lat.toFixed(6):lat;
+  if($(lngId))$(lngId).value=lng.toFixed?lng.toFixed(6):lng;
+  const btn=$(btnId);if(btn){btn.textContent='✅ GPS OK';btn.style.color='var(--green)';}
+  if($(statusId))$(statusId).innerHTML='<span style="color:var(--green)">📍 '+escHtml(label||(''+lat+', '+lng))+'</span>';
+}
+
+async function initAddressAutocomplete(inputId,latId,lngId,statusId){
   const input=$(inputId);if(!input)return;
   let debounce;
   input.addEventListener('input',function(){
     clearTimeout(debounce);
     debounce=setTimeout(async()=>{
-      const q=input.value.trim();if(q.length<4)return;
+      const q=input.value.trim();if(q.length<3)return;
+      const token=mapboxgl.accessToken;if(!token)return;
       try{
-        const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=py&limit=5&q='+encodeURIComponent(q),{headers:{'Accept-Language':'es'}});
+        const r=await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/'+encodeURIComponent(q+' Paraguay')+'.json?access_token='+token+'&country=py&language=es&limit=6&types=poi,address,place,locality,neighborhood');
         const data=await r.json();
         let box=document.getElementById('__autocomplete_'+inputId);
-        if(!box){box=document.createElement('ul');box.id='__autocomplete_'+inputId;box.style.cssText='position:absolute;z-index:9999;background:#1f2330;border:1px solid #2e344a;border-radius:8px;list-style:none;padding:4px 0;margin:0;min-width:260px;max-width:340px;box-shadow:0 4px 16px #0008';input.parentElement.style.position='relative';input.parentElement.appendChild(box);}
+        if(!box){box=document.createElement('ul');box.id='__autocomplete_'+inputId;box.style.cssText='position:absolute;z-index:9999;background:#1f2330;border:1px solid #2e344a;border-radius:8px;list-style:none;padding:4px 0;margin:0;min-width:280px;max-width:360px;box-shadow:0 4px 16px #0008';input.parentElement.style.position='relative';input.parentElement.appendChild(box);}
         box.innerHTML='';
-        data.forEach(place=>{
+        (data.features||[]).forEach(f=>{
+          const [lng,lat]=f.geometry.coordinates;
           const li=document.createElement('li');
-          li.textContent=place.display_name;
-          li.style.cssText='padding:8px 12px;cursor:pointer;font-size:12px;color:#e2e8f0;border-bottom:1px solid #2e344a;';
+          li.innerHTML='<div style="font-size:12px;color:#e2e8f0">'+escHtml(f.text)+'</div><div style="font-size:10px;color:#64748b">'+escHtml(f.place_name)+'</div>';
+          li.style.cssText='padding:8px 12px;cursor:pointer;border-bottom:1px solid #2e344a;';
           li.onmouseenter=()=>li.style.background='#252a38';
           li.onmouseleave=()=>li.style.background='';
-          li.onclick=()=>{input.value=place.display_name;input.dataset.lat=place.lat;input.dataset.lng=place.lon;box.innerHTML='';};
+          li.onclick=()=>{
+            input.value=f.place_name;
+            _setGpsFields(lat,lng,'GPS: '+f.text+' ('+lat.toFixed(4)+', '+lng.toFixed(4)+')',latId,lngId,statusId);
+            box.innerHTML='';
+          };
           box.appendChild(li);
         });
       }catch(e){}
-    },400);
+    },300);
   });
 }
 async function showDeliveryMap(containerId,orderAddr,gpsLat,gpsLng){
   const container=$(containerId);if(!container)return;
   container.style.height='220px';container.style.borderRadius='8px';container.style.overflow='hidden';
   try{
-    const geo=await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=py&limit=1&q='+encodeURIComponent(orderAddr+', Paraguay'),{headers:{'Accept-Language':'es'}});
-    const geoData=await geo.json();
+    const token=mapboxgl.accessToken;
     let destLat=-25.2867,destLng=-57.647;
-    if(geoData.length){destLat=parseFloat(geoData[0].lat);destLng=parseFloat(geoData[0].lon);}
+    if(token&&orderAddr){
+      const gq=encodeURIComponent(orderAddr+' Paraguay');
+      const geo=await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/'+gq+'.json?access_token='+token+'&country=py&language=es&limit=1&types=poi,address,place,locality,neighborhood');
+      const geoData=await geo.json();
+      const gf=geoData.features&&geoData.features[0];
+      if(gf){destLat=gf.geometry.coordinates[1];destLng=gf.geometry.coordinates[0];}
+    }
     const map=new mapboxgl.Map({container,style:'mapbox://styles/mapbox/dark-v11',center:[destLng,destLat],zoom:14});
     map.on('load',function(){
       const mkR=document.createElement('div');mkR.style.cssText='background:#ef4444;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px #ef4444';
@@ -3055,6 +3086,10 @@ async function saveEditOrder(id){
   o.sitio=gv('eSitio')||o.sitio||null;
   const _eLat=gv('nGpsLat'),_eLng=gv('nGpsLng');
   if(_eLat&&_eLng){o.gpsLat=_eLat;o.gpsLng=_eLng;}
+  if(!o.gpsLat||!o.gpsLng){
+    const searchQ=(o.sitio||gv('eDir')||'').trim();
+    if(searchQ){const geo=await geocodeMapbox(searchQ);if(geo){o.gpsLat=String(geo.lat.toFixed(6));o.gpsLng=String(geo.lng.toFixed(6));}}
+  }
   const eZonaVal=gv('eZona');
   if(eZonaVal==='manual'){
     o.zona=null;
@@ -3144,7 +3179,6 @@ function startGPS(){
       if($('gpsCrd'))$('gpsCrd').textContent='Lat: '+lat+' | Lng: '+lng;
     },
     ()=>{
-      if($('gpsLat'))$('gpsLat').value='-25.341';if($('gpsLng'))$('gpsLng').value='-57.545';
       if($('gpsDot'))$('gpsDot').style.background='var(--accent)';
       if($('gpsText'))$('gpsText').textContent='GPS no disponible — continuando sin validación';
     }
@@ -3271,7 +3305,10 @@ function openNewOrder(){
     '<button class="btn btn-secondary" onclick="closeB()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveNewOrder()">Crear pedido</button>'
   );
-  setTimeout(()=>initAddressAutocomplete('nDir'),400);
+  setTimeout(()=>{
+    initAddressAutocomplete('nDir','nGpsLat','nGpsLng','nGpsStatus');
+    initAddressAutocomplete('nSitio','nGpsLat','nGpsLng','nGpsStatus');
+  },400);
 }
 function parseLocationInput(text){
   if(!text)return null;
@@ -3302,23 +3339,29 @@ async function procesarUbicacion(text){
     if(status)status.innerHTML='<span style="color:var(--green)">📍 Coordenadas extraídas: '+coords.lat.toFixed(5)+', '+coords.lng.toFixed(5)+'</span>';
     return;
   }
-  if(text.includes('goo.gl')||text.includes('maps.app')){
-    if(status)status.textContent='⏳ Resolviendo enlace corto...';
+  if(text.includes('goo.gl')||text.includes('maps.app')||text.startsWith('http')){
+    if(status)status.textContent='⏳ Resolviendo enlace...';
     try{
       const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/resolve-link?url='+encodeURIComponent(text));
       const d=await r.json();
       if(d.lat&&d.lng){
-        if($('nGpsLat'))$('nGpsLat').value=d.lat;
-        if($('nGpsLng'))$('nGpsLng').value=d.lng;
-        if(btn){btn.textContent='✅ GPS OK';btn.style.color='var(--green)';}
-        if(status)status.innerHTML='<span style="color:var(--green)">📍 GPS resuelto: '+d.lat+', '+d.lng+'</span>';
-      }else{
-        if(status)status.innerHTML='<span style="color:var(--accent)">⚠ No se pudo extraer el GPS. Abrí el link → copiá las coordenadas del URL</span>';
+        _setGpsFields(d.lat,d.lng,'GPS extraído del link: '+d.lat+', '+d.lng);
+        return;
       }
-    }catch(e){if(status)status.textContent='Error al resolver el enlace.';}
+    }catch(e){}
+    if(status)status.innerHTML='<span style="color:var(--accent)">⚠ No se encontraron coordenadas en el link</span>';
     return;
   }
-  if(status)status.innerHTML='<span style="color:var(--text3)">📝 Dirección de texto — se geocodificará al mostrar en el mapa</span>';
+  // Texto libre: buscar como nombre de lugar en Mapbox
+  if(text.length>=4){
+    if(status)status.innerHTML='<span style="color:var(--text3)">🔍 Buscando lugar...</span>';
+    const geo=await geocodeMapbox(text);
+    if(geo){
+      _setGpsFields(geo.lat,geo.lng,'📍 '+geo.name);
+    }else{
+      if(status)status.innerHTML='<span style="color:var(--accent)">⚠ No se encontró el lugar. Probá con dirección más completa o coordenadas</span>';
+    }
+  }
 }
 
 function captureGpsForOrder(){
@@ -3467,7 +3510,14 @@ async function saveNewOrder(){
   if(faltantes.length){showAlert('noAlert','e','⚠️ Campos obligatorios faltantes: <b>'+faltantes.join(', ')+'</b>');return;}
   const orders=_ordersCache;
   const newId=Math.max(...orders.map(o=>o.id),1000)+1;
-  const gpsLat=gv('nGpsLat')||null,gpsLng=gv('nGpsLng')||null;
+  let gpsLat=gv('nGpsLat')||null,gpsLng=gv('nGpsLng')||null;
+  if(!gpsLat||!gpsLng){
+    const searchQ=(gv('nSitio')||gv('nDir')||'').trim();
+    if(searchQ){
+      const geo=await geocodeMapbox(searchQ);
+      if(geo){gpsLat=String(geo.lat.toFixed(6));gpsLng=String(geo.lng.toFixed(6));}
+    }
+  }
   const vendedorIdSel=parseInt(gv('nVendedorId'))||CU.id;
   const o={
     id:newId,fecha:gv('nFecha')||today(),cliente:cli,cedula:gv('nCed'),
@@ -5529,9 +5579,13 @@ function navegarPedido(id){
   const o=_ordersCache.find(x=>x.id===id);
   if(!o){pushNotif('Pedido no encontrado','e');return;}
   const z=_getZonaO(o);
-  const url=o.gpsLat&&o.gpsLng
-    ?'https://www.google.com/maps/dir/?api=1&destination='+o.gpsLat+','+o.gpsLng
-    :'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent((o.direccion||'')+' '+(z.nombre||'')+' Paraguay');
+  let url;
+  if(o.gpsLat&&o.gpsLng){
+    url='https://www.google.com/maps/dir/?api=1&destination='+o.gpsLat+','+o.gpsLng;
+  } else {
+    const partes=[o.sitio,o.direccion,z.nombre,'Paraguay'].filter(Boolean);
+    url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(partes.join(', '));
+  }
   window.open(url,'_blank');
 }
 function imprimirGuia(id){
@@ -6481,9 +6535,12 @@ window._mapaShowDlvs=false;
 async function _geocodeAddr(addr){
   if(window._geocodeCache[addr])return window._geocodeCache[addr];
   try{
-    const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(addr)+'&limit=1',{headers:{'Accept-Language':'es'}});
+    const token=mapboxgl.accessToken;if(!token)return null;
+    const q=encodeURIComponent(addr+' Paraguay');
+    const r=await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/'+q+'.json?access_token='+token+'&country=py&language=es&limit=1&types=poi,address,place,locality,neighborhood');
     const d=await r.json();
-    if(d.length){const c=[parseFloat(d[0].lat),parseFloat(d[0].lon)];window._geocodeCache[addr]=c;return c;}
+    const f=d.features&&d.features[0];
+    if(f){const c=[f.geometry.coordinates[1],f.geometry.coordinates[0]];window._geocodeCache[addr]=c;return c;}
   }catch(e){}
   return null;
 }
