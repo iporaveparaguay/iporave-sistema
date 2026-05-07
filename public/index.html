@@ -994,9 +994,16 @@ const DL = {
         const supaData=data.map(this._mapFromSupa);
         // Merge pedidos en localStorage no sincronizados aún
         const local=this._lg('orders')||[];
+        const localById={};local.forEach(o=>{localById[o.id]=o;});
+        // Preservar GPS del localStorage si Supabase no lo tiene (columna puede estar vacía)
+        const supaDataMerged=supaData.map(o=>{
+          const loc=localById[o.id];
+          if(loc&&!o.gpsLat&&loc.gpsLat){o.gpsLat=loc.gpsLat;o.gpsLng=loc.gpsLng;}
+          return o;
+        });
         const supaIds=new Set(supaData.map(o=>o.id));
         const localOnly=local.filter(o=>!supaIds.has(o.id));
-        let merged=[...supaData,...localOnly];
+        let merged=[...supaDataMerged,...localOnly];
         if(filters){
           if(filters.vendedorId)merged=merged.filter(o=>o.vendedorId===filters.vendedorId);
           if(filters.deliveryId)merged=merged.filter(o=>o.deliveryId===filters.deliveryId);
@@ -3135,7 +3142,9 @@ async function confirmDlv(id){
   const o=orders.find(x=>x.id===id);if(!o)return;
   o.historial=o.historial||[];
   o.historial.push({estado,usuario:CU.nombre,fecha:nowStr(),obs:notas});
-  o.estado=estado;o.notas=notas;o.gpsLat=gv('gpsLat');o.gpsLng=gv('gpsLng');
+  o.estado=estado;o.notas=notas;
+  const _newLat=gv('gpsLat'),_newLng=gv('gpsLng');
+  if(_newLat&&_newLng){o.gpsLat=_newLat;o.gpsLng=_newLng;}
   if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;await DL.incCupo(CU.id);waEntregado(o);notifEntregaAdmin(o);_gpsLoopStop();}
   if(estado==='Despachado'){waDespachado(o);}
   if(estado==='En ruta'){waEnRuta(o);notifEnRutaAdmin(o);_gpsLoopStart(o);}
