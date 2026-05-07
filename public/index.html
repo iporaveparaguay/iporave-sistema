@@ -1474,7 +1474,7 @@ async function geocodeMapbox(query){
   return null;
 }
 
-function _validGps(lat,lng){const a=parseFloat(lat),b=parseFloat(lng);return!isNaN(a)&&!isNaN(b)&&a>=-90&&a<=90&&b>=-180&&b<=180;}
+function _validGps(lat,lng){const a=parseFloat(lat),b=parseFloat(lng);return!isNaN(a)&&!isNaN(b)&&a>=-28&&a<=-14&&b>=-63&&b<=-54;}
 function _setGpsFields(lat,lng,label,latId,lngId,statusId,btnId){
   latId=latId||'nGpsLat';lngId=lngId||'nGpsLng';statusId=statusId||'nGpsStatus';btnId=btnId||'nGpsBtn';
   if($(latId))$(latId).value=lat.toFixed?lat.toFixed(6):lat;
@@ -3083,7 +3083,20 @@ async function saveEditOrder(id){
   o.cliente=cli;o.cedula=gv('eCed');o.telefono=gv('eTel');
   o.fecha=gv('eFecha')||o.fecha;o.direccion=gv('eDir');
   o.sitio=gv('eSitio')||o.sitio||null;
-  const _eLat=gv('nGpsLat'),_eLng=gv('nGpsLng');
+  let _eLat=gv('nGpsLat'),_eLng=gv('nGpsLng');
+  if(!_validGps(_eLat,_eLng)){
+    const _rawInput=(gv('nUbicacionInput')||'').trim();
+    if(_rawInput.startsWith('http')){
+      try{
+        const _rr=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/resolve-link?url='+encodeURIComponent(_rawInput));
+        const _rd=await _rr.json();
+        if(_rd.lat&&_rd.lng&&_validGps(_rd.lat,_rd.lng)){_eLat=String(parseFloat(_rd.lat).toFixed(6));_eLng=String(parseFloat(_rd.lng).toFixed(6));}
+      }catch(e){}
+    } else if(_rawInput.length>=3){
+      const _rg=await geocodeMapbox(_rawInput);
+      if(_rg){_eLat=String(_rg.lat.toFixed(6));_eLng=String(_rg.lng.toFixed(6));}
+    }
+  }
   if(_validGps(_eLat,_eLng)){o.gpsLat=_eLat;o.gpsLng=_eLng;}else if(_eLat||_eLng){o.gpsLat=null;o.gpsLng=null;}
   if(!o.gpsLat||!o.gpsLng){
     const searchQ=(o.sitio||gv('eDir')||'').trim();
