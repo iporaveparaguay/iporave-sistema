@@ -2725,7 +2725,11 @@ function _renderCharts(){
 const _DLV_EC={'Pendiente':'#f59e0b','Despachado':'#3b82f6','En ruta':'#16a34a','Entregado':'#22c55e','Cancelado':'#ef4444','No contesta 1°':'#f97316','No contesta 2°':'#ef4444','No contesta 3°':'#dc2626','Reprogramado':'#8b5cf6','Devuelto':'#6b7280'};
 PAGES.entregas=function(){
   $('tbTitle').textContent='Mis Entregas';
-  $('tbActions').innerHTML='<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">🔄</button>';
+  const pushActivo=Notification?.permission==='granted';
+  const pushBtn='PushManager' in window
+    ?'<button id="btnPushNotif" class="btn btn-sm" onclick="_activarPush()" style="background:'+(pushActivo?'#16a34a':'#f59e0b')+';color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">'+(pushActivo?'🔔 Notif ON':'🔔 Activar notif')+'</button>'
+    :'';
+  $('tbActions').innerHTML=pushBtn+'<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">🔄</button>';
   const mis=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
   const entHoy=_ordersCache.filter(o=>o.deliveryId===CU.id&&o.estado==='Entregado'&&o.fecha===today());
   const cfg=getCfg();const u=getUser(CU.id);
@@ -6898,6 +6902,32 @@ PAGES.mapa=function(){
     });
   },50);
 };
+
+async function _activarPush(){
+  if(!('PushManager' in window)){alert('Tu navegador no soporta notificaciones push.');return;}
+  const perm=await Notification.requestPermission();
+  if(perm!=='granted'){alert('Permiso denegado. Podés habilitarlo en Ajustes del celular → Notificaciones → iporave-sistema.');return;}
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const VAPID_KEY='BGsJSh2Ethpl-uNUqQu7HoE5J6Uaejeoe4eM0BW2_EkB_QLSkC3AwRcZ7koXfBrcOo0-V3EWWBpVZRyrKBS2p78';
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:VAPID_KEY});
+    }
+    const token=localStorage.getItem('token');
+    await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/push-subscribe',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({subscription:sub}),
+    });
+    const btn=document.getElementById('btnPushNotif');
+    if(btn){btn.textContent='🔔 Notif ON';btn.style.background='#16a34a';}
+    alert('✅ Notificaciones activadas. Vas a recibir avisos de nuevos pedidos.');
+  }catch(e){
+    console.error('[PUSH SUB]',e);
+    alert('Error al activar notificaciones: '+e.message);
+  }
+}
 
 document.addEventListener('DOMContentLoaded',function(){
   main().then(()=>console.log('Iporãve Connect v7 listo'));
