@@ -1465,15 +1465,13 @@ window.addEventListener('offline',()=>{
 function loadGoogleMaps(){} // reemplazado por Leaflet
 function onMapsLoaded(){_mapsLoaded=true;}
 async function geocodeMapbox(query){
-  const token=mapboxgl.accessToken;if(!token||!query||query.length<3)return null;
+  if(!query||query.length<3)return null;
   try{
-    const q=encodeURIComponent(query+' Paraguay');
-    const r=await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/'+q+'.json?access_token='+token+'&country=py&language=es&limit=1&types=poi,address,place,locality,neighborhood');
+    const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/geocode?q='+encodeURIComponent(query));
     const d=await r.json();
-    const f=d.features&&d.features[0];
-    if(!f)return null;
-    return{lat:f.geometry.coordinates[1],lng:f.geometry.coordinates[0],name:f.place_name};
-  }catch(e){return null;}
+    if(d.ok&&d.lat&&d.lng)return{lat:d.lat,lng:d.lng,name:d.name||query};
+  }catch(e){}
+  return null;
 }
 
 function _validGps(lat,lng){const a=parseFloat(lat),b=parseFloat(lng);return!isNaN(a)&&!isNaN(b)&&a>=-90&&a<=90&&b>=-180&&b<=180;}
