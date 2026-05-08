@@ -1006,7 +1006,8 @@ const DL = {
           return o;
         });
         const supaIds=new Set(supaData.map(o=>o.id));
-        const localOnly=local.filter(o=>!supaIds.has(o.id));
+        const localAll=local.filter(o=>!supaIds.has(o.id));
+        const localOnly=CU&&CU.rol==='admin'?localAll.filter(o=>!o.created_by||o.created_by===CU.id):localAll;
         let merged=[...supaDataMerged,...localOnly];
         if(filters){
           if(filters.vendedorId)merged=merged.filter(o=>o.vendedorId===filters.vendedorId);
@@ -1017,6 +1018,7 @@ const DL = {
       }
     }
     let orders=this._lg('orders')||[];
+    if(CU&&CU.rol==='admin')orders=orders.filter(o=>!o.created_by||o.created_by===CU.id);
     if(filters){
       if(filters.vendedorId)orders=orders.filter(o=>o.vendedorId===filters.vendedorId);
       if(filters.deliveryId)orders=orders.filter(o=>o.deliveryId===filters.deliveryId);
@@ -3753,6 +3755,7 @@ PAGES.recaudacion=function(){
   const orders=_ordersCache;
   let dlvs=_usersCache.filter(u=>u.rol==='delivery');
   if(CU.rol==='delivery')dlvs=dlvs.filter(d=>d.id===CU.id);
+  if(!dlvs.length){$('ca').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)">No tenés personal de delivery asignado todavía.</div>';return;}
   let html='';
   dlvs.forEach(d=>{
     const dO=orders.filter(o=>o.deliveryId===d.id&&o.estado==='Entregado');
