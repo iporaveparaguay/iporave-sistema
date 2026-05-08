@@ -2,185 +2,228 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seguí tu pedido — Iporãve</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Seguí tu pedido — IPORÃVE CONNECT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'DM Sans',system-ui,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;}
-  header{background:#1a1d2e;padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #2d3148;}
-  header img{width:36px;height:36px;border-radius:8px;}
-  header h1{font-size:18px;font-weight:700;color:#fff;}
-  header span{font-size:13px;color:#94a3b8;}
-  #info{padding:16px 20px;background:#1a1d2e;border-bottom:1px solid #2d3148;}
-  .info-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;}
-  .info-row:last-child{margin-bottom:0;}
-  .info-icon{font-size:18px;min-width:24px;text-align:center;}
-  .info-label{font-size:12px;color:#64748b;margin-bottom:2px;}
-  .info-val{font-size:14px;color:#e2e8f0;font-weight:500;}
-  #status-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-top:4px;}
-  .s-new{background:#1e3a5f;color:#60a5fa;}
-  .s-in_progress{background:#14532d;color:#4ade80;}
-  .s-delivered{background:#1e1e3a;color:#a78bfa;}
-  .s-cancelled{background:#3b1a1a;color:#f87171;}
-  #map{flex:1;min-height:300px;}
-  #delivery-card{padding:14px 20px;background:#1a1d2e;border-top:1px solid #2d3148;display:flex;align-items:center;gap:12px;}
-  .dlv-avatar{width:42px;height:42px;border-radius:50%;background:#2d3148;display:flex;align-items:center;justify-content:center;font-size:20px;}
-  .dlv-name{font-size:15px;font-weight:600;color:#fff;}
-  .dlv-at{font-size:12px;color:#64748b;}
-  #no-delivery{padding:14px 20px;background:#1a1d2e;border-top:1px solid #2d3148;text-align:center;color:#64748b;font-size:13px;}
-  #loading{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:12px;color:#64748b;}
-  .spinner{width:32px;height:32px;border:3px solid #2d3148;border-top-color:#6366f1;border-radius:50%;animation:spin 1s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  #error{padding:32px 20px;text-align:center;color:#f87171;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,-apple-system,'DM Sans',sans-serif;background:#0d0f1a;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;}
+header{background:linear-gradient(135deg,#1e1b4b 0%,#1a1d40 100%);padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 16px rgba(0,0,0,.5);position:sticky;top:0;z-index:100;}
+.hdr-logo{background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(99,102,241,.4);}
+.hdr-title{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px;}
+.hdr-sub{font-size:11px;color:#a5b4fc;}
+.hdr-flag{margin-left:auto;font-size:22px;}
+
+.card{background:#151827;border:1px solid #1e2235;border-radius:16px;padding:16px;margin:12px 14px 0;}
+.card-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#4b5563;font-weight:700;margin-bottom:12px;}
+.row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.row:last-child{margin-bottom:0;}
+.row-icon{font-size:15px;min-width:22px;text-align:center;margin-top:3px;}
+.row-label{font-size:10px;color:#4b5563;margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px;}
+.row-val{font-size:14px;color:#f1f5f9;font-weight:600;}
+
+.estado-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;}
+.e-pendiente{background:rgba(220,38,38,.15);color:#fca5a5;border:1px solid rgba(220,38,38,.3);}
+.e-despachado{background:rgba(29,78,216,.15);color:#93c5fd;border:1px solid rgba(29,78,216,.3);}
+.e-ruta{background:rgba(234,88,12,.15);color:#fdba74;border:1px solid rgba(234,88,12,.3);}
+.e-entregado{background:rgba(21,128,61,.15);color:#86efac;border:1px solid rgba(21,128,61,.3);}
+.e-cancelado{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2);}
+.e-default{background:rgba(30,41,59,.5);color:#94a3b8;border:1px solid #1e293b;}
+
+.dlv-card{background:#151827;border:1px solid #1e2235;border-radius:16px;padding:16px;margin:12px 14px 0;}
+.dlv-avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #6366f1;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#1e1b4b;}
+.dlv-name{font-size:16px;font-weight:800;color:#fff;margin-bottom:2px;}
+.dlv-info-line{font-size:12px;color:#64748b;margin-bottom:3px;}
+.stars{color:#fbbf24;font-size:15px;letter-spacing:1px;}
+.call-btn{margin-top:10px;background:#1d4ed8;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none;}
+
+#map{height:280px;flex-shrink:0;margin-top:12px;}
+
+.rate-card{background:#151827;border:1px solid #1e2235;border-radius:16px;padding:16px;margin:12px 14px 16px;}
+.rate-card-title{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:14px;}
+.rate-section-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.star-row{display:flex;gap:4px;font-size:30px;cursor:pointer;margin-bottom:14px;user-select:none;}
+.star-row span{transition:transform .1s;display:inline-block;}
+.star-row span:hover{transform:scale(1.2);}
+.photos-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.photo-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.photo-slot{width:56px;height:56px;border-radius:10px;background:#1e2235;border:1.5px dashed #374151;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;color:#4b5563;}
+.submit-btn{width:100%;background:linear-gradient(90deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;}
+.submit-btn:disabled{opacity:.35;cursor:not-allowed;background:#1e2235;}
+.coming-soon{font-size:11px;color:#374151;text-align:center;margin-top:8px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;}
+
+#loading{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:14px;color:#4b5563;min-height:60vh;}
+.spinner{width:34px;height:34px;border:3px solid #1e2235;border-top-color:#6366f1;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#error{padding:40px 20px;text-align:center;color:#f87171;}
+.err-icon{font-size:48px;margin-bottom:12px;}
 </style>
 </head>
 <body>
 <header>
-  <div style="width:36px;height:36px;background:#6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;">I</div>
-  <div><h1>Iporãve</h1><span>Seguimiento de pedido</span></div>
+  <div class="hdr-logo">I</div>
+  <div><div class="hdr-title">IPORÃVE CONNECT</div><div class="hdr-sub">Seguimiento en tiempo real</div></div>
+  <div class="hdr-flag">🇵🇾</div>
 </header>
 
-<div id="loading"><div class="spinner"></div><span>Cargando pedido...</span></div>
+<div id="loading"><div class="spinner"></div><span>Cargando tu pedido...</span></div>
 <div id="error" style="display:none"></div>
-<div id="content" style="display:none;flex:1;flex-direction:column;display:none;">
-  <div id="info"></div>
-  <div id="map"></div>
-  <div id="delivery-card" style="display:none"></div>
-  <div id="no-delivery" style="display:none">🛵 Esperando asignación de repartidor...</div>
-</div>
+<div id="content" style="display:none;flex-direction:column;flex:1;padding-bottom:20px;"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const API = 'https://iporave-api.iporaveparaguay.workers.dev';
-const params = new URLSearchParams(location.search);
-const orderId = params.get('id');
+const API='https://iporave-api.iporaveparaguay.workers.dev';
+const orderId=new URLSearchParams(location.search).get('id');
 
-const ESTADOS = {
-  new: ['📦 Pedido recibido', 's-new'],
-  in_progress: ['🛵 En camino', 's-in_progress'],
-  delivered: ['✅ Entregado', 's-delivered'],
-  cancelled: ['❌ Cancelado', 's-cancelled'],
-  waiting_location: ['📍 Esperando ubicación', 's-new'],
-  waiting_photo: ['📷 Esperando foto', 's-new'],
+const ESTADO_CFG={
+  'Pendiente':   {label:'📦 Pedido confirmado',  cls:'e-pendiente'},
+  'Despachado':  {label:'📦 Preparando tu pedido',cls:'e-despachado'},
+  'En ruta':     {label:'🛵 En camino a vos',     cls:'e-ruta'},
+  'Entregado':   {label:'✅ Entregado',            cls:'e-entregado'},
+  'Cancelado':   {label:'❌ Cancelado',            cls:'e-cancelado'},
+  'Devuelto':    {label:'↩️ Devuelto',             cls:'e-cancelado'},
 };
 
-let map, deliveryMarker, destMarker;
+function getEstado(e){return ESTADO_CFG[e]||{label:'📋 '+e,cls:'e-default'};}
+function stars(n){const f=Math.round(n||0);return'★'.repeat(f)+'☆'.repeat(5-f);}
+function precio(p){return p?'Gs. '+Number(p).toLocaleString('es-PY'):'';}
+function phone(t){if(!t)return'';const c=t.toString().replace(/\D/g,'');return c.startsWith('595')?c:'595'+c.replace(/^0/,'');}
 
-function initMap(destLat, destLng) {
-  map = L.map('map', { zoomControl: true }).setView([destLat || -25.28, destLng || -57.63], 14);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(map);
+let map,dlvMarker,destMarker;
 
-  if (destLat && destLng) {
-    const destIcon = L.divIcon({
-      html: '<div style="background:#6366f1;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>',
-      iconSize: [20, 20], iconAnchor: [10, 10], className: ''
-    });
-    destMarker = L.marker([destLat, destLng], { icon: destIcon })
-      .addTo(map)
-      .bindPopup('📍 Destino del pedido');
+function initMap(lat,lng){
+  map=L.map('map',{zoomControl:true}).setView([lat||-25.28,lng||-57.63],14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+  if(lat&&lng){
+    const icon=L.divIcon({html:'<div style="background:#6366f1;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',iconSize:[20,20],iconAnchor:[10,10],className:''});
+    destMarker=L.marker([lat,lng],{icon}).addTo(map).bindPopup('📍 Tu dirección de entrega');
   }
 }
 
-function updateDeliveryMarker(lat, lng, nombre) {
-  if (!map) return;
-  const dlvIcon = L.divIcon({
-    html: '<div style="background:#4ade80;width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;">🛵</div>',
-    iconSize: [22, 22], iconAnchor: [11, 11], className: ''
-  });
-  if (deliveryMarker) {
-    deliveryMarker.setLatLng([lat, lng]);
+function updateDlvMarker(lat,lng,nombre){
+  if(!map)return;
+  const icon=L.divIcon({html:'<div style="background:#22c55e;width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:14px">🛵</div>',iconSize:[26,26],iconAnchor:[13,13],className:''});
+  if(dlvMarker)dlvMarker.setLatLng([lat,lng]);
+  else{
+    dlvMarker=L.marker([lat,lng],{icon}).addTo(map).bindPopup('🛵 '+(nombre||'Repartidor'));
+    const g=destMarker?L.featureGroup([dlvMarker,destMarker]):L.featureGroup([dlvMarker]);
+    map.fitBounds(g.getBounds().pad(0.35));
+  }
+}
+
+function render(d){
+  document.getElementById('loading').style.display='none';
+  const content=document.getElementById('content');
+  content.style.display='flex';
+
+  const est=getEstado(d.estado);
+  const pr=precio(d.precio);
+  const tel=phone(d.delivery?.telefono);
+
+  // Card pedido
+  let infoHtml=`<div class="card">
+    <div class="card-title">Tu pedido</div>
+    <div class="row"><span class="row-icon">📦</span><div>
+      <div class="row-label">Producto</div>
+      <div class="row-val">${d.producto||'Pedido #'+d.id}</div>
+    </div></div>`;
+  if(pr)infoHtml+=`<div class="row"><span class="row-icon">💵</span><div>
+      <div class="row-label">Total</div><div class="row-val">${pr}</div>
+    </div></div>`;
+  if(d.direccion)infoHtml+=`<div class="row"><span class="row-icon">📍</span><div>
+      <div class="row-label">Dirección de entrega</div><div class="row-val">${d.direccion}</div>
+    </div></div>`;
+  infoHtml+=`<div class="row"><span class="row-icon">🔄</span><div>
+      <div class="row-label">Estado</div>
+      <div class="row-val"><span class="estado-pill ${est.cls}">${est.label}</span></div>
+    </div></div></div>`;
+
+  // Card delivery
+  let dlvHtml='';
+  if(d.delivery){
+    const dlv=d.delivery;
+    const avatarHtml=dlv.foto
+      ?`<img src="${dlv.foto}" class="dlv-avatar" width="54" height="54">`
+      :`<div class="dlv-avatar">🛵</div>`;
+    const vehiculo=[dlv.vehiculo,dlv.patente].filter(Boolean).join(' • ');
+    const at=dlv.at?'📡 GPS '+new Date(dlv.at).toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'}):'';
+    const rating=dlv.calificacion?`<div class="stars" title="${Number(dlv.calificacion).toFixed(1)} estrellas">${stars(dlv.calificacion)} <span style="font-size:12px;color:#64748b;font-family:sans-serif">${Number(dlv.calificacion).toFixed(1)}</span></div>`:'';
+    dlvHtml=`<div class="dlv-card">
+      <div class="card-title">Tu repartidor</div>
+      <div style="display:flex;gap:14px;align-items:center">
+        ${avatarHtml}
+        <div style="flex:1;min-width:0">
+          <div class="dlv-name">${dlv.nombre||'Repartidor'}</div>
+          ${vehiculo?`<div class="dlv-info-line">🏍️ ${vehiculo}</div>`:''}
+          ${at?`<div class="dlv-info-line" id="dlvAt">${at}</div>`:'<div class="dlv-info-line" id="dlvAt">En camino...</div>'}
+          ${rating}
+        </div>
+      </div>
+      ${tel?`<a href="tel:+${tel}" class="call-btn">📞 Llamar al repartidor</a>`:''}
+    </div>`;
   } else {
-    deliveryMarker = L.marker([lat, lng], { icon: dlvIcon })
-      .addTo(map)
-      .bindPopup(`🛵 ${nombre}`);
-    if (destMarker) {
-      const group = L.featureGroup([deliveryMarker, destMarker]);
-      map.fitBounds(group.getBounds().pad(0.3));
-    } else {
-      map.setView([lat, lng], 14);
-    }
+    dlvHtml=`<div class="dlv-card" style="text-align:center;color:#374151;font-size:13px;padding:20px">🛵 Esperando asignación de repartidor...</div>`;
   }
+
+  // Mapa
+  const mapHtml=`<div id="map"></div>`;
+
+  // Rating
+  const entregado=d.estado==='Entregado';
+  const rateHtml=`<div class="rate-card">
+    <div class="rate-card-title">⭐ Calificá tu experiencia</div>
+    <div class="rate-section-label">Repartidor</div>
+    <div class="star-row" id="starsRep">
+      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+    </div>
+    <div class="rate-section-label">Empresa (Iporãve Connect)</div>
+    <div class="star-row" id="starsEmp">
+      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+    </div>
+    <div class="photos-label">Fotos/video del producto recibido (hasta 5)</div>
+    <div class="photo-grid">
+      <div class="photo-slot">📷</div><div class="photo-slot">📷</div>
+      <div class="photo-slot">📷</div><div class="photo-slot">📷</div>
+      <div class="photo-slot">📷</div>
+    </div>
+    <button class="submit-btn" disabled>Enviar calificación</button>
+    <div class="coming-soon">Función disponible próximamente</div>
+  </div>`;
+
+  content.innerHTML=infoHtml+dlvHtml+mapHtml+rateHtml;
+  initMap(d.destLat,d.destLng);
+  if(d.delivery?.lat&&d.delivery?.lng)updateDlvMarker(d.delivery.lat,d.delivery.lng,d.delivery.nombre);
+
+  if(d.estado==='En ruta')setTimeout(()=>refresh(orderId),30000);
 }
 
-async function load() {
-  if (!orderId) {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = 'block';
-    document.getElementById('error').textContent = 'No se especificó un pedido.';
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API}/api/track?id=${orderId}`);
-    const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || 'Pedido no encontrado');
-
-    document.getElementById('loading').style.display = 'none';
-    const content = document.getElementById('content');
-    content.style.display = 'flex';
-    content.style.flexDirection = 'column';
-    content.style.flex = '1';
-
-    const [estadoLabel, estadoClass] = ESTADOS[data.estado] || ['📋 ' + data.estado, 's-new'];
-    document.getElementById('info').innerHTML = `
-      <div class="info-row">
-        <span class="info-icon">📦</span>
-        <div><div class="info-label">Pedido</div><div class="info-val">#${data.id}</div></div>
-      </div>
-      <div class="info-row">
-        <span class="info-icon">👤</span>
-        <div><div class="info-label">Cliente</div><div class="info-val">${data.cliente}</div></div>
-      </div>
-      ${data.direccion ? `<div class="info-row">
-        <span class="info-icon">📍</span>
-        <div><div class="info-label">Dirección</div><div class="info-val">${data.direccion}</div></div>
-      </div>` : ''}
-      <div class="info-row">
-        <span class="info-icon">🔄</span>
-        <div><div class="info-label">Estado</div><div class="info-val"><span id="status-badge" class="${estadoClass}">${estadoLabel}</span></div></div>
-      </div>
-    `;
-
-    initMap(data.destLat, data.destLng);
-
-    if (data.delivery?.lat && data.delivery?.lng) {
-      updateDeliveryMarker(data.delivery.lat, data.delivery.lng, data.delivery.nombre || 'Repartidor');
-      const at = data.delivery.at ? new Date(data.delivery.at).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }) : '';
-      document.getElementById('delivery-card').style.display = 'flex';
-      document.getElementById('delivery-card').innerHTML = `
-        <div class="dlv-avatar">🛵</div>
-        <div><div class="dlv-name">${data.delivery.nombre || 'Repartidor'}</div><div class="dlv-at">${at ? 'Última posición: ' + at : 'En camino...'}</div></div>
-      `;
-    } else {
-      document.getElementById('no-delivery').style.display = 'block';
-    }
-
-    // Refresca posición cada 30 segundos si está en progreso
-    if (data.estado === 'in_progress') {
-      setTimeout(() => refreshDelivery(orderId), 30000);
-    }
-  } catch (err) {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = 'block';
-    document.getElementById('error').textContent = '❌ ' + err.message;
-  }
+async function refresh(id){
+  try{
+    const res=await fetch(`${API}/api/track?id=${id}`);
+    const d=await res.json();
+    if(d.delivery?.lat&&d.delivery?.lng)updateDlvMarker(d.delivery.lat,d.delivery.lng,d.delivery.nombre);
+    const atEl=document.getElementById('dlvAt');
+    if(atEl&&d.delivery?.at)atEl.textContent='📡 GPS '+new Date(d.delivery.at).toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'});
+    if(d.estado==='En ruta')setTimeout(()=>refresh(id),30000);
+  }catch{}
 }
 
-async function refreshDelivery(id) {
-  try {
-    const res = await fetch(`${API}/api/track?id=${id}`);
-    const data = await res.json();
-    if (data.delivery?.lat && data.delivery?.lng) {
-      updateDeliveryMarker(data.delivery.lat, data.delivery.lng, data.delivery.nombre || 'Repartidor');
-      const at = data.delivery.at ? new Date(data.delivery.at).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }) : '';
-      const card = document.getElementById('delivery-card');
-      if (card) card.querySelector('.dlv-at').textContent = at ? 'Última posición: ' + at : 'En camino...';
-    }
-    if (data.estado === 'in_progress') setTimeout(() => refreshDelivery(id), 30000);
-  } catch {}
+async function load(){
+  if(!orderId){showErr('No se especificó un pedido.');return;}
+  try{
+    const res=await fetch(`${API}/api/track?id=${orderId}`);
+    const d=await res.json();
+    if(!res.ok||d.error)throw new Error(d.error||'Pedido no encontrado');
+    render(d);
+  }catch(e){showErr(e.message);}
+}
+
+function showErr(msg){
+  document.getElementById('loading').style.display='none';
+  const el=document.getElementById('error');
+  el.style.display='block';
+  el.innerHTML=`<div class="err-icon">❌</div><div style="font-size:16px;font-weight:700;margin-bottom:8px">${msg}</div><div style="font-size:13px;color:#64748b">Si el problema persiste, contactá al vendedor.</div>`;
 }
 
 load();

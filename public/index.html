@@ -6592,7 +6592,7 @@ async function rechazarDispositivo(id){
 
 /* ─── MAPA EN TIEMPO REAL ─────────────────────────────────────────────────── */
 const _MAPA_COLORS={
-  'Pendiente':'#991b1b','Despachado':'#b91c1c','En ruta':'#c2410c',
+  'Pendiente':'#dc2626','Despachado':'#1d4ed8','En ruta':'#ea580c',
   'Entregado':'#15803d',
   'No contesta 1°':'#7e22ce','No contesta 2°':'#6b21a8','No contesta 3°':'#581c87',
   'Reprogramado':'#1d4ed8',
@@ -6870,6 +6870,21 @@ async function _mapaCambiarEstado(id,nuevoEstado){
   if(window._mapMarkers[id])window._mapMarkers[id].getPopup().remove();
   _mapaCargar(window._mapInstance);
   pushNotif('Pedido #'+id+' → '+nuevoEstado,'s');
+  // En ruta desde mapa: auto WA al cliente + abrir Google Maps
+  if(nuevoEstado==='En Ruta'||nuevoEstado==='En ruta'){
+    const _trackUrl='https://iporave-sistema.vercel.app/track.html?id='+o.id;
+    const _cfg2=getCfg();
+    const _waMsg=(_cfg2.waMsgEnRuta||DEF_CONFIG.waMsgEnRuta)
+      .replace('{id}',o.id).replace('{cliente}',o.cliente||'').replace('{trackUrl}',_trackUrl);
+    if(o.telefono&&_sessionToken){
+      fetch('https://iporave-api.iporaveparaguay.workers.dev/api/orders/wa-cliente',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
+        body:JSON.stringify({phone:o.telefono,message:_waMsg})
+      }).catch(e=>console.warn('[WA EN RUTA MAP]',e.message));
+    }
+    setTimeout(()=>navegarPedido(id),300);
+  }
 }
 
 function _toggleTurno(){
