@@ -3257,21 +3257,7 @@ async function confirmDlv(id){
   if(_newLat&&_newLng){o.gpsLat=_newLat;o.gpsLng=_newLng;}
   if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;await DL.incCupo(CU.id);waEntregado(o);notifEntregaAdmin(o);_gpsLoopStop();}
   if(estado==='Despachado'){waDespachado(o);}
-  if(estado==='En ruta'){
-    // Enviar WA al cliente automáticamente desde el backend (no abre WhatsApp)
-    const _trackUrl='https://iporave-sistema.vercel.app/track.html?id='+o.id;
-    const _cfg2=getCfg();
-    const _waMsg=(_cfg2.waMsgEnRuta||DEF_CONFIG.waMsgEnRuta)
-      .replace('{id}',o.id).replace('{cliente}',o.cliente||'').replace('{trackUrl}',_trackUrl);
-    if(o.telefono&&_sessionToken){
-      fetch('https://iporave-api.iporaveparaguay.workers.dev/api/orders/wa-cliente',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
-        body:JSON.stringify({phone:o.telefono,message:_waMsg})
-      }).catch(e=>console.warn('[WA EN RUTA AUTO]',e.message));
-    }
-    notifEnRutaAdmin(o);_gpsLoopStart(o);
-  }
+  if(estado==='En ruta'){waEnRuta(o);notifEnRutaAdmin(o);_gpsLoopStart(o);}
   if(['Cancelado','Devuelto'].includes(estado))_gpsLoopStop();
   if(estado.startsWith('No contesta'))waNoContesta(o);
   await DL.saveOrder(o);
@@ -6870,19 +6856,8 @@ async function _mapaCambiarEstado(id,nuevoEstado){
   if(window._mapMarkers[id])window._mapMarkers[id].getPopup().remove();
   _mapaCargar(window._mapInstance);
   pushNotif('Pedido #'+id+' → '+nuevoEstado,'s');
-  // En ruta desde mapa: auto WA al cliente + abrir Google Maps
   if(nuevoEstado==='En Ruta'||nuevoEstado==='En ruta'){
-    const _trackUrl='https://iporave-sistema.vercel.app/track.html?id='+o.id;
-    const _cfg2=getCfg();
-    const _waMsg=(_cfg2.waMsgEnRuta||DEF_CONFIG.waMsgEnRuta)
-      .replace('{id}',o.id).replace('{cliente}',o.cliente||'').replace('{trackUrl}',_trackUrl);
-    if(o.telefono&&_sessionToken){
-      fetch('https://iporave-api.iporaveparaguay.workers.dev/api/orders/wa-cliente',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
-        body:JSON.stringify({phone:o.telefono,message:_waMsg})
-      }).catch(e=>console.warn('[WA EN RUTA MAP]',e.message));
-    }
+    waEnRuta(o);
     setTimeout(()=>navegarPedido(id),300);
   }
 }
