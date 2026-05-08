@@ -6718,6 +6718,21 @@ async function initOrdersLayer(map){
   },60000);
 }
 
+function _mapaSetEstilo(oscuro){
+  const map=window._mapInstance;
+  if(!map)return;
+  window._mapaEstiloOscuro=oscuro;
+  localStorage.setItem('mapaEstilo',oscuro?'oscuro':'claro');
+  map.setStyle(oscuro?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/streets-v12');
+  const btnC=$('btnMapaClaro'),btnO=$('btnMapaOscuro');
+  if(btnC)btnC.style.background=oscuro?'rgba(0,0,0,0.6)':'#fff';
+  if(btnO)btnO.style.background=oscuro?'#fff':'rgba(0,0,0,0.6)';
+  const esAdmin=isAdminLike(CU.rol);
+  map.once('style.load',function(){
+    _mapaCargar(map);
+    if(esAdmin&&window._mapaShowDlvs)_mapaCargarDlvs(map);
+  });
+}
 function _mapaSelStyle(){
   return 'padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:12px;background:var(--card);color:var(--text1);cursor:pointer;max-width:160px';
 }
@@ -6912,17 +6927,23 @@ PAGES.mapa=function(){
     const misPedidos=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     _gpsLoopStart(misPedidos[0]||null);
   }
+  const _mapaOscuro=localStorage.getItem('mapaEstilo')!=='claro';
+  window._mapaEstiloOscuro=_mapaOscuro;
   $('ca').innerHTML=
     '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>'+
     '<div style="position:relative">'+
       '<div id="ordersMap" style="height:calc(100vh - 220px);min-height:320px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
       '<button onclick="nav(\'orders\')" style="display:none;position:absolute;top:10px;right:10px;z-index:999;background:rgba(0,0,0,.75);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer" id="mapaBackBtn">← Volver</button>'+
+      '<div id="mapaEstiloBtns" style="position:absolute;top:10px;right:10px;z-index:999;display:flex;gap:4px">'+
+        '<button id="btnMapaClaro" onclick="_mapaSetEstilo(false)" title="Mapa claro" style="width:34px;height:34px;border:none;border-radius:8px;font-size:18px;cursor:pointer;background:'+((!_mapaOscuro)?'#fff':'rgba(0,0,0,0.6)')+';box-shadow:0 1px 4px rgba(0,0,0,.3)">☀️</button>'+
+        '<button id="btnMapaOscuro" onclick="_mapaSetEstilo(true)" title="Mapa oscuro" style="width:34px;height:34px;border:none;border-radius:8px;font-size:18px;cursor:pointer;background:'+((_mapaOscuro)?'#fff':'rgba(0,0,0,0.6)')+';box-shadow:0 1px 4px rgba(0,0,0,.3)">🌙</button>'+
+      '</div>'+
     '</div>'+
     '<div style="margin-top:5px;font-size:11px;color:var(--text3)">🔴 Pin = GPS confirmado · ⚪ semitransparente = dirección aproximada · Se actualiza cada 60s</div>';
   setTimeout(function(){
     const map=new mapboxgl.Map({
       container:'ordersMap',
-      style:'mapbox://styles/mapbox/dark-v11',
+      style:_mapaOscuro?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/streets-v12',
       center:[-58.5,-23.5],
       zoom:7,
       attributionControl:false
