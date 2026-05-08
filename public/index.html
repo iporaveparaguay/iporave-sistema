@@ -865,11 +865,11 @@ async function initSupabase(){
 function updateConnUI(online){
   const c=$('sConn'),cm=$('connMode');
   if(c){
-    c.innerHTML='<span class="dot '+(online?'dot-green':'dot-amber')+'"></span><span>'+(online?'Supabase conectado':'Modo offline')+'</span>';
+    c.innerHTML='<span class="dot '+(online?'dot-green':'dot-amber')+'"></span><span>'+(online?'Iporãve conectado':'Modo offline')+'</span>';
   }
   if(cm){
     cm.className='lmode '+(online?'sup':'loc');
-    cm.textContent=online?'🟢 Supabase conectado — Tiempo real activo':'🔶 Modo offline — localStorage';
+    cm.textContent=online?'🟢 Iporãve conectado — Tiempo real activo':'🔶 Modo offline — localStorage';
   }
   const b=$('offlineBadge');
   if(b){
@@ -1047,13 +1047,20 @@ const DL = {
       const{error}=await _supa.from('pedidos').upsert(row,{onConflict:'id'});
       if(error)console.warn('Supa saveOrder:',error.message);
     }
-    // Push al delivery si el estado cambió a Despachado o En ruta
+    // Notificar al delivery si el estado cambió a Despachado o En ruta
     if(_prev?.estado!==o.estado&&o.deliveryId&&['Despachado','En ruta'].includes(o.estado)&&_sessionToken){
+      // Push browser
       fetch('https://iporave-api.iporaveparaguay.workers.dev/api/push-send',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
         body:JSON.stringify({user_id:o.deliveryId,title:o.estado==='Despachado'?'📦 Pedido despachado':'🛵 Pedido en ruta',body:'Pedido #'+o.id+(o.cliente?' — '+o.cliente:''),url:'/pedidos'})
       }).catch(e=>console.warn('[PUSH DELIVERY]',e.message));
+      // WhatsApp al delivery via worker (respaldo)
+      fetch('https://iporave-api.iporaveparaguay.workers.dev/api/orders/notify',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
+        body:JSON.stringify({delivery_id:o.deliveryId,order_id:o.id,cliente_nombre:o.cliente||'Cliente',address:o.direccion||''})
+      }).catch(e=>console.warn('[WA NOTIFY DELIVERY]',e.message));
     }
   },
   async deleteOrder(id){
@@ -6932,11 +6939,15 @@ async function _activarPush(){
       sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:VAPID_KEY});
     }
     const token=sessionStorage.getItem('iporave_token');
-    await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/push-subscribe',{
+    const _resp=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/push-subscribe',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body:JSON.stringify({subscription:sub}),
     });
+    if(!_resp.ok){
+      const _err=await _resp.json().catch(()=>({}));
+      throw new Error(_err.error||'Error al guardar suscripción ('+_resp.status+')');
+    }
     const btn=document.getElementById('btnPushNotif');
     if(btn){btn.textContent='🔔 Notif ON';btn.style.background='#16a34a';}
     alert('✅ Notificaciones activadas. Vas a recibir avisos de nuevos pedidos.');
