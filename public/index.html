@@ -2253,6 +2253,7 @@ async function doLogin(){
     buildNav();
     await refreshCache();
     nav('dashboard');
+    _checkUrgentOrders();
     initRealtime();
     if(window._ordersPolling)clearInterval(window._ordersPolling);
     window._ordersPolling=setInterval(()=>{if(_sessionToken)_rtRefreshOrders().catch(()=>{});},30000);
@@ -2350,7 +2351,7 @@ const NAV_CFG={
     ]},
     {s:'Reportes',items:[
       {id:'recaudacion',l:'Recaudación Delivery',ic:'truck'},{id:'boletas',l:'Boletas IVA',ic:'receipt'},
-      {id:'cierre',l:'Cierre de jornada',ic:'sun'},
+      {id:'cierre',l:'Cierre de jornada',ic:'sun'},{id:'estadisticas',l:'Estadísticas Avanzadas',ic:'chart'},
     ]},
     {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
   ],
@@ -2368,7 +2369,7 @@ const NAV_CFG={
     ]},
     {s:'Reportes',items:[
       {id:'recaudacion',l:'Recaudación Delivery',ic:'truck'},{id:'boletas',l:'Boletas IVA',ic:'receipt'},
-      {id:'cierre',l:'Cierre de jornada',ic:'sun'},
+      {id:'cierre',l:'Cierre de jornada',ic:'sun'},{id:'estadisticas',l:'Estadísticas Avanzadas',ic:'chart'},
     ]},
     {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
   ],
@@ -2416,13 +2417,14 @@ const SVG={
   trophy:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M17 3H7v10a5 5 0 0010 0V3z"/><path d="M17 4h2a2 2 0 012 2v1a4 4 0 01-4 4M7 4H5a2 2 0 00-2 2v1a4 4 0 004 4"/></svg>',
   db:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
   chat:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+  chart:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>',
 };
 const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'Liquidación',
   usuarios:'Usuarios',zonas:'Zonas y Tarifas',config:'Configuración',setup:'Setup / SQL',
   recaudacion:'Recaudación Delivery',boletas:'Boletas IVA',cierre:'Cierre de Jornada',
   neworder:'Nuevo Pedido',entregas:'Mis Entregas',cupo:'Mi Cupo y Premios',mispedidos:'Mis Pedidos',
   catalogo:'Catálogo de Productos',suministros:'Mis Suministros',mensajes:'Mensajes',
-  mapa:'Mapa en Tiempo Real'};
+  mapa:'Mapa en Tiempo Real',estadisticas:'Estadísticas Avanzadas'};
 
 /* ── SIDEBAR MOBILE ── */
 function toggleSidebar(){
@@ -3943,6 +3945,129 @@ function verCierre(fecha){
     '<button class="btn btn-primary" onclick="window.print()">Imprimir</button>'
   );
 }
+
+/* ─── ESTADÍSTICAS AVANZADAS ─── */
+PAGES.estadisticas=function(){
+  if(!isAdminLike(CU.rol)){$('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Sin acceso</div>';return;}
+  const orders=_ordersCache;
+  const dlvs=_usersCache.filter(u=>u.rol==='delivery');
+  const entregados=orders.filter(o=>o.estado==='Entregado');
+  const cancelados=orders.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
+  const activos=orders.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+  const pct=orders.length?Math.round(entregados.length/orders.length*100):0;
+  // Delivery top
+  const dlvCounts={};
+  entregados.forEach(o=>{if(o.deliveryId)dlvCounts[o.deliveryId]=(dlvCounts[o.deliveryId]||0)+1;});
+  const topDlvId=Object.keys(dlvCounts).sort((a,b)=>dlvCounts[b]-dlvCounts[a])[0];
+  const topDlv=topDlvId?(_usersCache.find(u=>u.id==topDlvId)||{nombre:'—'}).nombre:'—';
+  // Zona top
+  const zonaCounts={};
+  entregados.forEach(o=>{const z=_getZonaO(o).nombre||'Sin zona';zonaCounts[z]=(zonaCounts[z]||0)+1;});
+  const topZona=Object.keys(zonaCounts).sort((a,b)=>zonaCounts[b]-zonaCounts[a])[0]||'—';
+  // Revenue
+  const revenue=entregados.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  // Últimos 30 días
+  const days30=[];const now=new Date();
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);days30.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  const dayMap={};
+  orders.forEach(o=>{
+    if(!o.historial||!o.historial.length)return;
+    const f=o.historial[0].fecha||'';const p=f.split(', ');if(p.length<2)return;
+    const[d,m,y]=p[0].split('/');const key=d+'/'+m;
+    if(!dayMap[key])dayMap[key]={total:0,ent:0};
+    dayMap[key].total++;
+    if(o.estado==='Entregado')dayMap[key].ent++;
+  });
+  // Pedidos por delivery (top 8)
+  const dlvStats=dlvs.map(u=>{
+    const tot=orders.filter(o=>o.deliveryId===u.id).length;
+    const ent=entregados.filter(o=>o.deliveryId===u.id).length;
+    return{nombre:u.nombre,tot,ent,pct:tot?Math.round(ent/tot*100):0,cal:u.calificacion_prom||0};
+  }).filter(x=>x.tot>0).sort((a,b)=>b.ent-a.ent).slice(0,8);
+  // Pedidos por zona (top 8)
+  const zonaStats=_zonasCache.map(z=>{
+    const tot=orders.filter(o=>String(o.zona)===String(z.id)).length;
+    const ent=entregados.filter(o=>String(o.zona)===String(z.id)).length;
+    return{nombre:z.nombre,tot,ent};
+  }).filter(x=>x.tot>0).sort((a,b)=>b.tot-a.tot).slice(0,8);
+
+  $('ca').innerHTML=
+    '<div class="sgrid">'+
+      '<div class="sc ac"><div class="slabel">Total pedidos</div><div class="sval">'+orders.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">% Éxito entrega</div><div class="sval">'+pct+'%</div><div class="ssub">'+entregados.length+' entregados</div></div>'+
+      '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+cancelados.length+'</div></div>'+
+      '<div class="sc bl"><div class="slabel">En curso</div><div class="sval">'+activos.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Recaudación total</div><div class="sval" style="font-size:14px">'+fmt(revenue)+'</div></div>'+
+      '<div class="sc pu"><div class="slabel">Top delivery</div><div class="sval" style="font-size:14px">'+topDlv+'</div><div class="ssub">'+((dlvCounts[topDlvId]||0)+' entregas')+'</div></div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px;grid-column:1/-1">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Pedidos últimos 30 días</div>'+
+        '<canvas id="estLinea" height="80"></canvas>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">🛵 Entregados por delivery</div>'+
+        '<canvas id="estDlv" height="200"></canvas>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">🌎 Pedidos por zona</div>'+
+        '<canvas id="estZona" height="200"></canvas>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:var(--card);border-radius:12px;padding:16px;margin-top:14px">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px">🏆 Ranking de deliverys</div>'+
+      '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'+
+        '<thead><tr style="color:var(--text2);border-bottom:1px solid var(--border2)">'+
+          '<th style="text-align:left;padding:6px 10px">#</th><th style="text-align:left;padding:6px 10px">Delivery</th>'+
+          '<th style="text-align:center;padding:6px 10px">Entregados</th><th style="text-align:center;padding:6px 10px">Total asignados</th>'+
+          '<th style="text-align:center;padding:6px 10px">% Éxito</th><th style="text-align:center;padding:6px 10px">Calificación</th>'+
+        '</tr></thead><tbody>'+
+        dlvStats.map((d,i)=>
+          '<tr style="border-bottom:1px solid var(--border2)">'+
+          '<td style="padding:8px 10px;color:var(--text2)">'+(i+1)+'</td>'+
+          '<td style="padding:8px 10px;font-weight:700">'+d.nombre+'</td>'+
+          '<td style="padding:8px 10px;text-align:center;color:#4ade80;font-weight:700">'+d.ent+'</td>'+
+          '<td style="padding:8px 10px;text-align:center">'+d.tot+'</td>'+
+          '<td style="padding:8px 10px;text-align:center"><span style="background:'+(d.pct>=80?'#15803d':d.pct>=50?'#ca8a04':'#b91c1c')+';color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">'+d.pct+'%</span></td>'+
+          '<td style="padding:8px 10px;text-align:center">'+(d.cal>0?'⭐ '+d.cal.toFixed(1):'—')+'</td>'+
+          '</tr>'
+        ).join('')+
+        '</tbody></table></div>'+
+    '</div>';
+
+  setTimeout(()=>{
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;
+    // Línea 30 días
+    const ctxL=$('estLinea');
+    if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
+      ctxL._ci=new Chart(ctxL,{type:'line',data:{labels:days30,
+        datasets:[
+          {label:'Pedidos',data:days30.map(d=>dayMap[d]?dayMap[d].total:0),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.15)',tension:.4,fill:true,pointRadius:2},
+          {label:'Entregados',data:days30.map(d=>dayMap[d]?dayMap[d].ent:0),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',tension:.4,fill:true,pointRadius:2}
+        ]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true}}}});
+    }
+    // Bar deliverys
+    const ctxD=$('estDlv');
+    if(ctxD){if(ctxD._ci)ctxD._ci.destroy();
+      ctxD._ci=new Chart(ctxD,{type:'bar',data:{labels:dlvStats.map(d=>d.nombre),
+        datasets:[
+          {label:'Entregados',data:dlvStats.map(d=>d.ent),backgroundColor:'#22c55e'},
+          {label:'Total',data:dlvStats.map(d=>d.tot),backgroundColor:'rgba(99,102,241,.4)'}
+        ]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}});
+    }
+    // Bar zonas
+    const ctxZ=$('estZona');
+    if(ctxZ){if(ctxZ._ci)ctxZ._ci.destroy();
+      ctxZ._ci=new Chart(ctxZ,{type:'bar',data:{labels:zonaStats.map(z=>z.nombre),
+        datasets:[
+          {label:'Entregados',data:zonaStats.map(z=>z.ent),backgroundColor:'#f59e0b'},
+          {label:'Total',data:zonaStats.map(z=>z.tot),backgroundColor:'rgba(239,68,68,.4)'}
+        ]},options:{indexAxis:'y',responsive:true,plugins:{legend:{position:'top'}},scales:{x:{beginAtZero:true}}}});
+    }
+  },100);
+};
 
 /* ─── USUARIOS ─── */
 PAGES.usuarios=async function(){
@@ -6736,7 +6861,58 @@ async function initOrdersLayer(map){
   _ordersLayerInterval=setInterval(()=>{
     _mapaCargar(map);
     if(window._mapaShowDlvs)_mapaCargarDlvs(map);
+    _checkUrgentOrders();
   },60000);
+}
+
+let _alertedUrgent=new Set();
+function _checkUrgentOrders(){
+  if(!isAdminLike(CU.rol))return;
+  const now=Date.now();
+  const umbral={Pendiente:24,Despachado:12,'No contesta 1°':6,'No contesta 2°':6,'No contesta 3°':6};
+  _ordersCache.forEach(o=>{
+    const h=umbral[o.estado];if(!h)return;
+    const lastH=o.historial&&o.historial.length?o.historial[o.historial.length-1]:null;
+    if(!lastH||!lastH.fecha)return;
+    const p=lastH.fecha.split(', ');if(p.length<2)return;
+    const [d,m,y]=p[0].split('/');const [hr,mi]=p[1].split(':');
+    const dt=new Date(y,m-1,d,hr,mi);
+    const ageH=(now-dt.getTime())/3600000;
+    if(ageH>=h&&!_alertedUrgent.has(o.id)){
+      _alertedUrgent.add(o.id);
+      pushNotif('⚠️ Pedido #'+o.id+' ('+o.cliente+') lleva +'+Math.floor(ageH)+'h en "'+o.estado+'"','w');
+    }
+  });
+}
+
+function _rutaOptima(){
+  const pedidos=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)&&o.gpsLat&&o.gpsLng);
+  if(!pedidos.length){pushNotif('No tenés pedidos activos con GPS para optimizar','w');return;}
+  const lat0=CU.tracking_lat?parseFloat(CU.tracking_lat):-23.5;
+  const lng0=CU.tracking_lng?parseFloat(CU.tracking_lng):-58.5;
+  let rest=[...pedidos],sorted=[],curLat=lat0,curLng=lng0;
+  while(rest.length){
+    let best=null,bestDist=Infinity;
+    rest.forEach(o=>{
+      const d=_gpsHaversine(curLat,curLng,parseFloat(o.gpsLat),parseFloat(o.gpsLng));
+      if(d<bestDist){bestDist=d;best=o;}
+    });
+    sorted.push({o:best,dist:bestDist});
+    curLat=parseFloat(best.gpsLat);curLng=parseFloat(best.gpsLng);
+    rest=rest.filter(x=>x.id!==best.id);
+  }
+  let html='<div style="font-weight:700;font-size:15px;margin-bottom:12px">🗺️ Ruta óptima ('+sorted.length+' paradas)</div>';
+  sorted.forEach((s,i)=>{
+    const c=_MAPA_COLORS[s.o.estado]||'#6b7280';
+    html+='<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;padding:10px;background:var(--bg3);border-radius:8px">'+
+      '<div style="min-width:28px;height:28px;border-radius:50%;background:'+c+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px">'+(i+1)+'</div>'+
+      '<div style="flex:1"><div style="font-weight:700">#'+s.o.id+' — '+s.o.cliente+'</div>'+
+      '<div style="font-size:12px;color:var(--text2)">📍 '+s.o.direccion+'</div>'+
+      '<div style="font-size:11px;color:var(--text3)">~'+Math.round(s.dist/1000*10)/10+' km · <span style="background:'+c+';color:#fff;padding:1px 6px;border-radius:8px">'+s.o.estado+'</span></div></div>'+
+      '<a href="https://www.google.com/maps/dir/?api=1&destination='+s.o.gpsLat+','+s.o.gpsLng+'" target="_blank" style="background:#ea4335;color:#fff;border-radius:6px;padding:5px 8px;font-size:11px;text-decoration:none;font-weight:700;white-space:nowrap">📍 Nav</a>'+
+    '</div>';
+  });
+  openA('Ruta óptima',html,'<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>');
 }
 
 const _MAPA_ESTILO_URLS={oscuro:'mapbox://styles/mapbox/dark-v11',claro:'mapbox://styles/mapbox/streets-v12',satelite:'mapbox://styles/mapbox/satellite-streets-v12',relieve:'mapbox://styles/mapbox/outdoors-v12',navegacion:'mapbox://styles/mapbox/navigation-day-v1'};
@@ -6948,11 +7124,12 @@ PAGES.mapa=function(){
     ?''
     :'<select id="mapaVendSel" onchange="window._mapaFiltroVend=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'"><option value="">👤 Todos</option></select>';
   const dlvBtn=esAdmin?'<button id="btnMapaDlvs" class="btn btn-secondary btn-sm" onclick="_mapaToggleDlvs()" style="background:#1d4ed8;color:#fff">🛵 Deliverys</button>':'';
+  const rutaBtn=esDelivery?'<button class="btn btn-sm" onclick="_rutaOptima()" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">🗺️ Ruta óptima</button>':'';
   const turnoActivo=esDelivery&&CU.turno_activo;
   const turnoBtnTxt=turnoActivo?'🔴 Finalizar turno':'📡 Iniciar turno';
   const turnoBtnClr=turnoActivo?'#dc2626':'#16a34a';
   const turnoBtn=esDelivery?'<button id="btnTurno" class="btn btn-sm" onclick="_toggleTurno()" style="background:'+turnoBtnClr+';color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">'+turnoBtnTxt+'</button>':'';
-  $('tbActions').innerHTML=zonaSel+vendSel+dlvBtn+turnoBtn+'<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄</button>';
+  $('tbActions').innerHTML=zonaSel+vendSel+dlvBtn+rutaBtn+turnoBtn+'<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄</button>';
   if(turnoActivo&&!window._gpsLoopTimer){
     const misPedidos=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     _gpsLoopStart(misPedidos[0]||null);
@@ -6964,7 +7141,7 @@ PAGES.mapa=function(){
     '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>'+
     '<div style="position:relative">'+
       '<div id="ordersMap" style="height:calc(100vh - 220px);min-height:320px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
-      '<button onclick="nav(\'orders\')" style="display:none;position:absolute;top:10px;right:10px;z-index:999;background:rgba(0,0,0,.75);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer" id="mapaBackBtn">← Volver</button>'+
+      '<button onclick="nav(\'orders\')" style="display:none;position:absolute;top:58px;right:10px;z-index:999;background:rgba(0,0,0,.75);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer" id="mapaBackBtn">← Volver</button>'+
       '<div id="mapaEstiloBtns" style="position:absolute;top:10px;right:10px;z-index:999;display:flex;gap:2px;background:rgba(0,0,0,.6);border-radius:10px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.4)">'+
         estilosBtns+
       '</div>'+
