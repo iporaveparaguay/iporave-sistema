@@ -173,6 +173,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .gpsd{width:9px;height:9px;border-radius:50%;background:var(--red);flex-shrink:0;}
 .gpsd.on{background:var(--green);animation:gpp 2s infinite;}
 @keyframes gpp{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{box-shadow:0 0 0 5px rgba(34,197,94,0);}}
+@keyframes dlvPulse{0%,100%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 0 rgba(29,78,216,.7);}50%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 9px rgba(29,78,216,0);}}
+@keyframes urgWarn{0%,100%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 0 rgba(234,179,8,.8);}50%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 8px rgba(234,179,8,0);}}
+@keyframes urgCrit{0%,100%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 0 rgba(220,38,38,.9);}50%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 9px rgba(220,38,38,0);}}
+.mapboxgl-popup-content{background:#1e293b!important;color:#e2e8f0!important;border-radius:10px!important;padding:12px!important;}
 .gpsc{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);margin-top:4px;}
 /* PROGRESS */
 .progbar{background:var(--bg4);border-radius:20px;height:10px;overflow:hidden;}
@@ -6668,24 +6672,40 @@ async function _mapaCargar(map){
   if(hasBounds)map.fitBounds(bbox,{padding:60,maxZoom:13,animate:true});
 }
 
+function _mapaUrgencia(o){
+  if(!o.historial||!o.historial.length)return 0;
+  const activos=['Pendiente','Despachado','No contesta 1°','No contesta 2°','No contesta 3°','Reprogramado'];
+  if(!activos.includes(o.estado))return 0;
+  const f=(o.historial[o.historial.length-1].fecha)||'';
+  const p=f.split(', ');if(p.length<2)return 0;
+  const [d,m,y]=p[0].split('/');const [h,mi]=p[1].split(':');
+  const dt=new Date(y,m-1,d,h,mi);
+  const ageH=(Date.now()-dt.getTime())/3600000;
+  return ageH>48?2:ageH>24?1:0;
+}
 function _mapaAddMarker(map,o,lat,lng,exact){
   const color=_MAPA_COLORS[o.estado]||'#6b7280';
   const abbr=(o.proveedor||'IPRV').substring(0,4).toUpperCase();
   const num='#'+String(o.id).padStart(3,'0');
   const opacity=exact?1:.8;
   const shortName=(o.cliente||'').length>18?(o.cliente||'').substring(0,17)+'…':(o.cliente||'');
+  const urg=_mapaUrgencia(o);
+  const urgAnim=urg===2?'animation:urgCrit 1.4s infinite;':urg===1?'animation:urgWarn 1.8s infinite;':'box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 2px '+color+';';
+  const urgLabel=urg===2?'<span style="font-size:9px;background:#dc2626;color:#fff;padding:1px 4px;border-radius:4px;margin-left:3px">+48h</span>':urg===1?'<span style="font-size:9px;background:#ca8a04;color:#fff;padding:1px 4px;border-radius:4px;margin-left:3px">+24h</span>':'';
   const el=document.createElement('div');
   el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer;opacity:'+opacity;
   el.innerHTML=
-    '<div style="font-size:10px;font-weight:800;color:#fff;background:rgba(0,0,0,.65);padding:2px 6px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px);letter-spacing:.2px">'+shortName+'</div>'+
+    '<div style="font-size:10px;font-weight:800;color:#fff;background:rgba(0,0,0,.65);padding:2px 6px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px);letter-spacing:.2px">'+shortName+urgLabel+'</div>'+
     '<div style="background:'+color+';color:#fff;width:44px;height:44px;border-radius:50%;'+
-    'border:3px solid rgba(255,255,255,.95);box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 2px '+color+';'+
+    'border:3px solid rgba(255,255,255,.95);'+urgAnim+
     'display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;line-height:1.15;text-align:center">'+
     '<span style="font-size:9px">'+num+'</span><span style="font-size:8.5px">'+abbr+'</span>'+
     '</div>';
   const wa=o.telefono?'<a href="https://wa.me/595'+o.telefono.replace(/\D/g,'')+'" target="_blank" style="background:#25D366;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;text-decoration:none;font-weight:700">💬 WA</a>':'';
   const dlvNombre=(_usersCache.find(u=>u.id===o.deliveryId)||{}).nombre||'Sin asignar';
   const vendNombre=(_usersCache.find(u=>u.id===o.vendedorId)||{}).nombre||'—';
+  const gMapsUrl='https://www.google.com/maps/dir/?api=1&destination='+lat+','+lng;
+  const navBtn='<a href="'+gMapsUrl+'" target="_blank" style="background:#ea4335;color:#fff;border-radius:6px;padding:3px 9px;font-size:11px;text-decoration:none;font-weight:700">📍 Navegar</a>';
   const popupHtml=
     '<div style="min-width:210px;font-family:Arial,sans-serif;font-size:13px;color:#e2e8f0">'+
     '<div style="font-weight:800;font-size:14px;color:#f1f5f9;margin-bottom:4px">'+o.cliente+'</div>'+
@@ -6694,13 +6714,14 @@ function _mapaAddMarker(map,o,lat,lng,exact){
     '<div style="color:#94a3b8;margin-bottom:2px">📍 '+(o.direccion||'—')+'</div>'+
     '<div style="color:#94a3b8;margin-bottom:2px">📞 '+(o.telefono||'—')+'</div>'+
     '<div style="color:#94a3b8;margin-bottom:6px">🛵 '+dlvNombre+' · 👤 '+vendNombre+'</div>'+
+    (urg>0?'<div style="background:'+(urg===2?'#7f1d1d':'#78350f')+';color:#fef3c7;font-size:11px;padding:4px 8px;border-radius:6px;margin-bottom:6px">'+(urg===2?'🚨 Sin movimiento más de 48h':'⚠️ Sin movimiento más de 24h')+'</div>':'')+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
     '<span style="background:'+color+';color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px">'+o.estado+'</span>'+
     (CU.rol==='delivery'
       ?'<button onclick="navegarPedido('+o.id+')" style="background:#ea4335;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">📍 Navegar</button>'+
        (['Pendiente','Despachado'].includes(o.estado)?'<button onclick="_mapaCambiarEstado('+o.id+',\'En Ruta\')" style="background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">🚀 En Ruta</button>':'')+
        '<button onclick="dlvModal('+o.id+')" style="background:#374151;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">⬆ Ampliar</button>'
-      :(o.deliveryId?'<button onclick="verDeliveryEnMapa('+o.deliveryId+')" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">🛵 Seguir delivery</button>':'')
+      :navBtn+(o.deliveryId?'<button onclick="verDeliveryEnMapa('+o.deliveryId+')" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">🛵 Seguir delivery</button>':'')
     )+wa+
     '</div>'+
     (exact?'':'<div style="font-size:10px;color:#64748b;margin-top:6px">⚠ Posición aproximada por dirección</div>')+
@@ -6718,20 +6739,28 @@ async function initOrdersLayer(map){
   },60000);
 }
 
-function _mapaSetEstilo(oscuro){
+const _MAPA_ESTILO_URLS={oscuro:'mapbox://styles/mapbox/dark-v11',claro:'mapbox://styles/mapbox/streets-v12',satelite:'mapbox://styles/mapbox/satellite-streets-v12',relieve:'mapbox://styles/mapbox/outdoors-v12',navegacion:'mapbox://styles/mapbox/navigation-day-v1'};
+function _mapaSetEstilo(tipo){
   const map=window._mapInstance;
   if(!map)return;
-  window._mapaEstiloOscuro=oscuro;
-  localStorage.setItem('mapaEstilo',oscuro?'oscuro':'claro');
-  map.setStyle(oscuro?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/streets-v12');
-  const btnC=$('btnMapaClaro'),btnO=$('btnMapaOscuro');
-  if(btnC)btnC.style.background=oscuro?'rgba(0,0,0,0.6)':'#fff';
-  if(btnO)btnO.style.background=oscuro?'#fff':'rgba(0,0,0,0.6)';
+  localStorage.setItem('mapaEstilo',tipo);
+  map.setStyle(_MAPA_ESTILO_URLS[tipo]||_MAPA_ESTILO_URLS.oscuro);
+  ['oscuro','claro','satelite','relieve','navegacion'].forEach(t=>{
+    const btn=$('btnMapa_'+t);
+    if(btn)btn.style.background=t===tipo?'rgba(255,255,255,.95)':'transparent';
+  });
   const esAdmin=isAdminLike(CU.rol);
   map.once('style.load',function(){
     _mapaCargar(map);
     if(esAdmin&&window._mapaShowDlvs)_mapaCargarDlvs(map);
   });
+}
+function _mapaLocateMe(){
+  const map=window._mapInstance;
+  if(!map||!navigator.geolocation)return;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    map.flyTo({center:[pos.coords.longitude,pos.coords.latitude],zoom:15,animate:true});
+  },null,{enableHighAccuracy:true,timeout:8000});
 }
 function _mapaSelStyle(){
   return 'padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:12px;background:var(--card);color:var(--text1);cursor:pointer;max-width:160px';
@@ -6775,9 +6804,10 @@ function _mapaCargarDlvs(map){
     const bg=online?'#1d4ed8':'#475569';
     const el=document.createElement('div');
     el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer';
+    const dlvAnim=online?'animation:dlvPulse 1.8s infinite;':'box-shadow:0 3px 14px rgba(0,0,0,.5);';
     el.innerHTML=
       '<div style="font-size:10px;font-weight:800;color:#fff;background:'+(online?'rgba(29,78,216,.92)':'rgba(71,85,105,.92)')+';padding:2px 7px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px)">'+dlv.nombre+(online?' 🟢':' ⚫')+'</div>'+
-      '<div style="background:'+bg+';color:#fff;width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.95);box-shadow:0 3px 14px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:20px">🛵</div>';
+      '<div style="background:'+bg+';color:#fff;width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.95);'+dlvAnim+'display:flex;align-items:center;justify-content:center;font-size:20px">🛵</div>';
     const pedidosHtml=activos.map(p=>{
       const c=_MAPA_COLORS[p.estado]||'#6b7280';
       return'<div style="border-top:1px solid #2d3748;padding:5px 0;font-size:11px"><b style="color:#f1f5f9">#'+p.id+'</b> '+p.cliente+' <span style="background:'+c+';color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">'+p.estado+'</span><br><span style="color:#64748b">'+p.direccion+'</span></div>';
@@ -6927,23 +6957,24 @@ PAGES.mapa=function(){
     const misPedidos=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     _gpsLoopStart(misPedidos[0]||null);
   }
-  const _mapaOscuro=localStorage.getItem('mapaEstilo')!=='claro';
-  window._mapaEstiloOscuro=_mapaOscuro;
+  const _mapaEstilo=localStorage.getItem('mapaEstilo')||'oscuro';
+  const _estilosInfo=[{id:'oscuro',e:'🌙',t:'Noche'},{id:'claro',e:'☀️',t:'Día'},{id:'satelite',e:'🛰️',t:'Satélite'},{id:'relieve',e:'🏔️',t:'Relieve'},{id:'navegacion',e:'🧭',t:'Navegación'}];
+  const estilosBtns=_estilosInfo.map(s=>'<button id="btnMapa_'+s.id+'" onclick="_mapaSetEstilo(\''+s.id+'\')" title="'+s.t+'" style="width:32px;height:32px;border:none;border-radius:7px;font-size:17px;cursor:pointer;background:'+(s.id===_mapaEstilo?'rgba(255,255,255,.95)':'transparent')+';transition:background .2s">'+s.e+'</button>').join('');
   $('ca').innerHTML=
     '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>'+
     '<div style="position:relative">'+
       '<div id="ordersMap" style="height:calc(100vh - 220px);min-height:320px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
       '<button onclick="nav(\'orders\')" style="display:none;position:absolute;top:10px;right:10px;z-index:999;background:rgba(0,0,0,.75);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer" id="mapaBackBtn">← Volver</button>'+
-      '<div id="mapaEstiloBtns" style="position:absolute;top:10px;right:10px;z-index:999;display:flex;gap:4px">'+
-        '<button id="btnMapaClaro" onclick="_mapaSetEstilo(false)" title="Mapa claro" style="width:34px;height:34px;border:none;border-radius:8px;font-size:18px;cursor:pointer;background:'+((!_mapaOscuro)?'#fff':'rgba(0,0,0,0.6)')+';box-shadow:0 1px 4px rgba(0,0,0,.3)">☀️</button>'+
-        '<button id="btnMapaOscuro" onclick="_mapaSetEstilo(true)" title="Mapa oscuro" style="width:34px;height:34px;border:none;border-radius:8px;font-size:18px;cursor:pointer;background:'+((_mapaOscuro)?'#fff':'rgba(0,0,0,0.6)')+';box-shadow:0 1px 4px rgba(0,0,0,.3)">🌙</button>'+
+      '<div id="mapaEstiloBtns" style="position:absolute;top:10px;right:10px;z-index:999;display:flex;gap:2px;background:rgba(0,0,0,.6);border-radius:10px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.4)">'+
+        estilosBtns+
       '</div>'+
+      '<button onclick="_mapaLocateMe()" title="Mi ubicación" style="position:absolute;bottom:36px;right:10px;z-index:999;width:36px;height:36px;border:none;border-radius:8px;font-size:20px;cursor:pointer;background:rgba(0,0,0,.65);box-shadow:0 2px 6px rgba(0,0,0,.4)">📍</button>'+
     '</div>'+
     '<div style="margin-top:5px;font-size:11px;color:var(--text3)">🔴 Pin = GPS confirmado · ⚪ semitransparente = dirección aproximada · Se actualiza cada 60s</div>';
   setTimeout(function(){
     const map=new mapboxgl.Map({
       container:'ordersMap',
-      style:_mapaOscuro?'mapbox://styles/mapbox/dark-v11':'mapbox://styles/mapbox/streets-v12',
+      style:_MAPA_ESTILO_URLS[_mapaEstilo]||_MAPA_ESTILO_URLS.oscuro,
       center:[-58.5,-23.5],
       zoom:7,
       attributionControl:false
