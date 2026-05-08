@@ -2353,6 +2353,9 @@ const NAV_CFG={
       {id:'recaudacion',l:'Recaudación Delivery',ic:'truck'},{id:'boletas',l:'Boletas IVA',ic:'receipt'},
       {id:'cierre',l:'Cierre de jornada',ic:'sun'},{id:'estadisticas',l:'Estadísticas Avanzadas',ic:'chart'},
     ]},
+    {s:'Analítica',items:[
+      {id:'analitica_admin',l:'Analítica Ecosistema',ic:'chart'},
+    ]},
     {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
   ],
   admin:[
@@ -2371,19 +2374,32 @@ const NAV_CFG={
       {id:'recaudacion',l:'Recaudación Delivery',ic:'truck'},{id:'boletas',l:'Boletas IVA',ic:'receipt'},
       {id:'cierre',l:'Cierre de jornada',ic:'sun'},{id:'estadisticas',l:'Estadísticas Avanzadas',ic:'chart'},
     ]},
+    {s:'Analítica',items:[
+      {id:'analitica_admin',l:'Analítica Ecosistema',ic:'chart'},
+    ]},
     {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
   ],
-  vendedor:[{s:'Mi Panel',items:[
-    {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis pedidos',ic:'pkg'},
-    {id:'balance',l:'Mi balance',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
-    {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},{id:'mensajes',l:'Mensajes',ic:'chat'},
-  ]}],
-  dropshipper:[{s:'Mi Panel',items:[
-    {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis productos',ic:'pkg'},
-    {id:'balance',l:'Mis comisiones',ic:'dollar'},
-    {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
-    {id:'mensajes',l:'Mensajes',ic:'chat'},
-  ]}],
+  vendedor:[
+    {s:'Mi Panel',items:[
+      {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis pedidos',ic:'pkg'},
+      {id:'balance',l:'Mi balance',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
+      {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},{id:'mensajes',l:'Mensajes',ic:'chat'},
+    ]},
+    {s:'Analítica',items:[
+      {id:'analitica_vend',l:'Mi Analítica',ic:'chart'},
+    ]},
+  ],
+  dropshipper:[
+    {s:'Mi Panel',items:[
+      {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis productos',ic:'pkg'},
+      {id:'balance',l:'Mis comisiones',ic:'dollar'},
+      {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+      {id:'mensajes',l:'Mensajes',ic:'chat'},
+    ]},
+    {s:'Analítica',items:[
+      {id:'analitica_drop',l:'Mi Analítica',ic:'chart'},
+    ]},
+  ],
   delivery:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'entregas',l:'Mis entregas',ic:'truck'},
     {id:'mapa',l:'Mapa de mis pedidos',ic:'map'},
@@ -2391,10 +2407,15 @@ const NAV_CFG={
     {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
     {id:'mensajes',l:'Mensajes',ic:'chat'},
   ]}],
-  proveedor:[{s:'Mi Panel',items:[
-    {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'suministros',l:'Mis suministros',ic:'pkg'},
-    {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},{id:'mensajes',l:'Mensajes',ic:'chat'},
-  ]}],
+  proveedor:[
+    {s:'Mi Panel',items:[
+      {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'suministros',l:'Mis suministros',ic:'pkg'},
+      {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},{id:'mensajes',l:'Mensajes',ic:'chat'},
+    ]},
+    {s:'Analítica',items:[
+      {id:'analitica_prov',l:'Mi Analítica',ic:'chart'},
+    ]},
+  ],
   cliente:[{s:'Mi Panel',items:[
     {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'mispedidos',l:'Mis pedidos',ic:'pkg'},
     {id:'boletas',l:'Mis boletas',ic:'receipt'},
@@ -2424,7 +2445,9 @@ const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'
   recaudacion:'Recaudación Delivery',boletas:'Boletas IVA',cierre:'Cierre de Jornada',
   neworder:'Nuevo Pedido',entregas:'Mis Entregas',cupo:'Mi Cupo y Premios',mispedidos:'Mis Pedidos',
   catalogo:'Catálogo de Productos',suministros:'Mis Suministros',mensajes:'Mensajes',
-  mapa:'Mapa en Tiempo Real',estadisticas:'Estadísticas Avanzadas'};
+  mapa:'Mapa en Tiempo Real',estadisticas:'Estadísticas Avanzadas',
+  analitica_prov:'Mi Analítica',analitica_vend:'Mi Analítica',
+  analitica_drop:'Mi Analítica',analitica_admin:'Analítica Ecosistema'};
 
 /* ── SIDEBAR MOBILE ── */
 function toggleSidebar(){
@@ -4065,6 +4088,427 @@ PAGES.estadisticas=function(){
           {label:'Entregados',data:zonaStats.map(z=>z.ent),backgroundColor:'#f59e0b'},
           {label:'Total',data:zonaStats.map(z=>z.tot),backgroundColor:'rgba(239,68,68,.4)'}
         ]},options:{indexAxis:'y',responsive:true,plugins:{legend:{position:'top'}},scales:{x:{beginAtZero:true}}}});
+    }
+  },100);
+};
+
+/* ─── ANALÍTICA PROVEEDOR ─── */
+PAGES.analitica_prov=function(){
+  $('tbActions').innerHTML='';
+  const mine=_ordersCache.filter(o=>(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  if(!mine.length){
+    $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">No hay órdenes asignadas a tu nombre de proveedor.<br><span style="font-size:12px;margin-top:8px;display:block">El vendedor debe ingresar tu nombre exacto en el campo "Proveedor" al crear el pedido.</span></div>';
+    return;
+  }
+  const ent=mine.filter(o=>o.estado==='Entregado');
+  const act=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+  const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
+  const cobrar=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
+  const enCamino=act.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
+  const perdidos=canc.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
+  const now=new Date();const days30=[];const labels=[];
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  const entByDay={};const pedByDay={};days30.forEach(d=>{entByDay[d]=0;pedByDay[d]=0;});
+  mine.forEach(o=>{if(days30.includes(o.fecha)){pedByDay[o.fecha]=(pedByDay[o.fecha]||0)+1;if(o.estado==='Entregado')entByDay[o.fecha]=(entByDay[o.fecha]||0)+1;}});
+  const prodMap={};
+  mine.forEach(o=>{const k=o.producto||'Sin nombre';if(!prodMap[k])prodMap[k]={n:0,tot:0,ent:0};prodMap[k].n+=(o.qty||1);prodMap[k].tot++;if(o.estado==='Entregado')prodMap[k].ent++;});
+  const topProd=Object.entries(prodMap).sort((a,b)=>b[1].n-a[1].n).slice(0,5);
+  let html=
+    '<div class="sgrid">'+
+      '<div class="sc ac"><div class="slabel">Total órdenes</div><div class="sval">'+mine.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Entregadas</div><div class="sval">'+ent.length+'</div><div class="ssub">'+(mine.length?Math.round(ent.length/mine.length*100):0)+'% éxito</div></div>'+
+      '<div class="sc bl"><div class="slabel">En curso</div><div class="sval">'+act.length+'</div></div>'+
+      '<div class="sc re"><div class="slabel">Canceladas/Dev.</div><div class="sval">'+canc.length+'</div></div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px;border-left:4px solid #22c55e">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:4px">💰 Para cobrar ya</div>'+
+        '<div style="font-size:18px;font-weight:800;color:#22c55e">'+fmt(cobrar)+'</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+ent.length+' pedidos entregados</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px;border-left:4px solid #3b82f6">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:4px">🚚 En tránsito</div>'+
+        '<div style="font-size:18px;font-weight:800;color:#3b82f6">'+fmt(enCamino)+'</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+act.length+' pedidos activos</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px;border-left:4px solid #ef4444">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:4px">❌ Cancelados/Dev.</div>'+
+        '<div style="font-size:18px;font-weight:800;color:#ef4444">'+fmt(perdidos)+'</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+canc.length+' órdenes</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Actividad — últimos 30 días</div>'+
+      '<canvas id="apLinea" height="80"></canvas>'+
+    '</div>';
+  if(topProd.length){
+    html+=
+      '<div class="tc" style="margin-bottom:14px"><div class="th2"><span class="tt">📦 Top Productos</span></div>'+
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Producto</th><th style="text-align:center">Unidades</th><th style="text-align:center">Pedidos</th><th style="text-align:center">Entregados</th><th style="text-align:center">% Éxito</th></tr></thead><tbody>'+
+      topProd.map(([p,v])=>
+        '<tr><td style="font-weight:600">'+p+'</td>'+
+        '<td style="text-align:center">'+v.n+'</td>'+
+        '<td style="text-align:center">'+v.tot+'</td>'+
+        '<td style="text-align:center;color:var(--green);font-weight:700">'+v.ent+'</td>'+
+        '<td style="text-align:center"><span style="background:'+(v.tot?(Math.round(v.ent/v.tot*100)>=80?'#15803d':Math.round(v.ent/v.tot*100)>=50?'#ca8a04':'#b91c1c'):'#6b7280')+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px">'+(v.tot?Math.round(v.ent/v.tot*100):0)+'%</span></td></tr>'
+      ).join('')+
+      '</tbody></table></div></div>';
+  }
+  if(ent.length){
+    html+=
+      '<div class="tc" style="margin-bottom:14px"><div class="th2"><span class="tt">✅ Pedidos entregados — monto a cobrar</span></div>'+
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>#</th><th>Fecha</th><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right">A cobrar</th></tr></thead><tbody>'+
+      ent.slice(-30).reverse().map(o=>
+        '<tr>'+
+        '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">#'+o.id+'</td>'+
+        '<td>'+fmtDate(o.fecha)+'</td>'+
+        '<td>'+((o.producto||'').substring(0,28))+'</td>'+
+        '<td style="text-align:center">'+(o.qty||1)+'</td>'+
+        '<td style="text-align:right;color:var(--green);font-weight:700">'+fmt((o.costo||0)*(o.qty||1))+'</td>'+
+        '</tr>'
+      ).join('')+
+      '</tbody></table></div></div>';
+  }
+  if(act.length){
+    html+=
+      '<div class="tc"><div class="th2"><span class="tt">🚚 Pedidos activos</span></div>'+
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>#</th><th>Fecha</th><th>Producto</th><th style="text-align:center">Cant.</th><th>Estado</th><th style="text-align:right">Costo</th></tr></thead><tbody>'+
+      act.map(o=>
+        '<tr>'+
+        '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">#'+o.id+'</td>'+
+        '<td>'+fmtDate(o.fecha)+'</td>'+
+        '<td>'+((o.producto||'').substring(0,28))+'</td>'+
+        '<td style="text-align:center">'+(o.qty||1)+'</td>'+
+        '<td><span class="badge be">'+o.estado+'</span></td>'+
+        '<td style="text-align:right;color:var(--blue)">'+fmt((o.costo||0)*(o.qty||1))+'</td>'+
+        '</tr>'
+      ).join('')+
+      '</tbody></table></div></div>';
+  }
+  $('ca').innerHTML=html;
+  setTimeout(()=>{
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;
+    const ctxL=$('apLinea');
+    if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
+      ctxL._ci=new Chart(ctxL,{type:'line',data:{labels,datasets:[
+        {label:'Entregados',data:days30.map(d=>entByDay[d]),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',tension:.35,fill:true,pointRadius:2},
+        {label:'Pedidos',data:days30.map(d=>pedByDay[d]),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',tension:.35,fill:true,pointRadius:2},
+      ]},options:{responsive:true,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+    }
+  },100);
+};
+
+/* ─── ANALÍTICA VENDEDOR ─── */
+PAGES.analitica_vend=function(periodo){
+  if(!periodo)periodo='mes';
+  $('tbActions').innerHTML='';
+  const all=_ordersCache.filter(o=>o.vendedorId===CU.id);
+  const hoyStr=today();const now=new Date();
+  const semIni=new Date(now);semIni.setDate(semIni.getDate()-6);const semIniStr=semIni.toISOString().slice(0,10);
+  const mesStr=mesActual();
+  let mine=all;
+  if(periodo==='hoy')mine=all.filter(o=>o.fecha===hoyStr);
+  else if(periodo==='semana')mine=all.filter(o=>o.fecha&&o.fecha>=semIniStr);
+  else if(periodo==='mes')mine=all.filter(o=>o.fecha&&o.fecha.startsWith(mesStr));
+  const ent=mine.filter(o=>o.estado==='Entregado');
+  const vBruta=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const vCosto=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
+  const vLog=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
+  const vGan=ent.reduce((a,b)=>a+ganVend(b),0);
+  const pctExito=mine.length?Math.round(ent.length/mine.length*100):0;
+  const ticketProm=ent.length?Math.round(vBruta/ent.length):0;
+  const days30=[];const labels=[];
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  const ganByDay={};days30.forEach(d=>ganByDay[d]=0);
+  all.filter(o=>o.estado==='Entregado'&&days30.includes(o.fecha)).forEach(o=>{ganByDay[o.fecha]=(ganByDay[o.fecha]||0)+ganVend(o);});
+  const prodMap={};
+  mine.forEach(o=>{const k=o.producto||'Sin nombre';if(!prodMap[k])prodMap[k]={n:0,ent:0};prodMap[k].n+=(o.qty||1);if(o.estado==='Entregado')prodMap[k].ent++;});
+  const topProd=Object.entries(prodMap).sort((a,b)=>b[1].n-a[1].n).slice(0,5);
+  const zonaMap={};
+  mine.forEach(o=>{const z=_getZonaO(o).nombre||'Sin zona';if(!zonaMap[z])zonaMap[z]=0;zonaMap[z]++;});
+  const topZonas=Object.entries(zonaMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const btnC=p=>periodo===p?'btn btn-primary btn-sm':'btn btn-secondary btn-sm';
+  const html=
+    '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'+
+      '<button class="'+btnC('hoy')+'" onclick="PAGES.analitica_vend(\'hoy\')">Hoy</button>'+
+      '<button class="'+btnC('semana')+'" onclick="PAGES.analitica_vend(\'semana\')">7 días</button>'+
+      '<button class="'+btnC('mes')+'" onclick="PAGES.analitica_vend(\'mes\')">Este mes</button>'+
+      '<button class="'+btnC('todo')+'" onclick="PAGES.analitica_vend(\'todo\')">Todo</button>'+
+    '</div>'+
+    '<div class="sgrid">'+
+      '<div class="sc ac"><div class="slabel">Pedidos</div><div class="sval">'+mine.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+pctExito+'% éxito</div></div>'+
+      '<div class="sc bl"><div class="slabel">En tránsito</div><div class="sval">'+mine.filter(o=>['Despachado','En ruta'].includes(o.estado)).length+'</div></div>'+
+      '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:16px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #22c55e">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">💰 Ventas brutas</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#22c55e">'+fmt(vBruta)+'</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #ef4444">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">📦 Costo proveedor</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#ef4444">'+fmt(vCosto)+'</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #3b82f6">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">🚚 Logística</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#3b82f6">'+fmt(vLog)+'</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--accent)">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">✨ Ganancia neta</div>'+
+        '<div style="font-size:17px;font-weight:800;color:var(--accent)">'+fmt(vGan)+'</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--purple)">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">🎯 Ticket promedio</div>'+
+        '<div style="font-size:17px;font-weight:800;color:var(--purple)">'+fmt(ticketProm)+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Ganancia diaria — últimos 30 días</div>'+
+      '<canvas id="avLinea" height="80"></canvas>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📦 Top productos</div>'+
+        (topProd.length?topProd.map(([p,v],i)=>
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
+          '<span style="font-size:15px;font-weight:700;color:var(--text3);min-width:18px">'+(i+1)+'</span>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p+'</div>'+
+            '<div style="font-size:11px;color:var(--text2)">'+v.n+' uds · '+v.ent+' entregados</div>'+
+          '</div></div>'
+        ).join(''):'<div style="color:var(--text3);font-size:12px">Sin datos</div>')+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">🌎 Top zonas</div>'+
+        (topZonas.length?topZonas.map(([z,n],i)=>
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
+          '<span style="font-size:15px;font-weight:700;color:var(--text3);min-width:18px">'+(i+1)+'</span>'+
+          '<div style="flex:1"><div style="font-weight:700;font-size:13px">'+z+'</div>'+
+          '<div style="font-size:11px;color:var(--text2)">'+n+' pedidos</div></div>'+
+          '</div>'
+        ).join(''):'<div style="color:var(--text3);font-size:12px">Sin datos</div>')+
+      '</div>'+
+    '</div>';
+  $('ca').innerHTML=html;
+  setTimeout(()=>{
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;
+    const ctxL=$('avLinea');
+    if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
+      ctxL._ci=new Chart(ctxL,{type:'line',data:{labels,datasets:[
+        {label:'Ganancia neta (Gs.)',data:days30.map(d=>ganByDay[d]),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.1)',tension:.35,fill:true,pointRadius:2},
+      ]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true}}}});
+    }
+  },100);
+};
+
+/* ─── ANALÍTICA DROPSHIPPER ─── */
+PAGES.analitica_drop=function(){
+  $('tbActions').innerHTML='';
+  const mine=_ordersCache.filter(o=>o.dropId===CU.id);
+  const ent=mine.filter(o=>o.estado==='Entregado');
+  const act=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+  const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
+  const vBruta=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const pctExito=mine.length?Math.round(ent.length/mine.length*100):0;
+  const ticketProm=ent.length?Math.round(vBruta/ent.length):0;
+  const now=new Date();const days30=[];const labels=[];
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  const pedByDay={};days30.forEach(d=>pedByDay[d]=0);
+  mine.forEach(o=>{if(days30.includes(o.fecha))pedByDay[o.fecha]=(pedByDay[o.fecha]||0)+1;});
+  const prodMap={};
+  mine.forEach(o=>{const k=o.producto||'Sin nombre';if(!prodMap[k])prodMap[k]={n:0,ent:0};prodMap[k].n+=(o.qty||1);if(o.estado==='Entregado')prodMap[k].ent++;});
+  const topProd=Object.entries(prodMap).sort((a,b)=>b[1].n-a[1].n).slice(0,5);
+  const html=
+    '<div class="sgrid">'+
+      '<div class="sc ac"><div class="slabel">Mis pedidos</div><div class="sval">'+mine.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+pctExito+'% éxito</div></div>'+
+      '<div class="sc bl"><div class="slabel">En curso</div><div class="sval">'+act.length+'</div></div>'+
+      '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+canc.length+'</div></div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #22c55e">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">💰 Ventas brutas (entregadas)</div>'+
+        '<div style="font-size:18px;font-weight:800;color:#22c55e">'+fmt(vBruta)+'</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+ent.length+' pedidos entregados</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--accent)">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">🎯 Ticket promedio</div>'+
+        '<div style="font-size:18px;font-weight:800;color:var(--accent)">'+fmt(ticketProm)+'</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-top:2px">por entrega exitosa</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Actividad — últimos 30 días</div>'+
+      '<canvas id="adLinea" height="80"></canvas>'+
+    '</div>'+
+    (topProd.length?
+      '<div class="tc" style="margin-bottom:14px"><div class="th2"><span class="tt">📦 Top Productos</span></div>'+
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Producto</th><th style="text-align:center">Uds.</th><th style="text-align:center">Entregados</th><th style="text-align:center">% Éxito</th></tr></thead><tbody>'+
+      topProd.map(([p,v])=>
+        '<tr><td style="font-weight:600">'+p+'</td>'+
+        '<td style="text-align:center">'+v.n+'</td>'+
+        '<td style="text-align:center;color:var(--green);font-weight:700">'+v.ent+'</td>'+
+        '<td style="text-align:center"><span style="background:'+(v.n?(Math.round(v.ent/v.n*100)>=80?'#15803d':Math.round(v.ent/v.n*100)>=50?'#ca8a04':'#b91c1c'):'#6b7280')+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px">'+(v.n?Math.round(v.ent/v.n*100):0)+'%</span></td></tr>'
+      ).join('')+
+      '</tbody></table></div></div>':'')+
+    renderTable(mine.slice(0,15),'Mis pedidos asignados',false);
+  $('ca').innerHTML=html;
+  setTimeout(()=>{
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;
+    const ctxL=$('adLinea');
+    if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
+      ctxL._ci=new Chart(ctxL,{type:'bar',data:{labels,datasets:[
+        {label:'Pedidos',data:days30.map(d=>pedByDay[d]),backgroundColor:'rgba(99,102,241,.7)',borderRadius:4},
+      ]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+    }
+  },100);
+};
+
+/* ─── ANALÍTICA ECOSISTEMA (admin / superadmin) ─── */
+PAGES.analitica_admin=function(){
+  if(!isAdminLike(CU.rol)){$('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Sin acceso</div>';return;}
+  $('tbActions').innerHTML='';
+  const orders=_ordersCache;
+  const ent=orders.filter(o=>o.estado==='Entregado');
+  const tIng=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const tCos=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
+  const tLog=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
+  const tGan=tIng-tCos-tLog;
+  const pctExito=orders.length?Math.round(ent.length/orders.length*100):0;
+  const ticketProm=ent.length?Math.round(tIng/ent.length):0;
+  const margen=tIng?Math.round(tGan/tIng*100):0;
+  const now=new Date();const days30=[];const labels=[];
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  const ingByDay={};const ganByDay={};days30.forEach(d=>{ingByDay[d]=0;ganByDay[d]=0;});
+  ent.forEach(o=>{if(days30.includes(o.fecha)){ingByDay[o.fecha]=(ingByDay[o.fecha]||0)+(o.precio||0)*(o.qty||1);ganByDay[o.fecha]=(ganByDay[o.fecha]||0)+ganVend(o);}});
+  const vendedores=_usersCache.filter(u=>['vendedor','dropshipper'].includes(u.rol));
+  const rankVend=vendedores.map(v=>{
+    const vO=ent.filter(o=>o.vendedorId===v.id||o.dropId===v.id);
+    return{nombre:v.nombre,rol:v.rol,n:vO.length,gan:vO.reduce((a,b)=>a+ganVend(b),0)};
+  }).filter(x=>x.n>0).sort((a,b)=>b.gan-a.gan);
+  const provMap={};
+  ent.forEach(o=>{const p=o.proveedor||'Sin proveedor';if(!provMap[p])provMap[p]={n:0,vol:0};provMap[p].n++;provMap[p].vol+=(o.costo||0)*(o.qty||1);});
+  const rankProv=Object.entries(provMap).sort((a,b)=>b[1].n-a[1].n).slice(0,6);
+  const dlvs=_usersCache.filter(u=>u.rol==='delivery');
+  const rankDlv=dlvs.map(d=>{
+    const dO=ent.filter(o=>o.deliveryId===d.id);
+    const tot=orders.filter(o=>o.deliveryId===d.id).length;
+    return{nombre:d.nombre,ent:dO.length,tot,pct:tot?Math.round(dO.length/tot*100):0};
+  }).filter(x=>x.tot>0).sort((a,b)=>b.ent-a.ent);
+  const prodMap={};
+  orders.forEach(o=>{const k=o.producto||'Sin nombre';if(!prodMap[k])prodMap[k]={n:0,ent:0};prodMap[k].n+=(o.qty||1);if(o.estado==='Entregado')prodMap[k].ent++;});
+  const topProd=Object.entries(prodMap).sort((a,b)=>b[1].n-a[1].n).slice(0,5);
+  const html=
+    '<div class="sgrid">'+
+      '<div class="sc ac"><div class="slabel">Total pedidos</div><div class="sval">'+orders.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Tasa de entrega</div><div class="sval">'+pctExito+'%</div><div class="ssub">'+ent.length+' entregados</div></div>'+
+      '<div class="sc bl"><div class="slabel">Ticket promedio</div><div class="sval" style="font-size:14px">'+fmt(ticketProm)+'</div></div>'+
+      '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+orders.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
+    '</div>'+
+    '<div class="stitle">💰 Flujo Financiero — pedidos entregados</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:16px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #22c55e">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">💵 Ingresos brutos</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#22c55e">'+fmt(tIng)+'</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #ef4444">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">📦 Costo proveedores</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#ef4444">'+fmt(tCos)+'</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #3b82f6">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">🚚 Logística</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#3b82f6">'+fmt(tLog)+'</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--accent)">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">✨ Ganancia neta</div>'+
+        '<div style="font-size:17px;font-weight:800;color:var(--accent)">'+fmt(tGan)+'</div>'+
+        '<div style="font-size:11px;color:var(--text3)">'+margen+'% margen</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Ingresos vs Ganancia — últimos 30 días</div>'+
+      '<canvas id="aaLinea" height="80"></canvas>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">🧑‍💼 Ranking Vendedores / Dropshippers</div>'+
+        (rankVend.length?rankVend.map((v,i)=>
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">'+
+          '<span style="font-size:15px;font-weight:700;color:var(--text3);min-width:20px">'+(i+1)+'</span>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-weight:700;font-size:13px">'+v.nombre+'<span style="font-size:10px;color:var(--text3);margin-left:4px">'+capRole(v.rol)+'</span></div>'+
+            '<div style="font-size:11px;color:var(--text2)">'+v.n+' entregas · '+fmt(v.gan)+'</div>'+
+          '</div></div>'
+        ).join(''):'<div style="color:var(--text3);font-size:12px">Sin datos</div>')+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📦 Ranking Proveedores</div>'+
+        (rankProv.length?rankProv.map(([p,v],i)=>
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">'+
+          '<span style="font-size:15px;font-weight:700;color:var(--text3);min-width:20px">'+(i+1)+'</span>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-weight:700;font-size:13px">'+p+'</div>'+
+            '<div style="font-size:11px;color:var(--text2)">'+v.n+' entregas · '+fmt(v.vol)+' costo total</div>'+
+          '</div></div>'
+        ).join(''):'<div style="color:var(--text3);font-size:12px">Sin datos</div>')+
+      '</div>'+
+    '</div>'+
+    '<div class="stitle">🚴 Ranking Delivery</div>'+
+    (rankDlv.length?
+      '<div style="overflow-x:auto;background:var(--card);border-radius:12px;padding:4px;margin-bottom:14px">'+
+      '<table style="width:100%;border-collapse:collapse;font-size:13px">'+
+      '<thead><tr style="color:var(--text2);border-bottom:1px solid var(--border2)">'+
+        '<th style="text-align:left;padding:8px 12px">#</th>'+
+        '<th style="text-align:left;padding:8px 12px">Delivery</th>'+
+        '<th style="text-align:center;padding:8px 12px">Entregas</th>'+
+        '<th style="text-align:center;padding:8px 12px">Asignados</th>'+
+        '<th style="text-align:center;padding:8px 12px">% Éxito</th>'+
+      '</tr></thead><tbody>'+
+      rankDlv.map((d,i)=>
+        '<tr style="border-bottom:1px solid var(--border2)">'+
+        '<td style="padding:8px 12px;color:var(--text2)">'+(i+1)+'</td>'+
+        '<td style="padding:8px 12px;font-weight:700">'+d.nombre+'</td>'+
+        '<td style="padding:8px 12px;text-align:center;color:#4ade80;font-weight:700">'+d.ent+'</td>'+
+        '<td style="padding:8px 12px;text-align:center">'+d.tot+'</td>'+
+        '<td style="padding:8px 12px;text-align:center"><span style="background:'+(d.pct>=80?'#15803d':d.pct>=50?'#ca8a04':'#b91c1c')+';color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">'+d.pct+'%</span></td>'+
+        '</tr>'
+      ).join('')+'</tbody></table></div>':
+      '<div style="color:var(--text3);font-size:12px;margin-bottom:14px">Sin datos de delivery</div>')+
+    '<div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📦 Top Productos</div>'+
+      (topProd.length?
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">'+
+        topProd.map(([p,v],i)=>
+          '<div style="background:var(--bg3);border-radius:8px;padding:10px 12px">'+
+          '<div style="font-size:10px;color:var(--text3);margin-bottom:2px">#'+(i+1)+'</div>'+
+          '<div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p+'</div>'+
+          '<div style="font-size:12px;color:var(--text2);margin-top:3px">'+v.n+' uds · '+v.ent+' ✓</div>'+
+          '</div>'
+        ).join('')+'</div>':
+        '<div style="color:var(--text3);font-size:12px">Sin datos</div>')+
+    '</div>';
+  $('ca').innerHTML=html;
+  setTimeout(()=>{
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;
+    const ctxL=$('aaLinea');
+    if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
+      ctxL._ci=new Chart(ctxL,{type:'line',data:{labels,datasets:[
+        {label:'Ingresos',data:days30.map(d=>ingByDay[d]),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',tension:.35,fill:true,pointRadius:2},
+        {label:'Ganancia neta',data:days30.map(d=>ganByDay[d]),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.08)',tension:.35,fill:true,pointRadius:2},
+      ]},options:{responsive:true,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true}}}});
     }
   },100);
 };
