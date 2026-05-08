@@ -6091,7 +6091,7 @@ async function _cargarResenasEnPerfil(userId){
         '<div class="resena-card">'+
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+_renderStars(c.estrellas)+
         '<span style="font-size:11px;color:var(--text3)">'+new Date(c.created_at).toLocaleDateString('es-PY')+'</span></div>'+
-        (c.comentario?'<div style="font-size:13px;line-height:1.5;margin-bottom:6px">'+c.comentario+'</div>':'')+
+        (c.comentario?'<div style="font-size:13px;line-height:1.5;margin-bottom:6px">'+escHtml(c.comentario)+'</div>':'')+
         (c.fotos?.length?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">'+c.fotos.map(f=>'<img src="'+f+'" class="resena-foto" onclick="window.open(\''+f+'\',\'_blank\')">').join('')+'</div>':'')+
         '</div>'
       ).join('');
