@@ -6869,15 +6869,20 @@ async function _mapaCambiarEstado(id,nuevoEstado){
   }
 }
 
-function _toggleTurno(){
+async function _toggleTurno(){
   const btn=$('btnTurno');
-  if(window._gpsLoopTimer){
+  if(CU.turno_activo){
+    if(!confirm('¿Finalizar turno? Dejarás de compartir tu posición.'))return;
     _gpsLoopStop();
+    CU.turno_activo=false;
+    await DL.saveUser({id:CU.id,turno_activo:false});
     if(btn){btn.textContent='📡 Iniciar turno';btn.style.background='#16a34a';}
     pushNotif('Turno finalizado — ya no se comparte tu posición','w');
   } else {
     const misPedidos=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     _gpsLoopStart(misPedidos[0]||null);
+    CU.turno_activo=true;
+    await DL.saveUser({id:CU.id,turno_activo:true});
     if(btn){btn.textContent='🔴 Finalizar turno';btn.style.background='#dc2626';}
     pushNotif('Turno iniciado — compartiendo tu posición en tiempo real','s');
   }
@@ -6898,8 +6903,15 @@ PAGES.mapa=function(){
     ?''
     :'<select id="mapaVendSel" onchange="window._mapaFiltroVend=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'"><option value="">👤 Todos</option></select>';
   const dlvBtn=esAdmin?'<button id="btnMapaDlvs" class="btn btn-secondary btn-sm" onclick="_mapaToggleDlvs()" style="background:#1d4ed8;color:#fff">🛵 Deliverys</button>':'';
-  const turnoBtn=esDelivery?'<button id="btnTurno" class="btn btn-sm" onclick="_toggleTurno()" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">📡 Iniciar turno</button>':'';
+  const turnoActivo=esDelivery&&CU.turno_activo;
+  const turnoBtnTxt=turnoActivo?'🔴 Finalizar turno':'📡 Iniciar turno';
+  const turnoBtnClr=turnoActivo?'#dc2626':'#16a34a';
+  const turnoBtn=esDelivery?'<button id="btnTurno" class="btn btn-sm" onclick="_toggleTurno()" style="background:'+turnoBtnClr+';color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">'+turnoBtnTxt+'</button>':'';
   $('tbActions').innerHTML=zonaSel+vendSel+dlvBtn+turnoBtn+'<button class="btn btn-secondary btn-sm" onclick="_mapaCargar(window._mapInstance)">🔄</button>';
+  if(turnoActivo&&!window._gpsLoopTimer){
+    const misPedidos=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+    _gpsLoopStart(misPedidos[0]||null);
+  }
   $('ca').innerHTML=
     '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>'+
     '<div style="position:relative">'+
