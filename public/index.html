@@ -559,8 +559,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <nav class="snav" id="snav"></nav>
     <div class="sfooter">
-      <button class="btn btn-secondary btn-full" style="margin-bottom:6px" onclick="openPerfilUsuario()">
-        👤 Mi Perfil
+      <button class="btn btn-secondary btn-full" style="margin-bottom:6px;position:relative" onclick="openPerfilUsuario()">
+        👤 Mi Perfil <span id="perfilIncompletoBadge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;vertical-align:middle">!</span>
       </button>
       <button class="btn btn-secondary btn-full" onclick="doLogout()">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
@@ -2298,6 +2298,7 @@ async function doLogin(){
     $('sDate').textContent=new Date().toLocaleDateString('es-PY',{weekday:'short',day:'numeric',month:'short'});
     buildNav();
     await refreshCache();
+    _actualizarBadgePerfil();
     nav('dashboard');
     _checkUrgentOrders();
     initRealtime();
@@ -6282,6 +6283,38 @@ function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').
 
 function escQ(s){return s.replace(/'/g,"\\'")}
 
+/* ─── VALIDACIÓN DE PERFIL POR ROL ─── */
+function _perfilCompleto(u){
+  const rol=u?.rol||'';
+  const missing=[];
+  if(!u?.nombre)missing.push('Nombre completo');
+  if(!u?.email)missing.push('Email');
+  const tieneBanco=u?.banco&&u?.nro_cuenta&&u?.titular_cuenta;
+  const tieneWallet=u?.wallet_tipo&&u?.wallet_nro;
+  if(!tieneBanco&&!tieneWallet)missing.push('Método de pago (banco o billetera)');
+  if(rol==='delivery'){
+    if(!u?.cedula)missing.push('Cédula/Documento');
+    if(!u?.whatsapp)missing.push('WhatsApp');
+    if(!u?.direccion)missing.push('Dirección');
+    if(!u?.vehiculo)missing.push('Vehículo');
+    if(!u?.patente)missing.push('Patente');
+  }else if(['admin','superadmin'].includes(rol)){
+    if(!u?.cedula)missing.push('Cédula/Documento');
+    if(!u?.whatsapp&&!u?.telefono2)missing.push('Teléfono o WhatsApp');
+    if(!u?.direccion)missing.push('Dirección');
+  }else{
+    if(!u?.whatsapp&&!u?.telefono2)missing.push('Teléfono o WhatsApp');
+    if(!u?.cedula&&!u?.ruc)missing.push('Cédula o RUC');
+  }
+  return{ok:missing.length===0,missing};
+}
+function _actualizarBadgePerfil(){
+  const b=$('perfilIncompletoBadge');
+  if(!b||!CU)return;
+  const{ok}=_perfilCompleto(CU);
+  b.style.display=ok?'none':'inline';
+}
+
 /* ─── PERFIL / EMPRESA ─── */
 function _getEmpresa(){
   const ls=(()=>{try{return JSON.parse(localStorage.getItem('ipv_empresa_'+(CU?.id||''))||'{}');}catch{return{};}})();
@@ -6387,10 +6420,14 @@ function openPerfilUsuario(){
     '</div>'+
     /* TAB 4 — Reseñas */
     '<div class="ptab-content"><div id="pfResenas"><div style="text-align:center;padding:30px;color:var(--text3)"><div style="font-size:28px">⭐</div><div style="margin-top:8px;font-size:13px">Cargando reseñas...</div></div></div></div>',
+    '<div id="pfAlert" style="margin-top:8px"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="guardarPerfilUsuario()">💾 Guardar perfil</button>',
     'xl'
   );
+  // Mostrar campos faltantes si perfil incompleto
+  const{ok,missing}=_perfilCompleto(u);
+  if(!ok)showAlert('pfAlert','w','⚠️ Campos obligatorios faltantes: <b>'+missing.join(', ')+'</b>');
   _cargarResenasEnPerfil(u.id);
 }
 async function subirFotoPerfil(input){
@@ -6429,13 +6466,22 @@ async function guardarPerfilUsuario(){
     banco:gv('pfBanco'),tipo_cuenta:gv('pfTipoCuenta'),nro_cuenta:gv('pfNroCuenta'),
     titular_cuenta:gv('pfTitular'),wallet_tipo:gv('pfWalletTipo'),
     wallet_nro:gv('pfWalletNro'),wallet_alias:gv('pfWalletAlias'),logo:CU.logo||'',
+    contactos:Array.isArray(CU.contactos)?CU.contactos:[],
   };
+  const check={...CU,...data};
+  const{ok,missing}=_perfilCompleto(check);
+  if(!ok){
+    showAlert('pfAlert','e','⚠️ Completá los campos obligatorios: <b>'+missing.join(', ')+'</b>');
+    return;
+  }
+  showAlert('pfAlert','i','Guardando...');
   Object.assign(CU,data);
   const idx=_usersCache.findIndex(u=>u.id===CU.id);
   if(idx>=0)_usersCache[idx]={..._usersCache[idx],...data};
   const r=await DL.saveUser(data);
-  if(!r.ok){pushNotif('Error al guardar: '+r.error,'e');return;}
+  if(!r.ok){showAlert('pfAlert','e','Error al guardar: '+r.error);return;}
   $('sName').textContent=CU.nombre;
+  _actualizarBadgePerfil();
   closeA();pushNotif('Perfil guardado ✓','s');
 }
 async function _cargarResenasEnPerfil(userId){
