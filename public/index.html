@@ -2388,6 +2388,7 @@ const NAV_CFG={
       {id:'balance',l:'Mi balance',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},{id:'mensajes',l:'Mensajes',ic:'chat'},
     ]},
+    {s:'Mapa',items:[{id:'mapa',l:'Mapa de mis pedidos',ic:'map'}]},
     {s:'Analítica',items:[
       {id:'analitica_vend',l:'Mi Analítica',ic:'chart'},
     ]},
@@ -2413,8 +2414,10 @@ const NAV_CFG={
   proveedor:[
     {s:'Mi Panel',items:[
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'suministros',l:'Mis suministros',ic:'pkg'},
+      {id:'pagos_prov',l:'Mis pagos',ic:'dollar'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},{id:'mensajes',l:'Mensajes',ic:'chat'},
     ]},
+    {s:'Mapa',items:[{id:'mapa',l:'Mapa de mis pedidos',ic:'map'}]},
     {s:'Analítica',items:[
       {id:'analitica_prov',l:'Mi Analítica',ic:'chart'},
     ]},
@@ -2449,6 +2452,7 @@ const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'
   neworder:'Nuevo Pedido',entregas:'Mis Entregas',cupo:'Mi Cupo y Premios',mispedidos:'Mis Pedidos',
   catalogo:'Catálogo de Productos',suministros:'Mis Suministros',mensajes:'Mensajes',
   mapa:'Mapa en Tiempo Real',estadisticas:'Estadísticas Avanzadas',
+  pagos_prov:'Mis Pagos',
   analitica_prov:'Mi Analítica',analitica_vend:'Mi Analítica',
   analitica_drop:'Mi Analítica',analitica_admin:'Analítica Ecosistema'};
 
@@ -3140,6 +3144,7 @@ function editOrder(id){
     '<div class="frow3"><div class="fg"><label>Cantidad</label><input type="number" id="eQty" value="'+(o.qty||1)+'" min="1"></div>'+
     '<div class="fg"><label>Precio venta (Gs.)</label><input type="number" id="ePrec" value="'+(o.precio||0)+'"></div>'+
     '<div class="fg"><label>Costo (Gs.)</label><input type="number" id="eCost" value="'+(o.costo||0)+'"></div></div>'+
+    '<div class="fg"><label>Comisión dropshipper (Gs.) <span style="font-weight:400;color:var(--text3);font-size:11px">— opcional</span></label><input type="number" id="eComision" value="'+(o.comision||0)+'" min="0"></div>'+
     '<div class="stitle">Logística</div>'+
     '<div class="fg"><label>Estado</label><select id="eEst">'+ESTADOS.map(e=>'<option value="'+e+'" '+(o.estado===e?'selected':'')+'>'+e+'</option>').join('')+'</select></div>'+
     '<div class="fg"><label>Método de cobro</label><select id="eMetodo"><option value="">Sin definir</option>'+METODOS.map(m=>'<option value="'+m+'" '+(o.metodoCobro===m?'selected':'')+'>'+m+'</option>').join('')+'</select></div>'+
@@ -3200,6 +3205,7 @@ async function saveEditOrder(id){
   o.qty=parseInt(gv('eQty'))||o.qty;
   o.precio=parseFloat(gv('ePrec'))||o.precio;
   o.costo=parseFloat(gv('eCost'))||o.costo;
+  o.comision=parseFloat(gv('eComision'))||0;
   o.estado=ns;o.notas=obs;
   o.metodoCobro=gv('eMetodo')||o.metodoCobro;
   const dlv=parseInt(gv('eDlv'));if(dlv)o.deliveryId=dlv;else if(gv('eDlv')==='')o.deliveryId=null;
@@ -4323,6 +4329,8 @@ PAGES.analitica_drop=function(){
   const act=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
   const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
   const vBruta=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const totalComision=ent.reduce((a,b)=>a+(b.comision||0),0);
+  const comisionPendiente=act.reduce((a,b)=>a+(b.comision||0),0);
   const pctExito=mine.length?Math.round(ent.length/mine.length*100):0;
   const ticketProm=ent.length?Math.round(vBruta/ent.length):0;
   const now=new Date();const days30=[];const labels=[];
@@ -4339,15 +4347,27 @@ PAGES.analitica_drop=function(){
       '<div class="sc bl"><div class="slabel">En curso</div><div class="sval">'+act.length+'</div></div>'+
       '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+canc.length+'</div></div>'+
     '</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #22c55e">'+
-        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">💰 Ventas brutas (entregadas)</div>'+
-        '<div style="font-size:18px;font-weight:800;color:#22c55e">'+fmt(vBruta)+'</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">💰 Comisión cobrada</div>'+
+        '<div style="font-size:18px;font-weight:800;color:#22c55e">Gs. '+fmtN(totalComision)+'</div>'+
         '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+ent.length+' pedidos entregados</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--accent)">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">⏳ Comisión pendiente</div>'+
+        '<div style="font-size:18px;font-weight:800;color:var(--accent)">Gs. '+fmtN(comisionPendiente)+'</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+act.length+' pedidos en curso</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--blue)">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">📊 Ventas brutas</div>'+
+        '<div style="font-size:18px;font-weight:800;color:var(--blue)">'+fmt(vBruta)+'</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-top:2px">precio de venta al cliente</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--purple)">'+
         '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">🎯 Ticket promedio</div>'+
-        '<div style="font-size:18px;font-weight:800;color:var(--accent)">'+fmt(ticketProm)+'</div>'+
+        '<div style="font-size:18px;font-weight:800;color:var(--purple)">'+fmt(ticketProm)+'</div>'+
         '<div style="font-size:11px;color:var(--text3);margin-top:2px">por entrega exitosa</div>'+
       '</div>'+
     '</div>'+
@@ -4673,6 +4693,46 @@ PAGES.suministros=function(){
     return;
   }
   $('ca').innerHTML=renderTable(mine,'Mis suministros ('+mine.length+')',false);
+};
+
+/* ─── PAGOS PROVEEDOR ─── */
+PAGES.pagos_prov=function(){
+  $('tbActions').innerHTML='';
+  const mine=_ordersCache.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  if(!mine.length){$('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">No tenés órdenes asignadas todavía.</div>';return;}
+  const entregados=mine.filter(o=>o.estado==='Entregado');
+  const pendientes=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+  const cancelados=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
+  const totalCobrado=entregados.reduce((s,o)=>(s+(o.costo||0)*(o.qty||1)),0);
+  const totalPendiente=pendientes.reduce((s,o)=>(s+(o.costo||0)*(o.qty||1)),0);
+  let html='<div class="sgrid" style="margin-bottom:16px">'+
+    '<div class="sc gr"><div class="slabel">💰 Cobrado</div><div class="sval">Gs. '+fmtN(totalCobrado)+'</div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+entregados.length+' pedidos entregados</div></div>'+
+    '<div class="sc pu"><div class="slabel">⏳ Por cobrar</div><div class="sval">Gs. '+fmtN(totalPendiente)+'</div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+pendientes.length+' pedidos activos</div></div>'+
+    '<div class="sc re"><div class="slabel">❌ Cancelados</div><div class="sval">'+cancelados.length+'</div></div>'+
+    '</div>'+
+    '<div class="stitle">Detalle de órdenes</div>'+
+    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'+
+    '<thead><tr style="color:var(--text2);border-bottom:1px solid var(--border2)">'+
+    '<th style="padding:8px 6px;text-align:left">#</th><th style="padding:8px 6px;text-align:left">Fecha</th>'+
+    '<th style="padding:8px 6px;text-align:left">Producto</th><th style="padding:8px 6px;text-align:right">Costo unit.</th>'+
+    '<th style="padding:8px 6px;text-align:right">Qty</th><th style="padding:8px 6px;text-align:right">Total</th>'+
+    '<th style="padding:8px 6px;text-align:center">Estado</th></tr></thead><tbody>';
+  mine.sort((a,b)=>b.id-a.id).forEach(o=>{
+    const esEnt=o.estado==='Entregado';
+    const esCanc=['Cancelado','Devuelto'].includes(o.estado);
+    const color=esEnt?'var(--green)':esCanc?'var(--red)':'var(--accent)';
+    html+='<tr style="border-bottom:1px solid var(--border)">'+
+      '<td style="padding:7px 6px;color:var(--text2)">#'+o.id+'</td>'+
+      '<td style="padding:7px 6px;color:var(--text2)">'+(o.fecha||'—')+'</td>'+
+      '<td style="padding:7px 6px">'+escHtml(o.producto||'—')+'</td>'+
+      '<td style="padding:7px 6px;text-align:right">Gs. '+fmtN(o.costo||0)+'</td>'+
+      '<td style="padding:7px 6px;text-align:right">'+(o.qty||1)+'</td>'+
+      '<td style="padding:7px 6px;text-align:right;font-weight:700">Gs. '+fmtN((o.costo||0)*(o.qty||1))+'</td>'+
+      '<td style="padding:7px 6px;text-align:center"><span style="color:'+color+';font-size:11px;font-weight:700">'+o.estado+'</span></td>'+
+    '</tr>';
+  });
+  html+='</tbody></table></div>';
+  $('ca').innerHTML=html;
 };
 
 /* ─── ZONAS ─── */
@@ -7215,10 +7275,11 @@ async function _mapaCargar(map){
   Object.values(window._mapMarkers).forEach(m=>m.remove());
   window._mapMarkers={};
   _mapaUpdateContadores();
-  let orders=_ordersCache.filter(o=>o.estado!=='Cancelado'&&o.estado!=='Devuelto');
+  const _mapaBase=['vendedor','proveedor','dropshipper'].includes(CU.rol)?getVisibleOrders():_ordersCache;
+  let orders=_mapaBase.filter(o=>o.estado!=='Cancelado'&&o.estado!=='Devuelto');
   if(window._mapaFiltro)orders=orders.filter(o=>o.estado===window._mapaFiltro);
   if(window._mapaFiltroZona)orders=orders.filter(o=>String(o.zona)===String(window._mapaFiltroZona));
-  if(window._mapaFiltroVend)orders=orders.filter(o=>String(o.vendedorId)===String(window._mapaFiltroVend));
+  if(!['vendedor','proveedor','dropshipper'].includes(CU.rol)&&window._mapaFiltroVend)orders=orders.filter(o=>String(o.vendedorId)===String(window._mapaFiltroVend));
   if(window._mapaFiltroDelivery)orders=orders.filter(o=>String(o.deliveryId)===String(window._mapaFiltroDelivery));
   const bbox=new mapboxgl.LngLatBounds();
   let hasBounds=false;
