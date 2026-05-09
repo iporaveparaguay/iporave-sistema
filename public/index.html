@@ -1084,12 +1084,14 @@ const DL = {
         body:JSON.stringify({delivery_id:o.deliveryId,order_id:o.id,cliente_nombre:o.cliente||'Cliente',address:o.direccion||''})
       }).catch(e=>console.warn('[WA NOTIFY DELIVERY]',e.message));
     }
+    updateNavBadges();
   },
   async deleteOrder(id){
     const _o=(_ordersCache||[]).find(x=>x.id===id)||(this._lg('orders')||[]).find(x=>x.id===id);
     if(_o&&_o.created_by&&CU&&CU.rol==='admin'&&_o.created_by!==CU.id){pushNotif('No podés eliminar pedidos de otro administrador.','e');return;}
     if(_supaConnected)await _supa.from('pedidos').delete().eq('id',id);
     this._ls('orders',(this._lg('orders')||[]).filter(o=>o.id!==id));
+    updateNavBadges();
   },
 
   // ZONAS
