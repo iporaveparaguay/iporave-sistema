@@ -873,7 +873,7 @@ async function initSupabase(){
     const {error}=await _supa.from('pedidos').select('id').limit(1);
     if(error&&error.code!=='PGRST116')throw error;
     _supaConnected=true;
-    updateConnUI(true);
+    if(CU)updateConnUI(true);
     return true;
   }catch(e){
     console.warn('Supabase offline, usando localStorage:',e.message);
