@@ -507,7 +507,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <!-- Panel login -->
     <div id="loginPanel">
       <div id="loginAlert"></div>
-      <div class="fg"><label>Usuario</label><input type="text" id="loginUser" placeholder="Ingresá tu usuario" autocomplete="username"></div>
+      <div class="fg"><label>Email</label><input type="email" id="loginUser" placeholder="Ingresá tu email" autocomplete="email"></div>
       <div class="fg"><label>Contraseña</label><div class="pwd-wrap"><input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" class="pwd-eye" onclick="togglePwd('loginPass',this)" tabindex="-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
       <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="doLogin()">
         <span id="loginBtnTxt">Ingresar al sistema</span>
@@ -521,8 +521,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <!-- Panel recuperar contraseña -->
     <div id="forgotPanel" style="display:none">
       <div id="forgotAlert"></div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Ingresá tu nombre de usuario y se enviará una solicitud al administrador para que te ayude a recuperar tu acceso.</p>
-      <div class="fg"><label>Usuario</label><input type="text" id="forgotUser" placeholder="Tu nombre de usuario" autocomplete="username"></div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Ingresá tu email y recibirás un enlace para restablecer tu contraseña.</p>
+      <div class="fg"><label>Email</label><input type="email" id="forgotUser" placeholder="Tu email" autocomplete="email"></div>
       <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="doForgotPassword()">
         <span id="forgotBtnTxt">Enviar solicitud</span>
       </button>
@@ -722,6 +722,7 @@ function getDeviceInfo(){
 ══════════════════════════════════════════════════ */
 let CU = null;
 let _sessionToken = null;
+let _refreshToken = null;
 let _supa = null;
 let _supaConnected = false;
 let _gpsLoopTimer=null,_gpsLoopOrder=null,_gpsLoopStartTime=0,_gpsLoopFast=true;
@@ -868,8 +869,18 @@ async function initSupabase(){
   const cfg=getCfg();
   if(!cfg.supabaseUrl||!cfg.supabaseKey)return false;
   try{
-    const _supaOpts=_sessionToken?{global:{headers:{Authorization:'Bearer '+_sessionToken}}}:{};
-    _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,_supaOpts);
+    _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+    if(_sessionToken&&_refreshToken){
+      await _supa.auth.setSession({access_token:_sessionToken,refresh_token:_refreshToken});
+    }
+    _supa.auth.onAuthStateChange((_ev,session)=>{
+      if(session){
+        _sessionToken=session.access_token;
+        _refreshToken=session.refresh_token;
+        sessionStorage.setItem('iporave_token',session.access_token);
+        sessionStorage.setItem('iporave_refresh',session.refresh_token);
+      }
+    });
     const {error}=await _supa.from('pedidos').select('id').limit(1);
     if(error&&error.code!=='PGRST116')throw error;
     _supaConnected=true;
@@ -2245,7 +2256,7 @@ async function doLogin(){
     const res=await fetch(WORKER_URL+'/api/login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username:u,password:p,device_hash,device_info})
+      body:JSON.stringify({email:u,password:p,device_hash,device_info})
     });
     const data=await res.json();
     if(!res.ok){
@@ -2255,14 +2266,16 @@ async function doLogin(){
           '<br><small style="color:var(--text3)">El administrador recibirá un email. Una vez aprobado podrás ingresar.</small>'
         );
       }else{
-        showAlert('loginAlert','e',data.error||'Usuario o contraseña incorrectos');
+        showAlert('loginAlert','e',data.error||'Email o contraseña incorrectos');
       }
       if(btn)btn.textContent='Ingresar al sistema';
       return;
     }
     CU=data.user;
     _sessionToken=data.token;
+    _refreshToken=data.refresh_token||null;
     sessionStorage.setItem('iporave_token',data.token);
+    if(data.refresh_token)sessionStorage.setItem('iporave_refresh',data.refresh_token);
     await loadServerConfig(_sessionToken);
     await initSupabase();
     $('loginScreen').style.display='none';
@@ -2307,14 +2320,14 @@ function showLoginPanel(){
 }
 async function doForgotPassword(){
   const btn=$('forgotBtnTxt');
-  const username=$('forgotUser').value.trim();
-  if(!username){showAlert('forgotAlert','e','Ingresá tu nombre de usuario');return;}
+  const email=$('forgotUser').value.trim();
+  if(!email){showAlert('forgotAlert','e','Ingresá tu email');return;}
   if(btn)btn.textContent='Enviando...';
   try{
     const r=await fetch(WORKER_URL+'/api/forgot-password',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username})
+      body:JSON.stringify({email})
     });
     const json=await r.json();
     if(!r.ok){
@@ -2322,8 +2335,8 @@ async function doForgotPassword(){
       if(btn)btn.textContent='Enviar solicitud';
       return;
     }
-    showAlert('forgotAlert','s','✅ Solicitud enviada. El administrador recibirá un email y te ayudará a recuperar tu acceso. También podés escribir a: iporaveparaguay@gmail.com');
-    if(btn)btn.textContent='Solicitud enviada';
+    showAlert('forgotAlert','s','✅ Revisá tu bandeja de entrada. Si el email está registrado recibirás un enlace para restablecer tu contraseña.');
+    if(btn)btn.textContent='Email enviado';
   }catch(e){
     showAlert('forgotAlert','e','Error al enviar solicitud: '+e.message);
     if(btn)btn.textContent='Enviar solicitud';
@@ -2331,9 +2344,12 @@ async function doForgotPassword(){
 }
 function doLogout(){
   _clearSensitiveCfg();
+  if(_supa)_supa.auth.signOut().catch(()=>{});
   CU=null;
   _sessionToken=null;
+  _refreshToken=null;
   sessionStorage.removeItem('iporave_token');
+  sessionStorage.removeItem('iporave_refresh');
   if(_realtimeSub){try{_supa.removeChannel(_realtimeSub);}catch(e){} _realtimeSub=null;}
   if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
   if(window._ordersPolling){clearInterval(window._ordersPolling);window._ordersPolling=null;}
@@ -4789,7 +4805,7 @@ PAGES.usuarios=async function(){
 function openNewUser(){
   openA('Nuevo usuario',
     '<div class="fg"><label>Nombre</label><input type="text" id="nuNom"></div>'+
-    '<div class="frow"><div class="fg"><label>Usuario</label><input type="text" id="nuUser"></div>'+
+    '<div class="frow"><div class="fg"><label>Email</label><input type="email" id="nuEmail"></div>'+
     '<div class="fg"><label>Contraseña</label>'+pwdField('nuPass','••••••••')+'</div></div>'+
     '<div class="fg"><label>Rol</label><select id="nuRol" onchange="toggleDlvF2()">'+
     '<option value="vendedor">Vendedor</option><option value="dropshipper">Dropshipper</option>'+
@@ -4808,31 +4824,31 @@ function openNewUser(){
 }
 function toggleDlvF2(){const r=gv('nuRol');const f=$('dlvXF');if(f)f.style.display=r==='delivery'?'block':'none';}
 async function saveNewUser(){
-  const nom=gv('nuNom').trim(),user=gv('nuUser').trim(),pass=gv('nuPass').trim(),rol=gv('nuRol');
-  if(!nom||!user||!pass){showAlert('nuAlert','e','Completá todos los campos');return;}
-  if(pass.length<4){showAlert('nuAlert','e','La contraseña debe tener al menos 4 caracteres');return;}
-  if(_usersCache.find(u=>u.username===user)){showAlert('nuAlert','e','El nombre de usuario ya existe');return;}
+  const nom=gv('nuNom').trim(),email=gv('nuEmail').trim(),pass=gv('nuPass').trim(),rol=gv('nuRol');
+  if(!nom||!email||!pass){showAlert('nuAlert','e','Completá todos los campos');return;}
+  if(pass.length<6){showAlert('nuAlert','e','La contraseña debe tener al menos 6 caracteres');return;}
+  if(_usersCache.find(u=>u.email===email)){showAlert('nuAlert','e','El email ya está registrado');return;}
   const id=Math.max(0,..._usersCache.map(u=>Number(u.id)||0))+1;
-  const u={id,username:user,password:pass,nombre:nom,rol,contactos:[],
+  const username=email.split('@')[0];
+  const u={id,email,username,password:pass,nombre:nom,rol,contactos:[],
     vehiculo:rol==='delivery'?gv('nuVeh'):'',patente:rol==='delivery'?gv('nuPat'):'',
     whatsapp:rol==='delivery'?gv('nuWa'):''};
   _usersCache=[..._usersCache,u];
   showAlert('nuAlert','i','Guardando...');
   const r=await DL.saveUser(u);
   if(!r.ok){
-    // Revertir cache si falló Supabase para que no quede inconsistente
     _usersCache=_usersCache.filter(x=>x.id!==u.id);
     showAlert('nuAlert','e','❌ Error al guardar en Supabase: '+r.error+'<br><small>El usuario NO fue creado. Mostrá este error al soporte.</small>');
     return;
   }
   closeA();PAGES.usuarios();
-  pushNotif('Usuario "'+user+'" creado correctamente','s');
+  pushNotif('Usuario "'+email+'" creado correctamente','s');
 }
 function editUser(id){
   const u=_usersCache.find(x=>x.id===id);if(!u)return;
   openA('Editar — '+u.nombre,
     '<div class="fg"><label>Nombre</label><input type="text" id="euNom" value="'+u.nombre+'"></div>'+
-    '<div class="frow"><div class="fg"><label>Usuario</label><input type="text" id="euUser" value="'+u.username+'"></div>'+
+    '<div class="frow"><div class="fg"><label>Email</label><input type="email" id="euEmail" value="'+(u.email||'')+'"></div>'+
     '<div class="fg"><label>Nueva contraseña</label>'+pwdField('euPass','(sin cambios)')+'</div></div>'+
     (u.rol==='superadmin'
       ?'<div class="fg"><label>Rol</label><div style="padding:8px 0;font-size:13px;color:var(--text2)">Superadministrador <span style="font-size:11px;color:var(--text3)">(rol fijo — no modificable)</span></div></div>'
@@ -4855,7 +4871,7 @@ async function saveEditUser(id){
   const u=_usersCache.find(x=>x.id==id);if(!u)return;
   const prev={...u}; // copia para revertir si falla
   const newNom=gv('euNom').trim();if(newNom)u.nombre=newNom;
-  const newUser=gv('euUser').trim();if(newUser)u.username=newUser;
+  const newEmail=gv('euEmail').trim();if(newEmail)u.email=newEmail;
   const newPass=gv('euPass').trim();if(newPass)u.password=newPass;
   if(gv('euRol')&&u.rol!=='superadmin')u.rol=gv('euRol');
   u.vehiculo=gv('euVeh');u.patente=gv('euPat');u.whatsapp=gv('euWa');
@@ -7127,6 +7143,7 @@ async function main(){
   // Si la URL tiene ?vendedor=USERNAME, mostrar catálogo público sin login
   if(await _initCatalogoPublico())return;
   _sessionToken=sessionStorage.getItem('iporave_token')||null;
+  _refreshToken=sessionStorage.getItem('iporave_refresh')||null;
   await loadServerConfig(_sessionToken);
   DL._initLocal();
   // Cargar cola pendiente del localStorage
