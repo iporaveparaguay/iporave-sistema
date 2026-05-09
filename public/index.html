@@ -6529,10 +6529,6 @@ async function guardarPerfilUsuario(){
   };
   const check={...CU,...data};
   const{ok,missing}=_perfilCompleto(check);
-  if(!ok){
-    showAlert('pfAlert','e','⚠️ Completá los campos obligatorios: <b>'+missing.join(', ')+'</b>');
-    return;
-  }
   showAlert('pfAlert','i','Guardando...');
   Object.assign(CU,data);
   const idx=_usersCache.findIndex(u=>u.id===CU.id);
@@ -6541,7 +6537,11 @@ async function guardarPerfilUsuario(){
   if(!r.ok){showAlert('pfAlert','e','Error al guardar: '+r.error);return;}
   $('sName').textContent=CU.nombre;
   _actualizarBadgePerfil();
-  closeA();pushNotif('Perfil guardado ✓','s');
+  if(!ok){
+    showAlert('pfAlert','w','✅ Guardado. Todavía faltan: <b>'+missing.join(', ')+'</b>');
+  }else{
+    closeA();pushNotif('Perfil guardado ✓','s');
+  }
 }
 async function _cargarResenasEnPerfil(userId){
   const cont=$('pfResenas');if(!cont)return;
