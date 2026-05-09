@@ -1506,7 +1506,7 @@ function onMapsLoaded(){_mapsLoaded=true;}
 async function geocodeMapbox(query){
   if(!query||query.length<3)return null;
   try{
-    const r=await fetch(WORKER_URL+'/api/geocode?q='+encodeURIComponent(query));
+    const r=await fetch(WORKER_URL+'/api/geocode?q='+encodeURIComponent(query),{headers:{'Authorization':'Bearer '+(_sessionToken||'')}});
     const d=await r.json();
     if(d.ok&&d.lat&&d.lng)return{lat:d.lat,lng:d.lng,name:d.name||query};
   }catch(e){}
@@ -5224,6 +5224,29 @@ async function procesarImportCSV(){
 }
 
 // Exportar catálogo a CSV compatible con Shopify
+function verFeedMetaAds(){
+  const base=WORKER_URL+'/api/export-catalog';
+  const urlJSON=base+'?format=json';
+  const urlCSV=base+'?format=csv';
+  const urlUser=base+'?format=json&u='+encodeURIComponent(CU.username||'');
+  openC('📣 Feed de catálogo — Meta Ads / TikTok Ads',
+    '<p style="color:var(--text2);font-size:13px;margin-bottom:16px">Usá estas URLs para importar tu catálogo en Meta Business Manager o TikTok Ads. Meta actualiza el feed automáticamente.</p>'+
+    '<div style="margin-bottom:12px"><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px">Feed completo (todos los productos públicos)</label>'+
+    '<div style="display:flex;gap:8px;margin-top:5px">'+
+    '<input id="metaUrlJSON" value="'+urlJSON+'" readonly style="flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 11px;font-size:12px;font-family:monospace">'+
+    '<button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText(\''+urlJSON+'\').then(()=>pushNotif(\'URL copiada\',\'s\'))">Copiar</button></div></div>'+
+    '<div style="margin-bottom:12px"><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px">Solo mis productos (usuario: '+CU.username+')</label>'+
+    '<div style="display:flex;gap:8px;margin-top:5px">'+
+    '<input value="'+urlUser+'" readonly style="flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 11px;font-size:12px;font-family:monospace">'+
+    '<button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText(\''+urlUser+'\').then(()=>pushNotif(\'URL copiada\',\'s\'))">Copiar</button></div></div>'+
+    '<div><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px">Descargar CSV (para importar manualmente)</label>'+
+    '<div style="margin-top:5px">'+
+    '<a href="'+urlCSV+'" target="_blank" class="btn btn-secondary btn-sm">⬇ Descargar CSV</a></div></div>'+
+    '<div style="margin-top:16px;padding:12px;background:var(--bg3);border-radius:8px;font-size:12px;color:var(--text2)">'+
+    '<b>Cómo usar en Meta:</b> Meta Business Manager → Catálogos → Agregar elementos → Usar una fuente de datos → URL del feed (JSON). Meta actualizará el catálogo automáticamente.</div>',
+    '<button class="btn btn-secondary" onclick="closeC()">Cerrar</button>'
+  );
+}
 function exportarCatalogoCSV(){
   const rows=[['Handle','Title','Body (HTML)','Vendor','Type','Tags','Published',
     'Option1 Name','Option1 Value','Variant Price','Variant Compare At Price',
@@ -5325,6 +5348,7 @@ PAGES.catalogo=function(q=''){
   if(esAdmin){
     acciones+='<button class="btn btn-secondary btn-sm" onclick="importarCatalogoCSV()">⬆ Importar</button>';
     acciones+='<button class="btn btn-secondary btn-sm" onclick="exportarCatalogoCSV()">⬇ Exportar</button>';
+    acciones+='<button class="btn btn-sm" onclick="verFeedMetaAds()" style="background:#1877f2;color:#fff;border:none;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600">📣 Meta Ads</button>';
     acciones='<button class="btn btn-secondary btn-sm" onclick="PAGES.catalogo_todos()">📋 Todos</button>'+acciones;
   }
   acciones+='<button class="btn btn-secondary btn-sm" onclick="abrirScannerCatalogo()">📷 Escanear</button>';
