@@ -650,13 +650,15 @@ const DEF_CATALOGO = [];
 const DEF_USERS = [];
 const DEF_USERS_VER = 9;
 
+const WORKER_URL='https://iporave-api.iporaveparaguay.workers.dev';
+
 /* ══════════════════════════════════════════════════
    CONFIG DESDE SERVIDOR (sin claves en el código)
 ══════════════════════════════════════════════════ */
 async function loadServerConfig(token){
   try{
     const headers=token?{'Authorization':'Bearer '+token}:{};
-    const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/config',{headers});
+    const r=await fetch(WORKER_URL+'/api/config',{headers});
     if(!r.ok)return;
     const cfg=await r.json();
     if(cfg.supabaseUrl){DEF_CONFIG.supabaseUrl=cfg.supabaseUrl;}
@@ -922,7 +924,7 @@ const DL = {
     // Usar endpoint del servidor (service key) en lugar de anon key directamente
     if(_sessionToken){
       try{
-        const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/get-users',{headers:{'Authorization':'Bearer '+_sessionToken}});
+        const r=await fetch(WORKER_URL+'/api/get-users',{headers:{'Authorization':'Bearer '+_sessionToken}});
         if(r.ok){
           const json=await r.json();
           if(json.ok&&json.users){
@@ -949,7 +951,7 @@ const DL = {
     // 2. Si hay contraseña nueva — hashear en el servidor
     if(password&&!password.startsWith('$2')){
       try{
-        const res=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/save-user',{
+        const res=await fetch(WORKER_URL+'/api/save-user',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
           body:JSON.stringify({...uLocal,password})
@@ -973,7 +975,7 @@ const DL = {
     // Eliminar de Supabase via API (service key — anon key bloqueado por RLS)
     if(_sessionToken){
       try{
-        await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/delete-user',{
+        await fetch(WORKER_URL+'/api/delete-user',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
           body:JSON.stringify({id})
@@ -1057,13 +1059,13 @@ const DL = {
     // Notificar al delivery si el estado cambió a Despachado o En ruta
     if(_prev?.estado!==o.estado&&o.deliveryId&&['Despachado','En ruta'].includes(o.estado)&&_sessionToken){
       // Push browser
-      fetch('https://iporave-api.iporaveparaguay.workers.dev/api/push-send',{
+      fetch(WORKER_URL+'/api/push-send',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
         body:JSON.stringify({user_id:o.deliveryId,title:o.estado==='Despachado'?'📦 Pedido despachado':'🛵 Pedido en ruta',body:'Pedido #'+o.id+(o.cliente?' — '+o.cliente:''),url:'/pedidos'})
       }).catch(e=>console.warn('[PUSH DELIVERY]',e.message));
       // WhatsApp al delivery via worker (respaldo)
-      fetch('https://iporave-api.iporaveparaguay.workers.dev/api/orders/notify',{
+      fetch(WORKER_URL+'/api/orders/notify',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
         body:JSON.stringify({delivery_id:o.deliveryId,order_id:o.id,cliente_nombre:o.cliente||'Cliente',address:o.direccion||''})
@@ -1504,7 +1506,7 @@ function onMapsLoaded(){_mapsLoaded=true;}
 async function geocodeMapbox(query){
   if(!query||query.length<3)return null;
   try{
-    const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/geocode?q='+encodeURIComponent(query));
+    const r=await fetch(WORKER_URL+'/api/geocode?q='+encodeURIComponent(query));
     const d=await r.json();
     if(d.ok&&d.lat&&d.lng)return{lat:d.lat,lng:d.lng,name:d.name||query};
   }catch(e){}
@@ -1577,7 +1579,7 @@ async function showDeliveryMap(containerId,orderAddr,gpsLat,gpsLng){
         (async()=>{
           let coords=null;
           try{
-            const rr=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/route',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},body:JSON.stringify({fromLat:dlvLat,fromLng:dlvLng,toLat:destLat,toLng:destLng})});
+            const rr=await fetch(WORKER_URL+'/api/route',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},body:JSON.stringify({fromLat:dlvLat,fromLng:dlvLng,toLat:destLat,toLng:destLng})});
             if(rr.ok){const rd=await rr.json();if(rd.ok&&rd.coords)coords=rd.coords.map(([a,b])=>[b,a]);}
           }catch(_){}
           if(!coords)coords=[[dlvLng,dlvLat],[destLng,destLat]];
@@ -1656,7 +1658,7 @@ async function notifEnRutaAdmin(o){
 ══════════════════════════════════════════════════ */
 let _aiHistory = [];
 let _unreadMsgs = 0;
-const AI_PROXY='https://iporave-api.iporaveparaguay.workers.dev/api/claude';
+const AI_PROXY=WORKER_URL+'/api/claude';
 
 function updateAIBadge(){
   const btn=$('aiBtn');if(!btn)return;
@@ -2224,7 +2226,7 @@ async function doLogin(){
   try{
     const device_hash=await getDeviceFingerprint();
     const device_info=getDeviceInfo();
-    const res=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/login',{
+    const res=await fetch(WORKER_URL+'/api/login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({username:u,password:p,device_hash,device_info})
@@ -2300,7 +2302,7 @@ async function doForgotPassword(){
   if(!username){showAlert('forgotAlert','e','Ingresá tu nombre de usuario');return;}
   if(btn)btn.textContent='Enviando...';
   try{
-    const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/forgot-password',{
+    const r=await fetch(WORKER_URL+'/api/forgot-password',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({username})
@@ -2559,7 +2561,7 @@ PAGES.dashboard=async function(){
   // Alerta de dispositivos pendientes (admin y superadmin)
   if(['admin','superadmin'].includes(CU.rol)&&_sessionToken){
     try{
-      const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/dispositivos-pendientes',{headers:{'Authorization':'Bearer '+_sessionToken}});
+      const r=await fetch(WORKER_URL+'/api/dispositivos-pendientes',{headers:{'Authorization':'Bearer '+_sessionToken}});
       const d=await r.json();
       if(d.ok&&d.data&&d.data.length>0){
         const visibles=d.data.filter(dev=>!_dismissedDevices.has(dev.id));
@@ -3194,7 +3196,7 @@ async function saveEditOrder(id){
     const _rawInput=(gv('nUbicacionInput')||'').trim();
     if(_rawInput.startsWith('http')){
       try{
-        const _rr=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/resolve-link?url='+encodeURIComponent(_rawInput));
+        const _rr=await fetch(WORKER_URL+'/api/resolve-link?url='+encodeURIComponent(_rawInput));
         const _rd=await _rr.json();
         if(_rd.lat&&_rd.lng&&_validGps(_rd.lat,_rd.lng)){_eLat=String(parseFloat(_rd.lat).toFixed(6));_eLng=String(parseFloat(_rd.lng).toFixed(6));}
       }catch(e){}
@@ -3465,7 +3467,7 @@ async function procesarUbicacion(text){
   if(text.includes('goo.gl')||text.includes('maps.app')||text.startsWith('http')){
     if(status)status.textContent='⏳ Resolviendo enlace...';
     try{
-      const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/resolve-link?url='+encodeURIComponent(text));
+      const r=await fetch(WORKER_URL+'/api/resolve-link?url='+encodeURIComponent(text));
       const d=await r.json();
       if(d.lat&&d.lng){
         _setGpsFields(d.lat,d.lng,'GPS extraído del link: '+d.lat+', '+d.lng);
@@ -5007,7 +5009,7 @@ async function subirArchivo(file, folder='catalogo'){
     reader.onload=async e=>{
       try{
         const base64=e.target.result;
-        const res=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/upload',{
+        const res=await fetch(WORKER_URL+'/api/upload',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
           body:JSON.stringify({base64,contentType:file.type,folder})
@@ -6323,7 +6325,7 @@ async function guardarPerfilUsuario(){
 async function _cargarResenasEnPerfil(userId){
   const cont=$('pfResenas');if(!cont)return;
   try{
-    const res=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/calificaciones?para_id='+userId,{headers:{'Authorization':'Bearer '+(_sessionToken||'')}});
+    const res=await fetch(WORKER_URL+'/api/calificaciones?para_id='+userId,{headers:{'Authorization':'Bearer '+(_sessionToken||'')}});
     const d=await res.json();
     if(!d.ok||!d.calificaciones?.length){
       cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)"><div style="font-size:32px">⭐</div><div style="margin-top:10px;font-size:13px">Aún no tenés reseñas.<br><span style="font-size:11px">Aparecerán cuando alguien te califique.</span></div></div>';
@@ -6392,7 +6394,7 @@ async function _enviarCalificacion(pedidoId,paraId,paraRol){
   const comentario=($('califComentario')||{}).value||'';
   showAlert('califAlert','i','Enviando...');
   try{
-    const res=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/calificaciones',{
+    const res=await fetch(WORKER_URL+'/api/calificaciones',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
       body:JSON.stringify({pedido_id:pedidoId,para_id:paraId,para_rol:paraRol,
@@ -6479,7 +6481,7 @@ function navegarPedido(id){
   window.open(url,'_blank');
 }
 function imprimirGuia(id){
-  const o=_ordersCache.find(x=>x.id===id)||(_ordersCache,getOrders().find(x=>x.id===id));
+  const o=_ordersCache.find(x=>x.id===id)||getOrders().find(x=>x.id===id);
   if(!o){pushNotif('Pedido no encontrado','e');return;}
   const emp=_getEmpresa();
   const z=_getZonaO(o);
@@ -7100,7 +7102,7 @@ function copiarLinkCatalogo(){
 /* ══════════════════════════════════════════════════
    TRACKING PÚBLICO — ?track=ID
 ══════════════════════════════════════════════════ */
-const TRACK_API='https://iporave-api.iporaveparaguay.workers.dev/api/track';
+const TRACK_API=WORKER_URL+'/api/track';
 const _TRACK_ESTADO_COLOR={
   'Pendiente':'#f59e0b','Despachado':'#3b82f6','En ruta':'#16a34a',
   'Entregado':'#22c55e','Cancelado':'#ef4444','Devuelto':'#8b5cf6',
@@ -7247,7 +7249,7 @@ async function _initCatalogoPublico(){
   document.body.appendChild(wrap);
 
   try{
-    const res=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/catalogo-publico?u='+encodeURIComponent(vendedor));
+    const res=await fetch(WORKER_URL+'/api/catalogo-publico?u='+encodeURIComponent(vendedor));
     const data=await res.json();
     if(!data.ok||!data.productos){
       wrap.innerHTML='<div style="text-align:center;padding:60px 20px;color:#64748b"><div style="font-size:40px">😕</div><div style="margin-top:10px;font-weight:700">Catálogo no encontrado</div></div>';
@@ -7375,7 +7377,7 @@ async function marcarEntregaNotif(id){
 }
 async function notifEntregaAdmin(o){
   try{
-    await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/notif-entrega',{
+    await fetch(WORKER_URL+'/api/notif-entrega',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
       body:JSON.stringify({pedido_id:o.id,cliente:o.cliente,delivery:CU.nombre,metodoCobro:o.metodoCobro})
@@ -7384,7 +7386,7 @@ async function notifEntregaAdmin(o){
 }
 async function aprobarDispositivo(id){
   if(!confirm('¿Autorizar este dispositivo?'))return;
-  const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/aprobar-dispositivo',{
+  const r=await fetch(WORKER_URL+'/api/aprobar-dispositivo',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
     body:JSON.stringify({device_id:id})
@@ -7395,7 +7397,7 @@ async function aprobarDispositivo(id){
 }
 async function rechazarDispositivo(id){
   if(!confirm('¿Rechazar y eliminar este dispositivo?'))return;
-  const r=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/rechazar-dispositivo',{
+  const r=await fetch(WORKER_URL+'/api/rechazar-dispositivo',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
     body:JSON.stringify({device_id:id})
@@ -7700,7 +7702,7 @@ function _gpsHaversine(lat1,lng1,lat2,lng2){
 }
 async function _gpsSendPos(lat,lng){
   try{
-    await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/tracking',{
+    await fetch(WORKER_URL+'/api/tracking',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
       body:JSON.stringify({lat,lng})
@@ -7874,7 +7876,7 @@ async function _activarPush(){
       sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:VAPID_KEY});
     }
     const token=sessionStorage.getItem('iporave_token');
-    const _resp=await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/push-subscribe',{
+    const _resp=await fetch(WORKER_URL+'/api/push-subscribe',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body:JSON.stringify({subscription:sub}),
@@ -7909,7 +7911,7 @@ document.addEventListener('DOMContentLoaded',function(){
           userVisibleOnly: true,
           applicationServerKey: VAPID_PUBLIC_KEY,
         });
-        await fetch('https://iporave-api.iporaveparaguay.workers.dev/api/push-subscribe', {
+        await fetch(WORKER_URL+'/api/push-subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
           body: JSON.stringify({ subscription: sub }),
