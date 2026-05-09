@@ -2343,8 +2343,11 @@ function doLogout(){
   sessionStorage.removeItem('iporave_token');
   if(_realtimeSub){try{_supa.removeChannel(_realtimeSub);}catch(e){} _realtimeSub=null;}
   if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
+  if(window._ordersPolling){clearInterval(window._ordersPolling);window._ordersPolling=null;}
   _shownMsgIds=new Set();
   _sessionStart='';
+  _supa=null;_supaConnected=false;
+  updateConnUI(false);
   $('appScreen').classList.remove('show');
   $('loginScreen').style.display='';
   $('loginUser').value='';$('loginPass').value='';
