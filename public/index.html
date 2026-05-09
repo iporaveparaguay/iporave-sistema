@@ -2506,7 +2506,11 @@ const NAV_CFG={
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
     ]},
     {s:'Mapa',items:[{id:'mapa',l:'Mapa de mis pedidos',ic:'map'}]},
-    {s:'Reportes',items:[{id:'boletas',l:'Boletas IVA',ic:'receipt'}]},
+    {s:'Reportes',items:[
+      {id:'boletas',l:'Boletas IVA',ic:'receipt'},
+      {id:'liquidacion',l:'Liquidación',ic:'doc'},
+      {id:'estadisticas',l:'Estadísticas',ic:'chart'},
+    ]},
     {s:'Analítica',items:[
       {id:'analitica_prov',l:'Mi Analítica',ic:'chart'},
     ]},
@@ -2780,10 +2784,17 @@ PAGES.dashboard=async function(){
   }
   if(CU.rol==='dropshipper'){
     const mine=orders.filter(o=>o.dropId===CU.id);
+    const ent=mine.filter(o=>o.estado==='Entregado');
+    const act=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+    const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
+    const comision=ent.reduce((a,b)=>a+(b.comision||0),0);
     html+='<div class="sgrid">'+
-      '<div class="sc pu"><div class="slabel">Mis productos</div><div class="sval">'+mine.length+'</div></div>'+
-      '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+mine.filter(o=>o.estado==='Entregado').length+'</div></div>'+
-      '</div>';
+      '<div class="sc ac"><div class="slabel">Mis pedidos</div><div class="sval">'+mine.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+(mine.length?Math.round(ent.length/mine.length*100):0)+'% éxito</div></div>'+
+      '<div class="sc bl"><div class="slabel">En tránsito</div><div class="sval">'+act.length+'</div></div>'+
+      '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+canc.length+'</div></div>'+
+      '<div class="sc" style="border:2px solid var(--accent)"><div class="slabel" style="color:var(--accent)">💰 Comisión cobrada</div><div class="sval" style="color:var(--accent);font-size:14px">'+fmt(comision)+'</div></div>'+
+    '</div>';
   }
   if(CU.rol==='proveedor'){
     const mine=orders.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
@@ -2803,7 +2814,7 @@ PAGES.dashboard=async function(){
       '<div class="sc bl"><div class="slabel">En camino</div><div class="sval">'+mine.filter(o=>['En ruta','Despachado'].includes(o.estado)).length+'</div></div>'+
       '</div>';
   }
-  if(['admin','superadmin','vendedor'].includes(CU.rol)){
+  if(['admin','superadmin','vendedor','dropshipper'].includes(CU.rol)){
     html+=
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px">'+
         '<div style="background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(0,0,0,.08);grid-column:1/-1">'+
@@ -2822,11 +2833,13 @@ PAGES.dashboard=async function(){
   }
   html+=renderTable(getVisibleOrders().slice(0,8),'Últimos pedidos',false);
   $('ca').innerHTML=html;
-  if(['admin','superadmin','vendedor'].includes(CU.rol))_renderCharts();
+  if(['admin','superadmin','vendedor','dropshipper'].includes(CU.rol))_renderCharts();
 };
 
 function _renderCharts(){
-  const mine=['admin','superadmin'].includes(CU.rol)?_ordersCache:_ordersCache.filter(o=>o.vendedorId===CU.id);
+  const mine=['admin','superadmin'].includes(CU.rol)?_ordersCache:
+    CU.rol==='dropshipper'?_ordersCache.filter(o=>o.dropId===CU.id):
+    _ordersCache.filter(o=>o.vendedorId===CU.id);
   const dark=document.documentElement.getAttribute('data-theme')==='dark';
   const textColor=dark?'#94a3b8':'#64748b';
   const gridColor=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
@@ -3814,6 +3827,7 @@ PAGES.balance=function(){
 PAGES.liquidacion=function(){
   if(CU.rol==='vendedor'){_liqVend();return;}
   if(CU.rol==='dropshipper'){_liqDrop();return;}
+  if(CU.rol==='proveedor'){_liqProv();return;}
   $('tbActions').innerHTML='<button class="btn btn-primary" onclick="printLiq()">⬇ PDF / Imprimir</button>';
   const orders=_ordersCache;
   const ent=orders.filter(o=>o.estado==='Entregado');
@@ -3985,6 +3999,38 @@ function _liqDrop(){
       '<td class="col-hide" style="color:var(--red)">'+fmt(o.costo*o.qty)+'</td>'+
       '<td style="color:'+(g>=0?'var(--green)':'var(--red)')+'">'+fmt(g)+'</td>'+
     '</tr>';}).join('')+'</tbody></table></div>':
+    '<div style="text-align:center;padding:32px;color:var(--text3)">Sin pedidos entregados todavía</div>');
+}
+
+function _liqProv(){
+  const ent=getVisibleOrders().filter(o=>o.estado==='Entregado');
+  const tCosto=ent.reduce((a,o)=>a+o.costo*o.qty,0);
+  const fecha=new Date().toLocaleDateString('es-PY',{year:'numeric',month:'long',day:'numeric'});
+  $('tbActions').innerHTML=
+    '<button class="btn btn-secondary" onclick="_waLiq(\'Liquidación proveedor '+CU.nombre+' — '+fecha+' — Pedidos: '+ent.length+' — A cobrar: Gs. '+fmtN(tCosto)+'\')" style="background:#25d366;border-color:#25d366;color:#fff">📲 WhatsApp</button>'+
+    '<button class="btn btn-primary" onclick="printLiq()">⬇ PDF / Imprimir</button>';
+  $('ca').innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">'+
+    '<div><h2 style="font-family:\'Bebas Neue\',sans-serif;font-size:26px;letter-spacing:2px">MI LIQUIDACIÓN</h2>'+
+    '<p style="color:var(--text2);font-size:12px">'+CU.nombre+' · Proveedor · '+fecha+'</p></div>'+
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;color:var(--accent)">IPORÃVE</div></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:18px">'+
+    '<div class="sc gr"><div class="slabel">Pedidos entregados</div><div class="sval">'+ent.length+'</div></div>'+
+    '<div class="sc" style="border:2px solid var(--accent)"><div class="slabel" style="color:var(--accent)">💰 A COBRAR</div><div class="sval" style="color:var(--accent)">Gs. '+fmtN(tCosto)+'</div></div>'+
+    '</div>'+
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:14px">'+
+    'ℹ️ Este resumen muestra el costo de tus productos entregados. El monto a cobrar al administrador es el total de costos según el acuerdo vigente.</div>'+
+    '<div class="stitle">Detalle de pedidos entregados</div>'+
+    (ent.length?'<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+    '<th>#</th><th>Fecha</th><th>Cliente</th><th>Producto</th>'+
+    '<th style="text-align:center">Cant.</th><th>Costo unit.</th><th style="color:var(--accent)">Total</th></tr></thead><tbody>'+
+    ent.map(o=>'<tr>'+
+      '<td style="color:var(--accent);font-size:11px">#'+o.id+'</td>'+
+      '<td>'+fmtDate(o.fecha)+'</td><td>'+o.cliente+'</td><td>'+o.producto+'</td>'+
+      '<td style="text-align:center">'+o.qty+'</td>'+
+      '<td>'+fmt(o.costo)+'</td>'+
+      '<td style="color:var(--accent);font-weight:700">'+fmt(o.costo*o.qty)+'</td>'+
+    '</tr>').join('')+'</tbody></table></div>':
     '<div style="text-align:center;padding:32px;color:var(--text3)">Sin pedidos entregados todavía</div>');
 }
 
@@ -4278,7 +4324,12 @@ function verCierre(fecha){
 
 /* ─── ESTADÍSTICAS AVANZADAS ─── */
 PAGES.estadisticas=function(){
-  if(!isAdminLike(CU.rol)){$('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Sin acceso</div>';return;}
+  if(!isAdminLike(CU.rol)){
+    if(CU.rol==='vendedor'){PAGES.analitica_vend();return;}
+    if(CU.rol==='dropshipper'){PAGES.analitica_drop();return;}
+    if(CU.rol==='proveedor'){PAGES.analitica_prov();return;}
+    $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Sin acceso</div>';return;
+  }
   const orders=_ordersCache;
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
   const entregados=orders.filter(o=>o.estado==='Entregado');
