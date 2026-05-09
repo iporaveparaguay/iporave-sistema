@@ -3700,7 +3700,9 @@ PAGES.balance=function(){
 
 /* ─── LIQUIDACION ─── */
 PAGES.liquidacion=function(){
-  $('tbActions').innerHTML='<button class="btn btn-primary" onclick="window.print()">Imprimir</button>';
+  if(CU.rol==='vendedor'){_liqVend();return;}
+  if(CU.rol==='dropshipper'){_liqDrop();return;}
+  $('tbActions').innerHTML='<button class="btn btn-primary" onclick="printLiq()">⬇ PDF / Imprimir</button>';
   const orders=_ordersCache;
   const ent=orders.filter(o=>o.estado==='Entregado');
   const cfg=getCfg();
@@ -3773,6 +3775,106 @@ PAGES.liquidacion=function(){
       '<div class="lrow"><span class="llbl">Premio 3+ extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra3)+'</span></div>'+
     '</div>';
 };
+
+function printLiq(){
+  const el=$('ca');if(!el)return;
+  const page='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Liquidación</title>'+
+  '<style>body{margin:0;padding:20px;font-family:"DM Sans",Arial,sans-serif;font-size:13px;color:#000;background:#fff}'+
+  'h2{font-size:22px;margin:0 0 4px}table{width:100%;border-collapse:collapse}'+
+  'th,td{padding:6px 8px;border:1px solid #ddd;text-align:left}th{background:#f5f5f5}'+
+  '.lrow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee}'+
+  '@media print{@page{margin:12mm;size:A4}body{padding:0}}</style></head><body>'+
+  el.innerHTML+
+  '<scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt>'+
+  '</body></html>';
+  const w=window.open('','_blank','width=860,height=700');
+  if(!w){alert('Permitir ventanas emergentes para guardar PDF');return;}
+  w.document.write(page);w.document.close();
+}
+
+function _waLiq(txt){
+  const admin=_usersCache.find(u=>u.rol==='superadmin')||_usersCache.find(u=>u.rol==='admin');
+  const tel=admin?(admin.whatsapp||admin.telefono||'').replace(/\D/g,'').replace(/^0/,''):'';
+  const url=tel?'https://wa.me/595'+tel+'?text='+encodeURIComponent(txt):'https://wa.me/?text='+encodeURIComponent(txt);
+  window.open(url,'_blank');
+}
+
+function _liqVend(){
+  const ent=getVisibleOrders().filter(o=>o.estado==='Entregado');
+  const tVentas=ent.reduce((a,o)=>a+o.precio*o.qty,0);
+  const tCosto=ent.reduce((a,o)=>a+o.costo*o.qty,0);
+  const tLog=ent.reduce((a,o)=>a+_getZonaO(o).precio,0);
+  const tGan=ent.reduce((a,o)=>a+ganVend(o),0);
+  const fecha=new Date().toLocaleDateString('es-PY',{year:'numeric',month:'long',day:'numeric'});
+  $('tbActions').innerHTML=
+    '<button class="btn btn-secondary" onclick="_waLiq(\'Liquidación '+CU.nombre+' — '+fecha+' — Total a cobrar: Gs. '+fmtN(tGan)+'\')" style="background:#25d366;border-color:#25d366;color:#fff">📲 WhatsApp</button>'+
+    '<button class="btn btn-primary" onclick="printLiq()">⬇ PDF / Imprimir</button>';
+  $('ca').innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">'+
+    '<div><h2 style="font-family:\'Bebas Neue\',sans-serif;font-size:26px;letter-spacing:2px">MI LIQUIDACIÓN</h2>'+
+    '<p style="color:var(--text2);font-size:12px">'+CU.nombre+' · '+fecha+'</p></div>'+
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;color:var(--accent)">IPORÃVE</div></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:18px">'+
+    '<div class="sc gr"><div class="slabel">Pedidos entregados</div><div class="sval">'+ent.length+'</div></div>'+
+    '<div class="sc"><div class="slabel">Ventas brutas</div><div class="sval">Gs. '+fmtN(tVentas)+'</div></div>'+
+    '<div class="sc re"><div class="slabel">(-) Costo</div><div class="sval">Gs. '+fmtN(tCosto)+'</div></div>'+
+    '<div class="sc pu"><div class="slabel">(-) Logística</div><div class="sval">Gs. '+fmtN(tLog)+'</div></div>'+
+    '<div class="sc" style="border:2px solid var(--accent)"><div class="slabel" style="color:var(--accent)">💰 A COBRAR</div><div class="sval" style="color:var(--accent)">Gs. '+fmtN(tGan)+'</div></div>'+
+    '</div>'+
+    '<div class="stitle">Detalle de pedidos entregados</div>'+
+    (ent.length?'<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+    '<th>#</th><th>Fecha</th><th>Cliente</th><th>Producto</th>'+
+    '<th class="col-hide">Venta</th><th class="col-hide">Costo</th><th class="col-hide">Logística</th>'+
+    '<th>Ganancia</th></tr></thead><tbody>'+
+    ent.map(o=>{const g=ganVend(o);return '<tr>'+
+      '<td style="color:var(--accent);font-size:11px">#'+o.id+'</td>'+
+      '<td>'+fmtDate(o.fecha)+'</td><td>'+o.cliente+'</td><td>'+o.producto+'</td>'+
+      '<td class="col-hide">'+fmt(o.precio*o.qty)+'</td>'+
+      '<td class="col-hide" style="color:var(--red)">'+fmt(o.costo*o.qty)+'</td>'+
+      '<td class="col-hide" style="color:var(--blue)">'+fmt(_getZonaO(o).precio)+'</td>'+
+      '<td style="color:'+(g>=0?'var(--green)':'var(--red)')+'">'+fmt(g)+'</td>'+
+    '</tr>';}).join('')+'</tbody></table></div>':
+    '<div style="text-align:center;padding:32px;color:var(--text3)">Sin pedidos entregados todavía</div>');
+}
+
+function _liqDrop(){
+  const ent=getVisibleOrders().filter(o=>o.estado==='Entregado');
+  const tVentas=ent.reduce((a,o)=>a+o.precio*o.qty,0);
+  const tCosto=ent.reduce((a,o)=>a+o.costo*o.qty,0);
+  const tLog=ent.reduce((a,o)=>a+_getZonaO(o).precio,0);
+  const tGan=tVentas-tCosto-tLog;
+  const fecha=new Date().toLocaleDateString('es-PY',{year:'numeric',month:'long',day:'numeric'});
+  $('tbActions').innerHTML=
+    '<button class="btn btn-secondary" onclick="_waLiq(\'Liquidación dropshipper '+CU.nombre+' — '+fecha+' — Pedidos: '+ent.length+' — Ventas: Gs. '+fmtN(tVentas)+'\')" style="background:#25d366;border-color:#25d366;color:#fff">📲 WhatsApp</button>'+
+    '<button class="btn btn-primary" onclick="printLiq()">⬇ PDF / Imprimir</button>';
+  $('ca').innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">'+
+    '<div><h2 style="font-family:\'Bebas Neue\',sans-serif;font-size:26px;letter-spacing:2px">MI LIQUIDACIÓN</h2>'+
+    '<p style="color:var(--text2);font-size:12px">'+CU.nombre+' · Dropshipper · '+fecha+'</p></div>'+
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;color:var(--accent)">IPORÃVE</div></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:18px">'+
+    '<div class="sc gr"><div class="slabel">Pedidos entregados</div><div class="sval">'+ent.length+'</div></div>'+
+    '<div class="sc"><div class="slabel">Ventas brutas</div><div class="sval">Gs. '+fmtN(tVentas)+'</div></div>'+
+    '<div class="sc re"><div class="slabel">(-) Costo</div><div class="sval">Gs. '+fmtN(tCosto)+'</div></div>'+
+    '<div class="sc pu"><div class="slabel">(-) Logística</div><div class="sval">Gs. '+fmtN(tLog)+'</div></div>'+
+    '<div class="sc" style="border:2px solid var(--accent)"><div class="slabel" style="color:var(--accent)">💰 GANANCIA</div><div class="sval" style="color:var(--accent)">Gs. '+fmtN(tGan)+'</div></div>'+
+    '</div>'+
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:14px">'+
+    'ℹ️ La comisión exacta la define el admin según el acuerdo comercial vigente. Este resumen muestra tu ganancia bruta (ventas − costo − logística).</div>'+
+    '<div class="stitle">Detalle de pedidos entregados</div>'+
+    (ent.length?'<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+    '<th>#</th><th>Fecha</th><th>Cliente</th><th>Producto</th>'+
+    '<th class="col-hide">Venta</th><th class="col-hide">Costo</th>'+
+    '<th>Ganancia</th></tr></thead><tbody>'+
+    ent.map(o=>{const g=ganVend(o);return '<tr>'+
+      '<td style="color:var(--accent);font-size:11px">#'+o.id+'</td>'+
+      '<td>'+fmtDate(o.fecha)+'</td><td>'+o.cliente+'</td><td>'+o.producto+'</td>'+
+      '<td class="col-hide">'+fmt(o.precio*o.qty)+'</td>'+
+      '<td class="col-hide" style="color:var(--red)">'+fmt(o.costo*o.qty)+'</td>'+
+      '<td style="color:'+(g>=0?'var(--green)':'var(--red)')+'">'+fmt(g)+'</td>'+
+    '</tr>';}).join('')+'</tbody></table></div>':
+    '<div style="text-align:center;padding:32px;color:var(--text3)">Sin pedidos entregados todavía</div>');
+}
 
 /* ─── RECAUDACION ─── */
 PAGES.recaudacion=function(){
