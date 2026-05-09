@@ -3862,9 +3862,32 @@ PAGES.cupo=function(){
 
 /* ─── BOLETAS ─── */
 PAGES.boletas=function(){
-  const orders=getVisibleOrders();
+  const hoy=new Date().toISOString().slice(0,10);
+  const primerDia=hoy.slice(0,8)+'01';
+  const inp='style="background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px"';
   $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Boletas IVA</span></div>'+
-  '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+  '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">'+
+  '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Desde <input type="date" id="bFD" value="'+primerDia+'" onchange="filtrarBoletas()" '+inp+'></label>'+
+  '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Hasta <input type="date" id="bFH" value="'+hoy+'" onchange="filtrarBoletas()" '+inp+'></label>'+
+  '<select id="bEst" onchange="filtrarBoletas()" '+inp+'>'+
+  '<option value="">Todos los estados</option><option>Entregado</option><option>En ruta</option><option>Despachado</option><option>Nuevo</option><option>Cancelado</option>'+
+  '</select>'+
+  '</div>'+
+  '<div id="boletasBody"></div></div>';
+  filtrarBoletas();
+};
+
+function filtrarBoletas(){
+  const desde=($('bFD')||{}).value||'';
+  const hasta=($('bFH')||{}).value||'';
+  const estado=($('bEst')||{}).value||'';
+  let orders=getVisibleOrders();
+  if(desde)orders=orders.filter(o=>(o.fecha||'')>=desde);
+  if(hasta)orders=orders.filter(o=>(o.fecha||'')<=hasta+'T23:59:59');
+  if(estado)orders=orders.filter(o=>o.estado===estado);
+  const el=$('boletasBody');if(!el)return;
+  if(!orders.length){el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text2)">Sin boletas en el período seleccionado</div>';return;}
+  el.innerHTML='<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
   '<th>Boleta</th><th class="col-hide">Doc N°</th><th>Fecha</th>'+
   '<th>Cliente</th><th>Producto</th><th>Total</th>'+
   '<th class="col-hide">IVA</th><th>Estado</th><th></th></tr></thead><tbody>'+
@@ -3881,11 +3904,10 @@ PAGES.boletas=function(){
       '<td>'+bE(o.estado)+'</td>'+
       '<td><button class="btn btn-secondary btn-sm" onclick="openBoleta('+o.id+')">Ver</button></td>'+
     '</tr>';
-  }).join('')+'</tbody></table></div></div>';
-};
+  }).join('')+'</tbody></table></div>';
+}
 
-function openBoleta(id){
-  const o=getOrders().find(x=>x.id===id);if(!o)return;
+function _boletaHTML(o){
   const zona=_getZonaO(o);
   const total=o.precio*o.qty;
   const flete=zona.precio;
@@ -3893,8 +3915,8 @@ function openBoleta(id){
   const tasaNum=parseInt(o.tipoIva)||10;
   const iva=o.tipoIva==='Exento'?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
   const base=totalFact-iva;
-  openC('Boleta IVA — '+o.boletaNum,
-    '<div class="boleta" id="boletaDiv">'+
+  return {zona,total,flete,totalFact,iva,base,
+    html:'<div class="boleta" id="boletaDiv">'+
     '<div style="display:flex;justify-content:space-between;border-bottom:3px double #000;padding-bottom:12px;margin-bottom:12px">'+
     '<div><div class="boleta-logo">IPORÃVE</div><div style="font-size:11px;font-weight:600">'+EMPRESA.nombre+'</div>'+
     '<div style="font-size:10px">'+EMPRESA.dir+'</div><div style="font-size:10px">Tel: '+EMPRESA.tel+'</div>'+
@@ -3930,10 +3952,54 @@ function openBoleta(id){
     '<span>TOTAL:</span><span>Gs. '+fmtN(totalFact)+'</span></div></div></div>'+
     '<div style="margin-top:12px;font-size:9px;color:#aaa;text-align:center;border-top:1px dashed #ddd;padding-top:7px">'+
     EMPRESA.nombre+' · '+EMPRESA.dir+' · Timbrado: '+EMPRESA.timbrado+' · Válido según Ley N° 125/91</div>'+
-    '</div>',
+    '</div>'};
+}
+
+function openBoleta(id){
+  const o=getOrders().find(x=>x.id===id);if(!o)return;
+  const b=_boletaHTML(o);
+  openC('Boleta IVA — '+o.boletaNum, b.html,
     '<button class="btn btn-secondary" onclick="closeC()">Cerrar</button>'+
-    '<button class="btn btn-primary" onclick="window.print()">Imprimir</button>'
+    '<button class="btn btn-secondary" onclick="waBoleta('+o.id+')" style="background:#25d366;border-color:#25d366;color:#fff">📲 WhatsApp</button>'+
+    '<button class="btn btn-primary" onclick="printBoleta('+o.id+')">⬇ PDF / Imprimir</button>'
   );
+}
+
+function printBoleta(id){
+  const o=getOrders().find(x=>x.id===id);if(!o)return;
+  const b=_boletaHTML(o);
+  const page='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Boleta '+o.boletaNum+'</title>'+
+  '<style>'+
+  'body{margin:0;padding:20px;font-family:"DM Sans",Arial,sans-serif;font-size:12px;color:#000;background:#fff}'+
+  '.boleta-logo{font-size:28px;color:#f5a623;font-weight:900}'+
+  '.boleta{background:#fff;color:#000;padding:24px}'+
+  '.bt-wrap{overflow-x:auto}.bt{width:100%;border-collapse:collapse}'+
+  '.bt th,.bt td{padding:6px 8px;border:1px solid #ddd;text-align:left}'+
+  '.bt th{background:#f5f5f5}'+
+  '@media print{@page{margin:12mm;size:A4}body{padding:0}}'+
+  '</style></head><body>'+b.html+
+  '<scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt>'+
+  '</body></html>';
+  const w=window.open('','_blank','width=860,height=700');
+  if(!w){alert('Permitir ventanas emergentes para guardar PDF');return;}
+  w.document.write(page);
+  w.document.close();
+}
+
+function waBoleta(id){
+  const o=getOrders().find(x=>x.id===id);if(!o)return;
+  const b=_boletaHTML(o);
+  const msg='*Boleta de Venta — Iporãve*\n\n'+
+    '📄 Boleta N°: '+o.boletaNum+'\n'+
+    '📅 Fecha: '+fmtDate(o.fecha)+'\n'+
+    '👤 Cliente: '+o.cliente+'\n'+
+    '📦 Producto: '+o.producto+' x'+o.qty+'\n'+
+    '🚚 Flete zona '+b.zona.nombre+': Gs. '+fmtN(b.flete)+'\n'+
+    '💰 *TOTAL: Gs. '+fmtN(b.totalFact)+'*\n\n'+
+    '_'+EMPRESA.nombre+' · '+EMPRESA.tel+'_';
+  const tel=(o.telefono||'').replace(/\D/g,'').replace(/^0/,'');
+  const url=tel?'https://wa.me/595'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
+  window.open(url,'_blank');
 }
 
 /* ─── CIERRE JORNADA ─── */
