@@ -518,6 +518,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div id="connMode" class="lmode loc">🔶 Modo offline — localStorage</div>
     </div>
 
+    <!-- Panel nueva contraseña (desde link de email) -->
+    <div id="resetPanel" style="display:none">
+      <div id="resetAlert"></div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Ingresá tu nueva contraseña.</p>
+      <div class="fg"><label>Nueva contraseña</label><div class="pwd-wrap"><input type="password" id="resetPass" placeholder="••••••••"><button type="button" class="pwd-eye" onclick="togglePwd('resetPass',this)" tabindex="-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+      <div class="fg"><label>Repetir contraseña</label><input type="password" id="resetPass2" placeholder="••••••••"></div>
+      <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="doResetPassword()">
+        <span id="resetBtnTxt">Guardar nueva contraseña</span>
+      </button>
+    </div>
+
     <!-- Panel recuperar contraseña -->
     <div id="forgotPanel" style="display:none">
       <div id="forgotAlert"></div>
@@ -2310,13 +2321,46 @@ async function doLogin(){
 function showForgotPanel(){
   $('loginPanel').style.display='none';
   $('forgotPanel').style.display='block';
+  $('resetPanel').style.display='none';
   $('forgotAlert').innerHTML='';
   const fi=$('forgotUser');if(fi)fi.value='';
 }
 function showLoginPanel(){
   $('forgotPanel').style.display='none';
+  $('resetPanel').style.display='none';
   $('loginPanel').style.display='block';
   $('loginAlert').innerHTML='';
+}
+function showResetPanel(){
+  $('loginPanel').style.display='none';
+  $('forgotPanel').style.display='none';
+  $('resetPanel').style.display='block';
+  $('resetAlert').innerHTML='';
+}
+async function doResetPassword(){
+  const btn=$('resetBtnTxt');
+  const p=$('resetPass').value;
+  const p2=$('resetPass2').value;
+  if(!p){showAlert('resetAlert','e','Ingresá una contraseña');return;}
+  if(p.length<6){showAlert('resetAlert','e','La contraseña debe tener al menos 6 caracteres');return;}
+  if(p!==p2){showAlert('resetAlert','e','Las contraseñas no coinciden');return;}
+  if(btn)btn.textContent='Guardando...';
+  try{
+    const cfg=getCfg();
+    if(!_supa&&cfg.supabaseUrl&&cfg.supabaseKey){
+      _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+    }
+    if(!_supa){showAlert('resetAlert','e','Error de conexión. Recargá la página.');if(btn)btn.textContent='Guardar nueva contraseña';return;}
+    const{error}=await _supa.auth.updateUser({password:p});
+    if(error){showAlert('resetAlert','e','Error: '+error.message);if(btn)btn.textContent='Guardar nueva contraseña';return;}
+    showAlert('resetAlert','s','✅ Contraseña actualizada. Redirigiendo al login...');
+    if(btn)btn.textContent='Listo';
+    history.replaceState(null,'',window.location.pathname);
+    setTimeout(()=>showLoginPanel(),2000);
+  }catch(e){
+    showAlert('resetAlert','e','Error inesperado: '+e.message);
+    if(btn)btn.textContent='Guardar nueva contraseña';
+  }
 }
 async function doForgotPassword(){
   const btn=$('forgotBtnTxt');
@@ -7138,6 +7182,22 @@ async function exportCSV(){
    INIT
 ══════════════════════════════════════════════════ */
 async function main(){
+  // Si la URL tiene #type=recovery (link de reset de contraseña desde email)
+  const _hashParams=new URLSearchParams(window.location.hash.slice(1));
+  if(_hashParams.get('type')==='recovery'){
+    const _at=_hashParams.get('access_token');
+    const _rt=_hashParams.get('refresh_token');
+    if(_at){
+      await loadServerConfig(null);
+      const cfg=getCfg();
+      if(cfg.supabaseUrl&&cfg.supabaseKey){
+        _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+        await _supa.auth.setSession({access_token:_at,refresh_token:_rt||''});
+      }
+      showResetPanel();
+      return;
+    }
+  }
   // Si la URL tiene ?track=ID, mostrar página de seguimiento sin login
   if(await _initTrackingPublico())return;
   // Si la URL tiene ?vendedor=USERNAME, mostrar catálogo público sin login
