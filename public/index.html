@@ -853,7 +853,8 @@ async function initSupabase(){
   const cfg=getCfg();
   if(!cfg.supabaseUrl||!cfg.supabaseKey)return false;
   try{
-    _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+    const _supaOpts=_sessionToken?{global:{headers:{Authorization:'Bearer '+_sessionToken}}}:{};
+    _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,_supaOpts);
     const {error}=await _supa.from('pedidos').select('id').limit(1);
     if(error&&error.code!=='PGRST116')throw error;
     _supaConnected=true;
@@ -1853,7 +1854,7 @@ const AI_TOOL_EXEC={
     if(CU.rol==='vendedor'&&o.vendedorId!==CU.id)return'Solo podés actualizar tus propios pedidos.';
     if(CU.rol==='dropshipper'&&o.dropId!==CU.id)return'Solo podés actualizar tus propios pedidos.';
     if(CU.rol==='delivery'&&o.deliveryId!==CU.id)return'Solo podés actualizar pedidos asignados a vos.';
-    if(CU.rol==='proveedor'&&o.vendedorId!==CU.id&&(o.proveedor||'').toLowerCase()!==CU.nombre.toLowerCase())return'Solo podés actualizar tus propios pedidos.';
+    if(CU.rol==='proveedor'&&o.vendedorId!==CU.id&&o.proveedorId!==CU.id&&(o.proveedor||'').toLowerCase()!==CU.nombre.toLowerCase())return'Solo podés actualizar tus propios pedidos.';
     if(CU.rol==='cliente')return'Sin permisos para actualizar estados.';
     const prev=o.estado;
     o.estado=args.estado;o.notas=args.notas||o.notas;
@@ -2516,7 +2517,7 @@ function getVisibleOrders(){
   if(r==='dropshipper')return _ordersCache.filter(o=>o.dropId===CU.id);
   if(r==='delivery')return _ordersCache.filter(o=>o.deliveryId===CU.id);
   if(r==='cliente')return _ordersCache.filter(o=>o.cliente===CU.nombre);
-  if(r==='proveedor')return _ordersCache.filter(o=>o.vendedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  if(r==='proveedor')return _ordersCache.filter(o=>o.vendedorId===CU.id||o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
   return[];
 }
 function nextDocNum(){
@@ -2654,7 +2655,7 @@ PAGES.dashboard=async function(){
       '</div>';
   }
   if(CU.rol==='proveedor'){
-    const mine=orders.filter(o=>(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+    const mine=orders.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
     const ent=mine.filter(o=>o.estado==='Entregado');
     html+='<div class="sgrid">'+
       '<div class="sc ac"><div class="slabel">Órdenes activas</div><div class="sval">'+mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
@@ -3012,7 +3013,7 @@ function viewOrder(id){
   }
 
   // Foto de entrega: solo visible para admin, vendedor (creador) o proveedor vinculado
-  const canSeeFoto=(['admin','superadmin'].includes(CU.rol))||(CU.rol==='vendedor'&&o.vendedorId===CU.id)||(CU.rol==='proveedor'&&(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  const canSeeFoto=(['admin','superadmin'].includes(CU.rol))||(CU.rol==='vendedor'&&o.vendedorId===CU.id)||(CU.rol==='proveedor'&&(o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase()));
   const fotoSection=canSeeFoto&&o.fotoEntrega&&o.fotoEntrega!==true
     ?'<div class="stitle">📷 Foto de entrega</div>'+
       '<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;text-align:center;padding:8px">'+
@@ -3096,11 +3097,13 @@ function editOrder(id){
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
   const drops=_usersCache.filter(u=>u.rol==='dropshipper');
   const vends=_usersCache.filter(u=>u.rol==='vendedor');
+  const provs=_usersCache.filter(u=>u.rol==='proveedor');
   const esManualEdit=!o.zona&&o.zonaCustomNombre;
   const zonaOpts=_zonasCache.map(z=>'<option value="'+z.id+'" '+(o.zona===z.id?'selected':'')+'>'+z.nombre+' (Gs. '+fmtN(z.precio)+')</option>').join('')+
     '<option value="manual" '+(esManualEdit?'selected':'')+'>✏️ Otra ubicación (manual)...</option>';
   const dlvOpts='<option value="">Sin asignar</option>'+dlvs.map(d=>'<option value="'+d.id+'" '+(o.deliveryId===d.id?'selected':'')+'>'+d.nombre+' ('+(d.vehiculo||'moto')+')</option>').join('');
   const dropOpts='<option value="">Sin asignar</option>'+drops.map(d=>'<option value="'+d.id+'" '+(o.dropId===d.id?'selected':'')+'>'+d.nombre+'</option>').join('');
+  const provOpts='<option value="">Sin proveedor</option>'+provs.map(d=>'<option value="'+d.id+'" '+(o.proveedorId===d.id?'selected':'')+'>'+d.nombre+'</option>').join('');
   const allSales=_usersCache.filter(u=>['vendedor','proveedor','dropshipper','administrador','superadmin'].includes(u.rol));
   const vendOpts='<option value="">Sin asignar</option>'+allSales.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+d.nombre+' ('+capRole(d.rol)+')</option>').join('');
   openA('✏️ Editar pedido #'+id,
@@ -3132,7 +3135,7 @@ function editOrder(id){
       '</div>'+
     '</div>'+
     '<div class="stitle">Producto</div>'+
-    '<div class="frow"><div class="fg"><label>Proveedor</label><input type="text" id="eProv" value="'+escHtml(o.proveedor||'')+'"></div>'+
+    '<div class="frow"><div class="fg"><label>Proveedor</label><select id="eProv">'+provOpts+'</select></div>'+
     '<div class="fg"><label>Producto *</label><input type="text" id="eProd" value="'+escHtml(o.producto||'')+'"></div></div>'+
     '<div class="frow3"><div class="fg"><label>Cantidad</label><input type="number" id="eQty" value="'+(o.qty||1)+'" min="1"></div>'+
     '<div class="fg"><label>Precio venta (Gs.)</label><input type="number" id="ePrec" value="'+(o.precio||0)+'"></div>'+
@@ -3193,7 +3196,7 @@ async function saveEditOrder(id){
   } else {
     const zona=parseInt(eZonaVal);if(zona){o.zona=zona;o.zonaCustomNombre=null;o.zonaCustomPrecio=null;}
   }
-  o.proveedor=gv('eProv');o.producto=prod;
+  const _provSel=_usersCache.find(u=>u.id===parseInt(gv('eProv')));o.proveedorId=_provSel?_provSel.id:null;o.proveedor=_provSel?_provSel.nombre:(o.proveedor||'');o.producto=prod;
   o.qty=parseInt(gv('eQty'))||o.qty;
   o.precio=parseFloat(gv('ePrec'))||o.precio;
   o.costo=parseFloat(gv('eCost'))||o.costo;
@@ -4098,7 +4101,7 @@ PAGES.estadisticas=function(){
 /* ─── ANALÍTICA PROVEEDOR ─── */
 PAGES.analitica_prov=function(){
   $('tbActions').innerHTML='';
-  const mine=_ordersCache.filter(o=>(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  const mine=_ordersCache.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
   if(!mine.length){
     $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">No hay órdenes asignadas a tu nombre de proveedor.<br><span style="font-size:12px;margin-top:8px;display:block">El vendedor debe ingresar tu nombre exacto en el campo "Proveedor" al crear el pedido.</span></div>';
     return;
@@ -4664,7 +4667,7 @@ async function doDelUser(id){
 /* ─── SUMINISTROS (vista proveedor) ─── */
 PAGES.suministros=function(){
   $('tbActions').innerHTML='';
-  const mine=_ordersCache.filter(o=>(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  const mine=_ordersCache.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
   if(!mine.length){
     $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">No hay órdenes asignadas a tu nombre de proveedor.<br><span style="font-size:12px;margin-top:8px;display:block">El vendedor debe ingresar tu nombre en el campo "Proveedor" al crear el pedido.</span></div>';
     return;
