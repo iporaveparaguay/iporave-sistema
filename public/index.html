@@ -1680,6 +1680,7 @@ function updateAIBadge(){
     if(!badge){badge=document.createElement('span');badge.className='ai-badge';btn.appendChild(badge);}
     badge.textContent=_unreadMsgs>9?'9+':_unreadMsgs;
   }else{if(badge)badge.remove();}
+  updateNavBadges();
 }
 function toggleAI(){
   const p=$('aiPanel');if(!p)return;
@@ -2507,8 +2508,27 @@ function buildNav(){
   $('snav').innerHTML=groups.map(g=>
     '<div class="nsec">'+g.s+'</div>'+
     g.items.map(it=>'<div class="ni" id="ni_'+it.id+'" onclick="nav(\''+it.id+'\')">'+
-      (SVG[it.ic]||'')+' '+it.l+'</div>').join('')
+      (SVG[it.ic]||'')+' '+it.l+
+      '<span class="nbadge" id="nbadge_'+it.id+'" style="display:none"></span></div>').join('')
   ).join('');
+  updateNavBadges();
+}
+function updateNavBadges(){
+  // Pedidos pendientes — admin/superadmin
+  if(['admin','superadmin'].includes(CU.rol)){
+    const pend=_ordersCache.filter(o=>o.estado==='Pendiente').length;
+    const b=$('nbadge_pedidos');
+    if(b){b.textContent=pend>99?'99+':String(pend);b.style.display=pend>0?'':'none';}
+  }
+  // Entregas activas — delivery
+  if(CU.rol==='delivery'){
+    const act=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)).length;
+    const b=$('nbadge_entregas');
+    if(b){b.textContent=act>99?'99+':String(act);b.style.display=act>0?'':'none';}
+  }
+  // Mensajes sin leer — todos los roles
+  const bm=$('nbadge_mensajes');
+  if(bm){bm.textContent=_unreadMsgs>99?'99+':String(_unreadMsgs);bm.style.display=_unreadMsgs>0?'':'none';}
 }
 function nav(page){
   document.querySelectorAll('.ni').forEach(el=>el.classList.remove('active'));
@@ -2535,6 +2555,7 @@ async function refreshCache(){
   _usersCache=DL._filterDemo(await DL.getUsers());
   _zonasCache=await DL.getZonas();
   _catalogoCache=await DL.getCatalogo();
+  updateNavBadges();
 }
 function getOrders(){return _ordersCache;}
 function getUsers(){return _usersCache;}
