@@ -23,10 +23,11 @@ console.log('\n🔍 Validando public/index.html...\n');
 const html = fs.readFileSync(HTML, 'utf8');
 
 // 1. Encontrar el bloque <script> principal
-const lastSrc = html.lastIndexOf('<script src=');
-const mainStart = html.indexOf('<script>', lastSrc);
+// Buscar '\n<script>' para no confundirse con <script> dentro de strings JS
+const mainStartRaw = html.lastIndexOf('\n<script>');
+const mainStart = mainStartRaw + 1; // apuntar al '<' del tag
 const mainEnd = html.lastIndexOf('</script>');
-if (mainStart < 0 || mainEnd < 0) {
+if (mainStart < 1 || mainEnd < 0) {
   fail('No se encontró el bloque <script> principal');
   process.exit(1);
 }
