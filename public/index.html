@@ -2596,7 +2596,24 @@ function nav(page){
   $('tbActions').innerHTML='';
   $('ca').classList.remove('mc-page');
   _msgConvPartner=null;
-  closeSidebar(); // cierra el sidebar en mobile al navegar
+  closeSidebar();
+  if(CU&&CU.rol!=='superadmin'){
+    const{ok,missing}=_perfilCompleto(CU);
+    if(!ok){
+      $('ca').innerHTML=
+        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px 20px">'+
+        '<div style="font-size:52px;margin-bottom:16px">⚠️</div>'+
+        '<div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px">Completá tu perfil para continuar</div>'+
+        '<div style="font-size:13px;color:var(--text2);margin-bottom:20px;max-width:360px">No podés usar el sistema hasta completar los datos obligatorios de tu perfil.</div>'+
+        '<div style="background:var(--bg3);border-radius:10px;padding:14px 20px;margin-bottom:24px;text-align:left;max-width:360px;width:100%">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Faltan estos campos:</div>'+
+        missing.map(m=>'<div style="font-size:13px;color:var(--red);margin:4px 0">• '+m+'</div>').join('')+
+        '</div>'+
+        '<button class="btn btn-primary" onclick="openPerfilUsuario()">👤 Completar mi perfil</button>'+
+        '</div>';
+      return;
+    }
+  }
   const fn=PAGES[page];
   if(fn)fn();
   else $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Página en construcción</div>';
@@ -6285,26 +6302,26 @@ function escQ(s){return s.replace(/'/g,"\\'")}
 
 /* ─── VALIDACIÓN DE PERFIL POR ROL ─── */
 function _perfilCompleto(u){
+  if(u?.rol==='superadmin')return{ok:true,missing:[]};
   const rol=u?.rol||'';
   const missing=[];
   if(!u?.nombre)missing.push('Nombre completo');
   if(!u?.email)missing.push('Email');
+  if(!u?.whatsapp&&!u?.telefono2)missing.push('Teléfono o WhatsApp');
   const tieneBanco=u?.banco&&u?.nro_cuenta&&u?.titular_cuenta;
   const tieneWallet=u?.wallet_tipo&&u?.wallet_nro;
   if(!tieneBanco&&!tieneWallet)missing.push('Método de pago (banco o billetera)');
   if(rol==='delivery'){
-    if(!u?.cedula)missing.push('Cédula/Documento');
-    if(!u?.whatsapp)missing.push('WhatsApp');
-    if(!u?.direccion)missing.push('Dirección');
     if(!u?.vehiculo)missing.push('Vehículo');
     if(!u?.patente)missing.push('Patente');
-  }else if(['admin','superadmin'].includes(rol)){
-    if(!u?.cedula)missing.push('Cédula/Documento');
-    if(!u?.whatsapp&&!u?.telefono2)missing.push('Teléfono o WhatsApp');
+    if(!u?.foto_cedula_frente)missing.push('Foto cédula frente');
+    if(!u?.foto_cedula_dorso)missing.push('Foto cédula dorso');
+  }else if(rol==='admin'){
     if(!u?.direccion)missing.push('Dirección');
-  }else{
-    if(!u?.whatsapp&&!u?.telefono2)missing.push('Teléfono o WhatsApp');
-    if(!u?.cedula&&!u?.ruc)missing.push('Cédula o RUC');
+    if(!u?.nombre_comercial)missing.push('Nombre del negocio');
+  }else if(['vendedor','dropshipper','proveedor'].includes(rol)){
+    if(!u?.nombre_comercial)missing.push('Nombre del negocio/tienda');
+    if(!u?.logo&&!u?.foto_perfil)missing.push('Logo o foto de perfil');
   }
   return{ok:missing.length===0,missing};
 }
@@ -6363,16 +6380,33 @@ function openPerfilUsuario(){
     '</div>'+
     /* TAB 0 — Identidad */
     '<div class="ptab-content active">'+
-    '<div class="frow"><div class="fg"><label>Tipo de documento</label><select id="pfTipoDoc">'+
-    '<option value="cedula_py" '+(u.tipo_doc==='cedula_py'||!u.tipo_doc?'selected':'')+'>Cédula de Identidad PY</option>'+
-    '<option value="dni_ext" '+(u.tipo_doc==='dni_ext'?'selected':'')+'>DNI Extranjero</option>'+
-    '<option value="pasaporte" '+(u.tipo_doc==='pasaporte'?'selected':'')+'>Pasaporte</option>'+
-    '</select></div>'+
-    '<div class="fg"><label>Número de documento</label><input type="text" id="pfCedula" value="'+(u.cedula||'')+'" placeholder="4.123.456"></div></div>'+
-    '<div class="fg"><label>Nombre completo</label><input type="text" id="pfNombre" value="'+(u.nombre||'')+'"></div>'+
-    '<div class="frow"><div class="fg"><label>WhatsApp (con código país)</label><input type="text" id="pfWa" value="'+(u.whatsapp||'')+'" placeholder="595981XXXXXX"></div>'+
+    '<div class="fg"><label>Nombre completo *</label><input type="text" id="pfNombre" value="'+(u.nombre||'')+'"></div>'+
+    '<div class="frow"><div class="fg"><label>WhatsApp (con código país) *</label><input type="text" id="pfWa" value="'+(u.whatsapp||'')+'" placeholder="595981XXXXXX"></div>'+
     '<div class="fg"><label>Teléfono alternativo</label><input type="text" id="pfTel2" value="'+(u.telefono2||'')+'"></div></div>'+
-    '<div class="fg"><label>Email</label><input type="email" id="pfEmail" value="'+(u.email||'')+'" placeholder="tu@email.com"></div>'+
+    '<div class="fg"><label>Email *</label><input type="email" id="pfEmail" value="'+(u.email||'')+'" placeholder="tu@email.com"></div>'+
+    (u.rol==='delivery'?
+      '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">📄 Documentos de identidad *</div>'+
+      '<div class="frow">'+
+      '<div class="fg"><label>Cédula — Frente *</label>'+
+      '<div id="pfCedFrentePreview" onclick="$(\'pfCedFrenteFile\').click()" style="height:90px;border-radius:8px;background:var(--bg3);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden">'+
+      (u.foto_cedula_frente?'<img src="'+u.foto_cedula_frente+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:11px;color:var(--text3);text-align:center">📷 Subir frente</span>')+
+      '</div><input type="file" id="pfCedFrenteFile" accept="image/*" style="display:none" onchange="subirCedulaFrente(this)"></div>'+
+      '<div class="fg"><label>Cédula — Dorso *</label>'+
+      '<div id="pfCedDorsoPreview" onclick="$(\'pfCedDorsoFile\').click()" style="height:90px;border-radius:8px;background:var(--bg3);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden">'+
+      (u.foto_cedula_dorso?'<img src="'+u.foto_cedula_dorso+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:11px;color:var(--text3);text-align:center">📷 Subir dorso</span>')+
+      '</div><input type="file" id="pfCedDorsoFile" accept="image/*" style="display:none" onchange="subirCedulaDorso(this)"></div>'+
+      '</div>'+
+      '<div class="frow" style="margin-top:10px"><div class="fg"><label>Tipo de documento</label><select id="pfTipoDoc">'+
+      '<option value="cedula_py" '+(u.tipo_doc==='cedula_py'||!u.tipo_doc?'selected':'')+'>Cédula de Identidad PY</option>'+
+      '<option value="dni_ext" '+(u.tipo_doc==='dni_ext'?'selected':'')+'>DNI Extranjero</option>'+
+      '<option value="pasaporte" '+(u.tipo_doc==='pasaporte'?'selected':'')+'>Pasaporte</option>'+
+      '</select></div>'+
+      '<div class="fg"><label>Número de documento</label><input type="text" id="pfCedula" value="'+(u.cedula||'')+'" placeholder="4.123.456"></div></div>'+
+      '</div>'
+    :
+      '<input type="hidden" id="pfTipoDoc" value="'+(u.tipo_doc||'')+'"><input type="hidden" id="pfCedula" value="'+(u.cedula||'')+'">'
+    )+
     '</div>'+
     /* TAB 1 — Negocio */
     '<div class="ptab-content">'+
@@ -6419,15 +6453,14 @@ function openPerfilUsuario(){
     '<div style="font-size:11px;color:var(--text2)">💡 Estos datos aparecen cuando un cliente quiere transferirte el pago. Verificá que sean correctos.</div></div>'+
     '</div>'+
     /* TAB 4 — Reseñas */
-    '<div class="ptab-content"><div id="pfResenas"><div style="text-align:center;padding:30px;color:var(--text3)"><div style="font-size:28px">⭐</div><div style="margin-top:8px;font-size:13px">Cargando reseñas...</div></div></div></div>',
+    '<div class="ptab-content"><div id="pfResenas"><div style="text-align:center;padding:30px;color:var(--text3)"><div style="font-size:28px">⭐</div><div style="margin-top:8px;font-size:13px">Cargando reseñas...</div></div></div></div>'+
     '<div id="pfAlert" style="margin-top:8px"></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button> '+
     '<button class="btn btn-primary" onclick="guardarPerfilUsuario()">💾 Guardar perfil</button>',
     'xl'
   );
-  // Mostrar campos faltantes si perfil incompleto
   const{ok,missing}=_perfilCompleto(u);
-  if(!ok)showAlert('pfAlert','w','⚠️ Campos obligatorios faltantes: <b>'+missing.join(', ')+'</b>');
+  if(!ok)showAlert('pfAlert','w','⚠️ Completá los campos obligatorios (*): <b>'+missing.join(', ')+'</b>');
   _cargarResenasEnPerfil(u.id);
 }
 async function subirFotoPerfil(input){
@@ -6453,6 +6486,30 @@ async function subirLogoPerfil(input){
   if(p)p.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">';
   pushNotif('Logo subido ✓','s');
 }
+async function subirCedulaFrente(input){
+  const f=input.files[0];if(!f)return;
+  pushNotif('Subiendo foto...','i');
+  const url=await subirArchivo(f,'documentos');
+  if(!url){pushNotif('Error al subir la foto','e');return;}
+  CU.foto_cedula_frente=url;
+  await DL.saveUser({id:CU.id,foto_cedula_frente:url});
+  const p=$('pfCedFrentePreview');
+  if(p)p.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">';
+  _actualizarBadgePerfil();
+  pushNotif('Foto frente subida ✓','s');
+}
+async function subirCedulaDorso(input){
+  const f=input.files[0];if(!f)return;
+  pushNotif('Subiendo foto...','i');
+  const url=await subirArchivo(f,'documentos');
+  if(!url){pushNotif('Error al subir la foto','e');return;}
+  CU.foto_cedula_dorso=url;
+  await DL.saveUser({id:CU.id,foto_cedula_dorso:url});
+  const p=$('pfCedDorsoPreview');
+  if(p)p.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">';
+  _actualizarBadgePerfil();
+  pushNotif('Foto dorso subida ✓','s');
+}
 async function guardarPerfilUsuario(){
   const data={id:CU.id,
     nombre:gv('pfNombre')||CU.nombre,
@@ -6466,6 +6523,8 @@ async function guardarPerfilUsuario(){
     banco:gv('pfBanco'),tipo_cuenta:gv('pfTipoCuenta'),nro_cuenta:gv('pfNroCuenta'),
     titular_cuenta:gv('pfTitular'),wallet_tipo:gv('pfWalletTipo'),
     wallet_nro:gv('pfWalletNro'),wallet_alias:gv('pfWalletAlias'),logo:CU.logo||'',
+    foto_cedula_frente:CU.foto_cedula_frente||'',
+    foto_cedula_dorso:CU.foto_cedula_dorso||'',
     contactos:Array.isArray(CU.contactos)?CU.contactos:[],
   };
   const check={...CU,...data};
