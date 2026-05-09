@@ -2263,8 +2263,6 @@ async function doLogin(){
     CU=data.user;
     _sessionToken=data.token;
     sessionStorage.setItem('iporave_token',data.token);
-    await loadServerConfig(_sessionToken);
-    await initSupabase();
     $('loginScreen').style.display='none';
     $('appScreen').classList.add('show');
     if(CU.foto_perfil){$('sAvatar').innerHTML='<img src="'+CU.foto_perfil+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover">';}
@@ -2290,6 +2288,7 @@ async function doLogin(){
     if(['admin','superadmin'].includes(CU.rol)&&_supaConnected){
       DL.syncCatalogoToSupa().then(n=>{if(n>0)console.log('Catálogo sincronizado: '+n+' productos');});
     }
+    loadServerConfig(_sessionToken).then(()=>initSupabase());
   }catch(e){
     showAlert('loginAlert','e','Error al iniciar sesión: '+e.message);
     if(btn)btn.textContent='Ingresar al sistema';
@@ -7133,8 +7132,9 @@ async function main(){
   // Cargar cola pendiente del localStorage
   _pendingQueue=DL._lg('pendingQueue')||[];
   if(_pendingQueue.length){const b=$('offlineBadge');if(b)b.classList.add('show');}
+  await initSupabase();
   await refreshCache();
-  // initSupabase solo corre desde doLogin(), nunca en la carga inicial
+  if(_supaConnected)await _syncPendingQueue();
   // If no orders in cache, populate demo
   if(_ordersCache.length===0){
     for(const o of DEF_ORDERS.map(o=>({...o}))){await DL.saveOrder(o);}
