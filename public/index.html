@@ -738,7 +738,6 @@ let _supa = null;
 let _supaConnected = false;
 let _gpsLoopTimer=null,_gpsLoopOrder=null,_gpsLoopStartTime=0,_gpsLoopFast=true;
 let _realtimeSub = null;
-let _mapsLoaded = false;
 let _notifHistory = [];
 let _notifUnread = 0;
 let _pendingQueue = [];
@@ -1539,7 +1538,6 @@ window.addEventListener('offline',()=>{
    GOOGLE MAPS
 ══════════════════════════════════════════════════ */
 function loadGoogleMaps(){} // reemplazado por Leaflet
-function onMapsLoaded(){_mapsLoaded=true;}
 async function geocodeMapbox(query){
   if(!query||query.length<3)return null;
   try{
@@ -2471,6 +2469,7 @@ const NAV_CFG={
     ]},
     {s:'Analítica',items:[
       {id:'analitica_vend',l:'Mi Analítica',ic:'chart'},
+      {id:'clientes_recurrentes',l:'👥 Clientes Recurrentes',ic:'users'},
     ]},
     {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
   ],
@@ -4745,6 +4744,46 @@ PAGES.analitica_drop=function(){
       ]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true,ticks:{stepSize:1}}}}});
     }
   },100);
+};
+
+/* ─── CLIENTES RECURRENTES (vendedor) ─── */
+PAGES.clientes_recurrentes=function(){
+  $('tbActions').innerHTML='';
+  const mine=_ordersCache.filter(o=>o.vendedorId===CU.id||o.vendedor===CU.nombre);
+  const mapa={};
+  mine.forEach(o=>{
+    const k=o.cliente||o.clienteNombre||'Sin nombre';
+    if(!mapa[k])mapa[k]={nombre:k,pedidos:0,total:0,ultimo:''};
+    mapa[k].pedidos++;
+    mapa[k].total+=(o.precio||0)*(o.qty||1);
+    if(!mapa[k].ultimo||o.fecha>mapa[k].ultimo)mapa[k].ultimo=o.fecha||'';
+  });
+  const lista=Object.values(mapa).sort((a,b)=>b.pedidos-a.pedidos);
+  const totalClientes=lista.length;
+  const recurrentes=lista.filter(c=>c.pedidos>1).length;
+  const pctRec=totalClientes?Math.round(recurrentes/totalClientes*100):0;
+  const top=lista[0]||null;
+  const html=
+    '<div class="sgrid">'+
+      '<div class="sc ac"><div class="slabel">Clientes únicos</div><div class="sval">'+totalClientes+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Repiten compra</div><div class="sval">'+recurrentes+'</div><div class="ssub">'+pctRec+'% del total</div></div>'+
+      (top?'<div class="sc bl"><div class="slabel">⭐ Más frecuente</div><div class="sval" style="font-size:14px;font-weight:700">'+top.nombre+'</div><div class="ssub">'+top.pedidos+' pedidos</div></div>':'')+''+
+    '</div>'+
+    (lista.length===0?
+      '<div style="text-align:center;padding:60px;color:var(--text3)">No hay pedidos registrados todavía.</div>':
+      '<div class="tc"><div class="th2"><span class="tt">👥 Clientes Recurrentes</span></div>'+
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Cliente</th><th style="text-align:center">Pedidos</th><th style="text-align:right">Total</th><th>Último pedido</th></tr></thead><tbody>'+
+      lista.map(c=>
+        '<tr>'+
+        '<td style="font-weight:600">'+c.nombre+'</td>'+
+        '<td style="text-align:center"><span style="background:'+(c.pedidos>2?'#15803d':c.pedidos>1?'#ca8a04':'#374151')+';color:#fff;padding:2px 9px;border-radius:10px;font-size:12px">'+c.pedidos+'</span></td>'+
+        '<td style="text-align:right;font-weight:700;color:var(--green)">'+fmt(c.total)+'</td>'+
+        '<td style="color:var(--text3);font-size:12px">'+( c.ultimo||'—')+'</td>'+
+        '</tr>'
+      ).join('')+
+      '</tbody></table></div></div>');
+  $('ca').innerHTML=html;
 };
 
 /* ─── ANALÍTICA ECOSISTEMA (admin / superadmin) ─── */

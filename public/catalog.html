@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo — Iporãve Connect</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d2e;
+    --bg3: #252840;
+    --accent: #6c63ff;
+    --accent2: #4ecdc4;
+    --text: #e8eaf6;
+    --text2: #9fa8da;
+    --border: #2a2d45;
+    --card: #1e2235;
+    --danger: #ef5350;
+    --success: #66bb6a;
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .logo { font-size: 1.5rem; }
+  .brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .brand span { color: var(--text2); font-weight: 400; font-size: 0.85rem; display: block; }
+
+  /* BARRA DE BÚSQUEDA */
+  .search-bar {
+    background: var(--bg2);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .search-bar input, .search-bar select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-bar input { flex: 1; min-width: 200px; }
+  .search-bar input:focus, .search-bar select:focus { border-color: var(--accent); }
+  .search-bar select option { background: var(--bg3); }
+
+  /* CONTADOR */
+  .contador {
+    padding: 12px 20px;
+    color: var(--text2);
+    font-size: 0.85rem;
+  }
+
+  /* GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    padding: 16px 20px 100px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(108,99,255,0.2); }
+  .card-img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+  }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card-body { padding: 12px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .card-nombre { font-weight: 600; font-size: 0.9rem; line-height: 1.3; color: var(--text); }
+  .card-cat { font-size: 0.75rem; color: var(--text2); }
+  .card-precio {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent2);
+    margin-top: auto;
+  }
+  .card-precio-old {
+    font-size: 0.8rem;
+    color: var(--text2);
+    text-decoration: line-through;
+  }
+  .btn-pedir {
+    margin: 0 12px 12px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    width: calc(100% - 24px);
+  }
+  .btn-pedir:hover { background: #5a52e0; }
+
+  /* EMPTY */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+    grid-column: 1/-1;
+  }
+  .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+
+  /* LOADING */
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 440px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  .modal h2 { font-size: 1.1rem; margin-bottom: 6px; }
+  .modal .prod-info { color: var(--text2); font-size: 0.85rem; margin-bottom: 20px; }
+  .modal label { display: block; font-size: 0.85rem; color: var(--text2); margin-bottom: 4px; margin-top: 12px; }
+  .modal input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-cancelar {
+    flex: 1; padding: 10px; border-radius: 10px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text2); cursor: pointer; font-size: 0.9rem;
+  }
+  .btn-whatsapp {
+    flex: 2; padding: 10px; border-radius: 10px;
+    border: none; background: #25d366;
+    color: #fff; cursor: pointer; font-size: 0.95rem; font-weight: 700;
+  }
+  .btn-whatsapp:hover { background: #1da851; }
+
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 10px 80px; }
+    .search-bar { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🛵</div>
+  <div class="brand">Iporãve Connect <span>Catálogo de productos</span></div>
+</header>
+
+<div class="search-bar">
+  <input type="text" id="inputBuscar" placeholder="🔍 Buscar producto..." oninput="filtrar()">
+  <select id="selectCat" onchange="filtrar()">
+    <option value="">Todas las categorías</option>
+  </select>
+</div>
+
+<div class="contador" id="contador"></div>
+
+<div class="grid" id="grid">
+  <div class="loading">
+    <div class="spinner"></div>
+    Cargando productos...
+  </div>
+</div>
+
+<!-- Modal de pedido -->
+<div class="modal-overlay" id="modalOverlay" onclick="cerrarModal(event)">
+  <div class="modal">
+    <h2>📦 Hacer pedido</h2>
+    <div class="prod-info" id="modalProdInfo"></div>
+    <label>Tu nombre</label>
+    <input type="text" id="inputNombre" placeholder="Nombre completo">
+    <label>Tu WhatsApp</label>
+    <input type="tel" id="inputWA" placeholder="09xxxxxxxx">
+    <label>Dirección de entrega</label>
+    <input type="text" id="inputDir" placeholder="Barrio, calle, número...">
+    <label>Cantidad</label>
+    <input type="number" id="inputCant" value="1" min="1" max="99">
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-whatsapp" onclick="enviarPedido()">📲 Pedir por WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://iporave-api.iporaveparaguay.workers.dev/api/catalog-public';
+const WA_EMPRESA = '595981000000'; // reemplazar con el número real de la empresa
+
+let todosLosProductos = [];
+let productoSeleccionado = null;
+
+async function cargar() {
+  try {
+    const res = await fetch(API);
+    const data = await res.json();
+    todosLosProductos = data.productos || [];
+    poblarCategorias();
+    renderizar(todosLosProductos);
+  } catch (e) {
+    document.getElementById('grid').innerHTML = `
+      <div class="empty">
+        <div class="icon">⚠️</div>
+        <div>No se pudieron cargar los productos.<br>Intentá de nuevo más tarde.</div>
+      </div>`;
+  }
+}
+
+function poblarCategorias() {
+  const cats = [...new Set(todosLosProductos.map(p => p.categoria).filter(Boolean))].sort();
+  const sel = document.getElementById('selectCat');
+  cats.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
+}
+
+function filtrar() {
+  const q = document.getElementById('inputBuscar').value.toLowerCase().trim();
+  const cat = document.getElementById('selectCat').value;
+  let lista = todosLosProductos;
+  if (cat) lista = lista.filter(p => p.categoria === cat);
+  if (q) lista = lista.filter(p => p.nombre?.toLowerCase().includes(q) || p.descripcion?.toLowerCase().includes(q));
+  renderizar(lista);
+}
+
+function renderizar(lista) {
+  const grid = document.getElementById('grid');
+  const contador = document.getElementById('contador');
+  contador.textContent = lista.length + ' producto' + (lista.length !== 1 ? 's' : '');
+
+  if (!lista.length) {
+    grid.innerHTML = `<div class="empty"><div class="icon">📦</div><div>No hay productos que coincidan</div></div>`;
+    return;
+  }
+
+  grid.innerHTML = lista.map(p => `
+    <div class="card" onclick="abrirModal(${p.id})">
+      <div class="card-img">
+        ${p.foto
+          ? `<img src="${p.foto}" alt="${esc(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'">`
+          : '📦'}
+      </div>
+      <div class="card-body">
+        <div class="card-nombre">${esc(p.nombre)}</div>
+        ${p.categoria ? `<div class="card-cat">${esc(p.categoria)}</div>` : ''}
+        ${p.precio_comparacion && p.precio_comparacion > p.precio
+          ? `<div class="card-precio-old">Gs. ${fmt(p.precio_comparacion)}</div>` : ''}
+        <div class="card-precio">Gs. ${fmt(p.precio)}</div>
+      </div>
+      <button class="btn-pedir" onclick="event.stopPropagation(); abrirModal(${p.id})">Pedir ahora</button>
+    </div>
+  `).join('');
+}
+
+function abrirModal(id) {
+  productoSeleccionado = todosLosProductos.find(p => p.id === id);
+  if (!productoSeleccionado) return;
+  document.getElementById('modalProdInfo').textContent =
+    productoSeleccionado.nombre + ' — Gs. ' + fmt(productoSeleccionado.precio);
+  document.getElementById('inputNombre').value = '';
+  document.getElementById('inputWA').value = '';
+  document.getElementById('inputDir').value = '';
+  document.getElementById('inputCant').value = '1';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function cerrarModal(e) {
+  if (!e || e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('open');
+    productoSeleccionado = null;
+  }
+}
+
+function enviarPedido() {
+  const nombre = document.getElementById('inputNombre').value.trim();
+  const wa = document.getElementById('inputWA').value.trim();
+  const dir = document.getElementById('inputDir').value.trim();
+  const cant = document.getElementById('inputCant').value || '1';
+  if (!nombre || !wa || !dir) { alert('Por favor completá todos los campos.'); return; }
+  const p = productoSeleccionado;
+  const msg = `Hola! Quiero hacer un pedido 🛵\n\n` +
+    `*Producto:* ${p.nombre}\n` +
+    `*Precio:* Gs. ${fmt(p.precio)}\n` +
+    `*Cantidad:* ${cant}\n` +
+    `*Total aprox.:* Gs. ${fmt(p.precio * parseInt(cant))}\n\n` +
+    `*Datos de entrega:*\n` +
+    `Nombre: ${nombre}\n` +
+    `WhatsApp: ${wa}\n` +
+    `Dirección: ${dir}`;
+  const url = `https://wa.me/${WA_EMPRESA}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  cerrarModal();
+}
+
+function esc(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmt(n) {
+  return Number(n || 0).toLocaleString('es-PY');
+}
+
+cargar();
+</script>
+</body>
+</html>
