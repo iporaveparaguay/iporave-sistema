@@ -1105,6 +1105,14 @@ const DL = {
         body:JSON.stringify({delivery_id:o.deliveryId,order_id:o.id,cliente_nombre:o.cliente||'Cliente',address:o.direccion||''})
       }).catch(e=>console.warn('[WA NOTIFY DELIVERY]',e.message));
     }
+    // Notificar al CLIENTE por WhatsApp cuando cambia el estado
+    if(_prev?.estado!==o.estado&&['En ruta','Entregado','Despachado','Cancelado'].includes(o.estado)&&_sessionToken){
+      fetch(WORKER_URL+'/api/orders/status',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
+        body:JSON.stringify({id:o.id,estado:o.estado})
+      }).catch(e=>console.warn('[WA NOTIFY CLIENTE]',e.message));
+    }
     updateNavBadges();
   },
   async deleteOrder(id){
@@ -1412,12 +1420,22 @@ function initRealtime(){
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'pedidos'},async payload=>{
         await _rtRefreshOrders();
         const r=payload.new;
-        pushNotif('📦 Nuevo pedido #'+(r.id||'')+(r.cliente?' — '+r.cliente:''),'s',"nav('orders')");
+        // Solo admin/superadmin reciben notif de pedido nuevo
+        if(isAdminLike(CU?.rol))
+          pushNotif('📦 Nuevo pedido #'+(r.id||'')+(r.cliente?' — '+r.cliente:''),'s',"nav('orders')");
       })
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'pedidos'},async payload=>{
         await _rtRefreshOrders();
         const r=payload.new;
-        pushNotif('🔄 Pedido #'+(r.id||'')+' actualizado'+(r.estado?' → '+r.estado:''),'i',"nav('orders')");
+        const rol=CU?.rol;
+        // Filtrar: cada rol solo ve los pedidos que le corresponden
+        const esRelevante=isAdminLike(rol)||
+          (rol==='delivery'&&r.delivery_id===CU?.id)||
+          (rol==='vendedor'&&r.vendedor_id===CU?.id)||
+          (rol==='dropshipper'&&r.drop_id===CU?.id)||
+          (rol==='proveedor'&&r.vendedor_id===CU?.id);
+        if(esRelevante)
+          pushNotif('🔄 Pedido #'+(r.id||'')+' → '+(r.estado||'actualizado'),'i',"nav('orders')");
       })
       .on('postgres_changes',{event:'DELETE',schema:'public',table:'pedidos'},async payload=>{
         await _rtRefreshOrders();
