@@ -247,8 +247,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mapbox #gmap{width:100%;height:280px;}
 .map-placeholder{height:180px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--text3);}
 /* AI CHAT FLOATING */
-#aiBtn{position:fixed;bottom:24px;right:24px;z-index:500;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#000;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(245,166,35,.4);transition:transform .2s;}
+#aiBtn{position:fixed;bottom:24px;right:24px;z-index:500;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#000;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(245,166,35,.4);transition:transform .2s;touch-action:none;user-select:none;}
 #aiBtn:hover{transform:scale(1.1);}
+#aiBtn.dragging{transition:none!important;transform:scale(1.04);box-shadow:0 8px 28px rgba(245,166,35,.55);}
 .ai-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 3px;pointer-events:none;}
 #aiPanel{position:fixed;bottom:86px;right:24px;z-index:500;width:360px;max-height:520px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);box-shadow:var(--shadow);display:none;flex-direction:column;transition:width .2s,max-height .2s;}
 #aiPanel.open{display:flex;}
@@ -569,7 +570,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </nav>
   <!-- AI CHAT — solo visible después del login -->
-  <div id="aiBtn" onclick="toggleAI()" title="Asistente IA" style="display:none">🤖</div>
+  <div id="aiBtn" onclick="toggleAI()" onpointerdown="startAIDrag(event)" title="Asistente IA" style="display:none">🤖</div>
   <div id="aiPanel">
     <div class="ai-head">
       <div class="ai-head-title">
@@ -1713,6 +1714,80 @@ async function notifEnRutaAdmin(o){
 let _aiHistory = [];
 let _unreadMsgs = 0;
 const AI_PROXY=WORKER_URL+'/api/claude';
+let _aiDragState=null;
+let _aiDragSuppressClick=false;
+const AI_BTN_POS_KEY='ipv5_aiBtnPos';
+
+function _clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+function _saveAIBtnPosition(left,top){
+  try{localStorage.setItem(AI_BTN_POS_KEY,JSON.stringify({left,top}));}catch(e){}
+}
+function _applyAIBtnPosition(pos){
+  const btn=$('aiBtn');if(!btn||!pos)return;
+  const size=btn.offsetWidth||52;
+  const left=_clamp(parseFloat(pos.left)||0,8,window.innerWidth-size-8);
+  const top=_clamp(parseFloat(pos.top)||0,8,window.innerHeight-size-8);
+  btn.style.left=left+'px';
+  btn.style.top=top+'px';
+  btn.style.right='auto';
+  btn.style.bottom='auto';
+  _saveAIBtnPosition(left,top);
+}
+function initAIDrag(){
+  const btn=$('aiBtn');if(!btn)return;
+  try{
+    const saved=JSON.parse(localStorage.getItem(AI_BTN_POS_KEY)||'null');
+    if(saved)_applyAIBtnPosition(saved);
+  }catch(e){}
+}
+function _positionAIPanel(){
+  const p=$('aiPanel'),btn=$('aiBtn');if(!p||!btn||p.classList.contains('fullscreen'))return;
+  if(!p.classList.contains('open'))return;
+  const br=btn.getBoundingClientRect();
+  const gap=10,pad=12;
+  const pw=Math.min(p.offsetWidth||360,window.innerWidth-pad*2);
+  const ph=Math.min(p.offsetHeight||520,window.innerHeight-pad*2);
+  let left=_clamp(br.left+(br.width/2)-(pw/2),pad,window.innerWidth-pw-pad);
+  let top=br.top-ph-gap;
+  if(top<pad)top=br.bottom+gap;
+  top=_clamp(top,pad,window.innerHeight-ph-pad);
+  p.style.left=left+'px';
+  p.style.top=top+'px';
+  p.style.right='auto';
+  p.style.bottom='auto';
+}
+function startAIDrag(e){
+  const btn=$('aiBtn');if(!btn||!e||e.button>0)return;
+  const rect=btn.getBoundingClientRect();
+  _aiDragState={id:e.pointerId,startX:e.clientX,startY:e.clientY,left:rect.left,top:rect.top,moved:false};
+  btn.classList.add('dragging');
+  try{btn.setPointerCapture(e.pointerId);}catch(_){}
+}
+window.addEventListener('pointermove',function(e){
+  if(!_aiDragState)return;
+  const btn=$('aiBtn');if(!btn)return;
+  const dx=e.clientX-_aiDragState.startX,dy=e.clientY-_aiDragState.startY;
+  if(Math.abs(dx)+Math.abs(dy)>5)_aiDragState.moved=true;
+  _applyAIBtnPosition({left:_aiDragState.left+dx,top:_aiDragState.top+dy});
+  _positionAIPanel();
+});
+window.addEventListener('pointerup',function(e){
+  if(!_aiDragState)return;
+  const btn=$('aiBtn');
+  if(btn){
+    btn.classList.remove('dragging');
+    try{btn.releasePointerCapture(_aiDragState.id);}catch(_){}
+  }
+  if(_aiDragState.moved){
+    _aiDragSuppressClick=true;
+    setTimeout(()=>{_aiDragSuppressClick=false;},220);
+  }
+  _aiDragState=null;
+});
+window.addEventListener('resize',function(){
+  try{const saved=JSON.parse(localStorage.getItem(AI_BTN_POS_KEY)||'null');if(saved)_applyAIBtnPosition(saved);}catch(e){}
+  _positionAIPanel();
+});
 
 function updateAIBadge(){
   const btn=$('aiBtn');if(!btn)return;
@@ -1724,6 +1799,7 @@ function updateAIBadge(){
   updateNavBadges();
 }
 function toggleAI(){
+  if(_aiDragSuppressClick)return;
   const p=$('aiPanel');if(!p)return;
   const wasOpen=p.classList.contains('open');
   p.classList.toggle('open');
@@ -1733,6 +1809,7 @@ function toggleAI(){
     if(_unreadMsgs>0&&CU){
       DL.markMensajesLeidos(CU.id).then(()=>{_unreadMsgs=0;updateAIBadge();});
     }
+    setTimeout(_positionAIPanel,0);
   }
 }
 function openAI(){
@@ -1741,17 +1818,20 @@ function openAI(){
     p.classList.add('open');
     if(_unreadMsgs>0&&CU){DL.markMensajesLeidos(CU.id).then(()=>{_unreadMsgs=0;updateAIBadge();});}
   }
+  setTimeout(_positionAIPanel,0);
   setTimeout(()=>{const m=$('aiMsgs');if(m)m.scrollTop=m.scrollHeight;},100);
 }
 function minimizeAI(){
   const p=$('aiPanel');if(!p)return;
   p.classList.remove('maximized','fullscreen');
   p.classList.toggle('minimized');
+  setTimeout(_positionAIPanel,0);
 }
 function maximizeAI(){
   const p=$('aiPanel');if(!p)return;
   p.classList.remove('minimized','fullscreen');
   p.classList.toggle('maximized');
+  setTimeout(_positionAIPanel,0);
 }
 function fullscreenAI(){
   const p=$('aiPanel');if(!p)return;
@@ -2323,7 +2403,7 @@ async function doLogin(){
     window._ordersPolling=setInterval(()=>{if(_sessionToken)_rtRefreshOrders().catch(()=>{});},30000);
     loadGoogleMaps();
     _aiHistory=[];
-    const aib=$('aiBtn');if(aib)aib.style.display='flex';
+    const aib=$('aiBtn');if(aib){aib.style.display='flex';initAIDrag();}
     DL.getMensajesNoLeidos(CU.id).then(n=>{_unreadMsgs=n;updateAIBadge();});
     _cargarMensajesPrevios();
     if(_pollInterval)clearInterval(_pollInterval);
