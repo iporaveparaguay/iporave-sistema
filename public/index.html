@@ -1380,6 +1380,7 @@ const DL = {
       id:o.id,fecha:o.fecha,cliente:o.cliente,cedula:o.cedula,telefono:o.telefono,
       direccion:o.direccion,zona_id:o.zona,proveedor:o.proveedor,producto:o.producto,
       qty:o.qty,precio:o.precio,costo:o.costo,estado:o.estado,
+      comision:o.comision||0,proveedor_id:o.proveedorId||null,
       vendedor_id:o.vendedorId,drop_id:o.dropId,delivery_id:o.deliveryId,
       metodo_cobro:o.metodoCobro,foto_entrega:o.fotoEntrega,
       gps_lat:o.gpsLat,gps_lng:o.gpsLng,sitio:o.sitio||null,notas:o.notas,
@@ -1396,6 +1397,7 @@ const DL = {
       id:r.id,fecha:r.fecha,cliente:r.cliente,cedula:r.cedula,telefono:r.telefono,
       direccion:r.direccion,zona:r.zona_id,proveedor:r.proveedor,producto:r.producto,
       qty:r.qty,precio:r.precio,costo:r.costo,estado:r.estado,
+      comision:r.comision||0,proveedorId:r.proveedor_id||null,
       vendedorId:r.vendedor_id,dropId:r.drop_id,deliveryId:r.delivery_id,
       metodoCobro:r.metodo_cobro,fotoEntrega:r.foto_entrega,
       gpsLat:r.gps_lat,gpsLng:r.gps_lng,sitio:r.sitio||null,notas:r.notas,
@@ -2690,6 +2692,93 @@ function _dashStat(cls,icon,label,value,sub,color){
     (sub?'<div class="ssub" style="font-size:12px;color:var(--text3);margin-top:2px">'+sub+'</div>':'')+
   '</div>';
 }
+function _clientesRecurrentesPage(){
+  $('tbActions').innerHTML='<button class="btn btn-secondary btn-sm" onclick="nav(\'orders\')">Ver pedidos</button>';
+  const orders=(_ordersCache||[]).filter(o=>o&&o.cliente&&(CU.rol!=='vendedor'||o.vendedorId===CU.id||o.vendedor===CU.nombre));
+  const mapa={};
+  orders.forEach(o=>{
+    const nombre=(o.cliente||'Sin nombre').trim()||'Sin nombre';
+    const key=nombre.toLowerCase();
+    if(!mapa[key])mapa[key]={nombre,pedidos:0,total:0,ultimoFecha:'',ultimoEstado:'',telefono:o.telefono||'',ultimoId:o.id};
+    mapa[key].pedidos++;
+    mapa[key].total+=(parseFloat(o.precio)||0)*(parseInt(o.qty)||1);
+    if(!mapa[key].ultimoFecha||(o.fecha||'')>=mapa[key].ultimoFecha){
+      mapa[key].ultimoFecha=o.fecha||'';
+      mapa[key].ultimoEstado=o.estado||'Pendiente';
+      mapa[key].telefono=o.telefono||mapa[key].telefono;
+      mapa[key].ultimoId=o.id;
+    }
+  });
+  const clientes=Object.values(mapa).sort((a,b)=>b.pedidos-a.pedidos||b.total-a.total);
+  const recurrentes=clientes.filter(c=>c.pedidos>1).length;
+  const totalGastado=clientes.reduce((a,c)=>a+c.total,0);
+  $('ca').innerHTML=
+    '<div class="sgrid">'+
+      _dashStat('ac','👥','Clientes únicos',clientes.length,'','var(--accent)')+
+      _dashStat('gr','🔁','Recurrentes',recurrentes,(clientes.length?Math.round(recurrentes/clientes.length*100):0)+'% del total','var(--green)')+
+      _dashStat('bl','💰','Total gastado',fmt(totalGastado),'','var(--blue)')+
+    '</div>'+
+    (clientes.length?
+      '<div class="tc"><div class="th2"><span class="tt">👥 Clientes recurrentes</span></div>'+
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Cliente</th><th style="text-align:center">Pedidos</th><th>Último estado</th><th class="col-hide">Último pedido</th><th style="text-align:right">Total gastado</th><th></th>'+
+      '</tr></thead><tbody>'+
+      clientes.map(c=>
+        '<tr>'+
+        '<td><div style="font-weight:700;line-height:1.3;margin:0">'+escHtml(c.nombre)+'</div><div style="font-size:11px;color:var(--text2)">'+escHtml(c.telefono||'')+'</div></td>'+
+        '<td style="text-align:center"><span class="badge '+(c.pedidos>1?'be':'bp')+'">'+c.pedidos+'</span></td>'+
+        '<td>'+bE(c.ultimoEstado)+'</td>'+
+        '<td class="col-hide">'+(c.ultimoFecha?fmtDate(c.ultimoFecha):'—')+'</td>'+
+        '<td style="text-align:right;color:var(--green);font-weight:800">'+fmt(c.total)+'</td>'+
+        '<td><button class="btn btn-secondary btn-sm" onclick="viewOrder('+c.ultimoId+')">Último</button></td>'+
+        '</tr>'
+      ).join('')+
+      '</tbody></table></div></div>':
+      '<div style="text-align:center;padding:52px 18px;color:var(--text3)">Todavía no hay pedidos para analizar clientes.</div>');
+}
+function _ensureClientesNav(){
+  if(!window.CU||CU.rol!=='vendedor')return;
+  if(document.querySelector('[data-codex-clientes-nav="1"]'))return;
+  const ref=Array.from(document.querySelectorAll('button,a,[onclick]')).find(el=>{
+    const on=el.getAttribute('onclick')||'';
+    const tx=(el.textContent||'').toLowerCase();
+    return on.includes("nav('orders'")||on.includes('nav("orders"')||tx.includes('pedido');
+  });
+  if(!ref||!ref.parentNode)return;
+  const item=ref.cloneNode(true);
+  item.dataset.codexClientesNav='1';
+  item.textContent='👥 Clientes';
+  item.setAttribute('onclick',"nav('clientes_recurrentes')");
+  item.onclick=function(e){e&&e.preventDefault&&e.preventDefault();nav('clientes_recurrentes');};
+  ref.parentNode.insertBefore(item,ref.nextSibling);
+}
+function _ensureClientesNavCfg(){
+  try{
+    if(typeof NAV_CFG==='undefined'||!NAV_CFG)return;
+    const list=NAV_CFG.vendedor;
+    if(!Array.isArray(list)||list.some(it=>(it&&((it.id||it.page||it.key||it.route)==='clientes_recurrentes'||it[0]==='clientes_recurrentes'||it==='clientes_recurrentes'))))return;
+    const sample=list.find(Boolean);
+    if(Array.isArray(sample))list.push(['clientes_recurrentes','👥 Clientes']);
+    else if(sample&&typeof sample==='object'){
+      const item={id:'clientes_recurrentes',page:'clientes_recurrentes',key:'clientes_recurrentes',route:'clientes_recurrentes',icon:'👥',label:'Clientes',title:'Clientes'};
+      list.push(item);
+    }else list.push('clientes_recurrentes');
+  }catch(e){console.warn('No se pudo agregar clientes_recurrentes al NAV_CFG:',e.message);}
+}
+setTimeout(function(){
+  PAGES.clientes_recurrentes=_clientesRecurrentesPage;
+  _ensureClientesNavCfg();
+  _ensureClientesNav();
+  if(typeof window.nav==='function'&&!window.nav._clientesCodex){
+    const baseNav=window.nav;
+    window.nav=function(){
+      const r=baseNav.apply(this,arguments);
+      setTimeout(function(){_ensureClientesNavCfg();_ensureClientesNav();},0);
+      return r;
+    };
+    window.nav._clientesCodex=true;
+  }
+},0);
 function _styleDashboardStats(){
   const ca=$('ca');if(!ca)return;
   const grid=ca.querySelector('.sgrid');if(!grid)return;
