@@ -3762,22 +3762,33 @@ PAGES.orders=PAGES.mispedidos=function(){
     '<select id="fEst" onchange="filtrar()"><option value="">Todos los estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
     '<select id="fZona" onchange="filtrar()"><option value="">Todas las zonas</option>'+_zonasCache.map(z=>'<option value="'+z.id+'">'+z.nombre+'</option>').join('')+'</select>'+
     '<select id="fProv" onchange="filtrar()"><option value="">Todos los proveedores</option>'+[...new Set(getVisibleOrders().map(o=>o.proveedor).filter(Boolean))].map(p=>'<option>'+p+'</option>').join('')+'</select>'+
-    '<input type="date" id="fFecha" onchange="filtrar()">'+
+    '<input type="date" id="fFecha" onchange="filtrar()" title="Fecha exacta">'+
+    '<input type="date" id="fDesde" onchange="filtrar()" title="Desde">'+
+    '<input type="date" id="fHasta" onchange="filtrar()" title="Hasta">'+
     '<button class="btn btn-secondary" onclick="clearF()">Limpiar</button>'+
     '</div>'+
     '<div id="oContainer"></div>';
   filtrar();
 };
-function clearF(){['fSrch','fEst','fZona','fProv','fFecha'].forEach(id=>{const e=$(id);if(e)e.value='';});filtrar();}
-function filtrar(){
+function clearF(){['fSrch','fEst','fZona','fProv','fFecha','fDesde','fHasta'].forEach(id=>{const e=$(id);if(e)e.value='';});filtrar();}
+function _ordersFilteredFromUI(){
   let orders=getVisibleOrders();
   const s=(gv('fSrch')||'').toLowerCase();
-  const est=gv('fEst'),zona=gv('fZona'),prov=gv('fProv'),fecha=gv('fFecha');
+  const est=gv('fEst'),zona=gv('fZona'),prov=gv('fProv'),fecha=gv('fFecha'),desde=gv('fDesde'),hasta=gv('fHasta');
   if(s)orders=orders.filter(o=>o.cliente.toLowerCase().includes(s)||o.producto.toLowerCase().includes(s)||(o.id+'').includes(s)||(o.proveedor||'').toLowerCase().includes(s));
   if(est)orders=orders.filter(o=>o.estado===est);
   if(zona)orders=orders.filter(o=>o.zona==zona);
   if(prov)orders=orders.filter(o=>o.proveedor===prov);
   if(fecha)orders=orders.filter(o=>o.fecha===fecha);
+  if(desde)orders=orders.filter(o=>(o.fecha||'')>=desde);
+  if(hasta)orders=orders.filter(o=>(o.fecha||'')<=hasta);
+  return orders;
+}
+function _ordersForExport(){
+  return $('oContainer')?_ordersFilteredFromUI():getVisibleOrders();
+}
+function filtrar(){
+  const orders=_ordersFilteredFromUI();
   const c=$('oContainer');
   if(c)c.innerHTML=renderTable(orders,'Pedidos ('+orders.length+')',true,true);
 }
@@ -3854,7 +3865,7 @@ function renderTable(orders,title,showActs,highlightChanges){
 function exportarCSV(){
   var CU=window.CU||{};
   var r=CU.rol||'';
-  var orders=(_ordersCache||[]).filter(function(o){
+  var orders=(typeof _ordersForExport==='function'&&$('oContainer'))?_ordersForExport():(_ordersCache||[]).filter(function(o){
     if(!o)return false;
     if(r==='superadmin'||r==='admin')return true;
     if(r==='vendedor')return(o.vendedorId===CU.id||o.vendedor===CU.nombre);
@@ -7105,7 +7116,7 @@ function openProductoPicker(){
    EXPORT (PDF / CSV)
 ══════════════════════════════════════════════════ */
 function exportOrdersPDF(){
-  const orders=getVisibleOrders();
+  const orders=_ordersForExport();
   if(!orders.length){pushNotif('No hay pedidos para exportar','w');return;}
   const ent=orders.filter(o=>o.estado==='Entregado');
   const totV=orders.reduce((a,o)=>a+o.precio*o.qty,0);
@@ -7217,7 +7228,7 @@ function _xlsxBuildSheet(headers,rows,moneyIdx,finIdx,totRow){
   return ws;
 }
 function exportOrdersCSV(){
-  const orders=getVisibleOrders();
+  const orders=_ordersForExport();
   if(!orders.length){pushNotif('No hay pedidos para exportar','w');return;}
   if(typeof XLSX==='undefined'){pushNotif('Librer\u00eda Excel no disponible a\u00fan, reintent\u00e1 en segundos','w');return;}
   // Columnas agrupadas por secci\u00f3n: Info pedido | Cliente | Datos fiscales | Producto | \u2500\u2500FINANCIERO\u2500\u2500 | Equipo | Notas
