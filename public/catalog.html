@@ -134,6 +134,20 @@
     width: calc(100% - 24px);
   }
   .btn-pedir:hover { background: #5a52e0; }
+  .btn-compartir {
+    margin: 0 12px 10px;
+    background: transparent;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    border-radius: 8px;
+    padding: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    width: calc(100% - 24px);
+  }
+  .btn-compartir:hover { background: var(--accent2); color: #fff; }
 
   /* EMPTY */
   .empty {
@@ -432,6 +446,7 @@ function renderizar(lista) {
         <div class="card-precio">Gs. ${fmt(p.precio)}</div>
       </div>
       <button class="btn-pedir" onclick="event.stopPropagation(); abrirModal(${p.id})">Pedir ahora</button>
+      <button class="btn-compartir" onclick="event.stopPropagation(); compartirWA(${p.id})">📤 Compartir</button>
     </div>
   `).join('');
 }
@@ -509,6 +524,14 @@ function enviarPedido() {
   const url = `https://wa.me/${WA_EMPRESA}?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
   cerrarModal();
+}
+
+function compartirWA(id) {
+  const p = todosLosProductos.find(p => p.id === id);
+  if (!p) return;
+  const msg = `¡Mirá este producto en Iporãve! 👇\n${p.nombre} — Gs. ${fmt(p.precio)}\nVer catálogo: https://iporave-sistema.vercel.app/catalog.html`;
+  const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
 }
 
 function esc(s) {
