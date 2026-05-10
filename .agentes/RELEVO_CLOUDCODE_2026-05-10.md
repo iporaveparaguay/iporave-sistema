@@ -143,6 +143,24 @@ Prioridad recomendada:
 2. OpenRouter `:free` o bajo costo para tareas no sensibles y con API keys limitadas.
 3. Modelos pagos solo cuando una tarea lo justifique y con limite de gasto.
 
+## Estado Ollama local
+
+- Ollama confirmado instalado por el usuario en:
+  - `C:\Users\USUARIO\AppData\Local\Programs\Ollama\ollama.exe`
+- Version reportada:
+  - `0.23.2`
+- Modelos confirmados:
+  - `llama3.2:latest` (`a80c4f17acd5`, 2.0 GB)
+  - `llama3.2:3b` descargado correctamente
+- Descarga en curso al momento del relevo:
+  - `qwen2.5-coder:7b` (aprox. 4.7 GB, iba 5% / 219 MB)
+
+Uso recomendado:
+
+- `llama3.2:3b`: supervisor local liviano, resumen, checklist, revision de contexto no critico.
+- `qwen2.5-coder:7b`: apoyo local para codigo cuando termine la descarga.
+- Por seguridad, Ollama tiene prioridad sobre OpenRouter para revisar fragmentos con contexto del proyecto.
+
 ## Protocolo recomendado para seguir
 
 1. Antes de nueva tarea:
