@@ -3753,6 +3753,7 @@ PAGES.orders=PAGES.mispedidos=function(){
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="openCSV()">↑ CSV</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportCSV()">↓ CSV</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="DL.exportBackup()">💾 Backup</button>':'')+
+    (['superadmin','vendedor'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportarCSV()" title="Exportar pedidos a CSV">📥 Exportar CSV</button>':'')+
     '<button class="btn btn-secondary" onclick="exportOrdersCSV()" title="Exportar a Excel">📊 Excel</button>'+
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">🖨️ PDF</button>';
   $('ca').innerHTML=
@@ -3847,6 +3848,59 @@ function renderTable(orders,title,showActs,highlightChanges){
   if(highlightChanges)_commitOrderStateSnapshot(orders);
   if(showActs)setTimeout(_compactOrderActions,0);
   return html;
+}
+
+/* ─── EXPORTAR CSV ─── */
+function exportarCSV(){
+  var CU=window.CU||{};
+  var r=CU.rol||'';
+  var orders=(_ordersCache||[]).filter(function(o){
+    if(!o)return false;
+    if(r==='superadmin'||r==='admin')return true;
+    if(r==='vendedor')return(o.vendedorId===CU.id||o.vendedor===CU.nombre);
+    return false;
+  });
+  if(!orders.length){if(typeof pushNotif==='function')pushNotif('No hay pedidos para exportar','w');return;}
+  var headers=['ID','Fecha','Cliente','Teléfono','Producto','Qty','Precio','Estado','Vendedor','Delivery'];
+  function _csvEsc(v){
+    var s=v==null?'':String(v);
+    if(s.indexOf(',')!==-1||s.indexOf('"')!==-1||s.indexOf('\n')!==-1)s='"'+s.replace(/"/g,'""')+'"';
+    return s;
+  }
+  function _getVendedorNombre(o){
+    var u=typeof getUser==='function'?getUser(o.vendedorId):null;
+    return(u&&u.nombre&&u.nombre!=='—')?u.nombre:(o.vendedor||o.vendedorNombre||'');
+  }
+  function _getDeliveryNombre(o){
+    var u=typeof getUser==='function'?getUser(o.deliveryId):null;
+    return(u&&u.nombre&&u.nombre!=='—')?u.nombre:(o.deliveryNombre||'');
+  }
+  var lines=[headers.map(_csvEsc).join(',')];
+  orders.forEach(function(o){
+    lines.push([
+      o.id,
+      o.fecha||'',
+      o.cliente||'',
+      o.telefono||'',
+      o.producto||'',
+      o.qty!=null?o.qty:1,
+      o.precio!=null?o.precio:0,
+      o.estado||'',
+      _getVendedorNombre(o),
+      _getDeliveryNombre(o)
+    ].map(_csvEsc).join(','));
+  });
+  var bom='﻿';
+  var blob=new Blob([bom+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  var fecha=new Date().toISOString().slice(0,10).replace(/-/g,'');
+  a.href=url;
+  a.download='pedidos_'+fecha+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},300);
+  if(typeof pushNotif==='function')pushNotif('CSV exportado — '+orders.length+' pedidos','s');
 }
 
 /* ─── WA MENU ─── */
