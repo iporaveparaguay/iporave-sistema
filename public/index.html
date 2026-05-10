@@ -2933,6 +2933,105 @@ function _renderCharts(){
 /* ─── ORDERS ─── */
 /* ─── VISTA APP DELIVERY ─── */
 const _DLV_EC={'Pendiente':'#f59e0b','Despachado':'#3b82f6','En ruta':'#16a34a','Entregado':'#22c55e','Cancelado':'#ef4444','No contesta 1°':'#f97316','No contesta 2°':'#ef4444','No contesta 3°':'#dc2626','Reprogramado':'#8b5cf6','Devuelto':'#6b7280'};
+let _orderStatePrevMap=null;
+let _orderStateChangedIds=new Set();
+function _orderStateBadgeClass(estado){
+  if(estado==='Entregado')return 'be';
+  if(estado==='Despachado')return 'bdisp';
+  if(estado==='En ruta'||estado==='En Ruta')return 'br';
+  if(['Cancelado','Devuelto'].includes(estado)||String(estado||'').startsWith('No contesta'))return 'bc';
+  return 'bp';
+}
+function _orderStateColor(estado){
+  if(estado==='Entregado')return 'var(--green)';
+  if(estado==='Despachado')return 'var(--blue)';
+  if(estado==='En ruta'||estado==='En Ruta')return 'var(--cyan)';
+  if(['Cancelado','Devuelto'].includes(estado)||String(estado||'').startsWith('No contesta'))return 'var(--red)';
+  return 'var(--accent)';
+}
+function _orderStateBg(estado){
+  if(estado==='Entregado')return 'rgba(34,197,94,.10)';
+  if(estado==='Despachado')return 'rgba(59,130,246,.10)';
+  if(estado==='En ruta'||estado==='En Ruta')return 'rgba(6,182,212,.10)';
+  if(['Cancelado','Devuelto'].includes(estado)||String(estado||'').startsWith('No contesta'))return 'rgba(239,68,68,.10)';
+  return 'rgba(245,158,11,.10)';
+}
+function _orderStateSnapshot(){
+  const snap={};
+  (_ordersCache||[]).forEach(o=>{if(o&&o.id!=null)snap[o.id]=o.estado||'';});
+  return snap;
+}
+function _prepareOrderStateHighlights(orders){
+  if(!_orderStatePrevMap){_orderStatePrevMap=_orderStateSnapshot();_orderStateChangedIds=new Set();return _orderStateChangedIds;}
+  const changed=new Set();
+  (orders||[]).forEach(o=>{
+    const prev=_orderStatePrevMap[o.id];
+    if(prev&&prev!==o.estado)changed.add(o.id);
+  });
+  _orderStateChangedIds=changed;
+  return changed;
+}
+function _commitOrderStateSnapshot(orders){
+  if(!_orderStatePrevMap)_orderStatePrevMap={};
+  (orders||[]).forEach(o=>{if(o&&o.id!=null)_orderStatePrevMap[o.id]=o.estado||'';});
+}
+function _orderStateWasChanged(o){return !!(o&&_orderStateChangedIds&&_orderStateChangedIds.has(o.id));}
+function _orderStateRowStyle(o){
+  if(!_orderStateWasChanged(o))return '';
+  const c=_orderStateColor(o.estado);
+  return 'box-shadow:inset 4px 0 0 '+c+';outline:1px solid '+c+';outline-offset:-1px;background:'+_orderStateBg(o.estado)+';';
+}
+function _orderStateCardStyle(o){
+  if(!_orderStateWasChanged(o))return '';
+  const c=_orderStateColor(o.estado);
+  return 'border:2px solid '+c+';box-shadow:0 0 0 3px '+_orderStateBg(o.estado)+',0 2px 10px rgba(0,0,0,.15);';
+}
+function _orderStateBadgeHtml(estado){
+  const st=estado||'Pendiente';
+  return '<span class="badge '+_orderStateBadgeClass(st)+' nt-state-badge" style="margin-right:6px;vertical-align:middle">'+st+'</span>';
+}
+function _notifStateFromText(txt){
+  const t=(txt||'').toLowerCase();
+  if(t.includes('despachado'))return 'Despachado';
+  if(t.includes('en ruta'))return 'En ruta';
+  if(t.includes('entregado'))return 'Entregado';
+  if(t.includes('cancelado'))return 'Cancelado';
+  if(t.includes('devuelto'))return 'Devuelto';
+  if(t.includes('reprogramado'))return 'Reprogramado';
+  if(t.includes('pendiente'))return 'Pendiente';
+  return '';
+}
+function _decorateNotifPanel(){
+  const panel=$('ntPanel');if(!panel)return;
+  const sel='.nt-item,.ntItem,.notif-item,.notifItem,.nitem,.notification-item,li';
+  let targets=Array.from(panel.querySelectorAll(sel)).filter(el=>_notifStateFromText(el.textContent||''));
+  if(!targets.length)targets=Array.from(panel.children).filter(el=>_notifStateFromText(el.textContent||''));
+  targets.forEach(el=>{
+    if(el.querySelector('.nt-state-badge'))return;
+    const st=_notifStateFromText(el.textContent||'');
+    if(st)el.insertAdjacentHTML('afterbegin',_orderStateBadgeHtml(st));
+  });
+}
+(function(){
+  if(typeof window.toggleNotifPanel==='function'&&!window.toggleNotifPanel._stateBadges){
+    const baseToggleNotifPanel=window.toggleNotifPanel;
+    window.toggleNotifPanel=function(){
+      const r=baseToggleNotifPanel.apply(this,arguments);
+      setTimeout(_decorateNotifPanel,0);
+      return r;
+    };
+    window.toggleNotifPanel._stateBadges=true;
+  }
+  if(typeof window.pushNotif==='function'&&!window.pushNotif._stateBadges){
+    const basePushNotif=window.pushNotif;
+    window.pushNotif=function(){
+      const r=basePushNotif.apply(this,arguments);
+      setTimeout(_decorateNotifPanel,0);
+      return r;
+    };
+    window.pushNotif._stateBadges=true;
+  }
+})();
 PAGES.entregas=function(){
   $('tbTitle').textContent='Mis Entregas';
   let _pushBtn='';
@@ -2943,6 +3042,8 @@ PAGES.entregas=function(){
   $('tbActions').innerHTML=_pushBtn+'<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">🔄</button>';
   const mis=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
   const entHoy=_ordersCache.filter(o=>o.deliveryId===CU.id&&o.estado==='Entregado'&&o.fecha===today());
+  const renderedOrders=mis.concat(entHoy);
+  _prepareOrderStateHighlights(renderedOrders);
   const cfg=getCfg();const u=getUser(CU.id);
   const max=u.vehiculo==='auto'?cfg.cupoAuto:cfg.cupoMoto;
   const cupos=DL._lg('cupos')||[];
@@ -2960,7 +3061,7 @@ PAGES.entregas=function(){
     '<span>'+entHoy.length+' entregados hoy</span><span>'+(used>=max?'🏆 Cupo completo!':(max-used)+' restantes')+'</span></div></div>';
   if(!mis.length&&!entHoy.length){
     html+='<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:700">Sin entregas pendientes</div><div style="font-size:13px;margin-top:6px">Todos los pedidos están al día</div></div>';
-    $('ca').innerHTML=html;return;
+    $('ca').innerHTML=html;_commitOrderStateSnapshot(renderedOrders);return;
   }
   if(mis.length){
     html+='<div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:600">'+mis.length+' pedido'+(mis.length>1?'s':'')+' activo'+(mis.length>1?'s':'')+(mis.length>1?' — ordenados por proximidad':'')+' <span id="dlvGpsTag" style="color:#f59e0b"></span></div>';
@@ -2985,6 +3086,7 @@ PAGES.entregas=function(){
       if(tag)tag.textContent='📍 ordenados por distancia desde tu posición';
     },null,{enableHighAccuracy:true,timeout:8000});
   }
+  _commitOrderStateSnapshot(renderedOrders);
 };
 function _renderDlvCard(o,dist){
   const ec=_DLV_EC[o.estado]||'#64748b';
@@ -2995,9 +3097,10 @@ function _renderDlvCard(o,dist){
   const enRuta=o.estado==='En Ruta';
   const cardBg=enRuta?'#39ff14':'var(--card)';
   const cardBorder=enRuta?'border:3px solid #00aa00':'border-left:4px solid '+ec;
+  const changeStyle=_orderStateCardStyle(o);
   const btnColor=enRuta?'#004d00':'#2563eb';
   const btnLabel=enRuta?'✅ Actualizar':'🔄 Actualizar';
-  return '<div style="background:'+cardBg+';border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.15);'+cardBorder+';'+(entregado?'opacity:.6':'')+'">'+
+  return '<div style="background:'+cardBg+';border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.15);'+cardBorder+';'+changeStyle+(entregado?'opacity:.6':'')+'">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
       '<div>'+
         '<div style="font-size:11px;font-family:monospace;'+(enRuta?'color:#1a4d1a':'color:var(--text2)')+'">'+
@@ -3051,13 +3154,14 @@ function filtrar(){
   if(prov)orders=orders.filter(o=>o.proveedor===prov);
   if(fecha)orders=orders.filter(o=>o.fecha===fecha);
   const c=$('oContainer');
-  if(c)c.innerHTML=renderTable(orders,'Pedidos ('+orders.length+')',true);
+  if(c)c.innerHTML=renderTable(orders,'Pedidos ('+orders.length+')',true,true);
 }
-function renderTable(orders,title,showActs){
-  if(!orders.length)return '<div style="text-align:center;padding:48px;color:var(--text3)">No hay pedidos</div>';
+function renderTable(orders,title,showActs,highlightChanges){
+  if(highlightChanges)_prepareOrderStateHighlights(orders);
+  if(!orders.length){if(highlightChanges)_commitOrderStateSnapshot(orders);return '<div style="text-align:center;padding:48px;color:var(--text3)">No hay pedidos</div>';}
   const canEdit=['admin','superadmin','vendedor'].includes(CU.rol);
   const isDel=CU.rol==='delivery';
-  return '<div class="tc"><div class="th2"><span class="tt">'+title+'</span></div>'+
+  const html='<div class="tc"><div class="th2"><span class="tt">'+title+'</span></div>'+
   '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
   '<th class="col-hide">#</th><th class="col-hide">Fecha</th><th>Cliente</th>'+
   '<th class="col-hide">Producto</th>'+
@@ -3065,7 +3169,7 @@ function renderTable(orders,title,showActs){
   '<th class="col-hide">Precio</th><th>Estado</th>'+
   (showActs?'<th>Acciones</th>':'')+
   '</tr></thead><tbody>'+
-  orders.map(o=>'<tr>'+
+  orders.map(o=>'<tr'+(highlightChanges?' style="'+_orderStateRowStyle(o)+'"':'')+'>'+
     '<td class="col-hide"><span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">#'+o.id+'</span></td>'+
     '<td class="col-hide">'+fmtDate(o.fecha)+'</td>'+
     '<td><div style="font-weight:600">'+o.cliente+'</div>'+
@@ -3089,6 +3193,8 @@ function renderTable(orders,title,showActs){
       (canEdit?'<span style="display:inline-block;width:10px"></span><button class="btn btn-danger btn-sm" onclick="confirmDeleteOrder('+o.id+')" title="Eliminar pedido">✕</button>':'')+
     '</div></td>':'')+'</tr>'
   ).join('')+'</tbody></table></div></div>';
+  if(highlightChanges)_commitOrderStateSnapshot(orders);
+  return html;
 }
 
 /* ─── WA MENU ─── */

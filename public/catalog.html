@@ -61,6 +61,7 @@
   .search-bar input { flex: 1; min-width: 200px; }
   .search-bar input:focus, .search-bar select:focus { border-color: var(--accent); }
   .search-bar select option { background: var(--bg3); }
+  .search-bar input[type="number"] { min-width: 100px; flex: 1; }
 
   /* CONTADOR */
   .contador {
@@ -204,6 +205,15 @@
   }
   .btn-whatsapp:hover { background: #1da851; }
 
+  /* MODAL DETALLE */
+  .detalle-modal { padding: 0; overflow: hidden; }
+  .detalle-img { width: 100%; height: 260px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+  .detalle-img img { width: 100%; height: 100%; object-fit: cover; }
+  .detalle-body { padding: 24px; }
+  .detalle-precios { margin: 12px 0; display: flex; align-items: baseline; gap: 10px; }
+  .detalle-desc { color: var(--text2); font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; white-space: pre-wrap; max-height: 30vh; overflow-y: auto; }
+  .detalle-modal h2 { font-size: 1.3rem; margin-bottom: 4px; }
+
   @media (max-width: 480px) {
     .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 10px 80px; }
     .search-bar { padding: 12px; }
@@ -222,6 +232,14 @@
   <select id="selectCat" onchange="filtrar()">
     <option value="">Todas las categorías</option>
   </select>
+  <input type="number" id="inputMin" placeholder="Precio mín." oninput="filtrar()" min="0">
+  <input type="number" id="inputMax" placeholder="Precio máx." oninput="filtrar()" min="0">
+  <select id="selectOrden" onchange="filtrar()">
+    <option value="relevancia">Relevancia</option>
+    <option value="precio_menor">Precio menor</option>
+    <option value="precio_mayor">Precio mayor</option>
+    <option value="nombre_az">Nombre A-Z</option>
+  </select>
 </div>
 
 <div class="contador" id="contador"></div>
@@ -230,6 +248,26 @@
   <div class="loading">
     <div class="spinner"></div>
     Cargando productos...
+  </div>
+</div>
+
+<!-- Modal de detalle -->
+<div class="modal-overlay" id="modalDetalle" onclick="cerrarModalDetalle(event)">
+  <div class="modal detalle-modal">
+    <div class="detalle-img"></div>
+    <div class="detalle-body">
+      <h2 id="detNombre"></h2>
+      <div id="detCat" class="card-cat"></div>
+      <div class="detalle-precios">
+        <span id="detPrecioOld" class="card-precio-old"></span>
+        <span id="detPrecio" class="card-precio"></span>
+      </div>
+      <div id="detDesc" class="detalle-desc"></div>
+      <div class="modal-btns">
+        <button class="btn-cancelar" onclick="cerrarModalDetalle()">Cerrar</button>
+        <button class="btn-whatsapp" id="btnDetallePedir">📲 Pedir por WhatsApp</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -289,16 +327,31 @@ function poblarCategorias() {
 function filtrar() {
   const q = document.getElementById('inputBuscar').value.toLowerCase().trim();
   const cat = document.getElementById('selectCat').value;
+  const min = parseInt(document.getElementById('inputMin').value);
+  const max = parseInt(document.getElementById('inputMax').value);
+  const orden = document.getElementById('selectOrden').value;
+
   let lista = todosLosProductos;
   if (cat) lista = lista.filter(p => p.categoria === cat);
   if (q) lista = lista.filter(p => p.nombre?.toLowerCase().includes(q) || p.descripcion?.toLowerCase().includes(q));
+  if (!isNaN(min)) lista = lista.filter(p => p.precio >= min);
+  if (!isNaN(max)) lista = lista.filter(p => p.precio <= max);
+
+  if (orden === 'precio_menor') {
+    lista.sort((a, b) => a.precio - b.precio);
+  } else if (orden === 'precio_mayor') {
+    lista.sort((a, b) => b.precio - a.precio);
+  } else if (orden === 'nombre_az') {
+    lista.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+  }
+
   renderizar(lista);
 }
 
 function renderizar(lista) {
   const grid = document.getElementById('grid');
   const contador = document.getElementById('contador');
-  contador.textContent = lista.length + ' producto' + (lista.length !== 1 ? 's' : '');
+  contador.textContent = lista.length === 1 ? '1 producto encontrado' : lista.length + ' productos encontrados';
 
   if (!lista.length) {
     grid.innerHTML = `<div class="empty"><div class="icon">📦</div><div>No hay productos que coincidan</div></div>`;
@@ -306,7 +359,7 @@ function renderizar(lista) {
   }
 
   grid.innerHTML = lista.map(p => `
-    <div class="card" onclick="abrirModal(${p.id})">
+    <div class="card" onclick="abrirModalDetalle(${p.id})">
       <div class="card-img">
         ${p.foto
           ? `<img src="${p.foto}" alt="${esc(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'">`
@@ -340,6 +393,41 @@ function cerrarModal(e) {
   if (!e || e.target === document.getElementById('modalOverlay')) {
     document.getElementById('modalOverlay').classList.remove('open');
     productoSeleccionado = null;
+  }
+}
+
+function abrirModalDetalle(id) {
+  const p = todosLosProductos.find(p => p.id === id);
+  if (!p) return;
+  
+  const imgCont = document.querySelector('#modalDetalle .detalle-img');
+  imgCont.innerHTML = p.foto ? `<img src="${p.foto}" alt="${esc(p.nombre)}">` : '📦';
+  
+  document.getElementById('detNombre').textContent = p.nombre;
+  document.getElementById('detCat').textContent = p.categoria || '';
+  
+  const oldP = document.getElementById('detPrecioOld');
+  if (p.precio_comparacion && p.precio_comparacion > p.precio) {
+    oldP.textContent = 'Gs. ' + fmt(p.precio_comparacion);
+    oldP.style.display = 'inline';
+  } else {
+    oldP.style.display = 'none';
+  }
+  document.getElementById('detPrecio').textContent = 'Gs. ' + fmt(p.precio);
+  document.getElementById('detDesc').textContent = p.descripcion || 'Sin descripción detallada.';
+  
+  const btn = document.getElementById('btnDetallePedir');
+  btn.onclick = () => {
+    cerrarModalDetalle();
+    abrirModal(id);
+  };
+  
+  document.getElementById('modalDetalle').classList.add('open');
+}
+
+function cerrarModalDetalle(e) {
+  if (!e || e.target === document.getElementById('modalDetalle')) {
+    document.getElementById('modalDetalle').classList.remove('open');
   }
 }
 
