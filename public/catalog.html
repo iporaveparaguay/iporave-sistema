@@ -62,6 +62,9 @@
   .search-bar input:focus, .search-bar select:focus { border-color: var(--accent); }
   .search-bar select option { background: var(--bg3); }
   .search-bar input[type="number"] { min-width: 100px; flex: 1; }
+  .search-bar select#selectOrden { min-width: 160px; flex: 1; }
+  .precio-row { display: flex; gap: 10px; flex: 1; min-width: 220px; }
+  .precio-row input { flex: 1; min-width: 0; }
 
   /* CONTADOR */
   .contador {
@@ -232,8 +235,10 @@
   <select id="selectCat" onchange="filtrar()">
     <option value="">Todas las categorías</option>
   </select>
-  <input type="number" id="inputMin" placeholder="Precio mín." oninput="filtrar()" min="0">
-  <input type="number" id="inputMax" placeholder="Precio máx." oninput="filtrar()" min="0">
+  <div class="precio-row">
+    <input type="number" id="inputMin" placeholder="Precio mín." oninput="filtrar()" min="0">
+    <input type="number" id="inputMax" placeholder="Precio máx." oninput="filtrar()" min="0">
+  </div>
   <select id="selectOrden" onchange="filtrar()">
     <option value="relevancia">Relevancia</option>
     <option value="precio_menor">Precio menor</option>
@@ -331,7 +336,7 @@ function filtrar() {
   const max = parseInt(document.getElementById('inputMax').value);
   const orden = document.getElementById('selectOrden').value;
 
-  let lista = todosLosProductos;
+  let lista = [...todosLosProductos];
   if (cat) lista = lista.filter(p => p.categoria === cat);
   if (q) lista = lista.filter(p => p.nombre?.toLowerCase().includes(q) || p.descripcion?.toLowerCase().includes(q));
   if (!isNaN(min)) lista = lista.filter(p => p.precio >= min);
