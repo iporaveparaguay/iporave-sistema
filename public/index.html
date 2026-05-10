@@ -2806,6 +2806,81 @@ function _styleDashboardStats(){
 }
 
 /* ─── DASHBOARD ─── */
+function _superadminMiniCard(icon,label,value,color){
+  return '<div style="background:var(--card);border-radius:10px;border:1px solid var(--border);border-top:3px solid '+color+';padding:12px 10px;text-align:center;min-width:0">'+
+    '<div style="font-size:20px;line-height:1;opacity:.78;margin-bottom:5px">'+icon+'</div>'+
+    '<div style="font-size:22px;font-weight:900;line-height:1;color:'+color+';overflow-wrap:anywhere">'+value+'</div>'+
+    '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-top:5px">'+label+'</div>'+
+  '</div>';
+}
+function _appendSuperadminDashboardExtra(){
+  if(!window.CU||CU.rol!=='superadmin')return;
+  const ca=$('ca');if(!ca||$('superadminExtraDash'))return;
+  const orders=_ordersCache||[];
+  const stateDefs=[
+    ['Pendiente','⏳','var(--accent)'],
+    ['Despachado','📦','var(--blue)'],
+    ['En ruta','🚴','var(--cyan)'],
+    ['Entregado','✅','var(--green)'],
+    ['Cancelado','❌','var(--red)'],
+    ['Devuelto','↩️','var(--red)']
+  ];
+  const estadoHtml=stateDefs.map(([estado,icon,color])=>_superadminMiniCard(icon,estado,orders.filter(o=>o.estado===estado).length,color)).join('');
+  const vendedorMap={};
+  orders.filter(o=>o.estado==='Entregado').forEach(o=>{
+    const id=o.vendedorId||o.vendedor||'sin';
+    const u=getUser(o.vendedorId);
+    const nombre=(u&&u.nombre&&u.nombre!=='—')?u.nombre:(o.vendedor||o.vendedorNombre||'Sin vendedor');
+    if(!vendedorMap[id])vendedorMap[id]={nombre,n:0};
+    vendedorMap[id].n++;
+  });
+  const topVendedores=Object.values(vendedorMap).sort((a,b)=>b.n-a.n).slice(0,5);
+  const totalFacturado=orders.filter(o=>o.estado==='Entregado').reduce((a,o)=>a+(parseFloat(o.precio)||0)*(parseInt(o.qty)||1),0);
+  const totalCancelado=orders.filter(o=>o.estado==='Cancelado').reduce((a,o)=>a+(parseFloat(o.precio)||0)*(parseInt(o.qty)||1),0);
+  let html='<div id="superadminExtraDash" style="margin-top:16px">'+
+    '<div style="font-size:13px;font-weight:800;color:var(--text2);margin:0 0 10px">Panel superadmin</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin-bottom:14px">'+estadoHtml+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">'+
+      _superadminMiniCard('💰','Total facturado',fmt(totalFacturado),'var(--green)')+
+      _superadminMiniCard('🚫','Total cancelado',fmt(totalCancelado),'var(--red)')+
+    '</div>';
+  if(topVendedores.length){
+    html+='<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">'+
+      '<div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🏆 Top 5 vendedores</div>'+
+      topVendedores.map((v,i)=>
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-top:'+(i?'1px solid var(--border)':'0')+'">'+
+          '<div style="display:flex;align-items:center;gap:8px;min-width:0">'+
+            '<span style="width:22px;height:22px;border-radius:50%;background:var(--bg3);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:var(--accent)">'+(i+1)+'</span>'+
+            '<span style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(v.nombre)+'</span>'+
+          '</div>'+
+          '<span class="badge be">'+v.n+' entregados</span>'+
+        '</div>'
+      ).join('')+
+    '</div>';
+  }
+  html+='</div>';
+  ca.insertAdjacentHTML('beforeend',html);
+}
+setTimeout(function(){
+  if(PAGES.superadmin&&!PAGES.superadmin._superDashCodex){
+    const baseSuperadmin=PAGES.superadmin;
+    PAGES.superadmin=function(){
+      const r=baseSuperadmin.apply(this,arguments);
+      Promise.resolve(r).then(()=>setTimeout(_appendSuperadminDashboardExtra,0));
+      return r;
+    };
+    PAGES.superadmin._superDashCodex=true;
+  }
+  if(PAGES.dashboard&&!PAGES.dashboard._superDashCodex){
+    const baseDashboard=PAGES.dashboard;
+    PAGES.dashboard=function(){
+      const r=baseDashboard.apply(this,arguments);
+      Promise.resolve(r).then(()=>setTimeout(_appendSuperadminDashboardExtra,0));
+      return r;
+    };
+    PAGES.dashboard._superDashCodex=true;
+  }
+},0);
 PAGES.dashboard=async function(){
   const orders=_ordersCache;
   let html='';
@@ -4724,6 +4799,108 @@ PAGES.estadisticas=function(){
 };
 
 /* ─── ANALÍTICA PROVEEDOR ─── */
+function _s3UserId(){
+  const u=window._currentUser||window.CU||{};
+  return u.id;
+}
+function _s3IsoDays(n){
+  const arr=[];const now=new Date();
+  for(let i=n-1;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);arr.push(d.toISOString().slice(0,10));}
+  return arr;
+}
+function _s3CompactCard(icon,label,value,color){
+  return '<div style="background:var(--card);border:1px solid var(--border);border-left:4px solid '+color+';border-radius:10px;padding:12px;min-width:0">'+
+    '<div style="font-size:18px;line-height:1;margin-bottom:5px;opacity:.78">'+icon+'</div>'+
+    '<div style="font-size:20px;font-weight:900;line-height:1;color:'+color+';overflow-wrap:anywhere">'+value+'</div>'+
+    '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-top:6px">'+label+'</div>'+
+  '</div>';
+}
+function _s3StateSummary(orders,title){
+  const days=_s3IsoDays(7);
+  const week=orders.filter(o=>days.includes(o.fecha));
+  return '<div style="margin:14px 0">'+
+    '<div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">'+title+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px">'+
+      _s3CompactCard('✅','Entregados',week.filter(o=>o.estado==='Entregado').length,'var(--green)')+
+      _s3CompactCard('⏳','Pendientes',week.filter(o=>o.estado==='Pendiente').length,'var(--accent)')+
+      _s3CompactCard('❌','Cancelados',week.filter(o=>o.estado==='Cancelado').length,'var(--red)')+
+    '</div>'+
+  '</div>';
+}
+function _s3VendorExtraHtml(){
+  const uid=_s3UserId();
+  const mine=(_ordersCache||[]).filter(o=>String(o.vendedorId)===String(uid));
+  if(!mine.length)return '<div id="s3VendExtra" style="text-align:center;padding:36px 16px;color:var(--text3)">Sin datos aún</div>';
+  const days=_s3IsoDays(7);
+  const ventas=days.map(d=>mine.filter(o=>o.fecha===d&&o.estado==='Entregado').reduce((a,o)=>a+(parseFloat(o.precio)||0)*(parseInt(o.qty)||1),0));
+  const max=Math.max(...ventas,1);
+  const week=mine.filter(o=>days.includes(o.fecha));
+  const comision=week.filter(o=>o.estado==='Entregado').reduce((a,o)=>a+(parseFloat(o.comision)||0),0);
+  return '<div id="s3VendExtra" style="margin-top:16px">'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">'+
+      _s3CompactCard('💎','Comisión estimada',fmt(comision),'var(--accent)')+
+      _s3CompactCard('💰','Ventas semana',fmt(ventas.reduce((a,b)=>a+b,0)),'var(--green)')+
+    '</div>'+
+    _s3StateSummary(mine,'Estado esta semana')+
+    '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:14px">'+
+      '<div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">📊 Ventas por día - últimos 7 días</div>'+
+      '<div style="display:flex;align-items:end;gap:6px;height:128px">'+
+        ventas.map((v,i)=>'<div style="flex:1;min-width:0;text-align:center">'+
+          '<div title="'+fmt(v)+'" style="height:'+Math.max(6,Math.round(v/max*92))+'px;background:var(--green);border-radius:6px 6px 2px 2px;opacity:.88"></div>'+
+          '<div style="font-size:9px;color:var(--text3);margin-top:5px">'+days[i].slice(5).replace('-','/')+'</div>'+
+        '</div>').join('')+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+function _s3ProviderExtraHtml(){
+  const uid=_s3UserId();
+  const mine=(_ordersCache||[]).filter(o=>String(o.proveedorId)===String(uid));
+  if(!mine.length)return '<div id="s3ProvExtra" style="text-align:center;padding:36px 16px;color:var(--text3)">Sin datos aún</div>';
+  const facturado=mine.filter(o=>o.estado==='Entregado').reduce((a,o)=>a+(parseFloat(o.precio)||0)*(parseInt(o.qty)||1),0);
+  const prod={};
+  mine.forEach(o=>{const k=o.producto||'Sin nombre';prod[k]=(prod[k]||0)+(parseInt(o.qty)||1);});
+  const top=Object.entries(prod).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  return '<div id="s3ProvExtra" style="margin-top:16px">'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">'+
+      _s3CompactCard('💰','Total facturado',fmt(facturado),'var(--green)')+
+      _s3CompactCard('📦','Productos pedidos',top.length,'var(--blue)')+
+    '</div>'+
+    _s3StateSummary(mine,'Estado esta semana')+
+    (top.length?'<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:14px">'+
+      '<div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🏆 Top 5 productos</div>'+
+      top.map(([p,n],i)=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:'+(i?'1px solid var(--border)':'0')+'">'+
+        '<span style="font-size:13px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(p)+'</span>'+
+        '<span class="badge bp">'+n+'</span>'+
+      '</div>').join('')+
+    '</div>':'')+
+  '</div>';
+}
+function _s3AppendRoleAnalytics(role){
+  const ca=$('ca');if(!ca)return;
+  if(role==='vendedor'&&!$('s3VendExtra'))ca.insertAdjacentHTML('beforeend',_s3VendorExtraHtml());
+  if(role==='proveedor'&&!$('s3ProvExtra'))ca.insertAdjacentHTML('beforeend',_s3ProviderExtraHtml());
+}
+setTimeout(function(){
+  if(PAGES.analitica_vend&&!PAGES.analitica_vend._s3Codex){
+    const baseVend=PAGES.analitica_vend;
+    PAGES.analitica_vend=function(){
+      const r=baseVend.apply(this,arguments);
+      setTimeout(()=>_s3AppendRoleAnalytics('vendedor'),0);
+      return r;
+    };
+    PAGES.analitica_vend._s3Codex=true;
+  }
+  if(PAGES.analitica_prov&&!PAGES.analitica_prov._s3Codex){
+    const baseProv=PAGES.analitica_prov;
+    PAGES.analitica_prov=function(){
+      const r=baseProv.apply(this,arguments);
+      setTimeout(()=>_s3AppendRoleAnalytics('proveedor'),0);
+      return r;
+    };
+    PAGES.analitica_prov._s3Codex=true;
+  }
+},0);
 PAGES.analitica_prov=function(){
   $('tbActions').innerHTML='';
   const mine=_ordersCache.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
