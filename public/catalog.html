@@ -160,6 +160,50 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* SKELETON LOADING */
+  @keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+  }
+  .skeleton-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .skeleton-img {
+    width: 100%;
+    aspect-ratio: 1;
+    background: linear-gradient(90deg, var(--bg3) 25%, #2e3150 50%, var(--bg3) 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+  }
+  .skeleton-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .skeleton-line {
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--bg3) 25%, #2e3150 50%, var(--bg3) 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+  }
+  .skeleton-line.title  { height: 14px; width: 80%; }
+  .skeleton-line.cat    { height: 11px; width: 50%; }
+  .skeleton-line.price  { height: 18px; width: 55%; margin-top: 6px; }
+  .skeleton-btn {
+    margin: 0 12px 12px;
+    height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--bg3) 25%, #2e3150 50%, var(--bg3) 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+  }
+
   /* MODAL */
   .modal-overlay {
     display: none;
@@ -249,12 +293,7 @@
 
 <div class="contador" id="contador"></div>
 
-<div class="grid" id="grid">
-  <div class="loading">
-    <div class="spinner"></div>
-    Cargando productos...
-  </div>
-</div>
+<div class="grid" id="grid"></div>
 
 <!-- Modal de detalle -->
 <div class="modal-overlay" id="modalDetalle" onclick="cerrarModalDetalle(event)">
@@ -302,6 +341,21 @@ const WA_EMPRESA = '595981000000'; // reemplazar con el número real de la empre
 
 let todosLosProductos = [];
 let productoSeleccionado = null;
+
+function mostrarSkeletons() {
+  const grid = document.getElementById('grid');
+  const sk = `
+    <div class="skeleton-card">
+      <div class="skeleton-img"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line title"></div>
+        <div class="skeleton-line cat"></div>
+        <div class="skeleton-line price"></div>
+      </div>
+      <div class="skeleton-btn"></div>
+    </div>`;
+  grid.innerHTML = sk.repeat(6);
+}
 
 async function cargar() {
   try {
@@ -465,6 +519,7 @@ function fmt(n) {
   return Number(n || 0).toLocaleString('es-PY');
 }
 
+mostrarSkeletons();
 cargar();
 </script>
 </body>
