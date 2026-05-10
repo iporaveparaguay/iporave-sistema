@@ -13,6 +13,7 @@ Este archivo resume lo hecho por Codex como suplente/coordinador temporal de la 
 
 ## Reglas operativas vigentes
 
+- Seguridad primero ante todo. El sistema ya tuvo un incidente/hackeo al inicio y hay parches de seguridad en curso; cualquier decision debe priorizar no abrir nuevas fugas ni regresiones.
 - No deployar produccion sin permiso explicito del usuario.
 - Antes de cambios frontend en `public/index.html`, correr `node validate.js`.
 - No tocar seguridad critica sin tarea precisa y confirmacion: `verifyToken`, `login.js`, `SAFE_SELF_FIELDS`, RLS.
@@ -109,9 +110,38 @@ Estos no fueron ejecutados todavia; quedan como backlog visual/mobile:
   - OpenRouter con modelos `:free` cuando corresponda;
   - Ollama local con modelos livianos para supervision/revision;
   - otros proveedores gratuitos solo despues de cerrar una tanda estable.
+- Politica especial para OpenRouter:
+  - tratarlo como proveedor externo no confiable para secretos, tokens, datos de clientes, credenciales, dumps de base de datos y archivos sensibles;
+  - usarlo preferentemente para tareas de baja sensibilidad: revision visual, redaccion, prompts, analisis de diffs ya limpiados, ideas de UX, tareas aisladas sin secretos;
+  - no enviar `.env`, claves Supabase, claves Cloudflare, tokens VAPID, datos reales de clientes ni conversaciones completas con informacion privada;
+  - crear API keys con limite de credito bajo y nombre por agente/tarea;
+  - revisar en OpenRouter que logging/uso de inputs este desactivado y filtrar proveedores que puedan entrenar con datos;
+  - si se usa OpenRouter para codigo, pasar solo fragmentos minimos y sanitizados.
+- Politica para Ollama:
+  - preferir Ollama para supervision local, lectura de contexto, analisis de bugs y tareas con datos mas sensibles, porque corre localmente;
+  - instalar modelos livianos para no bloquear la maquina;
+  - usarlo como respaldo cuando se terminen tokens cloud, aunque sea mas lento.
 - Seguridad:
   - hay preocupacion previa sobre seguridad y migracion/ajuste de Supabase/RLS;
-  - no tocar esto sin plan especifico y revision de Cloud Code o tarea muy precisa.
+  - el sistema ya fue hackeado en una etapa inicial y existen parches/pendientes de seguridad;
+  - no tocar auth, RLS, tokens, login, permisos ni exposicion de datos sin plan especifico, diff pequeno, revision dedicada y permiso explicito;
+  - si hay duda entre velocidad y seguridad, frenar y pedir confirmacion.
+
+## URLs oficiales para agentes/modelos de respaldo
+
+- OpenRouter API keys: `https://openrouter.ai/settings/keys`
+- OpenRouter documentacion API keys: `https://openrouter.ai/docs/api-keys`
+- OpenRouter privacidad/logging: `https://openrouter.ai/docs/features/privacy-and-logging`
+- OpenRouter data collection: `https://openrouter.ai/docs/guides/privacy/data-collection/`
+- Ollama descarga/documentacion: `https://docs.ollama.com/`
+- Ollama quickstart: `https://docs.ollama.com/quickstart`
+- Ollama API local: `https://docs.ollama.com/api`
+
+Prioridad recomendada:
+
+1. Ollama local para revisar contexto sensible y actuar como supervisor barato.
+2. OpenRouter `:free` o bajo costo para tareas no sensibles y con API keys limitadas.
+3. Modelos pagos solo cuando una tarea lo justifique y con limite de gasto.
 
 ## Protocolo recomendado para seguir
 
