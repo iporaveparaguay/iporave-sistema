@@ -2681,6 +2681,151 @@ function nextDocNum(){
 }
 
 /* ══════════════════════════════════════════════════
+   BÚSQUEDA GLOBAL DE PEDIDOS
+══════════════════════════════════════════════════ */
+(function(){
+  var _bgOpen=false;
+  var _bgTimer=null;
+
+  function _bgEstadoEmoji(estado){
+    if(estado==='Entregado')return'✅';
+    if(estado==='Cancelado')return'❌';
+    if(estado==='Despachado')return'📦';
+    if(estado==='En ruta'||estado==='En Ruta')return'🛵';
+    if(estado==='Pendiente')return'⏳';
+    if(estado==='Devuelto')return'↩️';
+    return'📋';
+  }
+
+  function _bgNavPedido(orderId){
+    _bgCerrar();
+    if(typeof viewOrder==='function'){viewOrder(orderId);return;}
+    if(typeof nav==='function'){nav('orders');}
+  }
+
+  function _bgCerrar(){
+    _bgOpen=false;
+    var dd=document.getElementById('bgDropdown');
+    if(dd){dd.style.display='none';}
+  }
+
+  function _bgBuscar(q){
+    if(!q||q.length<2){_bgCerrar();return;}
+    var sq=q.toLowerCase();
+    var orders=window._ordersCache||[];
+    var resultados=[];
+    for(var i=0;i<orders.length&&resultados.length<8;i++){
+      var o=orders[i];
+      if(!o)continue;
+      var cliente=(o.cliente||'').toLowerCase();
+      var telefono=(o.telefono||'').toString().toLowerCase();
+      var producto=(o.producto||'').toLowerCase();
+      var id=(o.id||'').toString();
+      var estado=(o.estado||'').toLowerCase();
+      if(cliente.includes(sq)||telefono.includes(sq)||producto.includes(sq)||id.includes(sq)||estado.includes(sq)){
+        resultados.push(o);
+      }
+    }
+    var dd=document.getElementById('bgDropdown');
+    if(!dd)return;
+    if(!resultados.length){
+      dd.innerHTML='<div style="padding:12px 14px;color:var(--text3);font-size:13px;text-align:center">Sin resultados para "'+escHtml(q)+'"</div>';
+      dd.style.display='block';
+      _bgOpen=true;
+      return;
+    }
+    dd.innerHTML=resultados.map(function(o){
+      var emoji=_bgEstadoEmoji(o.estado||'Pendiente');
+      var prod=(o.producto||'—');
+      if(prod.length>28)prod=prod.substring(0,27)+'…';
+      var cli=(o.cliente||'—');
+      if(cli.length>22)cli=cli.substring(0,21)+'…';
+      return '<div class="bg-item" onclick="_bgNavPedido('+o.id+')" '+
+        'style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;transition:background .12s" '+
+        'onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'\'">'+
+        '<span style="font-size:18px;flex-shrink:0">'+emoji+'</span>'+
+        '<div style="min-width:0;flex:1">'+
+          '<div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+
+            '<span style="color:var(--accent);font-family:\'JetBrains Mono\',monospace;font-size:11px">#'+o.id+'</span>'+
+            ' '+escHtml(cli)+
+          '</div>'+
+          '<div style="font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+
+            escHtml(prod)+
+          '</div>'+
+        '</div>'+
+        '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--bg4);color:var(--text2);white-space:nowrap;flex-shrink:0">'+escHtml(o.estado||'Pendiente')+'</span>'+
+      '</div>';
+    }).join('');
+    dd.style.display='block';
+    _bgOpen=true;
+  }
+
+  function _bgEnsureUI(){
+    if(document.getElementById('bgWrap'))return;
+    var wrap=document.createElement('div');
+    wrap.id='bgWrap';
+    wrap.setAttribute('style',
+      'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9990;'+
+      'width:min(380px,calc(100vw - 120px));'
+    );
+
+    var inp=document.createElement('input');
+    inp.type='text';
+    inp.id='busquedaGlobal';
+    inp.placeholder='🔍 Buscar pedido…';
+    inp.setAttribute('autocomplete','off');
+    inp.setAttribute('style',
+      'width:100%;box-sizing:border-box;'+
+      'background:var(--bg2,#1a1f2e);color:var(--text,#e2e8f0);'+
+      'border:1px solid var(--border,rgba(255,255,255,.10));'+
+      'border-radius:10px;padding:7px 14px;font-size:13px;'+
+      'outline:none;box-shadow:0 4px 18px rgba(0,0,0,.28);'+
+      'transition:border-color .15s,box-shadow .15s;'
+    );
+
+    var dd=document.createElement('div');
+    dd.id='bgDropdown';
+    dd.setAttribute('style',
+      'display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;'+
+      'background:var(--bg2,#1a1f2e);border:1px solid var(--border,rgba(255,255,255,.10));'+
+      'border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.45);'+
+      'overflow:hidden;max-height:420px;overflow-y:auto;z-index:9991;'
+    );
+
+    inp.addEventListener('input',function(){
+      clearTimeout(_bgTimer);
+      _bgTimer=setTimeout(function(){_bgBuscar(inp.value.trim());},180);
+    });
+    inp.addEventListener('focus',function(){
+      this.style.borderColor='var(--accent,#6c63ff)';
+      this.style.boxShadow='0 0 0 2px rgba(108,99,255,.22),0 4px 18px rgba(0,0,0,.28)';
+      if(inp.value.trim().length>=2)_bgBuscar(inp.value.trim());
+    });
+    inp.addEventListener('blur',function(){
+      this.style.borderColor='';
+      this.style.boxShadow='0 4px 18px rgba(0,0,0,.28)';
+    });
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Escape'){inp.value='';_bgCerrar();inp.blur();}
+    });
+
+    document.addEventListener('click',function(e){
+      if(_bgOpen&&!wrap.contains(e.target))_bgCerrar();
+    });
+
+    wrap.appendChild(inp);
+    wrap.appendChild(dd);
+    document.body.appendChild(wrap);
+  }
+
+  window._bgNavPedido=_bgNavPedido;
+  window._bgCerrar=_bgCerrar;
+  window._bgBuscar=_bgBuscar;
+
+  setTimeout(_bgEnsureUI,0);
+})();
+
+/* ══════════════════════════════════════════════════
    PAGES
 ══════════════════════════════════════════════════ */
 const PAGES={};
