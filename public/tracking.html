@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Iporãve — Rastreá tu pedido</title>
+<style>
+:root{
+  --bg:#0f1117;
+  --surface:#161b27;
+  --border:#1e2740;
+  --accent:#6c63ff;
+  --accent2:#4ecdc4;
+  --text:#e2e8f0;
+  --muted:#64748b;
+  --error:#f87171;
+  --radius:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── HEADER ── */
+header{
+  background:linear-gradient(135deg,#1a1440 0%,#0f1117 100%);
+  padding:18px 20px 16px;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:50;
+}
+.logo{
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:20px;color:#fff;flex-shrink:0;
+  box-shadow:0 3px 12px rgba(108,99,255,.4);
+}
+.header-text .title{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px;}
+.header-text .sub{font-size:11px;color:#a5b4fc;margin-top:1px;}
+.flag{margin-left:auto;font-size:24px;}
+
+/* ── MAIN ── */
+main{
+  flex:1;
+  padding:24px 16px;
+  max-width:480px;
+  width:100%;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:12px 0 4px;}
+.hero h1{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.3px;line-height:1.2;}
+.hero p{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.5;}
+.hero-icon{font-size:52px;margin-bottom:10px;display:block;}
+
+/* ── SEARCH CARD ── */
+.search-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+}
+.search-card label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+.input-wrap{
+  display:flex;
+  gap:10px;
+  align-items:stretch;
+}
+#searchInput{
+  flex:1;
+  background:#0f1117;
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  padding:13px 16px;
+  font-size:16px;
+  color:var(--text);
+  font-family:inherit;
+  outline:none;
+  transition:border-color .2s;
+  -webkit-appearance:none;
+}
+#searchInput::placeholder{color:#374151;font-size:14px;}
+#searchInput:focus{border-color:var(--accent);}
+#searchBtn{
+  background:linear-gradient(135deg,var(--accent),#5b52e8);
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  padding:13px 20px;
+  font-size:14px;
+  font-weight:800;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:opacity .15s,transform .1s;
+  font-family:inherit;
+  flex-shrink:0;
+}
+#searchBtn:hover{opacity:.9;}
+#searchBtn:active{transform:scale(.97);}
+#searchBtn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.hint{font-size:11px;color:#374151;margin-top:10px;text-align:center;}
+
+/* ── SPINNER ── */
+#loading{display:none;text-align:center;padding:32px 0;color:var(--muted);}
+.spinner{
+  width:36px;height:36px;
+  border:3px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+  margin:0 auto 14px;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── RESULTADO ── */
+#result{display:none;flex-direction:column;gap:16px;}
+
+/* ── STATUS BANNER ── */
+.status-banner{
+  border-radius:var(--radius);
+  padding:18px 20px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.status-icon{font-size:36px;flex-shrink:0;}
+.status-label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;opacity:.8;}
+.status-text{font-size:18px;font-weight:900;color:#fff;}
+
+.s-pendiente{background:linear-gradient(135deg,rgba(234,179,8,.12),rgba(234,179,8,.05));border:1px solid rgba(234,179,8,.25);}
+.s-despachado{background:linear-gradient(135deg,rgba(59,130,246,.15),rgba(59,130,246,.05));border:1px solid rgba(59,130,246,.3);}
+.s-ruta{background:linear-gradient(135deg,rgba(249,115,22,.15),rgba(249,115,22,.05));border:1px solid rgba(249,115,22,.3);}
+.s-entregado{background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(34,197,94,.05));border:1px solid rgba(34,197,94,.3);}
+.s-cancelado{background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(239,68,68,.05));border:1px solid rgba(239,68,68,.25);}
+.s-default{background:var(--surface);border:1px solid var(--border);}
+
+/* ── INFO CARD ── */
+.info-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 20px;
+}
+.info-card-title{
+  font-size:10px;text-transform:uppercase;letter-spacing:1px;
+  color:var(--muted);font-weight:700;margin-bottom:14px;
+}
+.info-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;}
+.info-row:last-child{margin-bottom:0;}
+.info-row-icon{font-size:16px;min-width:24px;text-align:center;margin-top:2px;}
+.info-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;font-weight:600;}
+.info-val{font-size:14px;color:var(--text);font-weight:600;line-height:1.4;}
+
+/* ── TIMELINE ── */
+.timeline-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 20px;
+}
+.tl-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;margin-bottom:16px;}
+.tl-steps{display:flex;flex-direction:column;gap:0;}
+.tl-step{display:flex;align-items:flex-start;gap:14px;position:relative;}
+.tl-step::before{
+  content:'';
+  position:absolute;
+  left:15px;top:32px;
+  width:2px;height:calc(100% - 8px);
+  background:var(--border);
+}
+.tl-step:last-child::before{display:none;}
+.tl-dot{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;z-index:1;margin-bottom:18px;
+}
+.tl-dot.active{background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 12px rgba(108,99,255,.4);}
+.tl-dot.done{background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.4);}
+.tl-dot.pending{background:var(--border);border:1px solid #2d3748;}
+.tl-step-text{padding-top:4px;}
+.tl-step-label{font-size:13px;font-weight:700;color:var(--text);}
+.tl-step-label.muted{color:#374151;}
+
+/* ── ERROR ── */
+#notFound{display:none;text-align:center;padding:28px 16px;}
+.nf-icon{font-size:54px;margin-bottom:14px;display:block;}
+.nf-title{font-size:17px;font-weight:800;color:#fff;margin-bottom:8px;}
+.nf-sub{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* ── WHATSAPP ── */
+.wa-section{
+  text-align:center;
+  padding:6px 0 8px;
+}
+.wa-btn{
+  display:inline-flex;align-items:center;gap:9px;
+  background:#25d366;color:#fff;
+  border-radius:14px;padding:13px 24px;
+  font-size:14px;font-weight:800;
+  text-decoration:none;
+  transition:opacity .15s,transform .1s;
+  font-family:inherit;
+}
+.wa-btn:hover{opacity:.9;}
+.wa-btn:active{transform:scale(.97);}
+.wa-icon{font-size:20px;}
+.wa-note{font-size:11px;color:#374151;margin-top:10px;}
+
+/* ── FOOTER ── */
+footer{
+  text-align:center;
+  padding:20px 16px;
+  font-size:11px;
+  color:#1f2937;
+  border-top:1px solid #111827;
+  margin-top:8px;
+}
+
+@media(min-width:480px){
+  main{padding:32px 20px;}
+  .hero h1{font-size:26px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">I</div>
+  <div class="header-text">
+    <div class="title">Iporãve Connect</div>
+    <div class="sub">Rastreo de pedidos</div>
+  </div>
+  <span class="flag">🇵🇾</span>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="hero-icon">📦</span>
+    <h1>Rastreá tu pedido</h1>
+    <p>Ingresá tu número de pedido o teléfono para ver el estado de tu entrega.</p>
+  </div>
+
+  <!-- BÚSQUEDA -->
+  <div class="search-card">
+    <label for="searchInput">Número de pedido o teléfono</label>
+    <div class="input-wrap">
+      <input
+        type="text"
+        id="searchInput"
+        inputmode="numeric"
+        placeholder="Ej: 1024 o 0981234567"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      >
+      <button id="searchBtn" onclick="buscar()">Rastrear 🔍</button>
+    </div>
+    <div class="hint">Podés buscar con el número que te envió tu vendedor</div>
+  </div>
+
+  <!-- CARGANDO -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <div>Buscando tu pedido...</div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div id="result">
+
+    <!-- Banner estado -->
+    <div id="statusBanner" class="status-banner s-default">
+      <span class="status-icon" id="statusIcon"></span>
+      <div>
+        <div class="status-label">Estado del pedido</div>
+        <div class="status-text" id="statusText"></div>
+      </div>
+    </div>
+
+    <!-- Info pedido -->
+    <div class="info-card">
+      <div class="info-card-title">Detalle del pedido</div>
+      <div class="info-row">
+        <span class="info-row-icon">🏷️</span>
+        <div>
+          <div class="info-label">Número</div>
+          <div class="info-val" id="infoId">—</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="info-row-icon">👤</span>
+        <div>
+          <div class="info-label">Cliente</div>
+          <div class="info-val" id="infoCliente">—</div>
+        </div>
+      </div>
+      <div class="info-row" id="rowProducto">
+        <span class="info-row-icon">📦</span>
+        <div>
+          <div class="info-label">Producto</div>
+          <div class="info-val" id="infoProducto">—</div>
+        </div>
+      </div>
+      <div class="info-row" id="rowFecha">
+        <span class="info-row-icon">📅</span>
+        <div>
+          <div class="info-label">Fecha</div>
+          <div class="info-val" id="infoFecha">—</div>
+        </div>
+      </div>
+      <div class="info-row" id="rowDireccion" style="display:none">
+        <span class="info-row-icon">📍</span>
+        <div>
+          <div class="info-label">Dirección de entrega</div>
+          <div class="info-val" id="infoDireccion">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline-card">
+      <div class="tl-title">Progreso del envío</div>
+      <div class="tl-steps" id="timeline"></div>
+    </div>
+
+  </div>
+
+  <!-- NO ENCONTRADO -->
+  <div id="notFound">
+    <span class="nf-icon">😕</span>
+    <div class="nf-title">No encontramos ese pedido</div>
+    <div class="nf-sub">No encontramos un pedido con ese número. Verificá el número o contactá a tu vendedor.</div>
+  </div>
+
+  <!-- WHATSAPP -->
+  <div class="wa-section">
+    <a href="https://wa.me/595975123456" class="wa-btn" target="_blank" rel="noopener">
+      <span class="wa-icon">💬</span>
+      ¿Necesitás ayuda? Escribinos
+    </a>
+    <div class="wa-note">Respondemos de lunes a sábado de 8:00 a 20:00</div>
+  </div>
+
+</main>
+
+<footer>Iporãve Connect &copy; 2026 &mdash; Paraguay 🇵🇾</footer>
+
+<script>
+const API = 'https://iporave-api.iporaveparaguay.workers.dev';
+
+const ESTADOS = {
+  'Pendiente':  { emoji: '⏳', texto: 'Pendiente',  clase: 's-pendiente',  paso: 0 },
+  'Despachado': { emoji: '📦', texto: 'Despachado', clase: 's-despachado', paso: 1 },
+  'En ruta':    { emoji: '🛵', texto: 'En ruta',    clase: 's-ruta',       paso: 2 },
+  'Entregado':  { emoji: '✅', texto: 'Entregado',  clase: 's-entregado',  paso: 3 },
+  'Cancelado':  { emoji: '❌', texto: 'Cancelado',  clase: 's-cancelado',  paso: -1 },
+};
+
+const PASOS = [
+  { emoji: '⏳', label: 'Pedido recibido' },
+  { emoji: '📦', label: 'Preparando envío' },
+  { emoji: '🛵', label: 'En camino a vos' },
+  { emoji: '✅', label: 'Entregado' },
+];
+
+function formatFecha(str) {
+  if (!str) return null;
+  try {
+    const d = new Date(str);
+    if (isNaN(d)) return str;
+    return d.toLocaleDateString('es-PY', { day: '2-digit', month: 'long', year: 'numeric' });
+  } catch { return str; }
+}
+
+function setDisplay(id, show) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = show ? (el.tagName === 'DIV' ? 'block' : '') : 'none';
+}
+
+function resetUI() {
+  setDisplay('loading', false);
+  document.getElementById('result').style.display = 'none';
+  setDisplay('notFound', false);
+}
+
+function mostrarCargando() {
+  resetUI();
+  setDisplay('loading', true);
+}
+
+function mostrarResultado(data) {
+  resetUI();
+
+  const cfg = ESTADOS[data.estado] || { emoji: '📋', texto: data.estado || 'Desconocido', clase: 's-default', paso: -1 };
+
+  // Banner estado
+  const banner = document.getElementById('statusBanner');
+  banner.className = 'status-banner ' + cfg.clase;
+  document.getElementById('statusIcon').textContent = cfg.emoji;
+  document.getElementById('statusText').textContent = cfg.texto;
+
+  // Datos
+  document.getElementById('infoId').textContent = '#' + (data.id || data.numero || '—');
+  document.getElementById('infoCliente').textContent = data.cliente || data.nombre_cliente || '—';
+
+  const producto = data.producto || data.nombre_producto;
+  if (producto) {
+    document.getElementById('infoProducto').textContent = producto;
+  } else {
+    document.getElementById('rowProducto').style.display = 'none';
+  }
+
+  const fecha = formatFecha(data.fecha || data.created_at || data.fecha_pedido);
+  if (fecha) {
+    document.getElementById('infoFecha').textContent = fecha;
+  } else {
+    document.getElementById('rowFecha').style.display = 'none';
+  }
+
+  if (data.direccion || data.direccion_entrega) {
+    document.getElementById('rowDireccion').style.display = 'flex';
+    document.getElementById('infoDireccion').textContent = data.direccion || data.direccion_entrega;
+  }
+
+  // Timeline
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+
+  if (data.estado === 'Cancelado') {
+    tl.innerHTML = '<div class="tl-step"><div class="tl-dot" style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);font-size:16px">❌</div><div class="tl-step-text"><div class="tl-step-label">Pedido cancelado</div></div></div>';
+  } else {
+    PASOS.forEach((paso, i) => {
+      const activo = i === cfg.paso;
+      const hecho = i < cfg.paso;
+      const dotClass = activo ? 'active' : hecho ? 'done' : 'pending';
+      const labelClass = (activo || hecho) ? '' : 'muted';
+      const icon = activo ? paso.emoji : hecho ? '✓' : paso.emoji;
+      const div = document.createElement('div');
+      div.className = 'tl-step';
+      div.innerHTML = `<div class="tl-dot ${dotClass}">${icon}</div><div class="tl-step-text"><div class="tl-step-label ${labelClass}">${paso.label}</div></div>`;
+      tl.appendChild(div);
+    });
+  }
+
+  document.getElementById('result').style.display = 'flex';
+  document.getElementById('result').style.flexDirection = 'column';
+  document.getElementById('result').style.gap = '16px';
+}
+
+function mostrarNoEncontrado() {
+  resetUI();
+  setDisplay('notFound', true);
+}
+
+async function buscar() {
+  const input = document.getElementById('searchInput');
+  const btn   = document.getElementById('searchBtn');
+  const query = input.value.trim();
+
+  if (!query) {
+    input.focus();
+    input.style.borderColor = '#ef4444';
+    setTimeout(() => { input.style.borderColor = ''; }, 1500);
+    return;
+  }
+
+  mostrarCargando();
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/api/track?id=${encodeURIComponent(query)}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error || data.notFound) {
+      mostrarNoEncontrado();
+    } else {
+      mostrarResultado(data);
+    }
+  } catch (err) {
+    mostrarNoEncontrado();
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Enter en el input también lanza la búsqueda
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') buscar();
+});
+
+// Si viene ?id= en la URL, buscar automáticamente
+(function() {
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id') || params.get('pedido');
+  if (id) {
+    document.getElementById('searchInput').value = id;
+    buscar();
+  }
+})();
+</script>
+
+</body>
+</html>
