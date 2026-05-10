@@ -2775,6 +2775,123 @@ function _notifSessionInit(){
   }
 }
 setTimeout(_notifSessionInit,0);
+function _b2bUser(){
+  return (typeof _currentUser!=='undefined'&&_currentUser)?_currentUser:CU;
+}
+function _b2bName(id){
+  const u=(_usersCache||[]).find(x=>String(x.id)===String(id));
+  return u?u.nombre:('#'+id);
+}
+function _b2bEstadoBadge(est){
+  const e=est||'Pendiente';
+  const cls=e==='Pagada'?'be':e==='Cancelada'?'bc':'bp';
+  return '<span class="badge '+cls+'">'+e+'</span>';
+}
+async function _loadFacturasB2B(){
+  const u=_b2bUser();
+  const body=$('b2bBody');
+  if(!body||!u||!u.id)return;
+  body.innerHTML='<div style="text-align:center;padding:28px;color:var(--text3)">Cargando facturas...</div>';
+  if(!_supa){body.innerHTML='<div class="alert alrt-e">Supabase no disponible.</div>';return;}
+  try{
+    const{data,error}=await _supa.from('facturas_b2b').select('*').or('emisor_id.eq.'+u.id+',receptor_id.eq.'+u.id).order('created_at',{ascending:false}).limit(20);
+    if(error)throw error;
+    const rows=data||[];
+    if(!rows.length){body.innerHTML='<div style="text-align:center;padding:46px 16px;color:var(--text3);background:var(--card);border:1px solid var(--border);border-radius:12px">Sin facturas aún 📄</div>';return;}
+    body.innerHTML='<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Fecha</th><th>Emisor</th><th>Receptor</th><th style="text-align:right">Monto</th><th>Estado</th><th>Descripción</th>'+
+      '</tr></thead><tbody>'+
+      rows.map(f=>'<tr>'+
+        '<td style="white-space:nowrap">'+(f.created_at?new Date(f.created_at).toLocaleDateString('es-PY'):'—')+'</td>'+
+        '<td>'+escHtml(_b2bName(f.emisor_id))+'</td>'+
+        '<td>'+escHtml(_b2bName(f.receptor_id))+'</td>'+
+        '<td style="text-align:right;color:var(--green);font-weight:800">'+fmt(parseFloat(f.monto)||0)+'</td>'+
+        '<td>'+_b2bEstadoBadge(f.estado)+'</td>'+
+        '<td style="min-width:180px">'+escHtml(f.descripcion||'—')+'</td>'+
+      '</tr>').join('')+
+      '</tbody></table></div>';
+  }catch(e){
+    body.innerHTML='<div class="alert alrt-e">No se pudieron cargar las facturas: '+escHtml(e.message||String(e))+'</div>';
+  }
+}
+function _openFacturaB2B(){
+  openA('Nueva factura B2B',
+    '<div id="b2bAlert"></div>'+
+    '<div class="fg"><label>ID del receptor</label><input type="number" id="b2bReceptor" min="1" placeholder="Ej: 12"></div>'+
+    '<div class="fg"><label>Monto (Gs.)</label><input type="number" id="b2bMonto" min="0" placeholder="0"></div>'+
+    '<div class="fg"><label>Descripción</label><textarea id="b2bDesc" placeholder="Detalle de la factura"></textarea></div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-primary" onclick="_saveFacturaB2B()">Guardar</button>',
+    'sm'
+  );
+}
+async function _saveFacturaB2B(){
+  const u=_b2bUser();
+  const receptor_id=parseInt(gv('b2bReceptor'));
+  const monto=parseFloat(gv('b2bMonto'));
+  const descripcion=(gv('b2bDesc')||'').trim();
+  const alert=$('b2bAlert');
+  if(!u||!u.id){if(alert)alert.innerHTML='<div class="alert alrt-e">Usuario no disponible.</div>';return;}
+  if(!receptor_id||!monto){if(alert)alert.innerHTML='<div class="alert alrt-e">Completá receptor y monto.</div>';return;}
+  try{
+    const{error}=await _supa.from('facturas_b2b').insert({emisor_id:u.id,receptor_id,monto,descripcion,estado:'Pendiente'});
+    if(error)throw error;
+    closeA();
+    _loadFacturasB2B();
+  }catch(e){
+    if(alert)alert.innerHTML='<div class="alert alrt-e">No se pudo guardar: '+escHtml(e.message||String(e))+'</div>';
+  }
+}
+PAGES.facturas_b2b=function(){
+  $('tbTitle').textContent='Facturas B2B';
+  $('tbActions').innerHTML='<button class="btn btn-primary" onclick="_openFacturaB2B()">Nueva factura +</button>';
+  $('ca').innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">'+
+    '<div style="font-size:18px;font-weight:900;margin-bottom:4px">🧾 Facturas</div>'+
+    '<div style="font-size:12px;color:var(--text2)">Emitidas o recibidas por tu usuario.</div>'+
+  '</div><div id="b2bBody"></div>';
+  _loadFacturasB2B();
+};
+function _ensureFacturasB2BNavCfg(){
+  try{
+    if(typeof NAV_CFG==='undefined'||!NAV_CFG)return;
+    ['proveedor','dropshipper'].forEach(role=>{
+      const list=NAV_CFG[role];
+      if(!Array.isArray(list)||list.some(it=>(it&&((it.id||it.page||it.key||it.route)==='facturas_b2b'||it[0]==='facturas_b2b'||it==='facturas_b2b'))))return;
+      const sample=list.find(Boolean);
+      if(Array.isArray(sample))list.push(['facturas_b2b','🧾 Facturas']);
+      else if(sample&&typeof sample==='object')list.push({id:'facturas_b2b',page:'facturas_b2b',key:'facturas_b2b',route:'facturas_b2b',icon:'🧾',label:'Facturas',title:'Facturas'});
+      else list.push('facturas_b2b');
+    });
+  }catch(e){console.warn('No se pudo agregar facturas_b2b al NAV_CFG:',e.message);}
+}
+function _ensureFacturasB2BNavVisual(){
+  const u=_b2bUser();if(!u||!['proveedor','dropshipper'].includes(u.rol))return;
+  if(document.querySelector('[data-codex-facturas-nav="1"]'))return;
+  const ref=Array.from(document.querySelectorAll('button,a,[onclick]')).find(el=>{
+    const on=el.getAttribute('onclick')||'';const tx=(el.textContent||'').toLowerCase();
+    return on.includes("nav('liquidacion'")||on.includes("nav('orders'")||tx.includes('liquidaci')||tx.includes('pedido');
+  });
+  if(!ref||!ref.parentNode)return;
+  const item=ref.cloneNode(true);
+  item.dataset.codexFacturasNav='1';
+  item.textContent='🧾 Facturas';
+  item.setAttribute('onclick',"nav('facturas_b2b')");
+  item.onclick=function(e){e&&e.preventDefault&&e.preventDefault();nav('facturas_b2b');};
+  ref.parentNode.insertBefore(item,ref.nextSibling);
+}
+setTimeout(function(){
+  _ensureFacturasB2BNavCfg();
+  _ensureFacturasB2BNavVisual();
+  if(typeof window.nav==='function'&&!window.nav._facturasB2B){
+    const baseNav=window.nav;
+    window.nav=function(){
+      const r=baseNav.apply(this,arguments);
+      setTimeout(function(){_ensureFacturasB2BNavCfg();_ensureFacturasB2BNavVisual();},0);
+      return r;
+    };
+    window.nav._facturasB2B=true;
+  }
+},0);
 function _dashStat(cls,icon,label,value,sub,color){
   return '<div class="sc '+cls+'" style="border-top:3px solid '+color+';display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:16px 10px;min-height:118px;gap:0">'+
     '<div style="font-size:1.6rem;opacity:.7;line-height:1;margin-bottom:4px">'+icon+'</div>'+
