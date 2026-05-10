@@ -78,6 +78,16 @@ Reporte local Node-RED:
    - `iporave-sistema` limpio.
    - `iporave-worker` sin cambios de codigo pendientes.
 
+4. Mejora visual/mobile: boton flotante del asistente IA
+   - Archivo: `public/index.html`
+   - Commit: `76d7382 feat: make AI assistant button draggable`
+   - Cambio:
+     - el boton del robot/asistente ahora se puede arrastrar en pantalla;
+     - la posicion se guarda en `localStorage`;
+     - el panel del chat se abre cerca del boton sin salirse de la pantalla;
+     - al redimensionar la pantalla, la posicion se reajusta dentro del viewport.
+   - Validacion: `node validate.js` OK.
+
 ## Tareas sugeridas para la proxima oleada
 
 Orden recomendado:
