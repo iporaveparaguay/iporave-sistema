@@ -1,12 +1,12 @@
 {
-  "name": "Iporãve Logística",
+  "name": "Iporãve Connect",
   "short_name": "Iporãve",
   "description": "Sistema logístico de entregas — Iporãve Paraguay",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0b0d12",
-  "theme_color": "#f5a623",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
   "orientation": "portrait-primary",
   "lang": "es",
   "icons": [
