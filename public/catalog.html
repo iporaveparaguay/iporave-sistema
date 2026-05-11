@@ -30,7 +30,7 @@
     --shadow: 0 4px 20px rgba(0,0,0,0.12);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; scroll-behavior: smooth; }
 
   /* HEADER */
   header {
@@ -43,7 +43,7 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: var(--shadow);
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
   }
   .logo { font-size: 1.5rem; }
   .brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
@@ -117,7 +117,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s ease, box-shadow 0.2s;
     cursor: pointer;
   }
   .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(108,99,255,0.2); }
