@@ -305,6 +305,242 @@
     .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 10px 80px; }
     .search-bar { padding: 12px; }
   }
+
+  /* BOTÓN AGREGAR AL CARRITO */
+  .btn-agregar {
+    margin: 0 12px 10px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    width: calc(100% - 24px);
+  }
+  .btn-agregar:hover { background: var(--accent); color: #fff; }
+  .btn-agregar.en-carrito { background: var(--accent); color: #fff; }
+
+  /* ÍCONO FLOTANTE DEL CARRITO */
+  .carrito-fab {
+    position: fixed;
+    top: 14px;
+    right: 66px;
+    z-index: 150;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(108,99,255,0.45);
+    transition: background 0.2s, transform 0.15s;
+    flex-shrink: 0;
+  }
+  .carrito-fab:hover { background: #5a52e0; transform: scale(1.08); }
+  .carrito-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--danger);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    display: none;
+  }
+  .carrito-badge.visible { display: flex; }
+
+  /* DRAWER OVERLAY */
+  .carrito-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 300;
+  }
+  .carrito-overlay.open { display: block; }
+
+  /* DRAWER PANEL */
+  .carrito-drawer {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 360px;
+    max-width: 95vw;
+    height: 100%;
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    z-index: 301;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: -4px 0 30px rgba(0,0,0,0.4);
+  }
+  .carrito-drawer.open { right: 0; }
+
+  .carrito-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .carrito-titulo {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-cerrar-carrito {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+  }
+  .btn-cerrar-carrito:hover { background: var(--bg3); }
+
+  .carrito-lista {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .carrito-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .carrito-item-info { flex: 1; min-width: 0; }
+  .carrito-item-nombre {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .carrito-item-precio {
+    font-size: 0.8rem;
+    color: var(--accent2);
+    margin-top: 2px;
+  }
+  .carrito-item-cant {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .carrito-item-cant button {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    width: 26px;
+    height: 26px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .carrito-item-cant button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .carrito-item-cant span {
+    font-size: 0.9rem;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+  }
+  .btn-quitar-item {
+    background: transparent;
+    border: none;
+    color: var(--danger);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 6px;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .btn-quitar-item:hover { background: rgba(239,83,80,0.12); }
+
+  .carrito-vacio {
+    text-align: center;
+    color: var(--text2);
+    padding: 40px 20px;
+    font-size: 0.95rem;
+  }
+  .carrito-vacio .icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+  .carrito-footer {
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .carrito-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .carrito-total-monto { color: var(--accent2); font-size: 1.1rem; }
+  .btn-vaciar {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-vaciar:hover { background: var(--danger); color: #fff; }
+  .btn-enviar-carrito {
+    background: #25d366;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-enviar-carrito:hover { background: #1da851; }
 </style>
 </head>
 <body>
@@ -336,6 +572,32 @@
 <div class="contador" id="contador"></div>
 
 <div class="grid" id="grid"></div>
+
+<!-- Ícono flotante del carrito -->
+<button class="carrito-fab" id="carritoFab" onclick="abrirCarrito()" title="Ver carrito">
+  🛒
+  <span class="carrito-badge" id="carritoBadge">0</span>
+</button>
+
+<!-- Overlay del drawer -->
+<div class="carrito-overlay" id="carritoOverlay" onclick="cerrarCarrito()"></div>
+
+<!-- Drawer panel del carrito -->
+<div class="carrito-drawer" id="carritoDrawer">
+  <div class="carrito-header">
+    <div class="carrito-titulo">🛒 Mi carrito</div>
+    <button class="btn-cerrar-carrito" onclick="cerrarCarrito()">✕ Cerrar</button>
+  </div>
+  <div class="carrito-lista" id="carritoLista"></div>
+  <div class="carrito-footer" id="carritoFooter">
+    <div class="carrito-total">
+      <span>Total</span>
+      <span class="carrito-total-monto" id="carritoTotal">Gs. 0</span>
+    </div>
+    <button class="btn-vaciar" onclick="vaciarCarrito()">🗑 Vaciar carrito</button>
+    <button class="btn-enviar-carrito" onclick="enviarCarritoPorWA()">📲 Enviar pedido por WhatsApp</button>
+  </div>
+</div>
 
 <!-- Modal de detalle -->
 <div class="modal-overlay" id="modalDetalle" onclick="cerrarModalDetalle(event)">
@@ -474,6 +736,7 @@ function renderizar(lista) {
         <div class="card-precio">Gs. ${fmt(p.precio)}</div>
       </div>
       <button class="btn-pedir" onclick="event.stopPropagation(); abrirModal(${p.id})">Pedir ahora</button>
+      <button class="btn-agregar" data-id="${p.id}" onclick="event.stopPropagation(); agregarAlCarrito(${p.id})">🛒 Agregar</button>
       <button class="btn-compartir" onclick="event.stopPropagation(); compartirWA(${p.id})">📤 Compartir</button>
     </div>
   `).join('');
@@ -593,6 +856,155 @@ function toggleTheme() {
   const temaGuardado = localStorage.getItem('iporave-theme') || 'dark';
   aplicarTema(temaGuardado);
 })();
+
+// ============================================================
+// CARRITO DE COMPRAS
+// ============================================================
+
+const CARRITO_KEY = 'iporave-carrito';
+
+// Cargar carrito desde localStorage al iniciar
+let _carrito = [];
+(function() {
+  try {
+    const guardado = localStorage.getItem(CARRITO_KEY);
+    if (guardado) _carrito = JSON.parse(guardado) || [];
+  } catch(e) { _carrito = []; }
+  actualizarBadge();
+})();
+
+function guardarCarrito() {
+  localStorage.setItem(CARRITO_KEY, JSON.stringify(_carrito));
+}
+
+function actualizarBadge() {
+  const total = _carrito.reduce((acc, item) => acc + item.cantidad, 0);
+  const badge = document.getElementById('carritoBadge');
+  if (total > 0) {
+    badge.textContent = total > 99 ? '99+' : total;
+    badge.classList.add('visible');
+  } else {
+    badge.classList.remove('visible');
+  }
+}
+
+function agregarAlCarrito(id) {
+  const p = todosLosProductos.find(p => p.id === id);
+  if (!p) return;
+  const existente = _carrito.find(item => item.id === id);
+  if (existente) {
+    existente.cantidad += 1;
+  } else {
+    _carrito.push({
+      id: p.id,
+      nombre: p.nombre,
+      precio: p.precio,
+      cantidad: 1
+    });
+  }
+  guardarCarrito();
+  actualizarBadge();
+  // Feedback visual en el botón
+  const btn = document.querySelector(`.btn-agregar[data-id="${id}"]`);
+  if (btn) {
+    btn.classList.add('en-carrito');
+    btn.textContent = '✓ Agregado';
+    setTimeout(() => {
+      btn.classList.remove('en-carrito');
+      btn.textContent = '🛒 Agregar';
+    }, 1200);
+  }
+}
+
+function cambiarCantidad(id, delta) {
+  const item = _carrito.find(item => item.id === id);
+  if (!item) return;
+  item.cantidad += delta;
+  if (item.cantidad <= 0) {
+    _carrito = _carrito.filter(i => i.id !== id);
+  }
+  guardarCarrito();
+  actualizarBadge();
+  renderCarrito();
+}
+
+function quitarDelCarrito(id) {
+  _carrito = _carrito.filter(item => item.id !== id);
+  guardarCarrito();
+  actualizarBadge();
+  renderCarrito();
+}
+
+function vaciarCarrito() {
+  if (!_carrito.length) return;
+  if (!confirm('¿Vaciar todo el carrito?')) return;
+  _carrito = [];
+  guardarCarrito();
+  actualizarBadge();
+  renderCarrito();
+}
+
+function renderCarrito() {
+  const lista = document.getElementById('carritoLista');
+  const footer = document.getElementById('carritoFooter');
+
+  if (!_carrito.length) {
+    lista.innerHTML = `
+      <div class="carrito-vacio">
+        <div class="icon">🛒</div>
+        <div>Tu carrito está vacío.<br>Agregá productos para continuar.</div>
+      </div>`;
+    footer.style.display = 'none';
+    return;
+  }
+
+  footer.style.display = 'flex';
+
+  lista.innerHTML = _carrito.map(item => `
+    <div class="carrito-item">
+      <div class="carrito-item-info">
+        <div class="carrito-item-nombre">${esc(item.nombre)}</div>
+        <div class="carrito-item-precio">Gs. ${fmt(item.precio)} c/u</div>
+      </div>
+      <div class="carrito-item-cant">
+        <button onclick="cambiarCantidad(${item.id}, -1)" title="Quitar uno">−</button>
+        <span>${item.cantidad}</span>
+        <button onclick="cambiarCantidad(${item.id}, 1)" title="Agregar uno">+</button>
+      </div>
+      <button class="btn-quitar-item" onclick="quitarDelCarrito(${item.id})" title="Eliminar">✕</button>
+    </div>
+  `).join('');
+
+  const total = _carrito.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+  document.getElementById('carritoTotal').textContent = 'Gs. ' + fmt(total);
+}
+
+function abrirCarrito() {
+  renderCarrito();
+  document.getElementById('carritoOverlay').classList.add('open');
+  document.getElementById('carritoDrawer').classList.add('open');
+}
+
+function cerrarCarrito() {
+  document.getElementById('carritoOverlay').classList.remove('open');
+  document.getElementById('carritoDrawer').classList.remove('open');
+}
+
+function enviarCarritoPorWA() {
+  if (!_carrito.length) { alert('El carrito está vacío.'); return; }
+  const total = _carrito.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+  const lineas = _carrito.map(item =>
+    `• ${item.nombre} x${item.cantidad} = Gs. ${fmt(item.precio * item.cantidad)}`
+  ).join('\n');
+  const msg = `Hola! Quiero hacer un pedido 🛵\n\n` +
+    `*Productos:*\n${lineas}\n\n` +
+    `*Total: Gs. ${fmt(total)}*\n\n` +
+    `Por favor confirmame disponibilidad y datos de entrega. ¡Gracias!`;
+  const url = `https://wa.me/${WA_EMPRESA}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
+// ============================================================
 
 mostrarSkeletons();
 cargar();
