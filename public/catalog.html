@@ -541,6 +541,43 @@
     transition: background 0.2s;
   }
   .btn-enviar-carrito:hover { background: #1da851; }
+
+  /* BOTÓN VOLVER ARRIBA */
+  .btn-volver-arriba {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 150;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(108,99,255,0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s, background 0.2s;
+    transform: translateY(12px);
+  }
+  .btn-volver-arriba.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .btn-volver-arriba:hover { background: #5a52e0; }
+
+  /* CONTADOR EN DRAWER */
+  .carrito-contador-drawer {
+    font-size: 0.78rem;
+    color: var(--text2);
+    margin-top: 2px;
+  }
 </style>
 </head>
 <body>
@@ -573,6 +610,9 @@
 
 <div class="grid" id="grid"></div>
 
+<!-- Botón volver arriba -->
+<button class="btn-volver-arriba" id="btnVolverArriba" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Volver arriba">↑</button>
+
 <!-- Ícono flotante del carrito -->
 <button class="carrito-fab" id="carritoFab" onclick="abrirCarrito()" title="Ver carrito">
   🛒
@@ -585,7 +625,10 @@
 <!-- Drawer panel del carrito -->
 <div class="carrito-drawer" id="carritoDrawer">
   <div class="carrito-header">
-    <div class="carrito-titulo">🛒 Mi carrito</div>
+    <div>
+      <div class="carrito-titulo">🛒 Mi carrito</div>
+      <div class="carrito-contador-drawer" id="carritoContadorDrawer"></div>
+    </div>
     <button class="btn-cerrar-carrito" onclick="cerrarCarrito()">✕ Cerrar</button>
   </div>
   <div class="carrito-lista" id="carritoLista"></div>
@@ -886,6 +929,17 @@ function actualizarBadge() {
   } else {
     badge.classList.remove('visible');
   }
+  // Contador visible dentro del drawer
+  const contadorDrawer = document.getElementById('carritoContadorDrawer');
+  if (contadorDrawer) {
+    if (total === 0) {
+      contadorDrawer.textContent = '';
+    } else if (total === 1) {
+      contadorDrawer.textContent = '1 producto en tu carrito';
+    } else {
+      contadorDrawer.textContent = total + ' productos en tu carrito';
+    }
+  }
 }
 
 function agregarAlCarrito(id) {
@@ -1003,6 +1057,20 @@ function enviarCarritoPorWA() {
   const url = `https://wa.me/${WA_EMPRESA}?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
 }
+
+// ============================================================
+// BOTÓN VOLVER ARRIBA
+// ============================================================
+(function() {
+  const btn = document.getElementById('btnVolverArriba');
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 300) {
+      btn.classList.add('visible');
+    } else {
+      btn.classList.remove('visible');
+    }
+  }, { passive: true });
+})();
 
 // ============================================================
 
