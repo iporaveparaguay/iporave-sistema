@@ -432,9 +432,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .tbl td.td-actions .btn{display:block;width:100%;padding:6px 8px;font-size:11px;margin:2px 0;text-align:center;}
   /* Modal — evitar desborde en pantallas angostas */
   .moverlay{padding:10px;}
-  .mbox{border-radius:var(--radius);max-width:calc(100vw - 20px)!important;width:100%!important;box-sizing:border-box;}
+  .mbox{border-radius:var(--radius);max-width:calc(100vw - 20px)!important;width:100%!important;box-sizing:border-box;max-height:95vh!important;display:flex!important;flex-direction:column!important;}
   .mbox.lg,.mbox.xl{max-width:calc(100vw - 20px)!important;}
-  .mbody{padding:14px;word-break:break-word;overflow-x:hidden;}
+  .mbody{padding:14px;word-break:break-word;overflow-x:hidden;overflow-y:auto!important;flex:1 1 auto!important;-webkit-overflow-scrolling:touch!important;}
   .mbody input,.mbody select,.mbody textarea{max-width:100%;box-sizing:border-box;}
   .mhead{padding:13px 16px;}
   .mfoot{padding:10px 14px;flex-wrap:wrap;}
@@ -3318,6 +3318,40 @@ function _appendSuperadminDashboardExtra(){
       ).join('')+
     '</div>';
   }
+  /* ── Gráfica SVG: ventas últimos 7 días ── */
+  (function(){
+    var dias7=[],labels7=[];
+    for(var i=6;i>=0;i--){
+      var d=new Date();d.setDate(d.getDate()-i);
+      var iso=d.toISOString().slice(0,10);
+      dias7.push(iso);
+      labels7.push(d.toLocaleDateString('es-PY',{weekday:'short',day:'2-digit'}).replace('.',''));
+    }
+    var counts=dias7.map(function(iso){
+      return orders.filter(function(o){return o.fecha===iso&&o.estado==='Entregado';}).length;
+    });
+    var maxV=Math.max.apply(null,counts)||1;
+    var W=280,H=80,PAD_L=20,PAD_B=22,barW=26,gap=10;
+    var totalW=PAD_L+(barW+gap)*7-gap;
+    var svgBars=counts.map(function(v,i){
+      var bh=Math.max(2,Math.round((v/maxV)*(H-PAD_B-4)));
+      var x=PAD_L+i*(barW+gap);
+      var y=H-PAD_B-bh;
+      var labelX=x+barW/2;
+      return '<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+bh+'" rx="4" fill="var(--accent)" opacity="0.85"/>'+
+        (v>0?'<text x="'+labelX+'" y="'+(y-3)+'" text-anchor="middle" font-size="9" fill="var(--text2)">'+v+'</text>':'')+
+        '<text x="'+labelX+'" y="'+(H-4)+'" text-anchor="middle" font-size="8" fill="var(--text3)">'+labels7[i]+'</text>';
+    }).join('');
+    html+='<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">'+
+      '<div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">📊 Entregados — últimos 7 días</div>'+
+      '<div style="overflow-x:auto">'+
+        '<svg viewBox="0 0 '+totalW+' '+H+'" width="100%" style="display:block;max-width:360px;margin:0 auto" aria-label="Ventas últimos 7 días">'+
+          svgBars+
+          '<line x1="'+PAD_L+'" y1="'+(H-PAD_B)+'" x2="'+totalW+'" y2="'+(H-PAD_B)+'" stroke="var(--border)" stroke-width="1"/>'+
+        '</svg>'+
+      '</div>'+
+    '</div>';
+  })();
   html+='</div>';
   ca.insertAdjacentHTML('beforeend',html);
 }
@@ -4848,6 +4882,65 @@ PAGES.liquidacion=function(){
       '<div class="lrow"><span class="llbl">Premio 3+ extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra3)+'</span></div>'+
     '</div>';
 };
+
+/* ══════════════════════════════════════════════════
+   BOTÓN FLOTANTE "↑ SUBIR" — CODEX MOBILE FIX
+   Aparece cuando scroll > 300px, vuelve al top suave
+══════════════════════════════════════════════════ */
+(function _initScrollTopBtn(){
+  if(document.getElementById('codexScrollTopBtn'))return;
+  var btn=document.createElement('button');
+  btn.id='codexScrollTopBtn';
+  btn.title='Volver arriba';
+  btn.textContent='↑';
+  btn.setAttribute('aria-label','Subir al inicio');
+  btn.setAttribute('style',
+    'position:fixed;bottom:80px;right:16px;z-index:9980;'+
+    'width:40px;height:40px;border-radius:50%;'+
+    'background:var(--accent,#6c63ff);color:#fff;'+
+    'border:none;font-size:18px;font-weight:900;line-height:1;'+
+    'cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.30);'+
+    'display:none;align-items:center;justify-content:center;'+
+    'transition:opacity .2s,transform .2s;opacity:0;transform:translateY(8px);'
+  );
+  btn.addEventListener('click',function(){
+    var ca=document.getElementById('ca');
+    var main=document.querySelector('.main')||document.querySelector('main');
+    var target=ca||main||window;
+    if(target===window){window.scrollTo({top:0,behavior:'smooth'});}
+    else{target.scrollTo({top:0,behavior:'smooth'});}
+  });
+  document.body.appendChild(btn);
+  function _onScroll(){
+    var ca=document.getElementById('ca');
+    var main=document.querySelector('.main')||document.querySelector('main');
+    var scrolled=(ca&&ca.scrollTop)||
+                 (main&&main.scrollTop)||
+                 (document.documentElement&&document.documentElement.scrollTop)||
+                 window.pageYOffset||0;
+    if(scrolled>300){
+      btn.style.display='flex';
+      setTimeout(function(){btn.style.opacity='1';btn.style.transform='translateY(0)';},10);
+    }else{
+      btn.style.opacity='0';btn.style.transform='translateY(8px)';
+      setTimeout(function(){if(btn.style.opacity==='0')btn.style.display='none';},220);
+    }
+  }
+  /* escuchar scroll en el contenedor principal y en window */
+  function _bindScroll(){
+    var ca=document.getElementById('ca');
+    var main=document.querySelector('.main')||document.querySelector('main');
+    if(ca&&!ca._scrollTopBound){ca.addEventListener('scroll',_onScroll,{passive:true});ca._scrollTopBound=true;}
+    if(main&&!main._scrollTopBound){main.addEventListener('scroll',_onScroll,{passive:true});main._scrollTopBound=true;}
+    window.addEventListener('scroll',_onScroll,{passive:true});
+  }
+  _bindScroll();
+  /* re-bindear cada vez que se navega (el #ca cambia de contenido) */
+  var _navObs=new MutationObserver(function(){_bindScroll();});
+  var caEl=document.getElementById('ca');
+  if(caEl)_navObs.observe(caEl,{childList:true,subtree:false});
+  setTimeout(_bindScroll,500);
+})();
 
 function printLiq(){
   const el=$('ca');if(!el)return;
