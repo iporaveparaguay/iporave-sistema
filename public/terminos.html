@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Términos y Condiciones y Política de Privacidad de Iporãve Connect — plataforma de logística y comercio en Paraguay." />
+  <title>Términos y Condiciones — Iporãve Connect</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg:        #0f1117;
+      --bg-card:   #1a1d27;
+      --accent:    #6c63ff;
+      --accent-dim:#4f49c0;
+      --text:      #e8e8f0;
+      --text-muted:#9090a8;
+      --border:    #2a2d3e;
+      --radius:    10px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                   Helvetica, Arial, sans-serif;
+      font-size: 1rem;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .back-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: #fff;
+    }
+
+    .back-link span {
+      font-size: 1rem;
+    }
+
+    .header-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* ── Main ── */
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 2.5rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+
+    .hero-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .hero-logo svg {
+      width: 30px;
+      height: 30px;
+      fill: #fff;
+    }
+
+    h1 {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-subtitle {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    /* ── Index ── */
+    .toc {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .toc-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .toc ol {
+      padding-left: 1.2rem;
+    }
+
+    .toc li {
+      margin-bottom: 0.35rem;
+    }
+
+    .toc a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    .toc a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    /* ── Secciones ── */
+    section {
+      margin-bottom: 2.5rem;
+    }
+
+    section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-number {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.55rem;
+      border-radius: 20px;
+      margin-bottom: 0.6rem;
+    }
+
+    h2 {
+      font-size: clamp(1.1rem, 3vw, 1.4rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      color: var(--text);
+      margin-bottom: 0.9rem;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    ul, ol {
+      padding-left: 1.4rem;
+      margin-bottom: 0.9rem;
+    }
+
+    li {
+      margin-bottom: 0.45rem;
+      color: var(--text);
+    }
+
+    strong {
+      color: #fff;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .highlight {
+      border-left: 3px solid var(--accent);
+      padding-left: 1rem;
+      margin: 1rem 0;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── Contacto ── */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 480px) {
+      .contact-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .contact-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+
+    .contact-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .contact-value {
+      font-size: 0.97rem;
+      color: var(--text);
+    }
+
+    .contact-value a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .contact-value a:hover {
+      text-decoration: underline;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    footer strong {
+      color: var(--accent);
+    }
+
+    /* ── Divider ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2.5rem 0;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-dim);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="header-inner">
+      <a class="back-link" href="/index.html">
+        <span>&#8592;</span> Volver al inicio
+      </a>
+      <span class="header-title">Términos y Condiciones</span>
+    </div>
+  </header>
+
+  <!-- ── Main ── -->
+  <main>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10
+                   10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z"/>
+        </svg>
+      </div>
+      <h1>Iporãve Connect</h1>
+      <p class="hero-subtitle">
+        Términos y Condiciones · Política de Privacidad<br>
+        Última actualización: mayo de 2026 &nbsp;·&nbsp; Paraguay
+      </p>
+    </div>
+
+    <!-- Índice -->
+    <nav class="toc" aria-label="Índice de contenidos">
+      <div class="toc-title">Contenido</div>
+      <ol>
+        <li><a href="#uso">Uso del servicio</a></li>
+        <li><a href="#privacidad">Privacidad de datos</a></li>
+        <li><a href="#cookies">Cookies y almacenamiento local</a></li>
+        <li><a href="#responsabilidad">Responsabilidad y limitaciones</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+      </ol>
+    </nav>
+
+    <!-- 1 · Uso del servicio -->
+    <section id="uso">
+      <span class="section-number">01</span>
+      <h2>Uso del servicio</h2>
+
+      <div class="card">
+        <p>
+          <strong>Iporãve Connect</strong> es una plataforma privada de gestión logística y
+          comercio que conecta proveedores, dropshippers, vendedores, repartidores y
+          administradores dentro del territorio paraguayo.
+        </p>
+        <p>
+          El acceso a la plataforma está restringido a usuarios registrados y autorizados
+          por el equipo de Iporãve. Cada cuenta corresponde a un único titular y no puede
+          compartirse ni cederse a terceros.
+        </p>
+      </div>
+
+      <br>
+
+      <p>Al utilizar esta plataforma, el usuario acepta:</p>
+      <ul>
+        <li>Proveer información verídica y actualizada al momento del registro y en su perfil.</li>
+        <li>Utilizar el sistema únicamente para las funciones correspondientes a su rol asignado.</li>
+        <li>No intentar acceder a secciones o datos de otros usuarios sin autorización expresa.</li>
+        <li>No realizar ingeniería inversa, scraping ni automatización no autorizada sobre la plataforma.</li>
+        <li>Notificar de inmediato al equipo ante cualquier actividad sospechosa o acceso no reconocido.</li>
+      </ul>
+
+      <div class="highlight">
+        El incumplimiento de estas condiciones puede resultar en la suspensión inmediata
+        de la cuenta sin previo aviso.
+      </div>
+
+      <p>
+        Iporãve se reserva el derecho de modificar, suspender o discontinuar cualquier
+        funcionalidad de la plataforma en cualquier momento, con o sin notificación previa,
+        cuando existan razones técnicas, legales o comerciales que lo justifiquen.
+      </p>
+    </section>
+
+    <hr>
+
+    <!-- 2 · Privacidad de datos -->
+    <section id="privacidad">
+      <span class="section-number">02</span>
+      <h2>Privacidad de datos</h2>
+
+      <p>
+        La protección de los datos personales de nuestros usuarios es una prioridad.
+        Esta sección describe qué información recopilamos, cómo la utilizamos y cómo
+        la protegemos.
+      </p>
+
+      <div class="card">
+        <p><strong>Datos que recopilamos</strong></p>
+        <ul>
+          <li><strong>Datos de identificación:</strong> nombre completo, número de cédula o RUC, correo electrónico y teléfono.</li>
+          <li><strong>Datos de operación:</strong> pedidos, rutas de entrega, liquidaciones y transacciones registradas en la plataforma.</li>
+          <li><strong>Datos técnicos:</strong> dirección IP, tipo de dispositivo, navegador y registros de acceso (logs).</li>
+          <li><strong>Datos de ubicación:</strong> cuando el usuario activa la geolocalización para funciones de seguimiento o entrega.</li>
+        </ul>
+      </div>
+
+      <br>
+
+      <p><strong>Uso de la información</strong></p>
+      <p>Los datos recopilados son utilizados exclusivamente para:</p>
+      <ul>
+        <li>Autenticar el acceso y gestionar las sesiones de usuario.</li>
+        <li>Coordinar operaciones logísticas entre los roles de la plataforma.</li>
+        <li>Generar reportes internos, liquidaciones y estadísticas de desempeño.</li>
+        <li>Mejorar la seguridad y detectar accesos no autorizados.</li>
+        <li>Cumplir con obligaciones legales aplicables en la República del Paraguay.</li>
+      </ul>
+
+      <p><strong>Almacenamiento y seguridad</strong></p>
+      <p>
+        Los datos son almacenados en servidores seguros provistos por <strong>Supabase</strong>
+        con cifrado en tránsito (HTTPS/TLS) y controles de acceso basados en roles (RLS —
+        Row Level Security). Ningún dato de usuario es compartido con terceros con fines
+        comerciales o publicitarios.
+      </p>
+
+      <p>
+        Los datos personales serán conservados durante el tiempo que la cuenta esté activa
+        y por un período adicional de hasta <strong>3 años</strong> tras su cierre, salvo
+        requerimiento legal que exija un plazo diferente.
+      </p>
+
+      <div class="highlight">
+        El usuario tiene derecho a solicitar en cualquier momento el acceso, rectificación
+        o eliminación de sus datos personales contactando al equipo de Iporãve por los
+        canales indicados al final de este documento.
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- 3 · Cookies y localStorage -->
+    <section id="cookies">
+      <span class="section-number">03</span>
+      <h2>Cookies y almacenamiento local</h2>
+
+      <p>
+        Iporãve Connect utiliza tecnologías de almacenamiento en el navegador para
+        garantizar el correcto funcionamiento de la plataforma.
+      </p>
+
+      <div class="card">
+        <p><strong>Tipos de almacenamiento utilizados</strong></p>
+        <ul>
+          <li>
+            <strong>localStorage:</strong> almacena la sesión activa del usuario (token de
+            autenticación), preferencias de interfaz y datos de caché para mejorar la
+            velocidad de carga.
+          </li>
+          <li>
+            <strong>sessionStorage:</strong> datos temporales de navegación que se eliminan
+            automáticamente al cerrar el navegador o la pestaña.
+          </li>
+          <li>
+            <strong>Cookies de sesión:</strong> utilizadas por el sistema de autenticación
+            para mantener la sesión segura. No se emplean cookies de seguimiento publicitario
+            de terceros.
+          </li>
+          <li>
+            <strong>Service Worker / caché offline:</strong> archivos de la aplicación
+            almacenados localmente para permitir el funcionamiento sin conexión en funciones
+            limitadas.
+          </li>
+        </ul>
+      </div>
+
+      <br>
+
+      <p>
+        No utilizamos cookies analíticas de terceros (como Google Analytics) ni píxeles de
+        seguimiento ajenos a la operación interna de la plataforma.
+      </p>
+
+      <p>
+        El usuario puede limpiar el almacenamiento local en cualquier momento desde la
+        configuración de su navegador. Tenga en cuenta que esto cerrará su sesión activa
+        y podrá afectar algunas preferencias guardadas.
+      </p>
+    </section>
+
+    <hr>
+
+    <!-- 4 · Responsabilidad -->
+    <section id="responsabilidad">
+      <span class="section-number">04</span>
+      <h2>Responsabilidad y limitaciones</h2>
+
+      <p>
+        Iporãve Connect actúa como plataforma tecnológica de intermediación y gestión.
+        En consecuencia, establece las siguientes limitaciones de responsabilidad:
+      </p>
+
+      <ul>
+        <li>
+          <strong>Operaciones comerciales:</strong> Iporãve no es parte directa de las
+          transacciones entre proveedores, dropshippers y clientes finales. Las condiciones
+          comerciales (precios, plazos, garantías) son responsabilidad exclusiva de las
+          partes involucradas.
+        </li>
+        <li>
+          <strong>Entregas y logística:</strong> los tiempos de entrega registrados en la
+          plataforma son estimados. Factores externos como condiciones climáticas,
+          contingencias viales o fuerza mayor pueden afectarlos sin responsabilidad de
+          Iporãve.
+        </li>
+        <li>
+          <strong>Disponibilidad del servicio:</strong> la plataforma es provista "tal como
+          está" (<em>as-is</em>). No garantizamos disponibilidad ininterrumpida; realizamos
+          mantenimientos programados que pueden generar interrupciones temporales.
+        </li>
+        <li>
+          <strong>Datos ingresados por usuarios:</strong> la veracidad de la información
+          cargada por cada usuario (inventario, precios, datos de clientes) es
+          responsabilidad exclusiva de quien la ingresa.
+        </li>
+        <li>
+          <strong>Accesos no autorizados:</strong> Iporãve implementa medidas razonables de
+          seguridad, pero no puede garantizar protección absoluta ante ataques externos.
+          En caso de brecha de seguridad notificable, los usuarios afectados serán
+          informados a la brevedad posible.
+        </li>
+      </ul>
+
+      <div class="highlight">
+        En ningún caso la responsabilidad total de Iporãve frente a un usuario superará el
+        monto equivalente a las comisiones cobradas por la plataforma durante los últimos
+        30 días previos al incidente.
+      </div>
+
+      <p>
+        Estas condiciones se rigen por la legislación vigente de la
+        <strong>República del Paraguay</strong>. Cualquier disputa que no pueda resolverse
+        amigablemente será sometida a la jurisdicción de los tribunales ordinarios de la
+        ciudad de Asunción.
+      </p>
+    </section>
+
+    <hr>
+
+    <!-- 5 · Contacto -->
+    <section id="contacto">
+      <span class="section-number">05</span>
+      <h2>Contacto</h2>
+
+      <p>
+        Para consultas sobre estos términos, solicitudes de acceso o eliminación de datos,
+        o cualquier inquietud relacionada con la privacidad, podés comunicarte con el
+        equipo de Iporãve a través de los siguientes canales:
+      </p>
+
+      <div class="contact-grid">
+        <div class="contact-item">
+          <div class="contact-label">Correo electrónico</div>
+          <div class="contact-value">
+            <a href="mailto:iporaveparaguay@gmail.com">iporaveparaguay@gmail.com</a>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-label">WhatsApp</div>
+          <div class="contact-value">
+            <a href="https://wa.me/595" target="_blank" rel="noopener">+595 · contacto directo</a>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-label">País</div>
+          <div class="contact-value">República del Paraguay</div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-label">Horario de atención</div>
+          <div class="contact-value">Lun – Vie, 8:00 – 18:00 (PYT)</div>
+        </div>
+      </div>
+
+      <br>
+
+      <p>
+        Atendemos solicitudes de datos personales en un plazo máximo de
+        <strong>15 días hábiles</strong> desde su recepción.
+      </p>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>
+        &copy; 2026 <strong>Iporãve Connect</strong> &mdash; Todos los derechos reservados.<br>
+        Plataforma de logística y comercio &mdash; Paraguay
+      </p>
+      <br>
+      <p>
+        <a class="back-link" href="/index.html">&#8592; Volver al inicio</a>
+      </p>
+    </footer>
+
+  </main>
+
+</body>
+</html>
