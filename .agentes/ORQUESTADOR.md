@@ -136,6 +136,42 @@ Invoke-RestMethod -Uri 'https://iporave-api.iporaveparaguay.workers.dev/api/piza
 
 ---
 
+## ESTADO DEL PROYECTO AL 2026-05-11 (actualizado en sesión)
+
+### Vertex AI — CONFIGURADO ✅
+- gcloud instalado y autenticado con ivanelgato4000@gmail.com
+- Proyecto: `rugged-shell-430212-f6`
+- Archivo JSON: `C:\Users\USUARIO\OneDrive\Desktop\rugged-shell-430212-f6-d4358e47cfbe.json`
+- Variables de entorno guardadas con `setx` (permanentes)
+- Modelo funcionando: `vertex_ai/gemini-2.5-flash` ✅
+- API Vertex AI habilitada en Google Cloud Console ✅
+- Costo real: $0.11 por tarea grande (index.html completo)
+
+### Cómo usar Aider con Gemini 2.5 Flash (ya configurado):
+```powershell
+aider --model vertex_ai/gemini-2.5-flash --yes --no-git --no-auto-commits --message "TU TAREA" "ruta\al\archivo"
+```
+No necesitás poner variables de entorno — ya están guardadas con setx.
+
+### Modelos disponibles en Vertex AI (sin descarga, por API):
+- `vertex_ai/gemini-2.5-flash` ✅ PROBADO — barato, 1M tokens, ideal para index.html
+- `vertex_ai/gemini-2.5-pro` — más potente, más caro
+- `vertex_ai/gemini-2.5-flash-lite` — más barato aún
+- NO usar: gemini-1.5-flash-002 (retirado), gemini-1.5-pro (verificar)
+
+### Ollama local — modelos disponibles:
+- `qwen2.5-coder:7b` ✅
+- `llama3.2:latest` ✅
+- `llama3.2:3b` ✅
+- `phi3:mini` ✅
+- `qwen2.5-coder:32b` — descargando (~20GB)
+
+### Node-RED — fix aplicado 2026-05-11:
+- settings.js: agregado `fs: require('fs')` en functionGlobalContext
+- flows.json: nodo sheets-writer ya no usa require() directo
+
+---
+
 ## ESTADO DEL PROYECTO AL 2026-05-11
 
 ### Completado ✅
@@ -158,19 +194,9 @@ Invoke-RestMethod -Uri 'https://iporave-api.iporaveparaguay.workers.dev/api/piza
 
 ### Pendiente 🔴 (prioridad alta)
 
-#### 1. Mejoras visuales botones — desktop Y mobile (index.html)
-**Problema:** Botones muy juntos, algunos apilados verticalmente, se ve poco profesional
-**Archivo:** `public/index.html` — solo CSS primeras 475 líneas
-**Usar:** Aider + Vertex AI Gemini 1.5 Flash (index.html es >128k tokens, Groq no alcanza)
-**Cambios exactos:**
-- `.btn` base: `box-shadow:0 1px 3px rgba(0,0,0,.13)`, padding `10px 20px`
-- `.btn-sm`: padding `6px 13px`
-- `.tbactions` desktop: gap `12px`
-- `.act-btns` desktop: gap `8px`
-- Mobile `@media`: `.tbl td.td-actions` → cambiar a grid 2 columnas en vez de block full-width
-- Mobile `.act-btns`: gap `7px`, padding botones `6px 10px`
-- Mobile `.tbactions .btn`: padding `8px 13px`, font-size `12px`
-- **NO tocar JS. NO tocar utils.js ni login.js.**
+#### 1. ~~Mejoras visuales botones~~ ✅ COMPLETADO (commit f09be67)
+- Grid 2 columnas en mobile, gap aumentado, box-shadow, padding profesional
+- Barra búsqueda global: corregida para no tapar iconos topbar en mobile
 
 #### 2. Tienda pública — catálogo + flujo de compra (catalog.html)
 **Zona:** Antigravity
