@@ -206,3 +206,15 @@ Invoke-RestMethod -Uri 'http://localhost:1880/reporte' -Method Post -ContentType
 ## Nota para Cloud Code
 
 El usuario pidio que este archivo se vaya actualizando mientras Codex este parado o monitoreando, para que exista un relevo completo. Tambien pidio que se propongan mejoras cuando se detecten, pero sin ejecutarlas automaticamente si implican riesgo visual, seguridad o produccion.
+
+## Cierre de tanda nocturna
+
+- El usuario confirmo "eso era y guarda" despues de la mejora del boton flotante del asistente.
+- Ultimo estado funcional relevante:
+  - boton IA arrastrable implementado y validado;
+  - cambios guardados en git;
+  - reporte enviado a Node-RED;
+  - no hay deploy frontend realizado desde Codex en esta tanda.
+- Mantener siguiente criterio:
+  - si no hay una tarea nueva explicita, continuar solo con monitoreo pasivo;
+  - no abrir otra oleada de cambios hasta que el usuario o Cloud Code indiquen proximo objetivo.
