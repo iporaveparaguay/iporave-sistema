@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iporãve Connect — Contacto</title>
+  <meta name="description" content="Contactá con Iporãve — WhatsApp, Email y más." />
+  <style>
+    :root {
+      --bg: #0f1117;
+      --bg2: #1a1d2e;
+      --bg3: #23263a;
+      --accent: #6c63ff;
+      --accent2: #4ecdc4;
+      --text: #e8eaf6;
+      --text-muted: #8b8fa8;
+      --border: #2e3150;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar a {
+      color: var(--accent2);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+
+    .topbar a:hover {
+      opacity: 0.8;
+    }
+
+    .topbar .arrow {
+      font-size: 1.1rem;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 48px 20px 32px;
+    }
+
+    .logo {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .hero-sub {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    /* ── CONTAINER ── */
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 0 16px 60px;
+    }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 32px 0 14px;
+    }
+
+    /* ── CANALES ── */
+    .canales {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .canal-btn {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 20px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .canal-btn:hover,
+    .canal-btn:focus-visible {
+      border-color: var(--accent);
+      background: var(--bg3);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .canal-btn:active {
+      transform: translateY(0);
+    }
+
+    .canal-icon {
+      font-size: 1.6rem;
+      min-width: 36px;
+      text-align: center;
+    }
+
+    .canal-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .canal-label {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .canal-detail {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .canal-btn.whatsapp:hover { border-color: #25d366; }
+    .canal-btn.email:hover    { border-color: var(--accent); }
+    .canal-btn.ubicacion      { cursor: default; }
+    .canal-btn.ubicacion:hover {
+      border-color: var(--accent2);
+      transform: none;
+    }
+
+    /* ── FORMULARIO ── */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .form-group:last-of-type {
+      margin-bottom: 0;
+    }
+
+    label {
+      font-size: 0.87rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    input, textarea {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      width: 100%;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 110px;
+    }
+
+    .btn-enviar {
+      margin-top: 20px;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent), #5a52e0);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      letter-spacing: 0.02em;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-enviar:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    .btn-enviar:active {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .form-note {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 24px 20px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (min-width: 480px) {
+      .hero {
+        padding-top: 60px;
+      }
+      .logo {
+        font-size: 2.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <nav class="topbar">
+    <a href="catalog.html">
+      <span class="arrow">←</span> Volver al catálogo
+    </a>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="logo">Iporãve Connect</div>
+    <p class="hero-sub">Estamos para ayudarte — escribinos cuando quieras</p>
+  </header>
+
+  <!-- MAIN -->
+  <main class="container">
+
+    <!-- CANALES DE CONTACTO -->
+    <p class="section-title">Canales de contacto</p>
+    <div class="canales">
+
+      <a
+        class="canal-btn whatsapp"
+        href="https://wa.me/595975123456"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Escribinos por WhatsApp"
+      >
+        <span class="canal-icon">💬</span>
+        <span class="canal-info">
+          <span class="canal-label">Escribinos por WhatsApp</span>
+          <span class="canal-detail">+595 975 123 456 — Respuesta rápida</span>
+        </span>
+      </a>
+
+      <a
+        class="canal-btn email"
+        href="mailto:info@iporaveparaguay.com"
+        aria-label="Envianos un email"
+      >
+        <span class="canal-icon">📧</span>
+        <span class="canal-info">
+          <span class="canal-label">Envianos un email</span>
+          <span class="canal-detail">info@iporaveparaguay.com</span>
+        </span>
+      </a>
+
+      <div class="canal-btn ubicacion" aria-label="Ubicación">
+        <span class="canal-icon">🇵🇾</span>
+        <span class="canal-info">
+          <span class="canal-label">Asunción, Paraguay</span>
+          <span class="canal-detail">Atención local y envíos al país</span>
+        </span>
+      </div>
+
+    </div>
+
+    <!-- FORMULARIO -->
+    <p class="section-title">Mandanos un mensaje</p>
+    <div class="card">
+      <form id="contactForm" novalidate>
+
+        <div class="form-group">
+          <label for="nombre">Tu nombre</label>
+          <input
+            id="nombre"
+            name="nombre"
+            type="text"
+            placeholder="Ej: María González"
+            autocomplete="name"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Tu email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="ejemplo@correo.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="mensaje">Mensaje</label>
+          <textarea
+            id="mensaje"
+            name="mensaje"
+            placeholder="Contanos en qué te podemos ayudar..."
+            required
+          ></textarea>
+        </div>
+
+        <button type="submit" class="btn-enviar">Enviar por WhatsApp 💬</button>
+        <p class="form-note">Al hacer clic se abrirá WhatsApp con tu mensaje listo para enviar.</p>
+      </form>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    &copy; 2026 Iporãve &mdash; Asunción, Paraguay
+  </footer>
+
+  <script>
+    (function () {
+      var WA_NUMBER = '595975123456';
+
+      document.getElementById('contactForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        var nombre  = document.getElementById('nombre').value.trim();
+        var email   = document.getElementById('email').value.trim();
+        var mensaje = document.getElementById('mensaje').value.trim();
+
+        if (!nombre || !email || !mensaje) {
+          alert('Por favor completá todos los campos antes de enviar.');
+          return;
+        }
+
+        var text =
+          'Hola Iporãve! Me contacto desde el formulario del sitio.\n\n' +
+          'Nombre: ' + nombre + '\n' +
+          'Email: ' + email + '\n\n' +
+          'Mensaje:\n' + mensaje;
+
+        var url = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text);
+        window.open(url, '_blank', 'noopener,noreferrer');
+      });
+    })();
+  </script>
+
+</body>
+</html>
