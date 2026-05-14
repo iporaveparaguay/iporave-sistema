@@ -11,6 +11,7 @@ Uso:
 import argparse
 import json
 import sys
+import uuid
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -204,38 +205,85 @@ USUARIOS_PRUEBA = [
 PASS_PRUEBA = "Test1234!"
 
 
+def _get_auth_id_supabase(email, password, anon_key):
+    """
+    Obtiene el auth_id (UUID) de un usuario en Supabase Auth.
+    Intenta signup primero; si ya existe, hace signin para recuperar el UUID.
+    No requiere service_role key.
+    """
+    headers = {"apikey": anon_key}
+
+    # Intento 1: signup
+    url_signup = f"{SUPABASE_URL}/auth/v1/signup"
+    status, resp = post(url_signup, {"email": email, "password": password}, extra_headers=headers)
+    if status in (200, 201):
+        user = resp.get("user") or resp
+        uid = user.get("id") if isinstance(user, dict) else None
+        if uid:
+            return uid
+
+    # Intento 2: signin (usuario ya existe)
+    url_signin = f"{SUPABASE_URL}/auth/v1/token?grant_type=password"
+    status2, resp2 = post(url_signin, {"email": email, "password": password}, extra_headers=headers)
+    if status2 == 200:
+        user2 = resp2.get("user") or {}
+        uid2 = user2.get("id")
+        if uid2:
+            return uid2
+
+    return None
+
+
 def crear_usuarios(token, anon_key):
+    """
+    Crea usuarios de prueba en 2 pasos:
+    1. Registrar en Supabase Auth (/auth/v1/signup) → obtener UUID real
+    2. Insertar perfil en tabla 'usuarios' con ese UUID como auth_id
+    Así se respeta la FK constraint usuarios_auth_id_fkey.
+    """
     print("\n[USUARIOS] Creando usuarios de prueba ...")
-    # Fix 1: id es entero serial — consultar max actual para evitar ERROR 500
-    max_id = 0
-    if anon_key:
-        max_id = get_max_id_supabase("usuarios", anon_key, token)
-        print(f"  Max id actual en 'usuarios': {max_id}")
-    else:
-        print("  AVISO: sin anon key no se puede consultar max id. Se omite el campo id.")
+    if not anon_key:
+        print("  OMITIDO — no se pudo obtener la anon key de Supabase.")
+        return 0
+
+    max_id = get_max_id_supabase("usuarios", anon_key, token)
+    print(f"  Max id actual en 'usuarios': {max_id}")
+
+    url_perfil = f"{SUPABASE_URL}/rest/v1/usuarios"
+    headers_perfil = {
+        "apikey": anon_key,
+        "Prefer": "return=minimal",
+    }
 
     creados = 0
     for i, u in enumerate(USUARIOS_PRUEBA):
+        # Paso 1: obtener auth_id (signup o signin si ya existe)
+        auth_id = _get_auth_id_supabase(u["email"], PASS_PRUEBA, anon_key)
+        if not auth_id:
+            print(f"  ERROR auth — {u['email']}: no se obtuvo auth_id de Supabase")
+            continue
+
+        # Paso 2: insertar perfil en tabla usuarios
         body = {
+            "id":       max_id + i + 1,
+            "auth_id":  auth_id,
             "email":    u["email"],
+            "username": u["email"].split("@")[0],
+            "password": PASS_PRUEBA,
             "nombre":   u["nombre"],
             "rol":      u["rol"],
-            "password": PASS_PRUEBA,
         }
-        # Campos opcionales de perfil extendido
         for campo in ("whatsapp", "ciudad", "barrio", "departamento", "pais", "vehiculo", "patente"):
             if campo in u:
                 body[campo] = u[campo]
-        # Solo incluir id si pudimos calcular el siguiente entero
-        if anon_key:
-            body["id"] = max_id + i + 1
 
-        status, resp = post(f"{WORKER_URL}/api/save-user", body, token=token)
-        if resp.get("ok"):
-            print(f"  OK — {u['email']} ({u['rol']})")
+        status, resp = post(url_perfil, body, token=token, extra_headers=headers_perfil)
+        if status in (200, 201):
+            print(f"  OK — {u['email']} ({u['rol']}) auth_id={auth_id[:8]}...")
             creados += 1
         else:
-            err = resp.get("error", resp.get("_raw", str(resp)))
+            err = (resp.get("message") or resp.get("error") or
+                   resp.get("details") or resp.get("_raw", str(resp)))
             print(f"  ERROR {status} — {u['email']}: {err}")
     return creados
 
