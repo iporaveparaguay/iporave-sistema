@@ -2732,6 +2732,8 @@ function buildNav(){
   updateNavBadges();
 }
 function updateNavBadges(){
+  // Defensa: si CU no está cargado (race condition durante login), abortar.
+  if(!CU||!CU.rol)return;
   // Pedidos pendientes — admin/superadmin
   if(['admin','superadmin'].includes(CU.rol)){
     const pend=_ordersCache.filter(o=>o.estado==='Pendiente').length;
