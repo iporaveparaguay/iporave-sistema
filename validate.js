@@ -23,15 +23,24 @@ console.log('\n🔍 Validando public/index.html...\n');
 const html = fs.readFileSync(HTML, 'utf8');
 
 // 1. Encontrar el bloque <script> principal
-// Buscar '\n<script>' para no confundirse con <script> dentro de strings JS
-const mainStartRaw = html.lastIndexOf('\n<script>');
-const mainStart = mainStartRaw + 1; // apuntar al '<' del tag
-const mainEnd = html.lastIndexOf('</script>');
-if (mainStart < 1 || mainEnd < 0) {
+// Busca por marcador único del código app para evitar falsos positivos
+// (no usar lastIndexOf porque hay <script> dentro de strings JS)
+const APP_MARKER = 'DL = {';
+const markerIdx = html.indexOf(APP_MARKER);
+if (markerIdx < 0) {
+  fail('No se encontró el bloque <script> principal (marcador DL = { ausente)');
+  process.exit(1);
+}
+const mainStart = html.lastIndexOf('<script', markerIdx);
+const mainEnd = html.indexOf('</script>', markerIdx + html.substring(markerIdx).lastIndexOf('</script>') - 9);
+// Buscar el cierre real: el último </script> dentro del bloque
+const blockContent = html.substring(mainStart);
+const realEnd = mainStart + blockContent.indexOf('</script>', APP_MARKER.length + (markerIdx - mainStart));
+if (mainStart < 0 || realEnd < 0) {
   fail('No se encontró el bloque <script> principal');
   process.exit(1);
 }
-const mainScript = html.substring(mainStart + 8, mainEnd);
+const mainScript = html.substring(mainStart + 8, realEnd);
 ok('Bloque <script> principal encontrado (' + mainScript.length + ' chars)');
 
 // 2. Buscar </script> sin escapar dentro del script principal

@@ -801,7 +801,15 @@ function pwdField(inputId,placeholder,extra){
 function showAlert(id,type,msg,dur){
   const el=$(id);if(!el)return;
   const cls={s:'alrt-s',e:'alrt-e',w:'alrt-w',i:'alrt-i'}[type]||'alrt-i';
-  el.innerHTML='<div class="alert '+cls+'" style="cursor:pointer" onclick="this.parentElement.innerHTML=\'\'" title="Clic para cerrar">'+msg+'</div>';
+  // SEGURIDAD: msg via textContent para evitar XSS. El envoltorio se crea via DOM API.
+  el.textContent='';
+  const div=document.createElement('div');
+  div.className='alert '+cls;
+  div.style.cursor='pointer';
+  div.title='Clic para cerrar';
+  div.onclick=function(){if(div.parentElement)div.parentElement.innerHTML='';};
+  div.textContent=msg;
+  el.appendChild(div);
   // Errores no desaparecen solos — el usuario los cierra haciendo clic
   const d=dur===undefined?(type==='e'?0:5000):dur;
   if(d)setTimeout(()=>{if(el)el.innerHTML='';},d);
@@ -812,7 +820,7 @@ function pushNotif(msg,type,action){
   if(area){
     const d=document.createElement('div');
     d.className='notif notif-'+(type||'i');
-    d.innerHTML=msg;
+    d.textContent=msg;
     if(action){d.style.cursor='pointer';d.onclick=()=>{if(d.parentNode)d.parentNode.removeChild(d);toggleNotifPanel();ejecutarAccionNotif(action);};}
     area.appendChild(d);
     setTimeout(()=>{if(d.parentNode)d.parentNode.removeChild(d);},5000);
@@ -2445,7 +2453,7 @@ async function doLogin(){
     await initSupabase();
     $('loginScreen').style.display='none';
     $('appScreen').classList.add('show');
-    if(CU.foto_perfil){$('sAvatar').innerHTML='<img src="'+CU.foto_perfil+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover">';}
+    if(CU.foto_perfil){$('sAvatar').innerHTML='<img src="'+safeUrl(CU.foto_perfil)+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover">';}
     else{$('sAvatar').textContent=CU.nombre[0].toUpperCase();}
     $('sName').textContent=CU.nombre;
     $('sRole').textContent=capRole(CU.rol);
@@ -4799,7 +4807,7 @@ async function saveNewOrder(){
   if(!costo)faltantes.push('Costo proveedor');
   if(!esManual&&!zona)faltantes.push('Zona de entrega');
   if(esManual&&!zonaCustomNombre)faltantes.push('Nombre de zona (manual)');
-  if(faltantes.length){showAlert('noAlert','e','⚠️ Campos obligatorios faltantes: <b>'+faltantes.join(', ')+'</b>');return;}
+  if(faltantes.length){showAlert('noAlert','e','⚠️ Campos obligatorios faltantes: '+faltantes.join(', '));return;}
   const orders=_ordersCache;
   const newId=Math.max(...orders.map(o=>o.id),1000)+1;
   let gpsLat=_validGps(gv('nGpsLat'),gv('nGpsLng'))?gv('nGpsLat'):null,gpsLng=_validGps(gv('nGpsLat'),gv('nGpsLng'))?gv('nGpsLng'):null;
@@ -6524,7 +6532,12 @@ function abrirScannerCatalogo(){
           verProducto(prod.id);
         }else{
           const r=$('qr-result');
-          if(r)r.innerHTML='<span style="color:var(--accent)">Código: '+codigo+'</span> — producto no encontrado. <a onclick="cerrarScannerCatalogo();PAGES.catalogo(\''+codigo+'\')" style="color:var(--blue);cursor:pointer">Buscar igual</a>';
+          if(r){
+            // SEGURIDAD: codigo viene del scanner QR/barcode — escapar para HTML y para el onclick.
+            const codSafe=escHtml(codigo||'');
+            const codAttr=String(codigo||'').replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            r.innerHTML='<span style="color:var(--accent)">Código: '+codSafe+'</span> — producto no encontrado. <a onclick="cerrarScannerCatalogo();PAGES.catalogo(\''+codAttr+'\')" style="color:var(--blue);cursor:pointer">Buscar igual</a>';
+          }
         }
       });
     }catch(e){const r=$('qr-result');if(r)r.textContent='Error al acceder a la cámara: '+e.message;}
@@ -7659,6 +7672,9 @@ function sendOrderChatMsg(orderId){
 }
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+// SEGURIDAD: valida que la URL sea http(s) — evita javascript:, data:, vbscript:, etc.
+function safeUrl(u){return /^https?:\/\//i.test(u||'')?u:'';}
+
 function escQ(s){return s.replace(/'/g,"\\'")}
 
 /* ─── VALIDACIÓN DE PERFIL POR ROL ─── */
@@ -7821,7 +7837,7 @@ function openPerfilUsuario(){
     'xl'
   );
   const{ok,missing}=_perfilCompleto(u);
-  if(!ok)showAlert('pfAlert','w','⚠️ Completá los campos obligatorios (*): <b>'+missing.join(', ')+'</b>');
+  if(!ok)showAlert('pfAlert','w','⚠️ Completá los campos obligatorios (*): '+missing.join(', '));
   _cargarResenasEnPerfil(u.id);
 }
 async function subirFotoPerfil(input){
@@ -7831,9 +7847,9 @@ async function subirFotoPerfil(input){
   if(!url){pushNotif('Error al subir la foto','e');return;}
   CU.foto_perfil=url;
   const av=$('sAvatar');
-  if(av)av.innerHTML='<img src="'+url+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover">';
+  if(av)av.innerHTML='<img src="'+safeUrl(url)+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover">';
   const pfav=document.querySelector('#mABody .perfil-avatar,#mABody .perfil-avatar-placeholder');
-  if(pfav)pfav.outerHTML='<img src="'+url+'" class="perfil-avatar">';
+  if(pfav)pfav.outerHTML='<img src="'+safeUrl(url)+'" class="perfil-avatar">';
   await DL.saveUser({id:CU.id,foto_perfil:url});
   pushNotif('Foto actualizada ✓','s');
 }
@@ -7844,7 +7860,7 @@ async function subirLogoPerfil(input){
   if(!url){pushNotif('Error al subir el logo','e');return;}
   CU.logo=url;
   const p=$('pfLogoPreview');
-  if(p)p.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">';
+  if(p)p.innerHTML='<img src="'+safeUrl(url)+'" style="width:100%;height:100%;object-fit:cover">';
   pushNotif('Logo subido ✓','s');
 }
 async function subirCedulaFrente(input){
@@ -7855,7 +7871,7 @@ async function subirCedulaFrente(input){
   CU.foto_cedula_frente=url;
   await DL.saveUser({id:CU.id,foto_cedula_frente:url});
   const p=$('pfCedFrentePreview');
-  if(p)p.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">';
+  if(p)p.innerHTML='<img src="'+safeUrl(url)+'" style="width:100%;height:100%;object-fit:cover">';
   _actualizarBadgePerfil();
   pushNotif('Foto frente subida ✓','s');
 }
@@ -7867,7 +7883,7 @@ async function subirCedulaDorso(input){
   CU.foto_cedula_dorso=url;
   await DL.saveUser({id:CU.id,foto_cedula_dorso:url});
   const p=$('pfCedDorsoPreview');
-  if(p)p.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">';
+  if(p)p.innerHTML='<img src="'+safeUrl(url)+'" style="width:100%;height:100%;object-fit:cover">';
   _actualizarBadgePerfil();
   pushNotif('Foto dorso subida ✓','s');
 }
@@ -7899,7 +7915,7 @@ async function guardarPerfilUsuario(){
   $('sName').textContent=CU.nombre;
   _actualizarBadgePerfil();
   if(!ok){
-    showAlert('pfAlert','w','✅ Guardado. Todavía faltan: <b>'+missing.join(', ')+'</b>');
+    showAlert('pfAlert','w','✅ Guardado. Todavía faltan: '+missing.join(', '));
   }else{
     closeA();pushNotif('Perfil guardado ✓','s');
   }
@@ -7922,7 +7938,13 @@ async function _cargarResenasEnPerfil(userId){
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+_renderStars(c.estrellas)+
         '<span style="font-size:11px;color:var(--text3)">'+new Date(c.created_at).toLocaleDateString('es-PY')+'</span></div>'+
         (c.comentario?'<div style="font-size:13px;line-height:1.5;margin-bottom:6px">'+escHtml(c.comentario)+'</div>':'')+
-        (c.fotos?.length?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">'+c.fotos.map(f=>'<img src="'+f+'" class="resena-foto" onclick="window.open(\''+f+'\',\'_blank\')">').join('')+'</div>':'')+
+        (c.fotos?.length?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">'+c.fotos.map(f=>{
+          const fSafe=safeUrl(f);
+          if(!fSafe)return '';
+          // escape comilla simple y < > para el atributo onclick (string JS dentro de HTML)
+          const fAttr=String(fSafe).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          return '<img src="'+escHtml(fSafe)+'" class="resena-foto" onclick="window.open(\''+fAttr+'\',\'_blank\')">';
+        }).join('')+'</div>':'')+
         '</div>'
       ).join('');
   }catch{cont.innerHTML='<div style="color:var(--text3);font-size:12px;padding:10px">Error al cargar reseñas.</div>';}
