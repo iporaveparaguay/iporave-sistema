@@ -551,6 +551,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .act-btns{justify-content:flex-start;gap:8px;}
   .order-menu-btn{min-width:40px;min-height:40px;}
 }
+@media(max-width:600px){input,select,textarea{font-size:16px !important;}}
 /* En desktop: ocultar elementos que solo deben verse en mobile */
 .col-show-mobile{display:none;}
 .act-btns{display:flex;gap:8px;flex-wrap:wrap;}
@@ -615,8 +616,8 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
     <div id="resetPanel" style="display:none">
       <div id="resetAlert"></div>
       <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Ingresá tu nueva contraseña.</p>
-      <div class="fg"><label>Nueva contraseña</label><div class="pwd-wrap"><input type="password" id="resetPass" placeholder="••••••••"><button type="button" class="pwd-eye" onclick="togglePwd('resetPass',this)" tabindex="-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-      <div class="fg"><label>Repetir contraseña</label><input type="password" id="resetPass2" placeholder="••••••••"></div>
+      <div class="fg"><label>Nueva contraseña</label><div class="pwd-wrap"><input type="password" id="resetPass" placeholder="••••••••" autocomplete="new-password"><button type="button" class="pwd-eye" onclick="togglePwd('resetPass',this)" tabindex="-1"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+      <div class="fg"><label>Repetir contraseña</label><input type="password" id="resetPass2" placeholder="••••••••" autocomplete="new-password"></div>
       <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="doResetPassword()">
         <span id="resetBtnTxt">Guardar nueva contraseña</span>
       </button>
@@ -994,7 +995,7 @@ document.addEventListener('click',function(e){
   if(!e.target.closest('.order-menu-wrap'))_closeCatMenus();
 });
 // Cerrar dropdowns al scrollear — evita que queden flotando con position:fixed
-document.addEventListener('scroll',function(){_closeAllDropMenus();},{passive:true,capture:true});
+if(!window._scrollDropGuard){window._scrollDropGuard=true;document.addEventListener('scroll',function(){_closeAllDropMenus();},{passive:true,capture:true});}
 
 // Funcion segura para ejecutar acciones de notificacion
 function ejecutarAccionNotif(actionStr){
@@ -2758,6 +2759,7 @@ async function _doSensitiveAuth() {
 }
 
 function doLogout(){
+  if(_trackRefreshTimer){clearInterval(_trackRefreshTimer);_trackRefreshTimer=null;}
   ['users','usersVer','orders','zonas','cupos','jornadas','catalogo'].forEach(k => localStorage.removeItem('ipv5_' + k));
   _clearSensitiveCfg();
   if(_supa)_supa.auth.signOut().catch(()=>{});
@@ -3295,6 +3297,7 @@ function _notifSessionToggle(open){
     const badge=$('codexNotifBadge');
     if(badge)badge.style.display='none';
     const c=$('nbCount');if(c)c.style.display='none';
+    _updateBell();
   }
 }
 function _notifSessionEnsureUi(){
@@ -4713,7 +4716,7 @@ function editOrder(id){
   const dropOpts='<option value="">Sin asignar</option>'+drops.map(d=>'<option value="'+d.id+'" '+(o.dropId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+'</option>').join('');
   const provOpts='<option value="">Sin proveedor</option>'+provs.map(d=>'<option value="'+d.id+'" '+(o.proveedorId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+'</option>').join('');
   const allSales=_usersCache.filter(u=>['vendedor','proveedor','dropshipper','administrador','superadmin'].includes(u.rol));
-  const vendOpts='<option value="">Sin asignar</option>'+allSales.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+' ('+capRole(d.rol)+')</option>').join('');
+  const vendOpts='<option value="">Sin asignar</option>'+allSales.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+' ('+escHtml(capRole(d.rol))+')</option>').join('');
   openA('✏️ Editar pedido #'+id,
     '<div class="stitle">Datos del cliente</div>'+
     '<div class="frow"><div class="fg"><label>Nombre cliente *</label><input type="text" id="eCli" value="'+escAttr(o.cliente)+'"></div>'+
@@ -4933,7 +4936,7 @@ function openNewOrder(){
     '<div class="stitle">Datos del cliente</div>'+
     (isAdminLike(CU.rol)?'<div class="fg"><label>👤 ¿De quién es este pedido?</label>'+
     '<select id="nVendedorId" style="width:100%"><option value="'+CU.id+'" selected>'+CU.nombre+' (yo)</option>'+
-    _usersCache.filter(u=>['vendedor','proveedor','dropshipper'].includes(u.rol)&&u.id!==CU.id).map(u=>'<option value="'+u.id+'">'+u.nombre+' ('+capRole(u.rol)+')</option>').join('')+
+    _usersCache.filter(u=>['vendedor','proveedor','dropshipper'].includes(u.rol)&&u.id!==CU.id).map(u=>'<option value="'+u.id+'">'+escHtml(u.nombre||'')+' ('+escHtml(capRole(u.rol))+')</option>').join('')+
     '</select></div>':'')+
     '<div class="frow"><div class="fg"><label>Nombre cliente *</label>'+
     '<input type="text" id="nCli" placeholder="Nombre del cliente" oninput="sugerirClienteAnterior()">'+
@@ -6584,7 +6587,7 @@ PAGES.analitica_admin=function(){
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">'+
           '<span style="font-size:15px;font-weight:700;color:var(--text3);min-width:20px">'+(i+1)+'</span>'+
           '<div style="flex:1;min-width:0">'+
-            '<div style="font-weight:700;font-size:13px">'+v.nombre+'<span style="font-size:10px;color:var(--text3);margin-left:4px">'+capRole(v.rol)+'</span></div>'+
+            '<div style="font-weight:700;font-size:13px">'+v.nombre+'<span style="font-size:10px;color:var(--text3);margin-left:4px">'+escHtml(capRole(v.rol))+'</span></div>'+
             '<div style="font-size:11px;color:var(--text2)">'+v.n+' entregas · '+fmt(v.gan)+'</div>'+
           '</div></div>'
         ).join(''):'<div style="color:var(--text3);font-size:12px">Sin datos</div>')+
@@ -6674,7 +6677,7 @@ PAGES.usuarios=async function(){
       (u.verificado?' <span class="badge-verif" style="font-size:9px">✓</span>':'')+
     '</td>'+
     '<td class="td-user" style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--text2)" title="'+escAttr(u.username)+'">'+escHtml(u.username||'')+'</td>'+
-    '<td><span class="badge '+(u.rol==='admin'?'bc':u.rol==='vendedor'?'bdisp':u.rol==='dropshipper'?'bn1':u.rol==='delivery'?'be':u.rol==='proveedor'?'bprov':'br')+'">'+capRole(u.rol)+'</span></td>'+
+    '<td><span class="badge '+(u.rol==='admin'?'bc':u.rol==='vendedor'?'bdisp':u.rol==='dropshipper'?'bn1':u.rol==='delivery'?'be':u.rol==='proveedor'?'bprov':'br')+'">'+escHtml(capRole(u.rol))+'</span></td>'+
     '<td class="col-hide" style="font-size:12px">'+escHtml(u.vehiculo||'—')+'</td>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">'+escHtml(u.patente||'—')+'</td>'+
     '<td class="col-hide" style="font-size:11px;color:var(--cyan)">'+escHtml(u.whatsapp||'—')+'</td>'+
@@ -6743,7 +6746,7 @@ function editUser(id){
     (u.rol==='superadmin'
       ?'<div class="fg"><label>Rol</label><div style="padding:8px 0;font-size:13px;color:var(--text2)">Superadministrador <span style="font-size:11px;color:var(--text3)">(rol fijo — no modificable)</span></div></div>'
       :'<div class="fg"><label>Rol</label><select id="euRol">'+
-       (CU.rol==='superadmin'?['vendedor','dropshipper','delivery','proveedor','cliente','admin']:['vendedor','dropshipper','delivery','proveedor','cliente']).map(r=>'<option value="'+r+'" '+(u.rol===r?'selected':'')+'>'+capRole(r)+'</option>').join('')+
+       (CU.rol==='superadmin'?['vendedor','dropshipper','delivery','proveedor','cliente','admin']:['vendedor','dropshipper','delivery','proveedor','cliente']).map(r=>'<option value="'+r+'" '+(u.rol===r?'selected':'')+'>'+escHtml(capRole(r))+'</option>').join('')+
        '</select></div>')+
     '<div class="frow"><div class="fg"><label>Vehículo</label><select id="euVeh">'+
     '<option value="moto" '+(u.vehiculo==='moto'?'selected':'')+'>Moto</option>'+
@@ -6787,7 +6790,7 @@ function delUser(id){
       '<div style="font-size:15px;font-weight:700;color:var(--red)">¿Eliminar este usuario?</div>'+
       '<div style="margin:10px 0;padding:10px 12px;background:var(--bg4);border-radius:8px;font-size:13px">'+
         '<div><b>'+escHtml(u.nombre||'')+'</b></div>'+
-        '<div style="color:var(--text2);margin-top:3px;font-family:\'JetBrains Mono\',monospace;font-size:11px">@'+escHtml(u.username||'')+' · '+capRole(u.rol)+'</div>'+
+        '<div style="color:var(--text2);margin-top:3px;font-family:\'JetBrains Mono\',monospace;font-size:11px">@'+escHtml(u.username||'')+' · '+escHtml(capRole(u.rol))+'</div>'+
       '</div>'+
       '<div style="font-size:12px;color:var(--text2)">Esta acción no se puede deshacer.</div>'+
     '</div>',
@@ -8133,7 +8136,7 @@ function renderOrderChat(orderId){
     const isMe=m.userId===CU.id;
     return '<div class="chat-msg">'+
       '<div class="chat-meta'+(isMe?' right':'')+'">'+
-        '<b>'+escHtml(m.nombre||'')+'</b> <span style="color:var(--text3)">('+capRole(m.rol)+')</span> · '+m.fecha+
+        '<b>'+escHtml(m.nombre||'')+'</b> <span style="color:var(--text3)">('+escHtml(capRole(m.rol))+')</span> · '+m.fecha+
       '</div>'+
       '<div class="chat-bubble-wrap'+(isMe?' right':'')+'">'+
         '<div class="chat-bubble'+(isMe?' mine':'')+'">'+escHtml(m.msg)+'</div>'+
@@ -8237,7 +8240,7 @@ function openPerfilUsuario(){
     '<div style="position:absolute;bottom:0;right:0;background:var(--accent);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px">📷</div>'+
     '</div><input type="file" id="pfFotoFile" accept="image/*" style="display:none" onchange="subirFotoPerfil(this)">'+
     '<div><div style="font-size:18px;font-weight:800">'+escHtml(u.nombre||'')+'</div>'+
-    '<div style="font-size:12px;color:var(--text2);margin:2px 0">@'+escHtml(u.username||'')+' · '+capRole(u.rol)+
+    '<div style="font-size:12px;color:var(--text2);margin:2px 0">@'+escHtml(u.username||'')+' · '+escHtml(capRole(u.rol))+
     (u.verificado?' <span class="badge-verif">✓ Verificado</span>':'')+
     (u.badge_confianza?' <span class="badge-confianza">🛡️ De Confianza</span>':'')+
     '</div><div style="margin-top:4px">'+calStr+'</div></div></div>'+
@@ -8888,7 +8891,7 @@ function openNuevoMensaje(){
     '<div class="mc-avatar" style="width:40px;height:40px;font-size:15px">'+escHtml((u.nombre||'?')[0].toUpperCase())+'</div>'+
     '<div class="mc-info">'+
       '<div class="mc-name">'+escHtml(u.nombre||'')+'</div>'+
-      '<div class="mc-preview">'+capRole(u.rol)+'</div>'+
+      '<div class="mc-preview">'+escHtml(capRole(u.rol))+'</div>'+
     '</div>'+
     '<div style="color:var(--accent);font-size:20px">›</div>'+
     '</div>'
@@ -8909,7 +8912,7 @@ function filtrarContactos(q){
     '<div class="mc-avatar" style="width:40px;height:40px;font-size:15px">'+escHtml((u.nombre||'?')[0].toUpperCase())+'</div>'+
     '<div class="mc-info">'+
       '<div class="mc-name">'+escHtml(u.nombre||'')+'</div>'+
-      '<div class="mc-preview">'+capRole(u.rol)+'</div>'+
+      '<div class="mc-preview">'+escHtml(capRole(u.rol))+'</div>'+
     '</div>'+
     '<div style="color:var(--accent);font-size:20px">›</div>'+
     '</div>'
@@ -8930,14 +8933,14 @@ function _renderModalContactos(q){
   const htmlMios=misContactos.length?misContactos.map(u=>
     '<div class="mc-conv-item" style="margin-bottom:3px;border-radius:var(--radius)">'+
     '<div class="mc-avatar" style="width:36px;height:36px;font-size:13px">'+escHtml((u.nombre||'?')[0].toUpperCase())+'</div>'+
-    '<div class="mc-info"><div class="mc-name">'+escHtml(u.nombre||'')+'</div><div class="mc-preview">'+capRole(u.rol)+'</div></div>'+
+    '<div class="mc-info"><div class="mc-name">'+escHtml(u.nombre||'')+'</div><div class="mc-preview">'+escHtml(capRole(u.rol))+'</div></div>'+
     '<button class="btn btn-secondary btn-sm" onclick="quitarContacto('+u.id+')">Quitar</button>'+
     '</div>'
   ).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">No tenés contactos agregados aún.</div>';
   const htmlDisp=disponibles.length?disponibles.map(u=>
     '<div class="mc-conv-item" style="margin-bottom:3px;border-radius:var(--radius)">'+
     '<div class="mc-avatar" style="width:36px;height:36px;font-size:13px">'+escHtml((u.nombre||'?')[0].toUpperCase())+'</div>'+
-    '<div class="mc-info"><div class="mc-name">'+escHtml(u.nombre||'')+'</div><div class="mc-preview">'+capRole(u.rol)+'</div></div>'+
+    '<div class="mc-info"><div class="mc-name">'+escHtml(u.nombre||'')+'</div><div class="mc-preview">'+escHtml(capRole(u.rol))+'</div></div>'+
     '<button class="btn btn-primary btn-sm" onclick="agregarContacto('+u.id+')">+ Agregar</button>'+
     '</div>'
   ).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">No hay más usuarios disponibles para agregar.</div>';
