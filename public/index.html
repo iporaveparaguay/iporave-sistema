@@ -2546,12 +2546,12 @@ async function sendAI(){
       if(data.stop_reason==='tool_use'){
         const toolBlocks=data.content.filter(b=>b.type==='tool_use');
         const textBlocks=data.content.filter(b=>b.type==='text'&&b.text.trim());
-        if(textBlocks.length)textBlocks.forEach(b=>addAIMsg(b.text,'bot'));
+        if(textBlocks.length)textBlocks.forEach(b=>addAIMsg(escHtml(b.text),'bot'));
         messages.push({role:'assistant',content:data.content});
         const toolResults=[];
         for(const tu of toolBlocks){
           removeAITyping();
-          addAIMsg('⚙️ Ejecutando <b>'+tu.name+'</b>…','bot','ai-typing');
+          addAIMsg('⚙️ Ejecutando <b>'+escHtml(tu.name)+'</b>…','bot','ai-typing');
           let result;
           try{
             const fn=AI_TOOL_EXEC[tu.name];
@@ -2574,7 +2574,7 @@ async function sendAI(){
     removeAITyping();
     if(finalReply){
       _aiHistory.push({role:'assistant',content:finalReply});
-      addAIMsg(finalReply,'bot');
+      addAIMsg(escHtml(finalReply),'bot');
     }
     try{if(typeof filtrar==='function')filtrar();}catch(e){}
 
@@ -2583,7 +2583,7 @@ async function sendAI(){
     _aiHistory.pop();
     addAIMsg((e.message?.includes('Failed to fetch')
       ?'⚠️ Sin conexión con el asistente. Verificá internet.'
-      :'⚠️ Error: '+e.message),'bot');
+      :'⚠️ Error: '+escHtml(e.message)),'bot');
   }
 }
 function addAIMsg(html,role,extraClass){
