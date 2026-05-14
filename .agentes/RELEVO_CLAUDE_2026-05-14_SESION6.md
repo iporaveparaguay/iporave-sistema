@@ -1,8 +1,8 @@
 # RELEVO Claude Sesión 6 — 2026-05-14 (continuación tarde/noche)
 
 ## Versiones actuales
-- **Worker:** `4077a8ab` (iporave-api.iporaveparaguay.workers.dev)
-- **Frontend:** `4adb53d` (iporave-sistema.vercel.app) — en deploy Vercel ahora
+- **Worker:** `e099250` (iporave-api.iporaveparaguay.workers.dev)
+- **Frontend:** `6adac42` (iporave-sistema.vercel.app)
 - **Supabase:** hrpnqbmknmgdaaokjelb.supabase.co
 
 ---
@@ -118,15 +118,30 @@ ALTER TABLE pedidos ALTER COLUMN id SET NOT NULL;
 
 ---
 
+## Cambios adicionales — continuación sesión 6 (noche)
+
+### Frontend commits posteriores
+- `7b54a17` — Push notifications en perfil para TODOS los roles + proveedor charts fix + catálogo img fallback
+- `656c403` — Admin dashboard: conteo usuarios por rol + acciones rápidas + 10 pedidos recientes
+- `6adac42` — GPS error handling (delivery) + mensajes/chat fixes (altura + empty state + badge + scroll)
+
+### Worker commits posteriores
+- `e91a6c9` — Rate limit tracking: max 1 update cada 4s por delivery
+- `c5b93e9` — SQL trigger seguridad delivery columnas (para ejecutar en Supabase)
+- `e099250` — delete-user: limpia push_subscriptions y mensajes al eliminar usuario
+
+### Fixes adicionales en frontend (incluidos en commits anteriores)
+- Pedidos: ID robusto con parseInt().filter(>0), estado inicial por rol, dropId auto-asignado para dropshipper
+- Empty states por rol en tabla de pedidos
+- GPS: `_mapaLocateMe` con error handling, `_gpsLoopTick` con contador errores, `_gpsLoopStart` con guard geolocation
+- Chat: altura flexible, empty state mejorado, badge no leídos, scroll doble-timeout
+
 ## Próximos pasos sugeridos
 
-1. **[URGENTE]** Ejecutar migración pedidos.id en Supabase SQL Editor
-2. **[CORTO]** Fix delivery: validar columnas permitidas en PATCH
-3. **[CORTO]** Rate limit en tracking (máx 1 update cada 5s por usuario)
-4. **[MEDIO]** Proveedor: charts muestran vacío (seed sin datos de ventas del proveedor)
-5. **[MEDIO]** Catálogo: imágenes de productos rotas (seed sin imagen_url)
-6. **[FUTURO]** Auto-registro público de usuarios externos (después de tienda pública)
-7. **[FUTURO]** Mapbox V6 — reemplazar Leaflet
+1. **[URGENTE]** Ejecutar migración `pedidos.id` en Supabase SQL Editor (archivo: `sql/migraciones_pendientes.sql`)
+2. **[URGENTE]** Ejecutar trigger seguridad delivery en Supabase SQL Editor (mismo archivo)
+3. **[FUTURO]** Auto-registro público de usuarios externos (después de tienda pública)
+4. **[FUTURO]** Mapbox V6 — reemplazar Leaflet
 
 ---
 
