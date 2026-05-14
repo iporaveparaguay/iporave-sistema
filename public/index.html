@@ -409,9 +409,9 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 #menuBtn{display:none;}
 @media print{.sidebar,.topbar,.btn,.fbar,.moverlay,#aiBtn,#aiPanel,#notifArea,#menuBtn,#sideOverlay,#ntPanel,#ntBell{display:none!important;}.main{margin:0!important;}}
 /* ── MENSAJES ── */
-.ca.mc-page{padding:0!important;overflow:hidden;}
-.mc-wrap{display:flex;flex-direction:column;height:calc(100vh - 52px);max-height:calc(100vh - 52px);overflow:hidden;width:100%;}
-.mc-conv-list{flex:1;overflow-y:auto;overflow-x:hidden;width:100%;}
+.ca.mc-page{padding:0!important;overflow:hidden;height:0;min-height:0;flex:1;}
+.mc-wrap{display:flex;flex-direction:column;height:100%;overflow:hidden;width:100%;}
+.mc-conv-list{flex:1;overflow-y:auto;overflow-x:hidden;width:100%;min-height:0;}
 .mc-conv-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;min-width:0;}
 .mc-conv-item:hover,.mc-conv-item:active{background:var(--bg3);}
 .mc-avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#000;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -422,7 +422,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .mc-time{font-size:10px;color:var(--text3);}
 .mc-badge{background:var(--accent);color:#000;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;min-width:18px;text-align:center;}
 /* Hilo de conversación */
-.mc-thread{display:flex;flex-direction:column;height:calc(100vh - 52px);overflow:hidden;}
+.mc-thread{display:flex;flex-direction:column;height:100%;overflow:hidden;}
 .mc-thread-header{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
 .mc-back{cursor:pointer;color:var(--accent);font-size:20px;line-height:1;padding:4px;}
 .mc-thread-name{font-weight:700;font-size:15px;}
@@ -528,7 +528,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .col-show-mobile{display:block!important;}
   /* Mensajes: prevenir overflow en lista y vista de hilo */
   .mc-preview{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
-  .mc-wrap,.mc-thread{max-width:100vw;width:100%;}
+  .mc-wrap,.mc-thread{max-width:100vw;width:100%;height:100%;}
   .mc-conv-list,.mc-bubbles{max-width:100vw;}
   /* En mobile, col-show-mobile es visible; en desktop se oculta abajo */
   /* Mejoras para tablas en pantallas más pequeñas */
@@ -9270,6 +9270,8 @@ PAGES.mensajes=async function(){
     $('ca').innerHTML='<div class="mc-empty">📵 Necesitás conexión a internet para ver mensajes.</div>';
     return;
   }
+  // Actualizar badge al entrar a la página de mensajes
+  DL.getMensajesNoLeidos(CU.id).then(n=>{_unreadMsgs=n;updateAIBadge();});
   // Limpiar mensajes viejos (más de 24h)
   await _limpiarMensajes24h();
   // Cargar todos los mensajes del usuario actual
@@ -9285,7 +9287,7 @@ PAGES.mensajes=async function(){
     :'';
   if(!msgs.length){
     const iniciarBtn='<div style="padding:18px 14px;text-align:center"><button class="btn btn-primary btn-full" style="font-size:15px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="openNuevoMensaje()"><span style="font-size:18px">💬</span> Iniciar conversación</button><div style="font-size:11px;color:var(--text3);margin-top:8px">Elegí con quién querés chatear</div></div>';
-    $('ca').innerHTML='<div class="mc-wrap"><div class="mc-conv-list">'+iniciarBtn+contactosBtn+'<div class="mc-empty" style="padding:30px 20px">💬<br><br>No tenés mensajes aún.<br><span style="font-size:12px">Los mensajes se eliminan automáticamente después de 24 horas.</span></div></div></div>';
+    $('ca').innerHTML='<div class="mc-wrap"><div class="mc-conv-list">'+iniciarBtn+contactosBtn+'<div class="mc-empty" style="padding:40px 20px"><div style="font-size:48px;margin-bottom:12px">💬</div><div style="font-weight:600;font-size:15px;margin-bottom:8px">No hay mensajes aún</div><div style="font-size:13px;color:var(--text3);line-height:1.5">Seleccioná un pedido para chatear<br>o iniciá una conversación nueva.</div><div style="font-size:11px;color:var(--text3);margin-top:14px;opacity:.7">Los mensajes se eliminan automáticamente después de 24 horas.</div></div></div></div>';
     return;
   }
   // Agrupar por conversación (partner ID)
@@ -9368,8 +9370,10 @@ async function _renderConvThread(pid,pnom,prol){
       '<button class="mc-send-btn" onclick="sendMsgThread('+pid+')" title="Enviar">➤</button>'+
     '</div>'+
     '</div>';
-  // Scroll al final
-  setTimeout(()=>{const b=$('mcBubbles');if(b)b.scrollTop=b.scrollHeight;},80);
+  // Scroll al último mensaje (doble timeout para asegurar render completo)
+  const _scrollToBottom=()=>{const b=$('mcBubbles');if(b){b.scrollTop=b.scrollHeight;const last=b.lastElementChild;if(last&&b.scrollTop<b.scrollHeight-b.clientHeight-5)last.scrollIntoView({block:'end'});}};
+  setTimeout(_scrollToBottom,80);
+  setTimeout(_scrollToBottom,300);
 }
 
 async function sendMsgThread(toId,toNom){
@@ -10275,10 +10279,14 @@ function _mapaSetEstilo(tipo){
 }
 function _mapaLocateMe(){
   const map=window._mapInstance;
-  if(!map||!navigator.geolocation)return;
+  if(!map)return;
+  if(!navigator.geolocation){pushNotif('Tu dispositivo no soporta GPS','w');return;}
   navigator.geolocation.getCurrentPosition(pos=>{
     map.flyTo({center:[pos.coords.longitude,pos.coords.latitude],zoom:15,animate:true});
-  },null,{enableHighAccuracy:true,timeout:8000});
+  },err=>{
+    const _gm={1:'Permiso de ubicación denegado. Habilitalo en Ajustes → Privacidad → Ubicación.',2:'Posición no disponible. Verificá tu señal GPS.',3:'Tiempo de espera GPS agotado. Intentá de nuevo.'};
+    pushNotif(_gm[err.code]||'Error al obtener ubicación','w');
+  },{enableHighAccuracy:true,timeout:8000});
 }
 function _mapaSelStyle(){
   return 'padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:12px;background:var(--card);color:var(--text1);cursor:pointer;max-width:160px';
@@ -10375,12 +10383,17 @@ async function _gpsSendPos(lat,lng){
     }
   }catch(e){console.warn('GPS send:',e.message);}
 }
+let _gpsErrCount=0;
 function _gpsLoopTick(){
   if(!navigator.geolocation)return;
   const elapsed=(Date.now()-_gpsLoopStartTime)/1000;
   navigator.geolocation.getCurrentPosition(pos=>{
+    _gpsErrCount=0; // reset error counter on success
     const lat=pos.coords.latitude,lng=pos.coords.longitude;
     _gpsSendPos(lat,lng);
+    // Actualizar badge GPS en botón de turno
+    const btnT=$('btnTurno');
+    if(btnT&&!btnT.dataset.gpsOk){btnT.dataset.gpsOk='1';btnT.title='GPS activo ✓';}
     let nearDest=false;
     if(_gpsLoopOrder&&_gpsLoopOrder.gpsLat&&_gpsLoopOrder.gpsLng){
       nearDest=_gpsHaversine(lat,lng,parseFloat(_gpsLoopOrder.gpsLat),parseFloat(_gpsLoopOrder.gpsLng))<500;
@@ -10391,10 +10404,21 @@ function _gpsLoopTick(){
       clearInterval(_gpsLoopTimer);
       _gpsLoopTimer=setInterval(_gpsLoopTick,wantFast?5000:30000);
     }
-  },null,{enableHighAccuracy:true,timeout:8000,maximumAge:0});
+  },err=>{
+    _gpsErrCount++;
+    const btnT=$('btnTurno');
+    if(btnT){btnT.dataset.gpsOk='';btnT.title='GPS con problemas ⚠';}
+    // Solo notificar al usuario en el primer error y luego cada 5 fallos (no spammear)
+    if(_gpsErrCount===1||_gpsErrCount%5===0){
+      const _gm={1:'GPS: permiso denegado. El turno seguirá activo pero sin tracking.',2:'GPS: señal no disponible.',3:'GPS: timeout.'};
+      pushNotif((_gm[err.code]||'Error GPS')+' (intento '+_gpsErrCount+')','w');
+    }
+  },{enableHighAccuracy:true,timeout:8000,maximumAge:0});
 }
 function _gpsLoopStart(order){
+  if(!navigator.geolocation){pushNotif('Este dispositivo no soporta GPS. No se enviará posición.','w');return;}
   _gpsLoopStop();
+  _gpsErrCount=0;
   _gpsLoopOrder=order;_gpsLoopStartTime=Date.now();_gpsLoopFast=true;
   _gpsLoopTick();
   _gpsLoopTimer=setInterval(_gpsLoopTick,5000);
