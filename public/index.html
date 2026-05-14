@@ -523,6 +523,11 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   /* Topbar mobile: título arriba, acciones abajo */
   .topbar{flex-wrap:wrap;gap:4px;padding:8px 14px;}
   .tbar-actions{flex-wrap:wrap;gap:6px;}
+  /* Botón kebab siempre a la derecha */
+  .lcard2 .order-menu-wrap{margin-left:auto;flex-shrink:0;}
+  /* Botones acción táctiles en mobile */
+  .act-btns{justify-content:flex-start;gap:8px;}
+  .order-menu-btn{min-width:40px;min-height:40px;}
 }
 /* En desktop: ocultar elementos que solo deben verse en mobile */
 .col-show-mobile{display:none;}
