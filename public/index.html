@@ -2470,7 +2470,7 @@ async function sendAI(){
       ', pendientes: '+visOrders.filter(o=>o.estado==='Pendiente').length+
       ', en ruta: '+visOrders.filter(o=>o.estado==='En ruta').length+
       ', cancelados: '+visOrders.filter(o=>o.estado==='Cancelado').length+'.\n'+
-      'Ingresos totales entregados: Gs.'+ent.reduce((a,b)=>a+b.precio*b.qty,0).toLocaleString('es-PY')+
+      'Ingresos totales entregados: Gs.'+ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0).toLocaleString('es-PY')+
       ' | Ganancia neta total: Gs.'+ent.reduce((a,b)=>a+ganVend(b),0).toLocaleString('es-PY')+'.\n'+
       ordersDetail;
   }else{
@@ -3972,8 +3972,8 @@ PAGES.dashboard=async function(){
   if(['admin','superadmin','vendedor'].includes(CU.rol)){
     const mine=['admin','superadmin'].includes(CU.rol)?orders:orders.filter(o=>o.vendedorId===CU.id);
     const ent=mine.filter(o=>o.estado==='Entregado');
-    const ing=ent.reduce((a,b)=>a+b.precio*b.qty,0);
-    const cos=ent.reduce((a,b)=>a+b.costo*b.qty,0);
+    const ing=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+    const cos=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
     const tar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
     const hoyV=mine.filter(o=>{const d=new Date(o.fecha||o.created_at||'');const n=new Date();return d.getDate()===n.getDate()&&d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}).length;
     html+='<div class="sgrid">'+
@@ -4022,7 +4022,7 @@ PAGES.dashboard=async function(){
     const pct=Math.round(used/max*100);
     const fc=pct<60?'plow':pct<85?'pmid':'phigh';
     const entTot=mine.filter(o=>o.estado==='Entregado');
-    const rec=entTot.reduce((a,b)=>a+b.precio*b.qty,0);
+    const rec=entTot.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
     const tasaExito=mine.length?Math.round(entTot.length/mine.length*100):0;
     // Stats semana actual (lunes a hoy)
     const semStart=(function(){const d=new Date();const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return d.toISOString().slice(0,10);}());
@@ -5582,8 +5582,8 @@ PAGES.balance=function(){
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">🖨️ PDF</button>';
   const orders=getVisibleOrders();
   const ent=orders.filter(o=>o.estado==='Entregado');
-  const ing=ent.reduce((a,b)=>a+b.precio*b.qty,0);
-  const cos=ent.reduce((a,b)=>a+b.costo*b.qty,0);
+  const ing=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const cos=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
   const tar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
   const byDate={};
   ent.forEach(o=>{
@@ -5628,8 +5628,8 @@ PAGES.liquidacion=function(){
   const vendedores=_usersCache.filter(u=>u.rol==='vendedor');
   const drops=_usersCache.filter(u=>u.rol==='dropshipper');
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
-  const tIng=ent.reduce((a,b)=>a+b.precio*b.qty,0);
-  const tCos=ent.reduce((a,b)=>a+b.costo*b.qty,0);
+  const tIng=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const tCos=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
   const tTar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
   $('ca').innerHTML=
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">'+
@@ -5648,7 +5648,7 @@ PAGES.liquidacion=function(){
       const gan=vO.reduce((a,b)=>a+ganVend(b),0);
       return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px">🧑‍💼 '+v.nombre+'</div>'+
         '<div class="lrow"><span class="llbl">Pedidos</span><span>'+vO.length+'</span></div>'+
-        '<div class="lrow"><span class="llbl">Ventas brutas</span><span>'+fmt(vO.reduce((a,b)=>a+b.precio*b.qty,0))+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Ventas brutas</span><span>'+fmt(vO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0))+'</span></div>'+
         '<div class="lrow"><span class="llbl">Ganancia (precio−costo−logística)</span><span style="color:var(--accent)">'+fmt(gan)+'</span></div></div>';
     }).join('')+
     '<div class="stitle">Por Dropshipper</div>'+
@@ -5656,14 +5656,14 @@ PAGES.liquidacion=function(){
       const dO=ent.filter(o=>o.dropId===d.id);
       return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px">🔗 '+d.nombre+'</div>'+
         '<div class="lrow"><span class="llbl">Pedidos</span><span>'+dO.length+'</span></div>'+
-        '<div class="lrow"><span class="llbl">Ventas brutas</span><span>'+fmt(dO.reduce((a,b)=>a+b.precio*b.qty,0))+'</span></div></div>';
+        '<div class="lrow"><span class="llbl">Ventas brutas</span><span>'+fmt(dO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0))+'</span></div></div>';
     }).join('')+
     '<div class="stitle">Por Delivery</div>'+
     dlvs.map(d=>{
       const dO=ent.filter(o=>o.deliveryId===d.id);
       const tar=dO.reduce((a,b)=>a+_getZonaO(b).precio,0);
       const ext=dO.reduce((a,b)=>a+(_getZonaO(b).extraDelivery||0),0);
-      const rec=dO.reduce((a,b)=>a+b.precio*b.qty,0);
+      const rec=dO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
       const max=d.vehiculo==='auto'?cfg.cupoAuto:cfg.cupoMoto;
       return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:8px">'+
         (d.foto_perfil?'<img src="'+safeUrl(d.foto_perfil)+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover">':'')+
@@ -5786,8 +5786,8 @@ function _waLiq(txt){
 
 function _liqVend(){
   const ent=getVisibleOrders().filter(o=>o.estado==='Entregado');
-  const tVentas=ent.reduce((a,o)=>a+o.precio*o.qty,0);
-  const tCosto=ent.reduce((a,o)=>a+o.costo*o.qty,0);
+  const tVentas=ent.reduce((a,o)=>a+(o.precio||0)*(o.qty||1),0);
+  const tCosto=ent.reduce((a,o)=>a+(o.costo||0)*(o.qty||1),0);
   const tLog=ent.reduce((a,o)=>a+_getZonaO(o).precio,0);
   const tGan=ent.reduce((a,o)=>a+ganVend(o),0);
   const fecha=new Date().toLocaleDateString('es-PY',{year:'numeric',month:'long',day:'numeric'});
@@ -5824,8 +5824,8 @@ function _liqVend(){
 
 function _liqDrop(){
   const ent=getVisibleOrders().filter(o=>o.estado==='Entregado');
-  const tVentas=ent.reduce((a,o)=>a+o.precio*o.qty,0);
-  const tCosto=ent.reduce((a,o)=>a+o.costo*o.qty,0);
+  const tVentas=ent.reduce((a,o)=>a+(o.precio||0)*(o.qty||1),0);
+  const tCosto=ent.reduce((a,o)=>a+(o.costo||0)*(o.qty||1),0);
   const tLog=ent.reduce((a,o)=>a+_getZonaO(o).precio,0);
   const tGan=tVentas-tCosto-tLog;
   const fecha=new Date().toLocaleDateString('es-PY',{year:'numeric',month:'long',day:'numeric'});
@@ -5863,7 +5863,7 @@ function _liqDrop(){
 
 function _liqProv(){
   const ent=getVisibleOrders().filter(o=>o.estado==='Entregado');
-  const tCosto=ent.reduce((a,o)=>a+o.costo*o.qty,0);
+  const tCosto=ent.reduce((a,o)=>a+(o.costo||0)*(o.qty||1),0);
   const fecha=new Date().toLocaleDateString('es-PY',{year:'numeric',month:'long',day:'numeric'});
   $('tbActions').innerHTML=
     '<button class="btn btn-secondary" onclick="_waLiq(\'Liquidación proveedor '+CU.nombre+' — '+fecha+' — Pedidos: '+ent.length+' — A cobrar: Gs. '+fmtN(tCosto)+'\')" style="background:#25d366;border-color:#25d366;color:#fff">📲 WhatsApp</button>'+
@@ -5904,7 +5904,7 @@ PAGES.recaudacion=function(){
     const dO=orders.filter(o=>o.deliveryId===d.id&&o.estado==='Entregado');
     const byM={};METODOS.forEach(m=>{byM[m]=0;});
     dO.forEach(o=>{if(o.metodoCobro)byM[o.metodoCobro]=(byM[o.metodoCobro]||0)+(o.precio*o.qty);});
-    const tRec=dO.reduce((a,b)=>a+b.precio*b.qty,0);
+    const tRec=dO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
     const tTar=dO.reduce((a,b)=>a+_getZonaO(b).precio,0);
     const tExt=dO.reduce((a,b)=>a+(_getZonaO(b).extraDelivery||0),0);
     html+='<div class="tc" style="margin-bottom:18px">'+
@@ -6225,8 +6225,8 @@ async function ejecutarCierre(){
   const orders=_ordersCache;
   const hoyO=orders.filter(o=>o.fecha===today());
   const ent=hoyO.filter(o=>o.estado==='Entregado');
-  const ing=ent.reduce((a,b)=>a+b.precio*b.qty,0);
-  const cos=ent.reduce((a,b)=>a+b.costo*b.qty,0);
+  const ing=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const cos=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
   const tar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
   const byM={};METODOS.forEach(m=>{byM[m]=0;});
   ent.forEach(o=>{if(o.metodoCobro)byM[o.metodoCobro]=(byM[o.metodoCobro]||0)+(o.precio*o.qty);});
@@ -8383,8 +8383,8 @@ function exportOrdersPDF(){
   const cPrimE=emp.colorPrimario||'#f5a623';
   const cSecE=emp.colorSecundario||'#0f172a';
   const ent=orders.filter(o=>o.estado==='Entregado');
-  const totV=orders.reduce((a,o)=>a+o.precio*o.qty,0);
-  const totC=orders.reduce((a,o)=>a+o.costo*o.qty,0);
+  const totV=orders.reduce((a,o)=>a+(o.precio||0)*(o.qty||1),0);
+  const totC=orders.reduce((a,o)=>a+(o.costo||0)*(o.qty||1),0);
   const totL=orders.reduce((a,o)=>a+_getZonaO(o).precio,0);
   const gan=totV-totC-totL;
   const filas=orders.map((o,i)=>{
@@ -8551,8 +8551,8 @@ function exportBalanceCSV(){
       o.metodoCobro||''
     ];
   });
-  const totV=orders.reduce((a,o)=>a+o.precio*o.qty,0);
-  const totC=orders.reduce((a,o)=>a+o.costo*o.qty,0);
+  const totV=orders.reduce((a,o)=>a+(o.precio||0)*(o.qty||1),0);
+  const totC=orders.reduce((a,o)=>a+(o.costo||0)*(o.qty||1),0);
   const totL=orders.reduce((a,o)=>a+_getZonaO(o).precio,0);
   const totG=totV-totC-totL;
   const totRow=['','','','TOTALES','','',orders.length+'  pedidos','',totV,totC,totL,totG,totV>0?Math.round(totG/totV*100)+'%':'',''];
