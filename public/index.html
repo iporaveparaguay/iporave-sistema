@@ -3678,11 +3678,20 @@ PAGES.dashboard=async function(){
     const used=found?found.used:0;
     const pct=Math.round(used/max*100);
     const fc=pct<60?'plow':pct<85?'pmid':'phigh';
-    const rec=mine.filter(o=>o.estado==='Entregado').reduce((a,b)=>a+b.precio*b.qty,0);
+    const entTot=mine.filter(o=>o.estado==='Entregado');
+    const rec=entTot.reduce((a,b)=>a+b.precio*b.qty,0);
+    const tasaExito=mine.length?Math.round(entTot.length/mine.length*100):0;
+    // Stats semana actual (lunes a hoy)
+    const semStart=(function(){const d=new Date();const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return d.toISOString().slice(0,10);}());
+    const semO=mine.filter(o=>o.fecha>=semStart);
+    const semEnt=semO.filter(o=>o.estado==='Entregado').length;
     html+='<div class="sgrid">'+
       '<div class="sc gr"><div class="slabel">Entregados hoy</div><div class="sval">'+hoyO.filter(o=>o.estado==='Entregado').length+'</div></div>'+
       '<div class="sc bl"><div class="slabel">Asignados hoy</div><div class="sval">'+hoyO.length+'</div></div>'+
       '<div class="sc ac"><div class="slabel">Recaudado total</div><div class="sval" style="font-size:14px">'+fmt(rec)+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Total entregados</div><div class="sval">'+entTot.length+'</div><div class="ssub">de '+mine.length+' asignados</div></div>'+
+      '<div class="sc bl"><div class="slabel">Éxito</div><div class="sval" style="font-size:18px">'+tasaExito+'%</div></div>'+
+      '<div class="sc ac"><div class="slabel">Esta semana</div><div class="sval">'+semEnt+'</div><div class="ssub">entregados</div></div>'+
       '</div>'+
       '<div class="lcard2"><div style="display:flex;justify-content:space-between;margin-bottom:8px">'+
       '<span style="font-weight:700">Cupo hoy — '+(u.vehiculo||'moto')+' ('+max+'/día)</span>'+
@@ -3723,11 +3732,11 @@ PAGES.dashboard=async function(){
       '<div class="sc bl"><div class="slabel">En camino</div><div class="sval">'+mine.filter(o=>['En ruta','Despachado'].includes(o.estado)).length+'</div></div>'+
       '</div>';
   }
-  if(['admin','superadmin','vendedor','dropshipper'].includes(CU.rol)){
+  if(['admin','superadmin','vendedor','dropshipper','delivery'].includes(CU.rol)){
     html+=
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px">'+
         '<div style="background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(0,0,0,.08);grid-column:1/-1">'+
-          '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Entregas por día — últimos 14 días</div>'+
+          '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Mis entregas por día — últimos 14 días</div>'+
           '<canvas id="chartLinea" height="90"></canvas>'+
         '</div>'+
         '<div style="background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(0,0,0,.08)">'+
@@ -3743,12 +3752,13 @@ PAGES.dashboard=async function(){
   html+=renderTable(getVisibleOrders().slice(0,8),'Últimos pedidos',false);
   $('ca').innerHTML=html;
   _styleDashboardStats();
-  if(['admin','superadmin','vendedor','dropshipper'].includes(CU.rol))_renderCharts();
+  if(['admin','superadmin','vendedor','dropshipper','delivery'].includes(CU.rol))_renderCharts();
 };
 
 function _renderCharts(){
   const mine=['admin','superadmin'].includes(CU.rol)?_ordersCache:
     CU.rol==='dropshipper'?_ordersCache.filter(o=>o.dropId===CU.id):
+    CU.rol==='delivery'?_ordersCache.filter(o=>o.deliveryId===CU.id):
     _ordersCache.filter(o=>o.vendedorId===CU.id);
   const dark=document.documentElement.getAttribute('data-theme')==='dark';
   const textColor=dark?'#94a3b8':'#64748b';
