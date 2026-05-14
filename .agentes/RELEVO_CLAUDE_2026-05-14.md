@@ -1,514 +1,495 @@
 # RELEVO COMPLETO — Claude → próxima sesión
-**Fecha:** 2026-05-14  
-**Sesión:** Auditoría de seguridad / hardening masivo + UX fixes + tester visual  
-**Estado al cierre:** CERRADO — commits deployados, pendientes documentados
+**Fecha de cierre:** 2026-05-14
+**Próxima sesión esperada:** 2026-05-15 (lanzamiento a 10 usuarios reales)
+**Estado al cierre:** CERRADO LIMPIO — todo commiteado, pusheado y deployado. Agentes detenidos.
 
 ---
 
-## 1. CONTEXTO DEL PROYECTO
+## 🚨 INSTRUCCIONES DE ARRANQUE — LEER ANTES QUE NADA
 
-### Arquitectura
-| Componente | URL / Detalle |
-|---|---|
-| Frontend SPA | https://iporave-sistema.vercel.app — auto-deploy desde `github.com/iporaveparaguay/iporave-sistema` rama `main` |
-| Worker API | https://iporave-api.iporaveparaguay.workers.dev — Cloudflare Workers, deploy con `cd iporave-worker && npx wrangler deploy --minify` |
-| Base de datos | Supabase (PostgreSQL + Auth nativa) |
-| Repo worker | Local en `C:\Users\USUARIO\iporave-worker` (rama `master`) |
-| Repo frontend | Local en `C:\Users\USUARIO\iporave-sistema` (rama `main`) + GitHub |
+Si sos el próximo Claude y acabás de abrir esta sesión, hacé EXACTAMENTE estos pasos en orden:
 
-### Versiones en producción al cierre
-- **Worker:** último commit del día (hardening ronda 2: config, pizarron, notif-entrega, catalog-public, orders, push-subscribe, order-status, mensajes genéricos + supabase-js ^2.105.4)
-- **Frontend:** commit `ec9e136` — último commit pusheado a GitHub y deployado en Vercel (2026-05-14)
-  - Incluye: botón Navegar azul, GPS centrado, ⚡ prioridad en pedidos, push al delivery, legibilidad mapa, menú ⋮ catálogo
+### Paso 1 — Confirmar estado del repo
+```powershell
+cd C:\Users\USUARIO\iporave-sistema; git log --oneline -5
+cd C:\Users\USUARIO\iporave-worker; git log --oneline -5
+```
+Esperado: frontend cabeza en `46d0726` o posterior, worker en `528a00c` o posterior.
 
-> Nota: correr `git log --oneline -5` en cada repo al inicio de la próxima sesión para confirmar hashes exactos.
+### Paso 2 — Confirmar que NO hay agentes Python corriendo
+```powershell
+Get-Process python* 2>&1
+```
+Esperado: **vacío**. Si hay procesos vivos = el cierre anterior no fue limpio. Decidir con el usuario si pararlos.
 
----
-
-## 2. QUÉ SE COMPLETÓ EN ESTA SESIÓN (2026-05-14)
-
-### Worker — ronda 1 (deployados temprano):
-| Fix | Descripción |
-|---|---|
-| Rate limits x6 | claude(20/min), geocode(30/min), orders(30/hr), resolve-link(10/min), route(20/min), upload(30/hr) |
-| save-user: auth_id | Protegido contra sobreescritura por admin — impide secuestro de cuenta |
-| Security headers | X-Content-Type-Options, X-Frame-Options, Referrer-Policy en `corsHeaders()` de utils.js |
-| 7 archivos legacy borrados | ai-chat, analytics-admin, auto-registro, boletas, delivery-ubicacion, order-status-logs, whatsapp-config |
-| User-Agents unificados | Todos los .agentes/*.py usan `IporaveAgent/1.0` |
-
-### Worker — ronda 2 — hardening adicional (todos deployados):
-| Fix | Archivo | Descripción |
-|---|---|---|
-| Acceso restringido a admin/superadmin | `config.js` | Endpoint bloqueado para roles no privilegiados — ALTA seguridad |
-| Fail-safe POST pizarrón | `pizarron.js` | Responde error claro cuando PIZARRON_SECRET no está configurado en vez de romper |
-| Validar pedido_id existe | `notif-entrega.js` | Evita insertar notificaciones con FK inválida |
-| Rate limit catálogo público | `catalog-public.js` | 60 req/min por IP |
-| Validar delivery_id y rol | `orders.js` | Verifica que delivery_id exista y sea rol `delivery` antes de asignar |
-| Prevenir endpoint takeover | `push-subscribe.js` | Sanitización de suscripciones push |
-| Whitelist estados delivery | `order-status.js` | Solo estados permitidos para el rol delivery |
-| Mensajes de error genéricos | `save-user.js`, `delete-user.js`, `get-users.js`, `dispositivos-pendientes.js` | Evita filtrar info interna en errores |
-| Actualización dependencia | `package.json` | `@supabase/supabase-js` actualizado a `^2.105.4` |
-
-### Frontend — ronda 1 (pusheados a Vercel):
-| Fix | Descripción |
-|---|---|
-| XSS showAlert/pushNotif | textContent en vez de innerHTML |
-| safeUrl() helper | Validación http/https para todos los img src |
-| safeUrl x15 puntos | catálogo, usuarios, delivery, entregas, galerías, etc. |
-| notifHistory escHtml | `n.msg` escapado en panel de notificaciones |
-| bgWrap → fbar | Buscador movido a .fbar inline, #fSrch eliminado |
-| catalog.html safeUrl | Grilla y modal de catálogo público |
-| escHtml x7 críticos | chat, renderTable, dlvCard, track-public, renderProds, autocomplete, chat-send |
-
-### Frontend — ronda 2 (pusheados hoy):
-| Fix | Descripción |
-|---|---|
-| localStorage cleanup en logout | `doLogout()` limpia todos los keys de localStorage al cerrar sesión |
-| Regresión showAlert | Se corrigió uso de innerHTML que se había introducido — vuelve a textContent |
-| Fix cleanup realtime + deleteUser | Limpieza correcta de suscripción realtime + validación de `.ok` en deleteUser |
-
-### Scripts de agentes creados/actualizados (en `.agentes/`):
-| Archivo | Descripción |
-|---|---|
-| `tester-visual.py` | Tester visual automatizado con Playwright + Gemini Vision para revisar UI — **actualizado** (ver Sección 2B) |
-| `crear-datos-prueba.py` | Crea usuarios/productos/pedidos de prueba en la base de datos |
-| `TAREA_DATOS_PRUEBA_EXTENDIDOS.md` | Plan de datos extendidos para cubrir más escenarios de prueba en futuras sesiones |
-| `playwright_state.json` | Estado guardado del browser autenticado — contiene sesión activa (anon key + JWT del usuario) |
-| `TAREA_MAPA_MEJORAS.md` | Mejoras visuales mapa: botones, pines, nombres visibles sobre el mapa |
-| `TAREA_ASISTENTE_BTN_CLICK.md` | Bug drag vs click en #aiBtn — **YA RESUELTO en commit dac3b9c** |
-| `TAREA_ASISTENTE_VOZ_IA.md` | Asistente IA con voz — Groq+Llama 3.3+WebSpeech API |
-
-### Supabase (usuario aplicó manualmente):
-- RLS activo en 7 tablas: pedidos, usuarios, mensajes, catalogo, cupos, calificaciones, dispositivos
-- Funciones helper: `my_id()`, `my_rol()`
-- Orphans: 1 usuario + 6 dispositivos — SQL para borrar está listo (ver Sección 5)
-
----
-
-## 2B. CAMBIOS DEPLOYADOS — RONDA TARDE (2026-05-14)
-
-### Commit `1992f33` — `fix: notificar errores de API al usuario con pushNotif`
-| Función | Cambio |
-|---|---|
-| `saveUser` | Muestra toast de error cuando falla Supabase (antes solo `console.warn`) |
-| `saveOrder` | Ídem |
-| `saveJornada` | Ídem |
-
-**Impacto:** El usuario ahora ve errores visibles en pantalla en vez de que fallen silenciosamente.
-
----
-
-### Commit `533854a` — `fix: eliminar campana duplicada + botones pedidos con menú desplegable`
-
-Este commit incluye DOS fixes corridos en paralelo:
-
-#### Fix A — Campanita duplicada
-| Cambio | Detalle |
-|---|---|
-| Eliminado `#ntBell` | Bell vieja del topbar con SVG sin color — borrada |
-| Solo queda `codexNotifBell` | Campanita flotante amarilla 🔔, `position:fixed` — es la única ahora |
-| CSS actualizado | `#codexNotifBell` oculta en login, visible solo cuando `#appScreen.show` |
-| `pushNotif()` ampliado | Ahora también alimenta `_notificaciones[]` y llama `_notifSessionRender()` |
-| `_notifSessionMarkAllRead()` | También limpia `_notifHistory` y `_notifUnread` |
-
-#### Fix B — Botones pedidos con menú ⋮
-| Cambio | Detalle |
-|---|---|
-| 8 botones de acción reemplazados | Ver, Editar, WA, GPS, IVA, etc. → botón único `⋮` |
-| Dropdown al click | Todas las opciones organizadas en menú desplegable |
-| Nuevo CSS | `.order-menu-btn`, `.order-dropdown`, `.order-dropdown.open`, `.od-sep` |
-| Nuevas funciones JS | `_toggleOrderMenu(e, id)`, `_closeOrderMenus()` |
-| Click-fuera-cierra | Listener global para cerrar dropdown al hacer click fuera |
-
----
-
-## 2E. COMMITS ADICIONALES — SEGUNDA MITAD DE SESIÓN (2026-05-14)
-
-### Commit `845e38a` — scroll-to-top
-- Color neutro (no llamativo)
-- Posición `bottom:130px` para no solapar con otros elementos
-- Detecta correctamente el contenedor con scroll (no siempre `window`)
-
-### Commit `5524c30` — re-autenticación en Config y SQL
-- Modal con `signInWithPassword` antes de entrar a `/config` y sección SQL
-- Gracia de 5 minutos tras verificar — no vuelve a pedir en ese lapso
-- Evita que roles no privilegiados accedan a settings/secrets
-
-### Commit `dac3b9c` — fix drag vs click en `#aiBtn` + `#bgWrap`
-- `#aiBtn` (botón flotante IA) ahora distingue drag de click usando `pointerCapture`
-- `#bgWrap` (fondo decorativo) oculto en la pantalla de login
-
-### Commit `8c135e8` — XSS safeUrl + escHtml + UX pedidos
-| Cambio | Detalle |
-|---|---|
-| `safeUrl()` en img src | foto_perfil, cédulas, logos — previene XSS vía URLs de imagen |
-| `escHtml()` en PDF | `exportOrdersPDF()` e `imprimirGuia()` |
-| Botón ⋮ táctil | Área de toque aumentada a 44px |
-| `confirm()` mejorado | Ahora incluye el número de pedido para evitar errores |
-
-### Commit `6b2ad15` — mapa profesional + menú ⋮ usuarios + pines prioridad
-| Cambio | Detalle |
-|---|---|
-| Clase `.map-btn` | Botones del mapa con estilo uniforme teal/cyan |
-| Menú ⋮ en tabla usuarios | Igual que en pedidos — acciones en dropdown |
-| Pines de prioridad | Animación `shake` + efecto sonar para pedidos marcados como prioridad |
-
----
-
-## 2C. SCRIPTS ARREGLADOS (no en git — carpeta `.agentes/`)
-
-### `tester-visual.py` — cambios importantes
-| Antes | Ahora |
-|---|---|
-| Usaba `page.goto()` para navegar a pantallas post-login | Usa `page.evaluate("nav('seccion')")` — respeta el SPA |
-| Perdía sessionStorage al cambiar URL | sessionStorage se mantiene entre navegaciones internas |
-| Sin mapeo de rutas | Mapeo URL → sección: `/usuarios`→`nav('usuarios')`, `/pedidos`→`nav('orders')`, etc. |
-| Sin persistencia de sesión | Guarda `playwright_state.json` tras login exitoso |
-
-**Comando de ejecución:**
-```bash
-python .agentes/tester-visual.py --user iporaveparaguay@gmail.com --pass ivan12345
+### Paso 3 — Leer el pizarrón (última actividad de agentes)
+```powershell
+$r = Invoke-WebRequest -Uri "https://iporave-api.iporaveparaguay.workers.dev/api/pizarron" -UseBasicParsing
+($r.Content | ConvertFrom-Json).registros | Select-Object -First 5 | ConvertTo-Json
 ```
 
+### Paso 4 — Saludar al usuario en español y preguntar qué arrancamos
+**NO LANZAR AGENTES SIN ORDEN EXPLÍCITA.** El usuario tiene que decir "arrancá los agentes" o equivalente. Hasta entonces: solo monitoreo y conversación.
+
 ---
 
-## 2D. DATOS DE PRUEBA INSERTADOS HOY
+## 🔴 REGLAS ABSOLUTAS (LÍNEAS ROJAS)
 
-### Pedidos nuevos (IDs 4–7):
-| ID | Cliente | Dirección | Tipo |
-|---|---|---|---|
-| #4 | Carlos Benítez | "Barrio Las Mercedes, frente a la cancha" | Nombre de lugar |
-| #5 | Sofía Martínez | "-25.2867,-57.6471" | Coordenadas GPS |
-| #6 | Diego Ramírez | "Av. Eusebio Ayala 1234, Asunción, Paraguay" | Dirección completa |
-| #7 | Laura Fernández | "Casa" | Mínimo/ambiguo |
+### Comunicación
+1. **SIEMPRE responder en español** (rioplatense/paraguayo). Nunca cambiar a inglés salvo pedido explícito.
+2. **Esperar confirmación SIEMPRE** antes de cualquier acción que toque código, secrets, deploy o roles.
+3. **Explicar antes de pedir permiso** — si va a aparecer un permission prompt, traducir las opciones al español primero.
 
-### Catálogo nuevos (IDs 10–12):
-| ID | Producto | Categoría | Stock | Precio |
+### Cierre de sesión
+4. **PARADA DE EMERGENCIA antes de cerrar.** Si los agentes están corriendo cuando se cierra la sesión: PARARLOS PRIMERO, antes de cualquier otra cosa, incluso antes de responder al usuario. El usuario lo dejó claro: "primero acción antes que responder, parada de emergencia de inmediato".
+5. **No re-lanzar agentes solo porque parecía buena idea.** Solo arrancan cuando el usuario da la orden explícita.
+
+### Código
+6. **NO TOCAR JAMÁS sin permiso explícito:**
+   - `iporave-worker/src/api/login.js` — auth, dispositivos, emails
+   - `iporave-worker/src/api/save-user.js` — escalación de roles
+   - `iporave-worker/src/utils.js verifyToken()` — verificación JWT
+   - Migrations / schemas de Supabase destructivos (DROP, ALTER destructivo)
+
+7. **NO HACER NUNCA:**
+   - `git push --force` a `main`
+   - `wrangler delete` (borra el worker entero)
+   - `wrangler secret delete` sin confirmar el valor
+   - DROP TABLE / DROP DATABASE / TRUNCATE en Supabase
+   - Dos agentes editando el mismo archivo simultáneamente
+   - `node validate.js` saltado antes de commit de `public/index.html`
+
+8. **NO ASUMIR columnas o endpoints existen.** Verificar siempre contra código real. Las columnas reales están en sección "SCHEMA DB" más abajo.
+
+---
+
+## 🤖 ESTRUCTURA COMPLETA DEL SISTEMA DE AGENTES
+
+> Esta sección es la más importante. Si la entendés, podés operar todo.
+
+### Arquitectura general
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  USUARIO  ←──  Claude Code (vos)  ←──  decisiones tácticas │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ lanza / detiene
+                      ▼
+   ┌──────────────────────────────────────────────────────┐
+   │  iniciar-todos.ps1  (script de arranque)            │
+   │  → lanza Supervisor + Cerebro-Monitor               │
+   └──────────────────────┬───────────────────────────────┘
+                          │
+                          ▼
+        ┌──────────────────────────────────┐
+        │  orquestador-supervisor.py       │
+        │  - Vigila a los 5 orquestadores  │
+        │  - Reinicia los caídos (3 max)   │
+        │  - Detecta PARADA_CRITICA.txt    │
+        │  - Lee STOP/RESTART del pizarrón │
+        │  - Escribe en alerts.json        │
+        └─────────────┬────────────────────┘
+                      │ lanza y vigila
+                      ▼
+   ┌──────────────────────────────────────────────────────┐
+   │  5 ORQUESTADORES (workers)                          │
+   │  ├─ orquestador-features.py   (features generales)  │
+   │  ├─ orquestador-catalog.py    (catálogo/Shopify)    │
+   │  ├─ orquestador-worker.py     (worker / Cloudflare) │
+   │  ├─ orquestador-paginas.py    (páginas públicas)    │
+   │  └─ orquestador.py            (orq. principal)      │
+   │                                                       │
+   │  + codex-solucionador.py  (resuelve tareas Codex)   │
+   └──────────────────────┬───────────────────────────────┘
+                          │ lanza
+                          ▼
+   ┌──────────────────────────────────────────────────────┐
+   │  AIDER processes (efímeros, ad-hoc)                  │
+   │  - aider-wrapper.py los lanza con prompts específicos│
+   │  - Usan vertex_ai/gemini-2.5-flash                   │
+   │  - Editan archivos directamente                       │
+   │  - PELIGRO: pueden colisionar si tocan mismo archivo │
+   └──────────────────────────────────────────────────────┘
+
+   ┌──────────────────────────────────────────────────────┐
+   │  cerebro-monitor.py (analista, no editor)            │
+   │  - Llama a Gemini AI Studio cada 30 min              │
+   │  - Lee pizarrón + alerts.json                         │
+   │  - Genera análisis para que Claude lea               │
+   └──────────────────────────────────────────────────────┘
+```
+
+### Quién es cada agente — tabla maestra
+
+| Agente | Tipo | Ubicación | Función | Edita código? |
 |---|---|---|---|---|
-| #10 | Lavandina 2L | Limpieza | 80 | 6500 |
-| #11 | Auriculares Bluetooth | Tecnología | 15 | 85000 |
-| #12 | Remera Algodón | Indumentaria | 40 | M:35000 / L:38000 |
+| **Claude Code (vos)** | Director técnico | esta sesión | Decide, supervisa, fixea crítico | Sí, líneas-rojas off-limits |
+| **Codex** | Code editor (externo) | herramienta del user | Frontend `index.html` zona asignada | Sí, con tarea explícita |
+| **Antigravity** | Code editor (externo) | herramienta del user | Archivos nuevos en `public/` | Sí, archivos nuevos solamente |
+| **Aider** | CLI tool | local Python | Edits puntuales con LLM (Gemini) | Sí, archivo específico |
+| **orquestador-supervisor.py** | Watchdog | local Python | Vigila a los 5 orquestadores | No |
+| **orquestador-features.py** | Worker autónomo | local Python | Toma tareas "features" del pizarrón | Indirecto vía Aider |
+| **orquestador-catalog.py** | Worker autónomo | local Python | Toma tareas "catálogo" | Indirecto |
+| **orquestador-worker.py** | Worker autónomo | local Python | Toma tareas del Cloudflare worker | Indirecto |
+| **orquestador-paginas.py** | Worker autónomo | local Python | Toma tareas de páginas públicas | Indirecto |
+| **orquestador.py** | Worker general | local Python | Orquestador principal/fallback | Indirecto |
+| **codex-solucionador.py** | Worker autónomo | local Python | Resuelve tareas para Codex | No, prepara contexto |
+| **cerebro-monitor.py** | Analista | local Python + Gemini | Análisis cada 30 min, genera reportes | No |
+| **Node-RED + Groq** | Validador (otro PC/servicio) | externo | Validación automática post-fix | No |
 
-**Estado actual DB (actualizado al cierre):**
-- 7 pedidos en total (#1–#7)
-- Catálogo: IDs activos 1, 2, 3, 10, 11, 12 — **duplicados IDs 4–9 fueron eliminados**
-  - #1 Yerba Mate 1kg
-  - #2 Aceite Cañuelas 900ml
-  - #3 Azúcar 1kg
-  - #10 Lavandina 2L
-  - #11 Auriculares Bluetooth
-  - #12 Remera Algodón
+### El **Pizarrón** — sistema de coordinación
 
----
+El **pizarrón** es la tabla `pizarron` en Supabase, expuesta vía REST en el worker.
 
-## 3. TRABAJO EN CURSO — AGENTES CORRIENDO AL CIERRE
+**URL:** `https://iporave-api.iporaveparaguay.workers.dev/api/pizarron`
 
-**Todos los agentes completaron. No hay trabajo en curso al cierre de esta sesión.**
+**Cómo funciona:**
+- Cada agente Python publica un `POST` con qué hizo
+- Cualquier agente puede leer con `GET` qué hicieron los demás
+- Claude y el usuario miran el pizarrón para saber el estado global
 
-### ✅ Agente A — track.html XSS fixes — COMPLETADO
-- Commit `8f13cec`: esc() y safeUrl() aplicados en track.html
-
-### ✅ Agente B — index.html 6 XSS fixes — COMPLETADO
-- Commit `ad8422b`: filtrarBoletas, _renderChips, _shareDrop, _renderPresForm, renderOrderChat, lista mensajes
-
-### ✅ Agente C — views/js scan — COMPLETADO
-- views/, js/, components/ — todos limpios (sin hallazgos)
-- Encontró XSS adicionales en `_boletaHTML()` y `imprimirTicket()` → delegados al Agente D
-
-### ✅ Agente D — _boletaHTML + imprimirTicket + campanita — COMPLETADO
-- Commit `e0910f6`: escHtml en _boletaHTML y imprimirTicket, guard _updateBell() pre-login
-
-### ✅ Agente E — Errores API visibles (ronda tarde) — COMPLETADO
-- Commit `1992f33`: pushNotif en saveUser, saveOrder, saveJornada
-
-### ✅ Agente F — Campanita única + menú pedidos ⋮ (ronda tarde) — COMPLETADO
-- Commit `533854a`: elimina #ntBell duplicada, dropdown ⋮ en botones de pedidos
-
----
-
-## 4. TAREAS PENDIENTES CONOCIDAS (por orden de prioridad)
-
-### ALTA PRIORIDAD
-
-- [x] ~~**Contraseña para acceder a Config/SQL**~~ — **RESUELTO en commit `5524c30`** (modal re-auth + 5 min de gracia)
-- [x] ~~**Agregar columna `prioridad` (boolean) a tabla `pedidos` en Supabase**~~ — **RESUELTO (2026-05-14)** — `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS prioridad boolean DEFAULT false;` ejecutado manualmente por el usuario
-- [x] ~~**Notificación push al delivery cuando pedido marcado como prioridad**~~ — **RESUELTO commit `67d97ec`** (`_notifDeliveryPrioridad` implementada)
-- [ ] **Correr tester visual** para verificar pantallas reales post-login
-  - `playwright_state.json` guardado, login funciona en tester (SPA navigation corregida)
-  - Comando: `python .agentes/tester-visual.py --user iporaveparaguay@gmail.com --pass ivan12345`
-
-### SEGURIDAD — media prioridad
-
-- [ ] **UI login — campanita antes de auth** (TAREA_UI_LOGIN_MOBILE.md): revisar si `codexNotifBell` se crea antes del auth check. Buscar en `updateNavBadges()` o render del topbar — agregar `if(!CU)return;` o condición equivalente. Archivo: `public/index.html`
-- [ ] **WHATSAPP_APP_SECRET** (usuario pendiente): `cd iporave-worker && npx wrangler secret put WHATSAPP_APP_SECRET`
-- [ ] **Isidro debe re-tap botón de notificaciones push** — las push pueden no llegar
-
-### MEDIA PRIORIDAD — UX
-
-- [ ] **Asistente IA con voz** (ver `TAREA_ASISTENTE_VOZ_IA.md`)
-  - Web Speech API para entrada/salida (gratis, nativo del browser)
-  - Groq + Llama 3.3 70B para interpretación (gratis)
-  - Pipeline: Escuchar → Entender → Extraer campos → Confirmar faltantes → Guardar
-  - Botón flotante 🎙️ en la app post-login
-
-- [x] ~~**Legibilidad nombres en mapa**~~ — **RESUELTO commit `79d5e2b`** (fondo más opaco, text-shadow, borde verde en camino)
-
-- [x] ~~**Botón ℹ️ del mapa**~~ — **RESUELTO commit `67d97ec`** (padding corregido, centrado)
-
-- [x] ~~**Botón Navegar rojo**~~ — **RESUELTO commit `67d97ec`** (azul #2563eb en 4 lugares)
-
-- [ ] **Botón scroll-to-top negro** — borde blanco sutil o efecto 3D para que resalte. Ver `TAREA_SCROLL_BTN_VISUAL.md`
-
-- [ ] **Refinamiento visual botones pedidos** (ver `TAREA_PEDIDOS_BOTONES_OVERFLOW.md`)
-
-- [x] ~~**Uniformar botones en catálogo**~~ — **RESUELTO commit `79d5e2b`** (menú ⋮ implementado)
-
-### TESTING / QA
-
-- [ ] **Prueba visual completa con `tester-visual.py`** — datos de prueba ya cargados. Ejecutar y revisar screenshots + análisis de Gemini Vision.
-- [ ] **Mejoras visuales** — aplicar sugerencias del reporte de Gemini Vision tras correr el tester.
-
-### BAJA PRIORIDAD / UI/UX (ver TAREA_UI_LOGIN_MOBILE.md)
-
-- [ ] Bandera Paraguay en mobile: posicionar junto a título con 0.5-1cm separación
-- [ ] Título más grande en mobile
-
-### BAJA PRIORIDAD — DATOS
-
-- [x] ~~**Limpiar duplicados en catálogo**~~ — **RESUELTO**: IDs 4–9 eliminados. Activos: 1, 2, 3, 10, 11, 12.
-
-### Funcionalidades pendientes (futuras)
-
-- [ ] WhatsApp webhook — `npx wrangler secret put WHATSAPP_APP_SECRET` + validación FROM (reconstruir con tabla `pedidos` real)
-- [ ] Tienda online pública (registro cliente externo, carrito, pago)
-- [ ] Mapbox V6 (reemplazar Leaflet) — después de GPS/tracking completo
-- [ ] Rol empresa (sub-admin mejorado)
-- [ ] Auto-registro usuarios externos con aprobación
-
----
-
-## 5. ACCIONES MANUALES QUE EL USUARIO DEBE HACER
-
-### Orphan cleanup (Supabase SQL Editor):
-```sql
--- Ver primero qué hay:
-SELECT id, username, email, rol FROM usuarios
-WHERE auth_id IS NULL OR auth_id NOT IN (SELECT id FROM auth.users);
-
-SELECT id, username, device_hash, ip, creado_at FROM dispositivos
-WHERE username NOT IN (SELECT username FROM usuarios WHERE username IS NOT NULL);
-
--- Borrar dispositivos huérfanos:
-DELETE FROM dispositivos
-WHERE username NOT IN (SELECT username FROM usuarios WHERE username IS NOT NULL);
-
--- Borrar usuario huérfano:
-DELETE FROM usuarios
-WHERE auth_id IS NULL OR auth_id NOT IN (SELECT id FROM auth.users);
+**Estructura de un registro:**
+```json
+{
+  "agente": "Codex-Solucionador",
+  "tarea": "fix-login-mobile",
+  "archivos": "public/index.html",
+  "resumen": "Reduje padding lcard y font-size title en mobile",
+  "estado": "Finalizado",   // Pendiente | Activo | Finalizado | ALERTA-CRITICA | Test
+  "validacion": "Pendiente", // Pendiente | OK | Conflicto
+  "created_at": "2026-05-14T01:48:29Z"
+}
 ```
 
-### WHATSAPP_APP_SECRET (terminal en iporave-worker/):
+**Importante:**
+- Los agentes Python usan `User-Agent: IporaveAgent/1.0` (Cloudflare bloquea `Python-urllib`)
+- El endpoint GET es **público** (los agentes Python no tienen JWT)
+- El endpoint POST acepta `X-Agent-Key` con env `PIZARRON_SECRET` para autenticarse
+
+---
+
+## 🚀 CÓMO ARRANCAR LOS AGENTES
+
+### Arranque normal
+```powershell
+cd C:\Users\USUARIO\iporave-sistema
+.\.agentes\iniciar-todos.ps1
 ```
-npx wrangler secret put WHATSAPP_APP_SECRET
+
+Eso lanza:
+1. `orquestador-supervisor.py` en una ventana PowerShell
+2. `cerebro-monitor.py` en otra ventana PowerShell
+3. El supervisor automáticamente lanza los 5 orquestadores + codex-solucionador
+
+### Verificar que arrancaron
+```powershell
+Get-Process python* | Format-Table Id, ProcessName, StartTime -AutoSize
+```
+Esperado: **7 procesos** (supervisor + 5 orquestadores + codex-solucionador) + cerebro = **8**.
+Si hay Aider corriendo, se suma. Si hay más de 8, hay duplicados.
+
+### Comprobar reportes en el pizarrón
+```powershell
+$r = Invoke-WebRequest "https://iporave-api.iporaveparaguay.workers.dev/api/pizarron" -UseBasicParsing
+($r.Content | ConvertFrom-Json).registros | Select-Object -First 5
+```
+
+### Bloqueo de arranque — `PARADA_CRITICA.txt`
+Si existe el archivo `.agentes/PARADA_CRITICA.txt`, el script de arranque se niega a iniciar. Es un seguro. Para resetear:
+```powershell
+Remove-Item C:\Users\USUARIO\iporave-sistema\.agentes\PARADA_CRITICA.txt
 ```
 
 ---
 
-## 6. SCHEMA REAL DE TABLAS (VERIFICADO EN CÓDIGO)
+## 🛑 CÓMO DETENERLOS (PARADA DE EMERGENCIA)
 
-**IMPORTANTE: Siempre verificar contra código antes de usar. Columnas mal escritas causan errores silenciosos.**
+### Opción 1 — Matar todo Python (más radical, más seguro)
+```powershell
+Get-Process python* | Stop-Process -Force
+```
 
-### `dispositivos`
-`id, username, device_hash, ip, autorizado, token_aprobacion, token_expires_at, aprobado_at, autorizado_at, creado_at`
-- NO tiene: `usuario_id`, `nombre`, `dispositivo_info`
-- `aprobado_at` = flujo email-link, `autorizado_at` = flujo panel admin (ambas existen)
+### Opción 2 — Matar por PIDs específicos (cuando sabés qué hay)
+```powershell
+Stop-Process -Id 4140,5388,8008,9512,10560,11712,13028,15532,17168 -Force
+```
 
-### `usuarios`  
-`id, username, email, rol, auth_id, nombre, estado_cuenta, created_by, whatsapp, telefono, foto_perfil, foto_cedula_frente, foto_cedula_dorso, vehiculo, patente, nombre_comercial, ruc, logo, descripcion_negocio, banco, tipo_cuenta, nro_cuenta, titular_cuenta, wallet_tipo, wallet_nro, wallet_alias, ...`
-- NO tiene: `created_at`, `creado_at` (tiene `created_by` que es FK)
+### Opción 3 — Listar comandos exactos antes de matar
+```powershell
+Get-WmiObject Win32_Process -Filter "name='python.exe'" | Select-Object ProcessId, CommandLine | Format-List
+```
+
+### Verificar que no quedó nada
+```powershell
+Get-Process python* 2>&1
+```
+Esperado: **vacío** o "Cannot find process".
+
+### Riesgo conocido al detener Aider en medio de un edit
+Si un proceso Aider estaba editando `index.html` y lo matamos, puede dejar el archivo a medio escribir o intacto. Verificar SIEMPRE:
+```powershell
+cd C:\Users\USUARIO\iporave-sistema; git status; node validate.js
+```
+
+---
+
+## 🗂️ ARCHIVOS CLAVE — DÓNDE BUSCAR QUÉ
+
+### Frontend
+| Ruta | Para qué |
+|---|---|
+| `public/index.html` | SPA completa (~10k líneas). Toda la lógica del sistema interno. |
+| `public/catalog.html` | Catálogo público sin auth |
+| `public/track.html` | Tracking público de pedidos |
+| `public/nosotros.html`, `faq.html`, `terminos.html` | Páginas estáticas |
+| `validate.js` | **OBLIGATORIO antes de commit a index.html.** Detecta `</script>` sin escapar dentro de strings JS (rompería la SPA entera). |
+
+### Worker (Cloudflare)
+| Ruta | Para qué |
+|---|---|
+| `iporave-worker/src/index.js` | Router principal — todos los endpoints se registran aquí |
+| `iporave-worker/src/utils.js` | `verifyToken()`, `corsHeaders()`, `json()`, `getSupaAdmin()` |
+| `iporave-worker/src/api/*.js` | Cada endpoint |
+
+### Coordinación de agentes
+| Ruta | Para qué |
+|---|---|
+| `.agentes/PLAYBOOK_SUPERVISOR.md` | Playbook permanente — reglas que no caducan |
+| `.agentes/ORQUESTACION.md` | Protocolo de sprints sincronizados (parte 1, 2, 3...) |
+| `.agentes/ORQUESTADOR.md` | Lista de tareas vivas — agentes leen de acá |
+| `.agentes/iniciar-todos.ps1` | Script de arranque |
+| `.agentes/alerts.json` | Log local de alertas críticas del supervisor |
+| `.agentes/playwright_state.json` | Sesión guardada del browser para tester-visual.py |
+| `.agentes/RELEVO_CLAUDE_*.md` | Handoff de cada sesión (este archivo) |
+| `.agentes/TAREA_*.md` | Tareas pendientes documentadas |
+
+### Tareas pendientes (al cierre 2026-05-14)
+| Archivo | Prioridad |
+|---|---|
+| `TAREA_PRUEBA_LANZAMIENTO.md` | **CRÍTICA** — prueba completa antes de lanzamiento mañana |
+| `TAREA_MOBILE_UX_FIXES.md` | **ALTA** — botones mobile, padding amarillo, campanita scroll, topbar |
+| `TAREA_SCROLL_BTN_VISUAL.md` | Baja — efecto 3D scroll-to-top |
+| `TAREA_ASISTENTE_VOZ_IA.md` | Media — voice IA con Groq + Llama 3.3 + Web Speech |
+| `TAREA_PEDIDOS_BOTONES_OVERFLOW.md` | Baja — refinamiento visual |
+| `TAREA_UI_LOGIN_MOBILE.md` | Baja — bandera PY, título mobile |
+| `TAREA_MAPA_MEJORAS.md` | Media — botones mapa, pines prioridad |
+| `TAREA_DATOS_PRUEBA_EXTENDIDOS.md` | Media — más datos de prueba |
+
+---
+
+## 📋 ESTADO DE PRODUCCIÓN AL CIERRE
+
+### Versiones desplegadas
+| Componente | Commit/Versión | URL |
+|---|---|---|
+| **Frontend** | `46d0726` (último push) | https://iporave-sistema.vercel.app |
+| **Worker** | `528a00c` | https://iporave-api.iporaveparaguay.workers.dev |
+| **Repo frontend** | `github.com/iporaveparaguay/iporave-sistema` rama `main` | auto-deploy a Vercel |
+| **Repo worker** | `github.com/iporaveparaguay/iporave-worker` rama `master` | deploy manual con wrangler |
+| **DB** | Supabase `hrpnqbmknmgdaaokjelb.supabase.co` | RLS activo en 7 tablas |
+
+### Lo que se hizo esta sesión (2026-05-14)
+- ✅ Hardening del worker — ronda 1 + 2 (rate limits, security headers, validaciones)
+- ✅ XSS fixes en frontend (~30 puntos): textContent en pushNotif, escHtml en chats/PDFs, safeUrl en imgs
+- ✅ Mapa profesional (commit `6b2ad15`): clase `.map-btn`, pines de prioridad animados (shake + sonar)
+- ✅ Menú ⋮ uniforme en pedidos, usuarios, catálogo (commits `533854a`, `79d5e2b`)
+- ✅ Botón Navegar azul (no más rojo) en 4 lugares (commit `67d97ec`)
+- ✅ ⚡ Botón "Marcar prioridad" en dropdown de pedidos (commit `67d97ec`)
+- ✅ Push notification al delivery cuando pedido se marca prioritario (commit `67d97ec`)
+- ✅ **Columna `prioridad boolean` agregada a tabla `pedidos`** (SQL manual ejecutado por usuario)
+- ✅ Scroll-to-top funcional (commit `845e38a`) — falta efecto visual
+- ✅ Re-auth con password en Config y SQL (commit `5524c30`) — 5 min de gracia
+- ✅ Fix drag vs click en botón flotante IA (commit `dac3b9c`)
+- ✅ Push a GitHub completado — Vercel deployó todo
+- ✅ Plan de prueba pre-lanzamiento guardado (`TAREA_PRUEBA_LANZAMIENTO.md`)
+- ✅ Fixes UX mobile anotados (`TAREA_MOBILE_UX_FIXES.md`)
+- ✅ Agentes detenidos en parada de emergencia limpia
+
+### Lo que NO se hizo (pendiente)
+- ⚠️ Los Aider que estaban editando `index.html` fueron cortados → los 3 bugs siguen vivos:
+  1. Campanita (`codexNotifBell`) aparece antes del login
+  2. `#bgWrap` (barra de búsqueda) tapa botones cuando está en el topbar
+  3. Login mobile — título "Iporave Connect" se sale del recuadro `.lcard` en 375px
+- ⚠️ Vercel CLI token expirado — auto-deploy desde GitHub funciona, pero `vercel --prod` directo falla. Si se necesita: `vercel login`
+- ⚠️ `WHATSAPP_APP_SECRET` no configurado: `cd iporave-worker; npx wrangler secret put WHATSAPP_APP_SECRET`
+- ⚠️ Isidro (admin) tiene que re-tap el botón de notif push para resubscribirse
+- ⚠️ Orphan cleanup en Supabase (SQL en sección 5 del RELEVO viejo)
+
+---
+
+## 📅 PLAN PARA LA PRÓXIMA SESIÓN (2026-05-15)
+
+**Contexto crítico:** Mañana a la tarde el usuario reparte usuarios+contraseñas a ~10 personas reales. Antes de eso, prueba completa.
+
+### Orden de trabajo sugerido
+1. **Cargar datos ficticios completos** (usar `crear-datos-prueba.py` o ampliarlo):
+   - 2 vendedores, 2 deliveries, 1 dropshipper, 1 empresa
+   - 5+ pedidos en estados variados (uno con ⚡ prioridad)
+   - 8 productos con foto
+   - TODOS los campos de cada pedido completos (teléfono, dirección, ref, etc.)
+
+2. **Fixes UX mobile** (de `TAREA_MOBILE_UX_FIXES.md`):
+   - Botón ⋮ a la derecha en cards de pedido
+   - Padding izquierdo uniforme (igual a Liquidación) en Balance, Usuarios, Zona/Entrega, Catálogo
+   - Topbar mobile: título arriba, hamburguesa ☰ abajo-izquierda contra separador
+   - Campanita: hacerla más chica, efecto transparencia al scroll down
+
+3. **Fixes pendientes de los Aider cortados:**
+   - Ocultar `codexNotifBell` antes del login
+   - `#bgWrap` fuera del topbar, position:fixed
+   - Login mobile padding/font reducidos
+
+4. **Correr tester-visual.py** para screenshots + análisis Gemini:
+   ```powershell
+   python .agentes/tester-visual.py --user iporaveparaguay@gmail.com --pass ivan12345
+   ```
+
+5. **Probar manualmente** todos los roles según `TAREA_PRUEBA_LANZAMIENTO.md`
+
+### Cómo lanzar agentes para esto
+**SOLO si el usuario lo pide explícitamente.** Sugerencia de delegación:
+- **Codex** → fixes CSS mobile (zonas claras, no toca auth)
+- **Aider** → fixes muy puntuales con prompt específico (campanita, bgWrap, login mobile)
+- **Claude (vos)** → datos ficticios (script Python), supervisión, fixes críticos
+- **Tester-visual.py** → screenshots automatizados al final
+
+---
+
+## 🧱 SCHEMA REAL DE TABLAS SUPABASE (VERIFICADO)
+
+**Las columnas que listo son las que existen. No agregues otras.**
 
 ### `pedidos`
-`id, cliente (TEXT), drop_id, vendedor_id, delivery_id, estado, address, ...`
-- NO tiene: `cliente_id` (cliente es texto directo), `dropshipper_id` (es `drop_id`)
+- `id, cliente (TEXT), drop_id, vendedor_id, delivery_id, estado, address, prioridad (boolean), …`
+- **NO existen:** `cliente_id` (es texto directo), `dropshipper_id` (se llama `drop_id`)
+
+### `usuarios`
+- `id, username, email, rol, auth_id, nombre, estado_cuenta, created_by, whatsapp, telefono, foto_perfil, foto_cedula_frente, foto_cedula_dorso, vehiculo, patente, nombre_comercial, ruc, logo, descripcion_negocio, banco, tipo_cuenta, nro_cuenta, titular_cuenta, wallet_tipo, wallet_nro, wallet_alias, …`
+- **NO existen:** `created_at`, `creado_at` (solo `created_by` que es FK)
+
+### `dispositivos`
+- `id, username, device_hash, ip, autorizado, token_aprobacion, token_expires_at, aprobado_at, autorizado_at, creado_at`
+- **NO existen:** `usuario_id`, `nombre`, `dispositivo_info`
 
 ### `mensajes`
-`de_id, de_nombre, para_id, mensaje, ...`
-- NO tiene: `de` (texto), `para` (texto)
+- `de_id, de_nombre, para_id, mensaje, …`
+- **NO existen:** `de` (texto), `para` (texto)
 
 ### `catalogo`
-- Precios en columna `presentaciones` (JSON array), NO hay columna `precio`
-- Descripción en `descripcion_html`, NO `descripcion`
+- Precios en columna `presentaciones` (JSON array). **NO hay columna `precio`.**
+- Descripción en `descripcion_html`. **NO `descripcion`.**
+
+### `pizarron`
+- `id, agente, tarea, archivos, resumen, estado, validacion, created_at`
 
 ---
 
-## 7. METODOLOGÍA DE TRABAJO — CÓMO OPERAMOS EN ESTA SESIÓN
+## 🔄 WORKFLOW DE FIX → DEPLOY (estándar de oro)
 
-### Filosofía
-- **Claude = supervisor/arquitecto/seguridad crítica.** Solo toca código cuando es un fix de 1-3 líneas urgente o cuando los agentes no pueden ejecutar bash.
-- **Agentes = ejecutores de todo lo demás.** Corriendo en paralelo, sin conflictar entre sí.
-- **Regla de no conflicto:** Nunca 2 agentes editando el mismo archivo simultáneamente.
-
-### Cómo lanzar agentes eficientemente
 ```
-Agent({
-  description: "Descripción corta 5 palabras",
-  run_in_background: true,
-  prompt: "prompt muy específico con: rutas exactas, líneas exactas, qué buscar, qué cambiar, cómo commitear"
-})
+1. Read el archivo que vas a modificar
+2. Edit con cambio mínimo focalizado
+3. node validate.js   (solo si tocaste index.html)
+4. git add <archivo específico>   ← NO git add . ni -A
+5. git commit -m "fix: descripción concreta"
+6. git push origin main           ← dispara auto-deploy Vercel
+7. Smoke test con curl al endpoint o ver Vercel deployment
+8. Si rompe: wrangler tail / vercel logs → fix → repetir
 ```
-- Múltiples agentes en un solo mensaje para paralelismo real
-- Subagent_type: `Explore` para SOLO LECTURA (más rápido, no gasta context en edits)
-- Default agent para fixes que necesitan editar + commitear
 
-### Ciclo de trabajo
-1. **Scan** (Explore agents, solo lectura) → reportan hallazgos
-2. **Fix** (agentes con permisos de Edit+Bash) → editan + validate.js + commit + push
-3. **Deploy** (worker: `npx wrangler deploy --minify`, frontend: auto en push)
-4. Claude revisa resultados → lanza siguiente ronda sin esperar al usuario
-
-### Commits del worker
-```
+**Worker:**
+```powershell
 cd C:\Users\USUARIO\iporave-worker
 git add src/api/archivo.js
 git commit -m "fix: descripción"
-npx wrangler deploy --minify
+npx wrangler deploy --minify   ← deploy explícito, no es auto
 ```
 
-### Commits del frontend
-```
+**Frontend:**
+```powershell
 cd C:\Users\USUARIO\iporave-sistema
-node validate.js   # OBLIGATORIO antes de commit
+node validate.js   # OBLIGATORIO para index.html
 git add public/index.html
 git commit -m "fix: descripción"
-git push origin main
+git push origin main   ← Vercel deploya automáticamente
 ```
 
-### validate.js — cuándo usarlo
-- SOLO para `public/index.html` (no aplica a track.html, catalog.html, etc.)
-- Verifica que no haya `</script>` sin escapar dentro de strings JS (rompe toda la SPA)
-- Si falla: buscar la línea con `</script>` dentro de un string y dividirla: `'</scr'+'ipt>'`
+---
+
+## ⚠️ ERRORES COMUNES (evitar repetir)
+
+1. **Asumir columnas que no existen.** Supabase ignora silenciosamente columnas desconocidas en UPDATE, pero falla en SELECT. Siempre verificar.
+2. **`</script>` dentro de strings JS en `index.html`.** Rompe toda la SPA. Dividir como `'<scr'+'ipt>'`.
+3. **Saltar `node validate.js`.** Solo se descubre el bug en producción cuando ya rompió todo.
+4. **Dos agentes editando el mismo archivo.** Conflicto git garantizado. Coordinar via pizarrón antes.
+5. **Agregar auth admin al GET de `/api/pizarron`.** Rompe el supervisor Python (no tiene JWT).
+6. **Caracteres Unicode decorativos en SQL para Supabase Editor.** Box-drawing rompe el parser.
+7. **Heredocs estilo `<<EOF` en PowerShell.** No funcionan. Usar `@'...'@` o archivo temporal.
+8. **`select('*')` deja escapar tokens y secretos.** Listar columnas explícitas (pero verificadas).
+9. **`git add .` / `-A`.** Trae archivos sensibles sin querer. Listar archivos específicos.
+10. **Re-lanzar agentes sin orden del usuario.** Sesión anterior cerró con parada de emergencia explícita.
 
 ---
 
-## 8. ERRORES COMUNES A EVITAR
+## 💬 ESTILO DE COMUNICACIÓN CON EL USUARIO
 
-1. **Columnas que no existen en Supabase** — siempre verificar contra código antes de usar. Los errores son silenciosos (Supabase simplemente ignora columnas desconocidas en UPDATE, pero falla en SELECT).
-2. **`</script>` dentro de strings JS en index.html** — divide siempre: `'</scr'+'ipt>'`. Si no, rompe la SPA completa.
-3. **`node validate.js` obligatorio** antes de cualquier commit de index.html.
-4. **Dos agentes editando el mismo archivo** — causa conflicts git. Verificar que no haya otro agente en el mismo archivo antes de editar.
-5. **pizarron.js GET debe ser PÚBLICO** — los agentes Python no tienen JWT. No agregar auth al GET.
-6. **save-user.js tiene SAFE_SELF_FIELDS** — los usuarios normales NO pueden cambiar su `rol`. Está enforzado en línea 42-48.
-
----
-
-## 9. ESTADO DE SEGURIDAD — MAPA COMPLETO
-
-### ✅ CERRADO
-| Área | Detalle |
-|---|---|
-| RLS Supabase | 7 tablas con políticas |
-| Rate limits | Todos los endpoints del worker (incluyendo catalog-public 60/min) |
-| XSS críticos index.html | ~30 puntos corregidos |
-| XSS catalog.html | safeUrl aplicado |
-| XSS track.html | esc() y safeUrl() aplicados (Agente A ✅) |
-| XSS index.html ronda 2 | filtrarBoletas, _renderChips, _shareDrop, etc. (Agente B ✅) |
-| XSS _boletaHTML + imprimirTicket | escHtml aplicado (Agente D ✅) |
-| views/js scan | views/, js/, components/ — limpios (Agente C ✅) |
-| auth_id protegido | save-user.js |
-| Security headers | X-Frame-Options, nosniff, Referrer-Policy |
-| Legacy code | 7 archivos Express eliminados |
-| SSRF resolve-link | Whitelist de dominios Google Maps |
-| whatsapp-webhook | HMAC SHA-256 |
-| pizarron POST | fail-safe cuando PIZARRON_SECRET no configurado |
-| track-public | Datos sensibles removidos de respuesta |
-| claude proxy | Modelo fijo + cap max_tokens |
-| config.js | Restringido a admin/superadmin |
-| orders.js | Valida delivery_id y rol delivery |
-| notif-entrega.js | Valida que pedido_id exista |
-| push-subscribe.js | Previene endpoint takeover |
-| order-status.js | Whitelist estados para delivery |
-| Mensajes error genéricos | save-user, delete-user, get-users, dispositivos-pendientes |
-| localStorage cleanup | doLogout() limpia todo el localStorage |
-| Regresión showAlert | Corregida — vuelve a textContent |
-| Realtime cleanup + deleteUser | Fix suscripción + validación .ok |
-| @supabase/supabase-js | Actualizado a ^2.105.4 |
-
-### ✅ CERRADO — RONDA TARDE (agregados hoy)
-| Área | Detalle |
-|---|---|
-| Errores API visibles | saveUser, saveOrder, saveJornada muestran toast en vez de fallar silenciosamente |
-| Campanita duplicada eliminada | Solo queda `codexNotifBell` flotante amarilla, `#ntBell` borrada |
-| CSS campanita en login | `codexNotifBell` oculta en login, visible solo con `#appScreen.show` |
-| Sincronización notificaciones | pushNotif() ahora alimenta tanto _notificaciones[] como _notifHistory[] |
-| Botones pedidos → menú ⋮ | 8 botones de acción reemplazados por dropdown organizado |
-
-### ✅ CERRADO — SEGUNDA MITAD DE SESIÓN
-| Área | Commit | Detalle |
-|---|---|---|
-| Scroll-to-top | `845e38a` | Color neutro, bottom:130px, detecta contenedor correcto |
-| Re-auth Config/SQL | `5524c30` | Modal signInWithPassword + 5 min gracia |
-| Fix drag vs click #aiBtn | `dac3b9c` | pointerCapture para distinguir drag de click; #bgWrap oculto en login |
-| XSS safeUrl img src | `8c135e8` | foto_perfil, cédulas, logos — previene XSS vía URL |
-| XSS escHtml PDF | `8c135e8` | exportOrdersPDF + imprimirGuia |
-| UX botón ⋮ táctil | `8c135e8` | 44px área de toque |
-| confirm() con nro pedido | `8c135e8` | Evita errores de confirmación |
-| Mapa profesional | `6b2ad15` | Clase .map-btn, colores teal/cyan |
-| Menú ⋮ usuarios | `6b2ad15` | Dropdown en tabla de usuarios |
-| Pines prioridad animados | `6b2ad15` | shake + sonar en pedidos prioritarios |
-| Duplicados catálogo | — | IDs 4–9 eliminados de DB |
-
-### 🔄 EN CURSO
-Ninguno — todos los agentes de la sesión completaron.
-
-### ❌ PENDIENTE
-| Área | Prioridad |
-|---|---|
-| ~~Columna `prioridad` en tabla `pedidos` (Supabase)~~ | ✅ RESUELTO 2026-05-14 |
-| ~~Push al delivery cuando pedido es prioridad~~ | ✅ RESUELTO commit `67d97ec` |
-| Prueba visual con tester-visual.py | ALTA — PRÓXIMA SESIÓN |
-| campanita antes del auth (codexNotifBell pre-login) | MEDIA |
-| WHATSAPP_APP_SECRET | MEDIA (usuario) |
-| Asistente IA con voz (TAREA_ASISTENTE_VOZ_IA.md) | MEDIA |
-| Legibilidad nombres en mapa (estado "En camino") | MEDIA |
-| Botón ℹ️ mapa — posicionamiento | MEDIA |
-| Refinamiento visual botones pedidos | MEDIA |
-| Mejoras visuales según análisis Gemini | DESPUÉS del tester |
+- **Idioma:** español rioplatense/paraguayo, siempre.
+- **Tono:** directo, conciso, sin jerga innecesaria.
+- **Si el user dice "modo automático" o "permiso total":** trabajar a fondo sin pedir confirmaciones extra, **pero respetar líneas rojas**.
+- **Si el user dice "esto es para después, no reacciones":** GUARDAR la info en un `TAREA_*.md`, commitear, y NO ejecutar nada.
+- **Si el user dice "dame X minutos":** no lanzar tareas que requieran su atención. Hacer trabajo silencioso (docs, audits seguros).
+- **Permisos de Claude Code en inglés:** TRADUCIR las opciones al español ANTES de pedir el permiso. Ejemplo en `CLAUDE.md`.
+- **Cuando el user es ambiguo:** preguntar antes de actuar. No interpretar.
 
 ---
 
-## 10. ARCHIVOS CLAVE DEL PROYECTO
+## 🎁 FEATURES FUTURAS — NO BLOQUEAN LANZAMIENTO
 
-| Archivo | Para qué sirve |
-|---|---|
-| `iporave-worker/src/index.js` | Router principal del worker — aquí se registran todos los endpoints |
-| `iporave-worker/src/utils.js` | `verifyToken()`, `corsHeaders()`, `json()`, `getSupaAdmin()` |
-| `iporave-worker/src/api/login.js` | Auth flow completo |
-| `iporave-worker/src/api/save-user.js` | Crear/editar usuarios, SAFE_SELF_FIELDS |
-| `iporave-sistema/public/index.html` | Toda la SPA (~9500+ líneas) |
-| `iporave-sistema/public/catalog.html` | Catálogo público (sin auth) |
-| `iporave-sistema/public/track.html` | Tracking público de pedidos |
-| `iporave-sistema/validate.js` | Validador de sintaxis OBLIGATORIO antes de commit |
-| `iporave-sistema/.agentes/` | Scripts Python de agentes IA, tareas pendientes, playbooks |
-| `iporave-sistema/.agentes/PLAYBOOK_SUPERVISOR.md` | Guía completa de cómo supervisar agentes |
-| `iporave-sistema/.agentes/playwright_state.json` | Estado del browser autenticado — sesión guardada post-login |
-| `C:\Users\USUARIO\node-red-config\api-keys.json` | API keys de Groq, Gemini, etc. (NO en git) |
+- Correo corporativo con dominio propio (iporave@iporaveparaguay.com)
+- API keys propias por cliente: WhatsApp Business, Shopify, Dropi
+- Botones de integración en perfil de cliente: Meta Ads, Shopify, Dropi
+- Asistente IA con voz (Web Speech API + Groq + Llama 3.3 70B)
+- Mapbox V6 (reemplazar Leaflet)
+- Tienda online pública con auto-registro
+- Rol "empresa" — sub-admin mejorado
+- Plan Google One — explorar beneficios
 
 ---
 
-## 11. NOTAS DE CONTEXTO TÉCNICO (ronda tarde)
+## 📞 RECURSOS Y CONTACTOS
 
-- **`sessionStorage` se pierde al recargar** → el tester visual ahora usa `page.evaluate("nav('seccion')")` en vez de `page.goto()` para navegar dentro del SPA post-login.
-- **`_notificaciones[]`** = push notifications (ServiceWorker) — la nueva campanita usa esto.
-- **`_notifHistory[]`** = notificaciones in-app generadas por `pushNotif()` — ahora ambos arrays se sincronizan.
-- **`playwright_state.json`** contiene el localStorage del browser guardado (incluyendo Supabase access token). El token se regenera cada hora — para scripts usar anon key + JWT propio del usuario.
-- **`codexNotifBell`** es la única campanita ahora — la vieja `#ntBell` del topbar fue eliminada definitivamente en commit `533854a`.
-- **Supabase access token caduca cada 1 hora** — si el tester falla con 401, re-ejecutar para hacer login fresco y guardar nuevo `playwright_state.json`.
+- **Cuenta del negocio:** iporaveparaguay@gmail.com (Shopify, admin)
+- **Cuenta Claude:** iporave@gmail.com (esta sesión)
+- **Supabase Project:** `hrpnqbmknmgdaaokjelb`
+- **Cloudflare Worker:** `iporave-api` (account: iporaveparaguay)
+- **Vercel Project:** `iporave-sistema` (auto-deploy desde GitHub)
+- **API Keys (locales):** `C:\Users\USUARIO\node-red-config\api-keys.json` (NO en git)
 
-### Estado de infraestructura al cierre
-| Componente | Estado |
-|---|---|
-| Worker | `iporave-api.iporaveparaguay.workers.dev` — activo |
-| Frontend | `iporave-sistema.vercel.app` — commit `6b2ad15` deployado |
-| Supabase | `hrpnqbmknmgdaaokjelb.supabase.co` — RLS activo en 7 tablas |
-| Node-RED + Groq | Operativo (pizarrón, supervisor) |
-| `playwright_state.json` | Guardado en `.agentes/` — login funciona, SPA navigation corregida (page.evaluate) |
+---
+
+## 🏁 ÚLTIMA COSA — CHECKLIST DE PRIMER MENSAJE
+
+Cuando saludes al usuario en la próxima sesión, hacé esto en este orden:
+
+1. Confirmar en español que leíste el RELEVO
+2. Reportar estado: commits, procesos Python (debería ser 0), última entrada del pizarrón
+3. Listar las 3 tareas más críticas para el día (mobile UX, datos ficticios, prueba)
+4. **Preguntar qué arrancamos primero. NO lanzar agentes solo.**
+
+Ejemplo:
+
+> Hola. Leí el RELEVO completo. Estado actual:
+> - Frontend en commit `46d0726`, todo deployado en Vercel
+> - 0 procesos Python (parada limpia)
+> - Última entrada del pizarrón: hace XX horas, sin actividad nueva
+>
+> Las 3 prioridades de hoy según lo que dejaste anotado:
+> 1. Cargar datos ficticios completos para prueba (TAREA_PRUEBA_LANZAMIENTO.md)
+> 2. Fixes UX mobile — botones, padding, topbar, campanita (TAREA_MOBILE_UX_FIXES.md)
+> 3. Probar manualmente todos los roles antes de entregar a las 10 personas
+>
+> ¿Por dónde arrancamos? ¿Querés que prepare los datos ficticios con un script o que primero levante los agentes?
+
+---
+
+*Documento de relevo generado al cierre de sesión 2026-05-14. Próxima sesión: leerlo entero antes de tocar nada.*
