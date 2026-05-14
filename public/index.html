@@ -7679,24 +7679,24 @@ function verProducto(id){
     fotos.map((f,i)=>'<img src="'+safeUrl(f)+'" onclick="$(\'vpMain\').src=\''+safeUrl(f)+'\';this.parentNode.querySelectorAll(\'img\').forEach(x=>x.style.borderColor=\'var(--border2)\');this.style.borderColor=\'var(--accent)\'" style="width:70px;height:70px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid '+(i===0?'var(--accent)':'var(--border2)')+'">').join('')+
   '</div>':'';
   const videoHtml=p.videos&&p.videos.length
-    ?'<div style="margin-top:10px">'+p.videos.map(v=>'<video src="'+v+'" controls playsinline style="width:100%;border-radius:8px;margin-bottom:8px;max-height:280px"></video>').join('')+'</div>':'';
+    ?'<div style="margin-top:10px">'+p.videos.map(v=>'<video src="'+safeUrl(v)+'" controls playsinline style="width:100%;border-radius:8px;margin-bottom:8px;max-height:280px"></video>').join('')+'</div>':'';
   const presHtml=p.presentaciones&&p.presentaciones.length
     ?'<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">'+
       '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Presentaciones</div>'+
       p.presentaciones.map(pr=>{
         const rp=_getPrecioRol(pr,CU.rol);
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2)">'+
-          '<span style="font-weight:600;font-size:13px">'+pr.nombre+'</span>'+
+          '<span style="font-weight:600;font-size:13px">'+escHtml(pr.nombre||'')+'</span>'+
           '<span style="font-size:16px;font-weight:700;color:var(--green)">'+fmt(rp)+'</span>'+
         '</div>';
       }).join('')+'</div>':'';
   const descHtml=p.descripcion_html?'<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">'+
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Descripción</div>'+
     '<div class="desc-html" style="font-size:13px;line-height:1.7">'+p.descripcion_html+'</div></div>':'';
-  openA(p.nombre,
+  openA(escHtml(p.nombre||''),
     mainImgHtml+galeria+videoHtml+
-    (p.categoria?'<div style="margin-top:10px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">'+p.categoria+'</div>':'')+
-    (p.proveedorNombre?'<div style="font-size:12px;color:var(--accent);margin-top:3px">'+p.proveedorNombre+'</div>':'')+
+    (p.categoria?'<div style="margin-top:10px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">'+escHtml(p.categoria)+'</div>':'')+
+    (p.proveedorNombre?'<div style="font-size:12px;color:var(--accent);margin-top:3px">'+escHtml(p.proveedorNombre)+'</div>':'')+
     '<div style="margin-top:8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">'+
       (p.precio_comparacion>0?'<span style="font-size:12px;color:var(--text3);text-decoration:line-through">'+fmt(p.precio_comparacion)+'</span>':'')+
       (p.presentaciones&&p.presentaciones.length?'<span style="font-size:22px;font-weight:700;color:var(--green)">'+fmt(_getPrecioRol(p.presentaciones[0],CU.rol))+'</span>':'')+
@@ -7713,7 +7713,7 @@ function openNuevaPresentacion(prodId){
   const sugeridas=['250ml','500ml','750ml','1L','2L','5L','10L','20L','200L',
     '100g','250g','500g','1Kg','5Kg','10Kg','25Kg',
     'Granel','Unidad','Par','Docena','Bolsa','Caja','Garrafa'];
-  openA('Nueva presentación — '+(p?p.nombre:''),
+  openA('Nueva presentación — '+escHtml(p?p.nombre||'':''),
     '<div class="fg">'+
       '<label>Nombre de la presentación</label>'+
       '<input type="text" id="nprNom" placeholder="Ej: 2.5L, 750g, Docena..." style="border:2px solid var(--accent)">'+
