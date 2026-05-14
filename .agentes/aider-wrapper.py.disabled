@@ -1,0 +1,15 @@
+"""
+Wrapper para Aider — parchea webbrowser ANTES de que Aider lo importe.
+Uso: python aider-wrapper.py --model X --message Y archivo.html
+"""
+import webbrowser
+
+# Bloquear TODAS las formas de abrir el navegador
+webbrowser.open = lambda *a, **k: True
+webbrowser.open_new = lambda *a, **k: True
+webbrowser.open_new_tab = lambda *a, **k: True
+webbrowser.get = lambda *a, **k: type("F", (), {"open": lambda *a, **k: True})()
+
+# Ahora ejecutar Aider normalmente
+from aider.main import main
+main()

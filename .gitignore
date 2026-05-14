@@ -27,3 +27,23 @@ secrets.json
 .agentes/playwright_state.json
 .agentes/test-screenshots/
 .agentes/pyoverrides/
+
+# Runtime files — not for version control
+.agentes/.supervisor.lock
+.agentes/pool_estado.json
+.agentes/playwright_state.json
+.agentes/test-screenshots/
+.agentes/pyoverrides/
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v4/
+
+# Vue.js files (arquitectura abandonada)
+public/App.vue
+public/css/
+public/js/
+public/router/
+public/src/
+public/views/
+serve-public.js
+specs-real.txt
