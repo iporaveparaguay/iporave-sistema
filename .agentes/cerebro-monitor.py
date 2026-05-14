@@ -76,7 +76,7 @@ except ImportError:
     def get_modelo_pro():   return "gemini-2.5-pro-latest"
     def get_api_key():
         try:
-            with open(KEYS_PATH, encoding="utf-8") as f:
+            with open(KEYS_PATH, encoding="utf-8-sig") as f:
                 return json.load(f).get("google_ai_studio", "")
         except: return ""
     def registrar_uso_pro(): pass
@@ -314,7 +314,7 @@ def _llamar_gemini_rest(modelo_rest, prompt, api_key):
     Hace una llamada directa a la REST API de AI Studio.
     Devuelve el texto de respuesta, o lanza excepciÃ³n.
     """
-    url = f"{GEMINI_API_BASE}/{modelo_rest}:generateContent?key={api_key}"
+    url = f"{GEMINI_API_BASE}/{modelo_rest}:generateContent"
     # Pro models: usar thinking para mejor anÃ¡lisis
     # Flash models: deshabilitar thinking (ahorra tokens, evita truncamiento)
     es_pro = "pro" in modelo_rest
@@ -333,7 +333,8 @@ def _llamar_gemini_rest(modelo_rest, prompt, api_key):
     }
     body = json.dumps(payload).encode("utf-8")
     req  = urllib.request.Request(url, data=body,
-                                  headers={"Content-Type": "application/json"})
+                                  headers={"Content-Type": "application/json",
+                                           "x-goog-api-key": api_key})
     with urllib.request.urlopen(req, timeout=90) as r:
         resp = json.loads(r.read().decode())
     return resp["candidates"][0]["content"]["parts"][0]["text"].strip()

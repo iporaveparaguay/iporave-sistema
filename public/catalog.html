@@ -54,8 +54,8 @@
     background: transparent;
     border: 1px solid var(--border);
     border-radius: 50%;
-    width: 38px;
-    height: 38px;
+    min-width: 44px; /* Touch-friendly */
+    min-height: 44px; /* Touch-friendly */
     font-size: 1.1rem;
     cursor: pointer;
     display: flex;
@@ -69,11 +69,11 @@
   /* BARRA DE BÚSQUEDA */
   .search-bar {
     background: var(--bg2);
-    padding: 16px 20px;
     border-bottom: 1px solid var(--border);
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    padding: 16px 20px; /* Padding original */
   }
   .search-bar input, .search-bar select {
     background: var(--bg3);
@@ -124,13 +124,14 @@
   .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(108,99,255,0.2); }
   .card-img {
     width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
+    aspect-ratio: 4/3; /* Nueva relación de aspecto */
+    object-fit: cover; /* Nueva propiedad para cubrir el espacio */
     background: var(--bg3);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 3rem;
+    border-radius: inherit; /* Hereda el border-radius del padre */
   }
   .card-img img { width: 100%; height: 100%; object-fit: cover; }
   .card-body { padding: 12px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
@@ -147,7 +148,7 @@
     color: var(--text2);
     text-decoration: line-through;
   }
-  .btn-pedir {
+  .btn-pedir, .btn-agregar, .btn-compartir {
     margin: 0 12px 12px;
     background: var(--accent);
     color: #fff;
@@ -159,6 +160,7 @@
     cursor: pointer;
     transition: background 0.2s;
     width: calc(100% - 24px);
+    min-height: 44px; /* Botones touch-friendly */
   }
   .btn-pedir:hover { background: #5a52e0; }
   .btn-compartir {
@@ -166,13 +168,8 @@
     background: transparent;
     color: var(--accent2);
     border: 1px solid var(--accent2);
-    border-radius: 8px;
     padding: 6px;
     font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s;
-    width: calc(100% - 24px);
   }
   .btn-compartir:hover { background: var(--accent2); color: #fff; }
 
@@ -222,7 +219,7 @@
   }
   .skeleton-img {
     width: 100%;
-    aspect-ratio: 1;
+    aspect-ratio: 4/3; /* Mismo aspect-ratio que la imagen real */
     background: linear-gradient(90deg, var(--bg3) 25%, #2e3150 50%, var(--bg3) 75%);
     background-size: 800px 100%;
     animation: shimmer 1.4s infinite linear;
@@ -287,31 +284,110 @@
   }
   .modal input:focus { border-color: var(--accent); }
   .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-cancelar, .btn-whatsapp {
+    min-height: 44px; /* Botones touch-friendly */
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+  }
   .btn-cancelar {
-    flex: 1; padding: 10px; border-radius: 10px;
-    border: 1px solid var(--border); background: transparent;
-    color: var(--text2); cursor: pointer; font-size: 0.9rem;
+    flex: 1;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
   }
   .btn-whatsapp {
-    flex: 2; padding: 10px; border-radius: 10px;
-    border: none; background: #25d366;
-    color: #fff; cursor: pointer; font-size: 0.95rem; font-weight: 700;
+    flex: 2;
+    background: #25d366;
+    color: #fff;
+    font-weight: 700;
   }
   .btn-whatsapp:hover { background: #1da851; }
 
   /* MODAL DETALLE */
   .detalle-modal { padding: 0; overflow: hidden; }
-  .detalle-img { width: 100%; height: 260px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+  .detalle-img {
+    width: 100%;
+    height: 260px;
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+  }
   .detalle-img img { width: 100%; height: 100%; object-fit: cover; }
   .detalle-body { padding: 24px; }
   .detalle-precios { margin: 12px 0; display: flex; align-items: baseline; gap: 10px; }
   .detalle-desc { color: var(--text2); font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; white-space: pre-wrap; max-height: 30vh; overflow-y: auto; }
   .detalle-modal h2 { font-size: 1.3rem; margin-bottom: 4px; }
 
-  @media (max-width: 480px) {
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
     body { padding-top: 68px; }
-    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 10px 80px; }
-    .search-bar { padding: 12px; }
+    .grid {
+      /* Ajuste para que no desborde en 375px y se adapte mejor */
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      padding: 10px 10px 80px; /* Padding reducido */
+    }
+    .search-bar {
+      padding: 12px; /* Padding reducido */
+      flex-direction: column; /* Apilar elementos en pantallas pequeñas */
+      gap: 8px;
+    }
+    .search-bar input, .search-bar select, .precio-row {
+      width: 100%; /* Ocupar todo el ancho */
+      min-width: 0;
+      flex: none; /* Quitar flex grow/shrink */
+    }
+    .precio-row { flex-direction: column; } /* Apilar inputs de precio */
+    .precio-row input { width: 100%; }
+
+    .card-nombre { font-size: 0.85rem; }
+    .card-precio { font-size: 18px; }
+    .btn-pedir, .btn-agregar, .btn-compartir {
+      font-size: 0.85rem;
+      padding: 8px;
+      width: calc(100% - 24px); /* Mantener margen */
+      min-height: 44px; /* Asegurar altura touch-friendly */
+    }
+    .btn-agregar { min-height: 44px; } /* Asegurar altura touch-friendly */
+    .btn-compartir { min-height: 44px; } /* Asegurar altura touch-friendly */
+
+    .carrito-fab {
+      right: 16px; /* Ajuste de posición */
+      top: 14px; /* Mantenido fijo */
+      position: fixed; /* Asegura que esté siempre visible */
+      z-index: 150; /* Asegura que esté por encima de otros elementos */
+    }
+    header { padding: 10px 12px; } /* Ajuste de padding para pantallas muy pequeñas */
+
+    /* Reducción de altura de imagen en mobile */
+    .card-img {
+      height: 180px; /* Altura reducida para pantallas medianas */
+    }
+  }
+
+  @media (max-width: 480px) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr); /* Dos columnas en pantallas muy pequeñas */
+      gap: 10px;
+      padding: 10px 10px 80px;
+    }
+    .search-bar { padding: 10px; }
+    .modal { padding: 16px; }
+    .modal-btns { flex-direction: column; }
+    .btn-cancelar, .btn-whatsapp { flex: none; width: 100%; }
+    .btn-cancelar { min-height: 44px; } /* Asegurar altura touch-friendly */
+    .btn-whatsapp { min-height: 44px; } /* Asegurar altura touch-friendly */
+
+    /* Ajuste adicional de altura de imagen en pantallas pequeñas */
+    .card-img {
+      height: 150px; /* Altura aún más reducida para pantallas pequeñas */
+    }
   }
 
   /* BOTÓN AGREGAR AL CARRITO */
@@ -320,29 +396,26 @@
     background: transparent;
     color: var(--accent);
     border: 1px solid var(--accent);
-    border-radius: 8px;
     padding: 6px;
     font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s;
     width: calc(100% - 24px);
+    min-height: 44px; /* Botones touch-friendly */
   }
   .btn-agregar:hover { background: var(--accent); color: #fff; }
   .btn-agregar.en-carrito { background: var(--accent); color: #fff; }
 
   /* ÍCONO FLOTANTE DEL CARRITO */
   .carrito-fab {
-    position: fixed;
+    position: fixed; /* Asegura que esté siempre visible */
     top: 14px;
-    right: 66px;
-    z-index: 150;
+    right: 66px; /* Ajustado para no solaparse con el tema */
+    z-index: 150; /* Asegura que esté por encima de otros elementos */
     background: var(--accent);
     color: #fff;
     border: none;
     border-radius: 50%;
-    width: 42px;
-    height: 42px;
+    min-width: 44px; /* Touch-friendly */
+    min-height: 44px; /* Touch-friendly */
     font-size: 1.2rem;
     cursor: pointer;
     display: flex;
@@ -426,6 +499,7 @@
     cursor: pointer;
     font-size: 0.85rem;
     transition: background 0.2s;
+    min-height: 44px; /* Botones touch-friendly */
   }
   .btn-cerrar-carrito:hover { background: var(--bg3); }
 
@@ -480,6 +554,8 @@
     align-items: center;
     justify-content: center;
     transition: background 0.15s;
+    min-width: 44px; /* Touch-friendly */
+    min-height: 44px; /* Botones touch-friendly */
   }
   .carrito-item-cant button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
   .carrito-item-cant span {
@@ -498,6 +574,7 @@
     border-radius: 6px;
     transition: background 0.15s;
     flex-shrink: 0;
+    min-height: 44px; /* Botones touch-friendly */
   }
   .btn-quitar-item:hover { background: rgba(239,83,80,0.12); }
 
@@ -536,6 +613,7 @@
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
+    min-height: 44px; /* Botones touch-friendly */
   }
   .btn-vaciar:hover { background: var(--danger); color: #fff; }
   .btn-enviar-carrito {
@@ -549,6 +627,7 @@
     cursor: pointer;
     transition: background 0.2s;
     width: 100%; /* Ocupa todo el ancho disponible */
+    min-height: 44px; /* Botones touch-friendly */
   }
   .btn-enviar-carrito:hover { background: #1da851; }
 
@@ -611,8 +690,8 @@
     <option value="">Todas las categorías</option>
   </select>
   <div class="precio-row">
-    <input type="number" id="inputMin" placeholder="Precio mín." oninput="filtrar()" min="0">
-    <input type="number" id="inputMax" placeholder="Precio máx." oninput="filtrar()" min="0">
+    <input type="number" id="inputMin" placeholder="Precio mín." oninput="filtrar()" min="0" step="1000">
+    <input type="number" id="inputMax" placeholder="Precio máx." oninput="filtrar()" min="0" step="1000">
   </div>
 </div>
 
@@ -678,13 +757,13 @@
     <h2>📦 Hacer pedido</h2>
     <div class="prod-info" id="modalProdInfo"></div>
     <label>Tu nombre</label>
-    <input type="text" id="inputNombre" placeholder="Nombre completo">
+    <input type="text" id="inputNombre" placeholder="Nombre completo" required>
     <label>Tu WhatsApp</label>
-    <input type="tel" id="inputWA" placeholder="09xxxxxxxx">
+    <input type="tel" id="inputWA" placeholder="09xxxxxxxx" required pattern="[0-9]{9,10}">
     <label>Dirección de entrega</label>
-    <input type="text" id="inputDir" placeholder="Barrio, calle, número...">
+    <input type="text" id="inputDir" placeholder="Barrio, calle, número..." required>
     <label>Cantidad</label>
-    <input type="number" id="inputCant" value="1" min="1" max="99">
+    <input type="number" id="inputCant" value="1" min="1" max="99" required>
     <div class="modal-btns">
       <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
       <button class="btn-whatsapp" onclick="enviarPedido()">📲 Pedir por WhatsApp</button>
@@ -693,7 +772,7 @@
 </div>
 
 <script>
-const API = 'https://iporave-api.iporaveparaguay.workers.dev/api/catalog-public';
+const API = 'https://iporave-api.iporave.workers.dev/api/catalog-public'; // Corregido el dominio
 const WA_EMPRESA = '595981000000'; // reemplazar con el número real de la empresa
 
 let todosLosProductos = [];
@@ -715,17 +794,29 @@ function mostrarSkeletons() {
 }
 
 async function cargar() {
+  mostrarSkeletons(); // Mostrar skeletons mientras carga
   try {
     const res = await fetch(API);
+    // Verificar si la respuesta es OK antes de intentar parsear JSON
+    if (!res.ok) {
+      throw new Error(`Error HTTP: ${res.status} ${res.statusText}`);
+    }
     const data = await res.json();
-    todosLosProductos = data.productos || [];
+    
+    // Verificar si la estructura de datos esperada está presente
+    if (!data || !Array.isArray(data.productos)) {
+      throw new Error('Formato de datos inesperado recibido del servidor.');
+    }
+    
+    todosLosProductos = data.productos;
     poblarCategorias();
-    renderizar(todosLosProductos);
+    filtrar(); // Llamar a filtrar para renderizar con los productos cargados
   } catch (e) {
+    console.error("Error al cargar el catálogo:", e);
     document.getElementById('grid').innerHTML = `
       <div class="empty">
         <div class="icon">⚠️</div>
-        <div>No se pudieron cargar los productos.<br>Intentá de nuevo más tarde.</div>
+        <div>No se pudieron cargar los productos.<br>Error: ${esc(e.message)}<br>Intentá de nuevo más tarde.</div>
       </div>`;
   }
 }
@@ -733,6 +824,8 @@ async function cargar() {
 function poblarCategorias() {
   const cats = [...new Set(todosLosProductos.map(p => p.categoria).filter(Boolean))].sort();
   const sel = document.getElementById('selectCat');
+  // Limpiar opciones existentes excepto la primera (Todas las categorías)
+  sel.innerHTML = '<option value="">Todas las categorías</option>';
   cats.forEach(c => {
     const o = document.createElement('option');
     o.value = c; o.textContent = c;
@@ -743,15 +836,35 @@ function poblarCategorias() {
 function filtrar() {
   const q = document.getElementById('catalogSearch').value.toLowerCase().trim();
   const cat = document.getElementById('selectCat').value;
-  const min = parseInt(document.getElementById('inputMin').value);
-  const max = parseInt(document.getElementById('inputMax').value);
+  
+  // Validar y parsear precios
+  const minInput = document.getElementById('inputMin');
+  const maxInput = document.getElementById('inputMax');
+  let min = parseInt(minInput.value);
+  let max = parseInt(maxInput.value);
+
+  // Validaciones para campos de precio
+  if (isNaN(min) || min < 0) {
+    min = 0; // Resetear a 0 si no es un número válido o es negativo
+    minInput.value = ''; // Limpiar input si el valor era inválido
+  }
+  if (isNaN(max) || max < 0) {
+    max = Infinity; // Usar Infinity si no es un número válido o es negativo
+    maxInput.value = ''; // Limpiar input si el valor era inválido
+  }
+  // Asegurar que max no sea menor que min
+  if (max < min) {
+    max = min; // Si max es menor, ajustarlo a min
+    maxInput.value = fmt(max); // Actualizar el input
+  }
+
   const orden = document.getElementById('catalogSort').value;
 
   let lista = [...todosLosProductos];
   if (cat) lista = lista.filter(p => p.categoria === cat);
   if (q) lista = lista.filter(p => p.nombre?.toLowerCase().includes(q) || p.descripcion?.toLowerCase().includes(q));
-  if (!isNaN(min)) lista = lista.filter(p => p.precio >= min);
-  if (!isNaN(max)) lista = lista.filter(p => p.precio <= max);
+  
+  lista = lista.filter(p => p.precio >= min && p.precio <= max);
 
   if (orden === 'precio_menor') {
     lista.sort((a, b) => a.precio - b.precio);
@@ -770,7 +883,7 @@ function renderizar(lista) {
   contador.textContent = lista.length === 1 ? '1 producto encontrado' : lista.length + ' productos encontrados';
 
   if (!lista.length) {
-    grid.innerHTML = `<div class="empty"><div class="icon">😔</div><div>No hay productos en esta categoría</div></div>`;
+    grid.innerHTML = `<div class="empty"><div class="icon">😔</div><div>No se encontraron productos con los filtros aplicados.</div></div>`;
     return;
   }
 
@@ -797,29 +910,45 @@ function renderizar(lista) {
 
 function abrirModal(id) {
   productoSeleccionado = todosLosProductos.find(p => p.id === id);
-  if (!productoSeleccionado) return;
+  if (!productoSeleccionado) {
+    console.error("Producto no encontrado para abrir modal:", id);
+    return;
+  }
   document.getElementById('modalProdInfo').textContent =
     productoSeleccionado.nombre + ' — Gs. ' + fmt(productoSeleccionado.precio);
+  
+  // Limpiar y resetear campos del modal
   document.getElementById('inputNombre').value = '';
   document.getElementById('inputWA').value = '';
   document.getElementById('inputDir').value = '';
-  document.getElementById('inputCant').value = '1';
+  const inputCant = document.getElementById('inputCant');
+  inputCant.value = '1'; // Resetear a 1
+  inputCant.min = '1'; // Asegurar min
+  inputCant.max = '99'; // Asegurar max
+  
   document.getElementById('modalOverlay').classList.add('open');
 }
 
 function cerrarModal(e) {
-  if (!e || e.target === document.getElementById('modalOverlay')) {
-    document.getElementById('modalOverlay').classList.remove('open');
-    productoSeleccionado = null;
-  }
+  // Cierra el modal si se hace clic fuera del contenido del modal
+  if (e && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  productoSeleccionado = null;
 }
 
 function abrirModalDetalle(id) {
   const p = todosLosProductos.find(p => p.id === id);
-  if (!p) return;
+  if (!p) {
+    console.error("Producto no encontrado para abrir detalle:", id);
+    return;
+  }
   
   const imgCont = document.querySelector('#modalDetalle .detalle-img');
-  imgCont.innerHTML = p.foto ? `<img src="${safeUrl(p.foto)}" alt="${esc(p.nombre)}">` : '📦';
+  // Usar safeUrl para la imagen y manejar error
+  const imageUrl = safeUrl(p.foto);
+  imgCont.innerHTML = imageUrl
+    ? `<img src="${imageUrl}" alt="${esc(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'">`
+    : '📦';
   
   document.getElementById('detNombre').textContent = p.nombre;
   document.getElementById('detCat').textContent = p.categoria || '';
@@ -837,34 +966,69 @@ function abrirModalDetalle(id) {
   const btn = document.getElementById('btnDetallePedir');
   btn.onclick = () => {
     cerrarModalDetalle();
-    abrirModal(id);
+    abrirModal(id); // Abre el modal de pedido para este producto
   };
   
   document.getElementById('modalDetalle').classList.add('open');
 }
 
 function cerrarModalDetalle(e) {
-  if (!e || e.target === document.getElementById('modalDetalle')) {
-    document.getElementById('modalDetalle').classList.remove('open');
-  }
+  // Cierra el modal si se hace clic fuera del contenido del modal
+  if (e && e.target !== document.getElementById('modalDetalle')) return;
+  document.getElementById('modalDetalle').classList.remove('open');
 }
 
 function enviarPedido() {
-  const nombre = document.getElementById('inputNombre').value.trim();
-  const wa = document.getElementById('inputWA').value.trim();
-  const dir = document.getElementById('inputDir').value.trim();
-  const cant = document.getElementById('inputCant').value || '1';
-  if (!nombre || !wa || !dir) { alert('Por favor completá todos los campos.'); return; }
+  const nombreInput = document.getElementById('inputNombre');
+  const waInput = document.getElementById('inputWA');
+  const dirInput = document.getElementById('inputDir');
+  const cantInput = document.getElementById('inputCant');
+
+  // Validaciones client-side para los campos requeridos
+  if (!nombreInput.value.trim()) {
+    alert('Por favor, ingresá tu nombre.');
+    nombreInput.focus();
+    return;
+  }
+  if (!waInput.value.trim() || !/^\d{9,10}$/.test(waInput.value.trim())) {
+    alert('Por favor, ingresá un número de WhatsApp válido (ej. 09xxxxxxxx).');
+    waInput.focus();
+    return;
+  }
+  if (!dirInput.value.trim()) {
+    alert('Por favor, ingresá tu dirección de entrega.');
+    dirInput.focus();
+    return;
+  }
+  
+  let cant = parseInt(cantInput.value);
+  // Validar cantidad (aunque ya tiene min/max HTML, es bueno tenerlo en JS)
+  if (isNaN(cant) || cant < 1 || cant > 99) {
+    alert('Por favor, ingresá una cantidad válida entre 1 y 99.');
+    cantInput.focus();
+    return;
+  }
+
+  const nombre = nombreInput.value.trim();
+  const wa = waInput.value.trim();
+  const dir = dirInput.value.trim();
+  
   const p = productoSeleccionado;
+  if (!p) {
+    alert('Error: No se pudo obtener la información del producto.');
+    return;
+  }
+
   const msg = `Hola! Quiero hacer un pedido 🛵\n\n` +
-    `*Producto:* ${p.nombre}\n` +
-    `*Precio:* Gs. ${fmt(p.precio)}\n` +
+    `*Producto:* ${esc(p.nombre)}\n` +
+    `*Precio unitario:* Gs. ${fmt(p.precio)}\n` +
     `*Cantidad:* ${cant}\n` +
-    `*Total aprox.:* Gs. ${fmt(p.precio * parseInt(cant))}\n\n` +
+    `*Total aprox.:* Gs. ${fmt(p.precio * cant)}\n\n` +
     `*Datos de entrega:*\n` +
-    `Nombre: ${nombre}\n` +
-    `WhatsApp: ${wa}\n` +
-    `Dirección: ${dir}`;
+    `Nombre: ${esc(nombre)}\n` +
+    `WhatsApp: ${esc(wa)}\n` +
+    `Dirección: ${esc(dir)}`;
+  
   const url = `https://wa.me/${WA_EMPRESA}?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
   cerrarModal();
@@ -872,21 +1036,31 @@ function enviarPedido() {
 
 function compartirWA(id) {
   const p = todosLosProductos.find(p => p.id === id);
-  if (!p) return;
-  const msg = `¡Mirá este producto en Iporãve! 👇\n${p.nombre} — Gs. ${fmt(p.precio)}\nVer catálogo: https://iporave-sistema.vercel.app/catalog.html`;
+  if (!p) {
+    console.error("Producto no encontrado para compartir:", id);
+    return;
+  }
+  const msg = `¡Mirá este producto en Iporãve! 👇\n${esc(p.nombre)} — Gs. ${fmt(p.precio)}\nVer catálogo: https://iporave-sistema.vercel.app/catalog.html`;
   const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
 }
 
 function esc(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  // Escapa caracteres HTML para prevenir XSS
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function safeUrl(u) {
-  return (typeof u === 'string' && /^https?:\/\//i.test(u)) ? u : '';
+  // Valida si la URL es segura (http/https)
+  if (typeof u !== 'string' || !/^https?:\/\//i.test(u)) {
+    console.warn("URL no segura o inválida:", u);
+    return ''; // Retorna vacío si no es una URL válida
+  }
+  return u;
 }
 
 function fmt(n) {
-  return Number(n || 0).toLocaleString('es-PY');
+  // Formatea números a formato paraguayo (Gs. XXX.XXX)
+  return Number(n || 0).toLocaleString('es-PY', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 // THEME TOGGLE
@@ -924,13 +1098,34 @@ let _carrito = [];
 (function() {
   try {
     const guardado = localStorage.getItem(CARRITO_KEY);
-    if (guardado) _carrito = JSON.parse(guardado) || [];
-  } catch(e) { _carrito = []; }
+    if (guardado) {
+      const parsed = JSON.parse(guardado);
+      // Asegurarse de que sea un array y tenga la estructura esperada
+      if (Array.isArray(parsed)) {
+        _carrito = parsed.map(item => ({
+          id: item.id,
+          nombre: item.nombre,
+          precio: item.precio,
+          cantidad: item.cantidad || 1 // Asegurar cantidad
+        }));
+      } else {
+        _carrito = []; // Si no es un array, resetear
+      }
+    }
+  } catch(e) {
+    console.error("Error al cargar el carrito desde localStorage:", e);
+    _carrito = []; // Resetear en caso de error de parseo
+  }
   actualizarBadge();
 })();
 
 function guardarCarrito() {
-  localStorage.setItem(CARRITO_KEY, JSON.stringify(_carrito));
+  try {
+    localStorage.setItem(CARRITO_KEY, JSON.stringify(_carrito));
+  } catch (e) {
+    console.error("Error al guardar el carrito en localStorage:", e);
+    // Podría ser útil notificar al usuario si el almacenamiento falla
+  }
 }
 
 function actualizarBadge() {
@@ -957,7 +1152,10 @@ function actualizarBadge() {
 
 function agregarAlCarrito(id) {
   const p = todosLosProductos.find(p => p.id === id);
-  if (!p) return;
+  if (!p) {
+    console.error("Producto no encontrado para agregar al carrito:", id);
+    return;
+  }
   const existente = _carrito.find(item => item.id === id);
   if (existente) {
     existente.cantidad += 1;
@@ -1004,7 +1202,7 @@ function quitarDelCarrito(id) {
 
 function vaciarCarrito() {
   if (!_carrito.length) return;
-  if (!confirm('¿Vaciar todo el carrito?')) return;
+  if (!confirm('¿Estás seguro de que querés vaciar todo el carrito?')) return;
   _carrito = [];
   guardarCarrito();
   actualizarBadge();
@@ -1061,7 +1259,7 @@ function enviarCarritoPorWA() {
   if (!_carrito.length) { alert('El carrito está vacío.'); return; }
   const total = _carrito.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
   const lineas = _carrito.map(item =>
-    `• ${item.nombre} x${item.cantidad} = Gs. ${fmt(item.precio * item.cantidad)}`
+    `• ${esc(item.nombre)} x${item.cantidad} = Gs. ${fmt(item.precio * item.cantidad)}`
   ).join('\n');
   const msg = `Hola! Quiero hacer un pedido 🛵\n\n` +
     `*Productos:*\n${lineas}\n\n` +
@@ -1086,9 +1284,10 @@ function enviarCarritoPorWA() {
 })();
 
 // ============================================================
-
-mostrarSkeletons();
-cargar();
+// INICIALIZACIÓN
+// ============================================================
+// Llamar a cargar() al final para que se ejecute después de que el DOM esté listo
+document.addEventListener('DOMContentLoaded', cargar);
 </script>
 
 <!-- FOOTER -->

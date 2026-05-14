@@ -119,7 +119,7 @@ def _guardar_estado(estado):
 # ─── NOTIFICACIONES ───────────────────────────────────────────────────────────
 def _cargar_keys():
     try:
-        with open(KEYS_PATH, encoding="utf-8") as f:
+        with open(KEYS_PATH, encoding="utf-8-sig") as f:
             return json.load(f)
     except Exception:
         return {}

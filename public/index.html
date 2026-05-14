@@ -352,7 +352,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 #appScreen.show #aiBtn,
 body:has(#appScreen.show) #notifArea,
 body:has(#appScreen.show) #codexNotifBell{display:flex !important;}
-body:has(#appScreen.show) #bgWrap{display:inline-block !important;}
+body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px;flex-shrink:1;}
+#codexNotifBell{transition:opacity .25s ease;}
 /* CATÁLOGO GRID */
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
 .prod-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);overflow:hidden;display:flex;flex-direction:column;transition:border-color .18s,box-shadow .18s;}
@@ -512,11 +513,11 @@ body:has(#appScreen.show) #bgWrap{display:inline-block !important;}
     .tbl td,.tbl th{font-size:11px;padding:6px 4px;}
   }
   /* Ajustes para la pantalla de login en móviles */
-  .lcard{padding:36px 26px;}
-  .llogo h1{font-size:44px;letter-spacing:3px;}
+  .lcard{padding:28px 18px;}
+  .llogo h1{font-size:clamp(22px,7vw,30px);letter-spacing:1px;}
   .llogo p{font-size:11px;}
-  /* Bandera PY: más cerca de la Y final, sin salirse del card */
-  .llogo > span[title="Paraguay"]{right:-18px!important;font-size:17px!important;top:2px!important;}
+  /* Bandera PY: dentro del card, sin salirse */
+  .llogo > span[title="Paraguay"]{right:-8px!important;font-size:15px!important;top:2px!important;}
 }
 /* En desktop: ocultar elementos que solo deben verse en mobile */
 .col-show-mobile{display:none;}
