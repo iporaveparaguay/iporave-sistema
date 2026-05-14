@@ -1091,19 +1091,19 @@ const DL = {
       const{data,error}=await q;
       if(!error&&data){
         const supaData=data.map(this._mapFromSupa);
-        // Merge pedidos en localStorage no sincronizados aún
+        // Preservar GPS del localStorage si Supabase no lo tiene (columna puede estar vacía)
         const local=this._lg('orders')||[];
         const localById={};local.forEach(o=>{localById[o.id]=o;});
-        // Preservar GPS del localStorage si Supabase no lo tiene (columna puede estar vacía)
         const supaDataMerged=supaData.map(o=>{
           const loc=localById[o.id];
           if(loc&&!o.gpsLat&&loc.gpsLat){o.gpsLat=loc.gpsLat;o.gpsLng=loc.gpsLng;}
           return o;
         });
-        const supaIds=new Set(supaData.map(o=>o.id));
-        const localAll=local.filter(o=>!supaIds.has(o.id));
-        const localOnly=CU&&CU.rol==='admin'?localAll.filter(o=>!o.created_by||o.created_by===CU.id):localAll;
-        let merged=[...supaDataMerged,...localOnly];
+        // Espejar Supabase a localStorage: los pedidos huerfanos pre-migracion
+        // que no existen en la nube dejan de aparecer. Los pendientes offline
+        // viven en _pendingQueue (sync separado), no aca.
+        this._ls('orders',supaDataMerged);
+        let merged=supaDataMerged;
         if(filters){
           if(filters.vendedorId)merged=merged.filter(o=>o.vendedorId===filters.vendedorId);
           if(filters.deliveryId)merged=merged.filter(o=>o.deliveryId===filters.deliveryId);
@@ -3960,7 +3960,7 @@ PAGES.orders=PAGES.mispedidos=function(){
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">🖨️ PDF</button>';
   $('ca').innerHTML=
     '<div class="fbar">'+
-    '<input type="text" id="fSrch" placeholder="Buscar..." onkeyup="filtrar()">'+
+    '<input type="text" id="fSrch" placeholder="🔍 Buscar pedido…" onkeyup="filtrar()">'+
     '<select id="fEst" onchange="filtrar()"><option value="">Todos los estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
     '<select id="fZona" onchange="filtrar()"><option value="">Todas las zonas</option>'+_zonasCache.map(z=>'<option value="'+z.id+'">'+z.nombre+'</option>').join('')+'</select>'+
     '<select id="fProv" onchange="filtrar()"><option value="">Todos los proveedores</option>'+[...new Set(getVisibleOrders().map(o=>o.proveedor).filter(Boolean))].map(p=>'<option>'+p+'</option>').join('')+'</select>'+
