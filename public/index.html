@@ -4529,8 +4529,8 @@ function viewOrder(id){
     ?'<div class="lcard2" style="padding:10px 13px">'+
         (o.historial).slice().reverse().map(h=>
           '<div class="hitem"><div class="hdot"></div>'+
-          '<div class="htime">'+h.fecha+'</div>'+
-          '<div style="flex:1"><span style="font-weight:600">'+h.estado+'</span> — <span style="color:var(--text2)">'+h.usuario+'</span>'+
+          '<div class="htime">'+escHtml(h.fecha||'')+'</div>'+
+          '<div style="flex:1"><span style="font-weight:600">'+escHtml(h.estado||'')+'</span> — <span style="color:var(--text2)">'+escHtml(h.usuario||'')+'</span>'+
           (h.obs?'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+escHtml(h.obs)+'</div>':'')+
           '</div></div>'
         ).join('')+
