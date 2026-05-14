@@ -1071,3 +1071,39 @@ Sistema **endurecido contra XSS en TODO el frontend visible** — usuarios, mens
 
 **26 commits totales en Sesión 4.**
 Frontend: https://iporave-sistema.vercel.app
+
+---
+
+## ETAPA 5 — Pulido XSS adicional (Opus 4.7)
+
+### Commits adicionales
+
+| Commit | Descripción |
+|--------|-------------|
+| `3b9829c` | escape XSS en historial de cambios del pedido (fecha/estado/usuario) |
+| `fefb4dd` | escape XSS dashboard alertas de dispositivos pendientes (admin) |
+| `c9983f9` | escape XSS top productos + top zonas analítica vendedor |
+
+### Áreas adicionales endurecidas
+
+1. **Historial de cambios** (orden detail): `h.fecha`, `h.estado`, `h.usuario` — usuario malicioso que se llame `<script>` aparece en historial de cualquier pedido que toque
+2. **Dashboard "Dispositivos pendientes de aprobación"**: `dev.username`, `dev.nombre`, IP, userAgent, screen, language — campos device_info de Supabase
+3. **Analítica vendedor "Top productos / Top zonas"**: nombres rendered raw — corregido con escHtml
+
+### Total final Sesión 4
+
+**29 commits.**
+
+Frontend: ~558KB validado, en producción.
+Seguridad: XSS bloqueado en TODO el sistema visible (frontend + público).
+Performance: 6 inputs con debounce, rAF throttle en drag, timers limpiados.
+A11y: aria-labels, touch targets 44px, empty states con icon+guía.
+UX: login mobile mejorado, campanita bug fixed, "Sin acceso" con guidance.
+
+### Estado al cerrar sesión Opus 4.7
+
+Sistema **seguro, performante, accesible, en producción**.
+Próxima sesión (cuando el usuario regrese, posiblemente con Sonnet 4.5):
+- Crear usuarios de prueba desde panel admin (FK constraint workaround)
+- Pancake features cuando el usuario dé detalles del modelo de negocio
+- Deploy worker para notif push prioridad
