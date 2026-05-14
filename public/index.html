@@ -1895,13 +1895,20 @@ function startAIDrag(e){
   btn.classList.add('dragging');
   try{btn.setPointerCapture(e.pointerId);}catch(_){}
 }
+let _aiDragRAF=null;
 window.addEventListener('pointermove',function(e){
   if(!_aiDragState)return;
-  const btn=$('aiBtn');if(!btn)return;
-  const dx=e.clientX-_aiDragState.startX,dy=e.clientY-_aiDragState.startY;
-  if(Math.abs(dx)+Math.abs(dy)>5)_aiDragState.moved=true;
-  _applyAIBtnPosition({left:_aiDragState.left+dx,top:_aiDragState.top+dy});
-  _positionAIPanel();
+  // Throttle con requestAnimationFrame (60fps max) — evita layout thrashing
+  if(_aiDragRAF)return;
+  _aiDragRAF=requestAnimationFrame(function(){
+    _aiDragRAF=null;
+    if(!_aiDragState)return;
+    const btn=$('aiBtn');if(!btn)return;
+    const dx=e.clientX-_aiDragState.startX,dy=e.clientY-_aiDragState.startY;
+    if(Math.abs(dx)+Math.abs(dy)>5)_aiDragState.moved=true;
+    _applyAIBtnPosition({left:_aiDragState.left+dx,top:_aiDragState.top+dy});
+    _positionAIPanel();
+  });
 });
 window.addEventListener('pointerup',function(e){
   if(!_aiDragState)return;
@@ -4114,9 +4121,9 @@ function _deliveryCardPedido(o){
     '<div style="font-size:13px;color:var(--text2);margin-bottom:'+(notas?'4':'12')+'px">📞 '+escHtml(telRaw||'Sin teléfono')+'</div>'+
     (notas?'<div style="font-size:12px;color:var(--text3);background:var(--bg2);border-radius:8px;padding:7px 10px;margin-bottom:12px;font-style:italic">💬 '+escHtml(notas)+'</div>':'')+
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
-      (tel?'<a class="btn btn-success" href="tel:'+tel+'" style="padding:10px 6px;text-align:center;text-decoration:none;font-size:13px;font-weight:900;min-height:42px;display:flex;align-items:center;justify-content:center;touch-action:manipulation">📞 Llamar</a>':'<button class="btn btn-secondary" disabled style="padding:10px 6px;font-size:13px;opacity:.45;min-height:42px">Sin tel</button>')+
-      '<a class="btn btn-primary" href="'+mapUrl+'" target="_blank" style="padding:10px 6px;text-align:center;text-decoration:none;font-size:13px;font-weight:900;min-height:42px;display:flex;align-items:center;justify-content:center;touch-action:manipulation">🗺 Mapa</a>'+
-      '<button class="btn btn-warning" onclick="dlvModal('+o.id+')" style="padding:10px 6px;font-size:13px;font-weight:900;min-height:42px;touch-action:manipulation;cursor:pointer">⬆ Estado</button>'+
+      (tel?'<a class="btn btn-success" href="tel:'+tel+'" aria-label="Llamar al cliente" style="padding:10px 6px;text-align:center;text-decoration:none;font-size:13px;font-weight:900;min-height:44px;display:flex;align-items:center;justify-content:center;touch-action:manipulation">📞 Llamar</a>':'<button class="btn btn-secondary" disabled aria-disabled="true" aria-label="Sin teléfono disponible" style="padding:10px 6px;font-size:13px;opacity:.45;min-height:44px;min-width:44px">Sin tel</button>')+
+      '<a class="btn btn-primary" href="'+mapUrl+'" target="_blank" aria-label="Abrir dirección en Google Maps" style="padding:10px 6px;text-align:center;text-decoration:none;font-size:13px;font-weight:900;min-height:44px;display:flex;align-items:center;justify-content:center;touch-action:manipulation">🗺 Mapa</a>'+
+      '<button class="btn btn-warning" onclick="dlvModal('+o.id+')" aria-label="Actualizar estado del pedido" style="padding:10px 6px;font-size:13px;font-weight:900;min-height:44px;touch-action:manipulation;cursor:pointer">⬆ Estado</button>'+
     '</div>'+
   '</div>';
 }
@@ -7415,7 +7422,7 @@ async function editProducto(id){
     sharesHTML='<div class="fg" style="position:relative"><label>Compartir con usuarios</label>'+
       '<div id="sharesBox" style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:5px 8px;border:1px solid var(--border);border-radius:6px;min-height:38px;cursor:text;background:var(--bg)" onclick="document.getElementById(\'sharesSrch\').focus()">'+
       '<span id="sharesChips"></span>'+
-      '<input id="sharesSrch" type="text" placeholder="Buscar usuario..." autocomplete="off" style="border:none;outline:none;background:transparent;min-width:100px;flex:1;font-size:13px;padding:2px 0" oninput="_shareDrop(this.value)" onfocus="_shareDrop(this.value)" onblur="setTimeout(()=>{const d=$(\'sharesDrop\');if(d)d.style.display=\'none\';},150)">'+
+      '<input id="sharesSrch" type="text" placeholder="Buscar usuario..." autocomplete="off" style="border:none;outline:none;background:transparent;min-width:100px;flex:1;font-size:13px;padding:2px 0" oninput="_shareDrop(this.value)" onfocus="_shareDrop(this.value)" onblur="clearTimeout(window._sharesBlurT);window._sharesBlurT=setTimeout(()=>{const d=$(\'sharesDrop\');if(d)d.style.display=\'none\';window._sharesBlurT=null;},150)">'+
       '</div>'+
       '<div id="sharesDrop" style="display:none;position:absolute;z-index:999;background:var(--bg2);border:1px solid var(--border);border-radius:6px;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15);left:0;right:0;top:100%"></div>'+
       '</div>';
