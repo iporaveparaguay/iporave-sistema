@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pizarrón de Agentes - Iporãve</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0d1117;--panel:#151b24;--panel2:#1c2430;--line:#2b3442;--text:#eef3f8;--muted:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#38bdf8;--accent:#facc15}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:"DM Sans",Arial,sans-serif;min-height:100vh}
+    header{position:sticky;top:0;z-index:5;background:rgba(13,17,23,.96);border-bottom:1px solid var(--line);padding:14px 16px}
+    .top{display:flex;gap:12px;align-items:center;justify-content:space-between;max-width:1180px;margin:0 auto}
+    h1{font-size:20px;margin:0;font-weight:800}
+    .sub{color:var(--muted);font-size:12px;margin-top:2px}
+    .btn{border:0;border-radius:8px;background:var(--accent);color:#111;padding:10px 14px;font-weight:800;cursor:pointer}
+    main{max-width:1180px;margin:0 auto;padding:16px}
+    .filters{display:grid;grid-template-columns:1fr 170px 170px;gap:10px;margin-bottom:14px}
+    input,select{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);padding:11px 12px;font:inherit}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+    .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+    .stat b{display:block;font-size:22px}
+    .stat span{color:var(--muted);font-size:12px}
+    .list{display:grid;gap:10px}
+    .card{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--info);border-radius:10px;padding:13px}
+    .card.ok{border-left-color:var(--ok)}.card.warn{border-left-color:var(--warn)}.card.bad{border-left-color:var(--bad)}
+    .row{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+    .agent{font-weight:800;font-size:15px}
+    .task{color:var(--accent);font-size:13px;margin-top:2px}
+    .time{color:var(--muted);font-size:12px;white-space:nowrap}
+    .summary{margin-top:9px;color:#dbe6f3;line-height:1.45;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+    .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+    .pill{font-size:11px;font-weight:800;border-radius:20px;padding:4px 8px;background:var(--panel2);color:var(--muted)}
+    .pill.ok{color:var(--ok)}.pill.warn{color:var(--warn)}.pill.bad{color:var(--bad)}
+    .empty,.error{background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center;color:var(--muted)}
+    .error{color:var(--bad)}
+    @media(max-width:760px){
+      header{padding:12px}
+      .top{align-items:flex-start;flex-direction:column}
+      .btn{width:100%}
+      main{padding:12px}
+      .filters{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .row{flex-direction:column;gap:5px}
+      .time{white-space:normal}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top">
+      <div>
+        <h1>Pizarrón de Agentes</h1>
+        <div class="sub" id="lastUpdate">Cargando reportes...</div>
+      </div>
+      <button class="btn" onclick="loadBoard()">Actualizar</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="filters">
+      <input id="q" placeholder="Buscar agente, tarea, estado o resumen" oninput="render()">
+      <select id="estado" onchange="render()">
+        <option value="">Todos los estados</option>
+      </select>
+      <select id="agente" onchange="render()">
+        <option value="">Todos los agentes</option>
+      </select>
+    </section>
+
+    <section class="stats">
+      <div class="stat"><b id="stTotal">0</b><span>Total</span></div>
+      <div class="stat"><b id="stOk">0</b><span>Finalizados / activos</span></div>
+      <div class="stat"><b id="stWarn">0</b><span>Alertas</span></div>
+      <div class="stat"><b id="stBad">0</b><span>Errores</span></div>
+    </section>
+
+    <section class="list" id="list"></section>
+  </main>
+
+  <script>
+    const API='https://iporave-api.iporaveparaguay.workers.dev/api/pizarron';
+    let rows=[];
+
+    function txt(v){return String(v??'').trim()}
+    function esc(s){return txt(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+    function normEstado(e){return txt(e).toLowerCase()}
+    function clsEstado(e){
+      const x=normEstado(e);
+      if(x.includes('error')||x.includes('fall')||x.includes('bloq')||x.includes('crit'))return'bad';
+      if(x.includes('alert')||x.includes('advert')||x.includes('pend'))return'warn';
+      if(x.includes('final')||x.includes('activo')||x.includes('ok')||x.includes('complet'))return'ok';
+      return'';
+    }
+    function fmtDate(v){
+      if(!v)return'';
+      const d=new Date(v);
+      return isNaN(d)?txt(v):d.toLocaleString('es-PY',{dateStyle:'short',timeStyle:'short'});
+    }
+
+    async function loadBoard(){
+      const list=document.getElementById('list');
+      list.innerHTML='<div class="empty">Actualizando pizarrón...</div>';
+      try{
+        const r=await fetch(API,{cache:'no-store'});
+        if(!r.ok)throw new Error('HTTP '+r.status);
+        const data=await r.json();
+        rows=Array.isArray(data)?data:(data.registros||[]);
+        rows=rows.slice().reverse();
+        fillFilters();
+        render();
+        document.getElementById('lastUpdate').textContent='Última actualización: '+new Date().toLocaleString('es-PY');
+      }catch(e){
+        list.innerHTML='<div class="error">No se pudo cargar el pizarrón: '+esc(e.message)+'</div>';
+        document.getElementById('lastUpdate').textContent='Error al cargar';
+      }
+    }
+
+    function fillFilters(){
+      const estado=document.getElementById('estado');
+      const agente=document.getElementById('agente');
+      const ev=estado.value,av=agente.value;
+      const estados=[...new Set(rows.map(r=>txt(r.estado)).filter(Boolean))].sort();
+      const agentes=[...new Set(rows.map(r=>txt(r.agente)).filter(Boolean))].sort();
+      estado.innerHTML='<option value="">Todos los estados</option>'+estados.map(x=>'<option>'+esc(x)+'</option>').join('');
+      agente.innerHTML='<option value="">Todos los agentes</option>'+agentes.map(x=>'<option>'+esc(x)+'</option>').join('');
+      estado.value=ev;agente.value=av;
+    }
+
+    function render(){
+      const q=txt(document.getElementById('q').value).toLowerCase();
+      const est=txt(document.getElementById('estado').value);
+      const ag=txt(document.getElementById('agente').value);
+      let data=rows.filter(r=>{
+        const blob=[r.agente,r.tarea,r.estado,r.resumen,r.archivos].map(txt).join(' ').toLowerCase();
+        return (!q||blob.includes(q))&&(!est||txt(r.estado)===est)&&(!ag||txt(r.agente)===ag);
+      });
+
+      const ok=data.filter(r=>clsEstado(r.estado)==='ok').length;
+      const warn=data.filter(r=>clsEstado(r.estado)==='warn').length;
+      const bad=data.filter(r=>clsEstado(r.estado)==='bad').length;
+      document.getElementById('stTotal').textContent=data.length;
+      document.getElementById('stOk').textContent=ok;
+      document.getElementById('stWarn').textContent=warn;
+      document.getElementById('stBad').textContent=bad;
+
+      const list=document.getElementById('list');
+      if(!data.length){list.innerHTML='<div class="empty">No hay reportes con esos filtros.</div>';return;}
+      list.innerHTML=data.map(r=>{
+        const c=clsEstado(r.estado);
+        return '<article class="card '+c+'">'+
+          '<div class="row"><div><div class="agent">'+esc(r.agente||'Agente')+'</div>'+
+          '<div class="task">'+esc(r.tarea||'Sin tarea')+'</div></div>'+
+          '<div class="time">'+esc(fmtDate(r.created_at||r.fecha||r.timestamp))+'</div></div>'+
+          '<div class="summary">'+esc(r.resumen||'Sin resumen')+'</div>'+
+          '<div class="meta">'+
+          '<span class="pill '+c+'">'+esc(r.estado||'Sin estado')+'</span>'+
+          (r.archivos?'<span class="pill">'+esc(r.archivos)+'</span>':'')+
+          '</div></article>';
+      }).join('');
+    }
+
+    loadBoard();
+    setInterval(loadBoard,30000);
+  </script>
+</body>
+</html>
