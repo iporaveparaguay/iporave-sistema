@@ -4399,7 +4399,7 @@ function exportarCSV(){
 function waMenu(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
   openA('WhatsApp — Pedido #'+id,
-    '<div class="alert alrt-i" style="margin-bottom:14px">Enviar mensaje de WhatsApp al cliente: <b>'+o.cliente+'</b> ('+o.telefono+')</div>'+
+    '<div class="alert alrt-i" style="margin-bottom:14px">Enviar mensaje de WhatsApp al cliente: <b>'+escHtml(o.cliente||'')+'</b> ('+escHtml(o.telefono||'')+')</div>'+
     '<div style="display:flex;flex-direction:column;gap:8px">'+
     '<button class="btn btn-success btn-full" onclick="waPedidoCreado(getOrders().find(x=>x.id==='+id+'));closeA()">📦 Pedido confirmado</button>'+
     '<button class="btn btn-secondary btn-full" onclick="waNoContesta(getOrders().find(x=>x.id==='+id+'));closeA()">📞 No te encontré</button>'+
@@ -4415,7 +4415,7 @@ function confirmDeleteOrder(id){
   if(o&&o.created_by&&CU.rol==='admin'&&o.created_by!==CU.id){pushNotif('No podés eliminar pedidos de otro administrador.','e');return;}
   const info=o?'<div style="margin:10px 0;padding:10px 12px;background:var(--bg4);border-radius:8px;font-size:13px">'+
     '<div><b>Pedido #'+id+'</b></div>'+
-    '<div style="color:var(--text2);margin-top:3px">'+o.cliente+' — '+o.producto+'</div>'+
+    '<div style="color:var(--text2);margin-top:3px">'+escHtml(o.cliente||'')+' — '+escHtml(o.producto||'')+'</div>'+
     '<div style="color:var(--text2);font-size:11px;margin-top:2px">'+bE(o.estado)+'</div>'+
     '</div>':'';
   openA('Eliminar pedido',
@@ -4550,21 +4550,21 @@ function viewOrder(id){
       '</div>'
     :'';
 
-  openB('Pedido #'+o.id+' — '+o.cliente,
+  openB('Pedido #'+o.id+' — '+escHtml(o.cliente||''),
     progressBar+
     '<div class="stitle">Detalles</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;word-break:break-word;">'+
     '<div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Cliente</div><div style="font-weight:600">'+o.cliente+'</div></div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Cédula</div><div>'+(o.cedula||'—')+'</div></div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Teléfono</div><div>'+o.telefono+'</div></div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Dirección</div><div>'+o.direccion+'</div></div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Zona</div><div>'+zona.nombre+' — '+fmt(zona.precio)+'</div></div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Tiempo estimado</div><div style="color:var(--cyan)">'+zona.tiempoEntrega+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Cliente</div><div style="font-weight:600">'+escHtml(o.cliente||'')+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Cédula</div><div>'+escHtml(o.cedula||'—')+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Teléfono</div><div>'+escHtml(o.telefono||'')+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Dirección</div><div>'+escHtml(o.direccion||'')+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Zona</div><div>'+escHtml(zona.nombre||'')+' — '+fmt(zona.precio)+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Tiempo estimado</div><div style="color:var(--cyan)">'+escHtml(zona.tiempoEntrega||'')+'</div></div>'+
     '</div>'+
     '<div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Producto x Qty</div><div style="font-weight:600">'+o.producto+' x'+o.qty+'</div></div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Proveedor</div><div>'+(o.proveedor||'—')+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Producto x Qty</div><div style="font-weight:600">'+escHtml(o.producto||'')+' x'+o.qty+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Proveedor</div><div>'+escHtml(o.proveedor||'—')+'</div></div>'+
       '<div style="margin-bottom:10px"><div class="slabel">Precio venta</div><div style="color:var(--green)">'+fmt(o.precio*o.qty)+'</div></div>'+
       (['admin','vendedor'].includes(CU.rol)?'<div style="margin-bottom:10px"><div class="slabel">Costo proveedor</div><div style="color:var(--red)">'+fmt(o.costo*o.qty)+'</div></div>'+
       '<div style="margin-bottom:10px"><div class="slabel">Logística</div><div style="color:var(--blue)">'+fmt(zona.precio)+'</div></div>'+
@@ -7081,7 +7081,7 @@ function verFeedMetaAds(){
     '<div style="display:flex;gap:8px;margin-top:5px">'+
     '<input id="metaUrlJSON" value="'+urlJSON+'" readonly style="flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 11px;font-size:12px;font-family:monospace">'+
     '<button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText(\''+urlJSON+'\').then(()=>pushNotif(\'URL copiada\',\'s\'))">Copiar</button></div></div>'+
-    '<div style="margin-bottom:12px"><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px">Solo mis productos (usuario: '+CU.username+')</label>'+
+    '<div style="margin-bottom:12px"><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px">Solo mis productos (usuario: '+escHtml(CU.username||'')+')</label>'+
     '<div style="display:flex;gap:8px;margin-top:5px">'+
     '<input value="'+urlUser+'" readonly style="flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 11px;font-size:12px;font-family:monospace">'+
     '<button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText(\''+urlUser+'\').then(()=>pushNotif(\'URL copiada\',\'s\'))">Copiar</button></div></div>'+
@@ -9527,28 +9527,28 @@ function _mapaAddMarker(map,o,lat,lng,exact){
   const el=document.createElement('div');
   el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer;opacity:'+opacity;
   el.innerHTML=
-    '<div style="font-size:10px;font-weight:600;color:#f1f5f9;background:rgba(15,17,23,.88);padding:3px 7px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px);letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.8);'+labelBorder+'">'+shortName+urgLabel+priorityLabel+'</div>'+
+    '<div style="font-size:10px;font-weight:600;color:#f1f5f9;background:rgba(15,17,23,.88);padding:3px 7px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px);letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.8);'+labelBorder+'">'+escHtml(shortName)+urgLabel+priorityLabel+'</div>'+
     '<div class="'+pinClass+'" style="background:'+color+';color:#fff;width:44px;height:44px;border-radius:50%;'+
     'border:3px solid rgba(255,255,255,.95);box-shadow:0 2px 6px rgba(0,0,0,.5);'+(isPriority?'':urgAnim)+
     'display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;line-height:1.15;text-align:center">'+
-    '<span style="font-size:9px">'+num+'</span><span style="font-size:8.5px">'+abbr+'</span>'+
+    '<span style="font-size:9px">'+num+'</span><span style="font-size:8.5px">'+escHtml(abbr)+'</span>'+
     '</div>';
-  const wa=o.telefono?'<a href="https://wa.me/595'+o.telefono.replace(/\D/g,'')+'" target="_blank" style="background:#25D366;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;text-decoration:none;font-weight:700">💬 WA</a>':'';
+  const wa=o.telefono?'<a href="https://wa.me/595'+String(o.telefono).replace(/\D/g,'')+'" target="_blank" style="background:#25D366;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;text-decoration:none;font-weight:700">💬 WA</a>':'';
   const dlvNombre=(_usersCache.find(u=>u.id===o.deliveryId)||{}).nombre||'Sin asignar';
   const vendNombre=(_usersCache.find(u=>u.id===o.vendedorId)||{}).nombre||'—';
   const gMapsUrl='https://www.google.com/maps/dir/?api=1&destination='+lat+','+lng;
   const navBtn='<a href="'+gMapsUrl+'" target="_blank" style="background:#2563eb;color:#fff;border-radius:6px;padding:3px 9px;font-size:11px;text-decoration:none;font-weight:700">📍 Navegar</a>';
   const popupHtml=
     '<div style="min-width:210px;font-family:Arial,sans-serif;font-size:13px;color:#e2e8f0">'+
-    '<div style="font-weight:800;font-size:14px;color:#f1f5f9;margin-bottom:4px">'+o.cliente+'</div>'+
-    '<div style="color:#94a3b8;margin-bottom:2px">📦 '+o.producto+' × '+o.qty+'</div>'+
-    '<div style="color:#94a3b8;margin-bottom:2px">🏭 '+(o.proveedor||'—')+'</div>'+
-    '<div style="color:#94a3b8;margin-bottom:2px">📍 '+(o.direccion||'—')+'</div>'+
-    '<div style="color:#94a3b8;margin-bottom:2px">📞 '+(o.telefono||'—')+'</div>'+
-    '<div style="color:#94a3b8;margin-bottom:6px">🛵 '+dlvNombre+' · 👤 '+vendNombre+'</div>'+
+    '<div style="font-weight:800;font-size:14px;color:#f1f5f9;margin-bottom:4px">'+escHtml(o.cliente||'')+'</div>'+
+    '<div style="color:#94a3b8;margin-bottom:2px">📦 '+escHtml(o.producto||'')+' × '+o.qty+'</div>'+
+    '<div style="color:#94a3b8;margin-bottom:2px">🏭 '+escHtml(o.proveedor||'—')+'</div>'+
+    '<div style="color:#94a3b8;margin-bottom:2px">📍 '+escHtml(o.direccion||'—')+'</div>'+
+    '<div style="color:#94a3b8;margin-bottom:2px">📞 '+escHtml(o.telefono||'—')+'</div>'+
+    '<div style="color:#94a3b8;margin-bottom:6px">🛵 '+escHtml(dlvNombre)+' · 👤 '+escHtml(vendNombre)+'</div>'+
     (urg>0?'<div style="background:'+(urg===2?'#7f1d1d':'#78350f')+';color:#fef3c7;font-size:11px;padding:4px 8px;border-radius:6px;margin-bottom:6px">'+(urg===2?'🚨 Sin movimiento más de 48h':'⚠️ Sin movimiento más de 24h')+'</div>':'')+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
-    '<span style="background:'+color+';color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px">'+o.estado+'</span>'+
+    '<span style="background:'+color+';color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px">'+escHtml(o.estado||'')+'</span>'+
     (CU.rol==='delivery'
       ?'<button onclick="navegarPedido('+o.id+')" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;font-weight:700;min-height:36px;touch-action:manipulation">📍 Navegar</button>'+
        (['Pendiente','Despachado'].includes(o.estado)?'<button onclick="_mapaCambiarEstado('+o.id+',\'En Ruta\')" style="background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;font-weight:700;min-height:36px;touch-action:manipulation">🚀 En Ruta</button>':'')+
