@@ -18,7 +18,8 @@
 
 ### Versiones en producción al cierre
 - **Worker:** último commit del día (hardening ronda 2: config, pizarron, notif-entrega, catalog-public, orders, push-subscribe, order-status, mensajes genéricos + supabase-js ^2.105.4)
-- **Frontend:** commit `67d97ec` — botón Navegar azul, GPS centrado, ⚡ prioridad en pedidos, push al delivery
+- **Frontend:** commit `ec9e136` — último commit pusheado a GitHub y deployado en Vercel (2026-05-14)
+  - Incluye: botón Navegar azul, GPS centrado, ⚡ prioridad en pedidos, push al delivery, legibilidad mapa, menú ⋮ catálogo
 
 > Nota: correr `git log --oneline -5` en cada repo al inicio de la próxima sesión para confirmar hashes exactos.
 
