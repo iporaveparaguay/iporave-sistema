@@ -301,12 +301,12 @@ Cada auditoría es READ-ONLY: NO modifica código, solo reporta al pizarrón con
 
 - [x] **audit-xss-index** — COMPLETADO 2026-05-14: todos los innerHTML con datos de usuario usan escHtml(). Sin vulnerabilidades XSS encontradas.
 - [x] **audit-worker-auth** — Leer todos los archivos en iporave-worker/src/api/. Verificar que cada endpoint que no sea público llame a verifyToken() al inicio. Listar los que NO lo hacen. Reportar al pizarrón.
-- [ ] **audit-mobile-index** — Leer el bloque @media de public/index.html. Buscar: elementos con width fijo >300px sin max-width:100%, font-size <12px en mobile, inputs sin padding en mobile. Listar problemas. Reportar al pizarrón.
+- [x] **audit-mobile-index** — COMPLETADO 2026-05-14: único problema encontrado era .tbl th font-size:9px → corregido a 11px (commit 395d6ca). #aiPanel.maximized width:680px cubierto por media query. Sin otros problemas.
 - [x] **audit-rls-supabase** — Leer iporave-worker/src/api/save-user.js y order-status.js. Verificar que ningún UPDATE/INSERT omita filtros de usuario_id o rol. Reportar al pizarrón.
 - [x] **audit-errores-js** — Leer public/index.html, buscar funciones async sin try/catch, fetch() sin .catch(), y console.log() que expongan datos sensibles (token, password, auth_id). Reportar líneas exactas al pizarrón.
 - [x] **audit-catalog-seguridad** — COMPLETADO 2026-05-14: usa esc() en todos los datos, safeUrl() en URLs, fetch con try/catch. Sin vulnerabilidades encontradas.
 - [x] **audit-worker-rate-limits** — Leer iporave-worker/src/index.js y los api/*.js. Verificar que los endpoints de login, registro y cambio de contraseña tengan rate limiting activo. Reportar cuáles no tienen.
-- [ ] **audit-performance-index** — Leer public/index.html: buscar setTimeout con delay >2000ms, setInterval sin clearInterval, EventListeners duplicados (misma función en mismo elemento). Reportar al pizarrón.
+- [x] **audit-performance-index** — COMPLETADO 2026-05-14: todos los setInterval tienen clearInterval previo. _gpsLoopTimer es correcto (llama _gpsLoopStop() antes). Dos document.click y dos window.scroll handlers son intencionales y no duplicados exactos. Sin problemas reales.
 
 ### NO DELEGAR (solo Claude Code o GPT-4o)
 - JWT + RLS Security Audit
