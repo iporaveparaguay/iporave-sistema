@@ -2551,6 +2551,7 @@ async function doForgotPassword(){
   }
 }
 function doLogout(){
+  ['users','usersVer','orders','zonas','cupos','jornadas','catalogo'].forEach(k => localStorage.removeItem('ipv5_' + k));
   _clearSensitiveCfg();
   if(_supa)_supa.auth.signOut().catch(()=>{});
   CU=null;
