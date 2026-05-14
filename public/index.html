@@ -3118,12 +3118,18 @@ function nav(page){
   closeSidebar();
   if(CU&&CU.rol!=='superadmin'){
     const{ok,missing}=_perfilCompleto(CU);
-    if(!ok){
+    if(!ok&&page!=='perfil'){
+      // Redirigir automáticamente al perfil (una sola vez por sesión de nav)
+      if(!window._perfilRedirAvisado){
+        window._perfilRedirAvisado=true;
+        try{toast&&toast('Completá tu perfil para continuar: '+missing.join(', '),'warn');}catch(e){}
+      }
+      setTimeout(()=>{ try{openPerfilUsuario();}catch(e){} },150);
       $('ca').innerHTML=
         '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px 20px">'+
         '<div style="font-size:52px;margin-bottom:16px">⚠️</div>'+
         '<div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px">Completá tu perfil para continuar</div>'+
-        '<div style="font-size:13px;color:var(--text2);margin-bottom:20px;max-width:360px">No podés usar el sistema hasta completar los datos obligatorios de tu perfil.</div>'+
+        '<div style="font-size:13px;color:var(--text2);margin-bottom:20px;max-width:360px">Te llevamos a tu perfil para completar los datos obligatorios.</div>'+
         '<div style="background:var(--bg3);border-radius:10px;padding:14px 20px;margin-bottom:24px;text-align:left;max-width:360px;width:100%">'+
         '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Faltan estos campos:</div>'+
         missing.map(m=>'<div style="font-size:13px;color:var(--red);margin:4px 0">• '+m+'</div>').join('')+
@@ -8503,24 +8509,30 @@ function _perfilCompleto(u){
   if(u?.rol==='superadmin')return{ok:true,missing:[]};
   const rol=u?.rol||'';
   const missing=[];
+  // Admin: solo campos esenciales (nombre + email). El resto es opcional.
+  if(rol==='admin'){
+    if(!u?.nombre||(u.nombre||'').length<2)missing.push('Nombre');
+    if(!u?.email)missing.push('Email');
+    return{ok:missing.length===0,missing};
+  }
   if(!u?.nombre)missing.push('Nombre completo');
   if(!u?.email)missing.push('Email');
   if(!u?.whatsapp&&!u?.telefono2)missing.push('Teléfono o WhatsApp');
-  if(u.rol==='cliente')return{ok:true,missing:[]};
-  const tieneBanco=u?.banco&&u?.nro_cuenta&&u?.titular_cuenta;
-  const tieneWallet=u?.wallet_tipo&&u?.wallet_nro;
-  if(!tieneBanco&&!tieneWallet)missing.push('Método de pago (banco o billetera)');
+  if(rol==='cliente')return{ok:missing.length===0,missing:missing.filter(m=>m!=='Teléfono o WhatsApp')};
   if(rol==='delivery'){
+    const tieneBanco=u?.banco&&u?.nro_cuenta&&u?.titular_cuenta;
+    const tieneWallet=u?.wallet_tipo&&u?.wallet_nro;
+    if(!tieneBanco&&!tieneWallet)missing.push('Método de pago (banco o billetera)');
     if(!u?.vehiculo)missing.push('Vehículo');
     if(!u?.patente)missing.push('Patente');
     if(!u?.foto_cedula_frente)missing.push('Foto cédula frente');
     if(!u?.foto_cedula_dorso)missing.push('Foto cédula dorso');
-  }else if(rol==='admin'){
-    if(!u?.direccion)missing.push('Dirección');
-    if(!u?.nombre_comercial)missing.push('Nombre del negocio');
   }else if(['vendedor','dropshipper','proveedor'].includes(rol)){
-    if(!u?.nombre_comercial)missing.push('Nombre del negocio/tienda');
-    if(!u?.logo&&!u?.foto_perfil)missing.push('Logo o foto de perfil');
+    // Menos estricto: aceptar banco O wallet (no obligar ambos).
+    // nombre_comercial y logo son opcionales (solo se necesitan si se va a facturar).
+    const tieneBanco=u?.banco&&u?.nro_cuenta&&u?.titular_cuenta;
+    const tieneWallet=u?.wallet_tipo&&u?.wallet_nro;
+    if(!tieneBanco&&!tieneWallet)missing.push('Método de pago (banco o billetera)');
   }
   return{ok:missing.length===0,missing};
 }
