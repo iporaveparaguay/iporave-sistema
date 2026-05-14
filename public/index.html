@@ -998,6 +998,7 @@ document.addEventListener('click',function(e){
   // Cerrar kebab menus de pedidos, usuarios y catálogo al hacer clic fuera
   if(!e.target.closest('.order-menu-wrap'))_closeOrderMenus();
   if(!e.target.closest('.order-menu-wrap'))_closeUserMenus();
+  if(!e.target.closest('.order-menu-wrap'))_closeZonaMenus();
   if(!e.target.closest('.order-menu-wrap'))_closeCatMenus();
 });
 // Cerrar dropdowns al scrollear — evita que queden flotando con position:fixed
@@ -4699,6 +4700,16 @@ function _toggleCatMenu(e,id){
   _closeAllDropMenus();
   if(!wasOpen){_posMenuDrop(e,drop);drop.classList.add('open');}
 }
+/* ─── KEBAB MENU zonas ─── */
+function _closeZonaMenus(){_closeAllDropMenus();}
+function _toggleZonaMenu(e,id){
+  e.stopPropagation();
+  const drop=document.getElementById('zdrop-'+id);
+  if(!drop)return;
+  const wasOpen=drop.classList.contains('open');
+  _closeAllDropMenus();
+  if(!wasOpen){_posMenuDrop(e,drop);drop.classList.add('open');}
+}
 function renderTable(orders,title,showActs,highlightChanges){
   if(highlightChanges)_prepareOrderStateHighlights(orders);
   if(!orders.length){
@@ -7288,10 +7299,14 @@ PAGES.zonas=function(){
     '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--green)">'+fmt(z.precio)+'</td>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;color:var(--purple)">'+(z.extraDelivery>0?fmt(z.extraDelivery):'—')+'</td>'+
     '<td class="col-hide" style="font-size:12px;color:var(--cyan)">'+escHtml(z.tiempoEntrega||'—')+'</td>'+
-    '<td class="td-actions">'+
-    '<button class="btn btn-secondary btn-sm" onclick="editZona('+z.id+')">Editar</button>'+
-    '<button class="btn btn-danger btn-sm" onclick="delZona('+z.id+')">✕</button>'+
-    '</td></tr>'
+    '<td style="white-space:nowrap"><div class="order-menu-wrap">'+
+      '<button class="order-menu-btn" onclick="_toggleZonaMenu(event,'+z.id+')" title="Acciones">⋮</button>'+
+      '<div class="order-dropdown" id="zdrop-'+z.id+'">'+
+        '<button onclick="_closeZonaMenus();editZona('+z.id+')">✏️ Editar</button>'+
+        '<div class="od-sep"></div>'+
+        '<button onclick="_closeZonaMenus();delZona('+z.id+')" style="color:var(--red)">✕ Eliminar</button>'+
+      '</div>'+
+    '</div></td></tr>'
   ).join('')+'</tbody></table></div></div>';
 };
 function openNewZona(){
