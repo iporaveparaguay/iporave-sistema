@@ -5642,7 +5642,7 @@ function _boletaHTML(o){
 function openBoleta(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
   const b=_boletaHTML(o);
-  openC('Boleta IVA — '+o.boletaNum, b.html,
+  openC('Boleta IVA — '+escHtml(o.boletaNum||''), b.html,
     '<button class="btn btn-secondary" onclick="closeC()">Cerrar</button>'+
     '<button class="btn btn-secondary" onclick="waBoleta('+o.id+')" style="background:#25d366;border-color:#25d366;color:#fff">📲 WhatsApp</button>'+
     '<button class="btn btn-primary" onclick="printBoleta('+o.id+')">⬇ PDF / Imprimir</button>'
@@ -5652,7 +5652,7 @@ function openBoleta(id){
 function printBoleta(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
   const b=_boletaHTML(o);
-  const page='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Boleta '+o.boletaNum+'</title>'+
+  const page='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Boleta '+escHtml(o.boletaNum||'')+'</title>'+
   '<style>'+
   'body{margin:0;padding:20px;font-family:"DM Sans",Arial,sans-serif;font-size:12px;color:#000;background:#fff}'+
   '.boleta-logo{font-size:28px;color:#f5a623;font-weight:900}'+
@@ -6676,8 +6676,8 @@ function delUser(id){
       '<div style="font-size:36px;margin-bottom:8px">⚠️</div>'+
       '<div style="font-size:15px;font-weight:700;color:var(--red)">¿Eliminar este usuario?</div>'+
       '<div style="margin:10px 0;padding:10px 12px;background:var(--bg4);border-radius:8px;font-size:13px">'+
-        '<div><b>'+u.nombre+'</b></div>'+
-        '<div style="color:var(--text2);margin-top:3px;font-family:\'JetBrains Mono\',monospace;font-size:11px">@'+u.username+' · '+capRole(u.rol)+'</div>'+
+        '<div><b>'+escHtml(u.nombre||'')+'</b></div>'+
+        '<div style="color:var(--text2);margin-top:3px;font-family:\'JetBrains Mono\',monospace;font-size:11px">@'+escHtml(u.username||'')+' · '+capRole(u.rol)+'</div>'+
       '</div>'+
       '<div style="font-size:12px;color:var(--text2)">Esta acción no se puede deshacer.</div>'+
     '</div>',
@@ -8126,8 +8126,8 @@ function openPerfilUsuario(){
     '<div style="position:relative;cursor:pointer" onclick="$(\'pfFotoFile\').click()">'+av+
     '<div style="position:absolute;bottom:0;right:0;background:var(--accent);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px">📷</div>'+
     '</div><input type="file" id="pfFotoFile" accept="image/*" style="display:none" onchange="subirFotoPerfil(this)">'+
-    '<div><div style="font-size:18px;font-weight:800">'+u.nombre+'</div>'+
-    '<div style="font-size:12px;color:var(--text2);margin:2px 0">@'+u.username+' · '+capRole(u.rol)+
+    '<div><div style="font-size:18px;font-weight:800">'+escHtml(u.nombre||'')+'</div>'+
+    '<div style="font-size:12px;color:var(--text2);margin:2px 0">@'+escHtml(u.username||'')+' · '+capRole(u.rol)+
     (u.verificado?' <span class="badge-verif">✓ Verificado</span>':'')+
     (u.badge_confianza?' <span class="badge-confianza">🛡️ De Confianza</span>':'')+
     '</div><div style="margin-top:4px">'+calStr+'</div></div></div>'+
