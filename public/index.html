@@ -1068,8 +1068,8 @@ const DL = {
     if(_supaConnected){
       try{
         const{error}=await _supa.from('usuarios').upsert(uLocal,{onConflict:'id'});
-        if(error){console.warn('saveUser Supabase:',error.message);return{ok:false,error:error.message};}
-      }catch(e){console.warn('saveUser catch:',e.message);return{ok:false,error:e.message};}
+        if(error){console.warn('saveUser Supabase:',error.message);pushNotif('Error al guardar usuario: '+(error.message||''),'e');return{ok:false,error:error.message};}
+      }catch(e){console.warn('saveUser catch:',e.message);pushNotif('Error al guardar usuario: '+(e.message||''),'e');return{ok:false,error:e.message};}
     }
     return{ok:true};
   },
@@ -1157,7 +1157,7 @@ const DL = {
     if(_supaConnected){
       const row=this._mapToSupa(o);
       const{error}=await _supa.from('pedidos').upsert(row,{onConflict:'id'});
-      if(error)console.warn('Supa saveOrder:',error.message);
+      if(error){console.warn('Supa saveOrder:',error.message);pushNotif('Error al guardar pedido: '+(error.message||''),'e');}
     }
     // Notificar al delivery si el estado cambió a Despachado o En ruta
     if(_prev?.estado!==o.estado&&o.deliveryId&&['Despachado','En ruta'].includes(o.estado)&&_sessionToken){
@@ -1383,7 +1383,7 @@ const DL = {
   async saveJornada(j){
     if(_supaConnected){
       const{error}=await _supa.from('jornadas').upsert({fecha:j.fecha,data:JSON.stringify(j)});
-      if(error)console.warn(error.message);
+      if(error){console.warn(error.message);pushNotif('Error al guardar jornada: '+(error.message||''),'e');}
     }
     const jornadas=this._lg('jornadas')||[];
     const i=jornadas.findIndex(x=>x.fecha===j.fecha);
