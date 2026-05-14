@@ -8572,9 +8572,9 @@ PAGES.config=function(){
     '<div class="lcard2">'+
       '<div class="stitle" style="margin-top:0">📱 WhatsApp automático</div>'+
       '<div class="fg"><label><input type="checkbox" id="cfgWaE" '+(cfg.waEnabled?'checked':'')+' style="margin-right:6px;width:auto"> Activar mensajes automáticos</label></div>'+
-      '<div class="fg"><label>Mensaje pedido confirmado (usa {id},{producto},{cliente})</label><textarea id="cfgWaP">'+(cfg.waMsgPedido||DEF_CONFIG.waMsgPedido)+'</textarea></div>'+
-      '<div class="fg"><label>Mensaje no contesta</label><textarea id="cfgWaNC">'+(cfg.waMsgNoContesta||DEF_CONFIG.waMsgNoContesta)+'</textarea></div>'+
-      '<div class="fg"><label>Mensaje entregado</label><textarea id="cfgWaE2">'+(cfg.waMsgEntregado||DEF_CONFIG.waMsgEntregado)+'</textarea></div>'+
+      '<div class="fg"><label>Mensaje pedido confirmado (usa {id},{producto},{cliente})</label><textarea id="cfgWaP">'+escHtml(cfg.waMsgPedido||DEF_CONFIG.waMsgPedido)+'</textarea></div>'+
+      '<div class="fg"><label>Mensaje no contesta</label><textarea id="cfgWaNC">'+escHtml(cfg.waMsgNoContesta||DEF_CONFIG.waMsgNoContesta)+'</textarea></div>'+
+      '<div class="fg"><label>Mensaje entregado</label><textarea id="cfgWaE2">'+escHtml(cfg.waMsgEntregado||DEF_CONFIG.waMsgEntregado)+'</textarea></div>'+
       '<button class="btn btn-primary" onclick="saveCfgWA()">Guardar mensajes</button>'+
     '</div>'+
     '<div class="lcard2">'+
