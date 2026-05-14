@@ -1075,11 +1075,12 @@ const DL = {
     // Eliminar de Supabase via API (service key — anon key bloqueado por RLS)
     if(_sessionToken){
       try{
-        await fetch(WORKER_URL+'/api/delete-user',{
+        const rd=await fetch(WORKER_URL+'/api/delete-user',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
           body:JSON.stringify({id})
         });
+        if(!rd.ok)throw new Error('Error HTTP '+rd.status);
       }catch(e){console.warn('deleteUser API:',e.message);}
     }
     const users=this._lg('users')||[];
@@ -1483,7 +1484,7 @@ const DL = {
 function initRealtime(){
   if(!_supaConnected||!_supa)return;
   try{
-    if(_realtimeSub)_realtimeSub.unsubscribe();
+    if(_realtimeSub){try{_realtimeSub.unsubscribe();}catch(e){} _realtimeSub=null;}
     _realtimeSub=_supa.channel('iporave_rt')
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'pedidos'},async payload=>{
         await _rtRefreshOrders();
