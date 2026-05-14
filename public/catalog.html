@@ -373,21 +373,26 @@
 
   @media (max-width: 480px) {
     .grid {
-      grid-template-columns: repeat(2, 1fr); /* Dos columnas en pantallas muy pequeñas */
+      grid-template-columns: repeat(2, 1fr);
       gap: 10px;
       padding: 10px 10px 80px;
     }
-    .search-bar { padding: 10px; }
+    /* Search-bar en grid 2 columnas: más compacto y legible */
+    .search-bar {
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+    .search-bar input[type="text"] { grid-column: 1 / -1; } /* buscar ocupa fila completa */
+    .search-bar .precio-row { grid-column: 1 / -1; display: flex; gap: 6px; }
+    .search-bar .precio-row input { flex: 1; min-width: 0; }
     .modal { padding: 16px; }
     .modal-btns { flex-direction: column; }
     .btn-cancelar, .btn-whatsapp { flex: none; width: 100%; }
-    .btn-cancelar { min-height: 44px; } /* Asegurar altura touch-friendly */
-    .btn-whatsapp { min-height: 44px; } /* Asegurar altura touch-friendly */
-
-    /* Ajuste adicional de altura de imagen en pantallas pequeñas */
-    .card-img {
-      height: 150px; /* Altura aún más reducida para pantallas pequeñas */
-    }
+    .btn-cancelar { min-height: 44px; }
+    .btn-whatsapp { min-height: 44px; }
+    .card-img { height: 150px; }
   }
 
   /* BOTÓN AGREGAR AL CARRITO */
