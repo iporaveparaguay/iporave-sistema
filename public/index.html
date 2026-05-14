@@ -6518,12 +6518,18 @@ PAGES.analitica_admin=function(){
     const dark=document.documentElement.getAttribute('data-theme')==='dark';
     const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
     Chart.defaults.color=tc;Chart.defaults.borderColor=gc;
+    const _ttA={backgroundColor:cb,titleColor:dark?'#f1f5f9':'#0f172a',bodyColor:tc,borderColor:dark?'#334155':'#e2e8f0',borderWidth:1,cornerRadius:10,padding:10,boxPadding:4};
     const ctxL=$('aaLinea');
     if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
+      const gl=ctxL.getContext('2d');const h=ctxL.offsetHeight||150;
+      const gG=gl.createLinearGradient(0,0,0,h);gG.addColorStop(0,'rgba(34,197,94,.40)');gG.addColorStop(1,'rgba(34,197,94,.02)');
+      const gI=gl.createLinearGradient(0,0,0,h);gI.addColorStop(0,'rgba(99,102,241,.38)');gI.addColorStop(1,'rgba(99,102,241,.02)');
       ctxL._ci=new Chart(ctxL,{type:'line',data:{labels,datasets:[
-        {label:'Ingresos',data:days30.map(d=>ingByDay[d]),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',tension:.35,fill:true,pointRadius:2},
-        {label:'Ganancia neta',data:days30.map(d=>ganByDay[d]),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.08)',tension:.35,fill:true,pointRadius:2},
-      ]},options:{responsive:true,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true}}}});
+        {label:'Ingresos',data:days30.map(d=>ingByDay[d]),borderColor:'#22c55e',backgroundColor:gG,tension:.45,fill:true,pointRadius:3,pointHoverRadius:7,pointBackgroundColor:'#22c55e',pointBorderColor:cb,pointBorderWidth:2,borderWidth:2.5},
+        {label:'Ganancia neta',data:days30.map(d=>ganByDay[d]),borderColor:'#6366f1',backgroundColor:gI,tension:.45,fill:true,pointRadius:3,pointHoverRadius:7,pointBackgroundColor:'#6366f1',pointBorderColor:cb,pointBorderWidth:2,borderWidth:2.5},
+      ]},options:{responsive:true,animation:{duration:1200,easing:'easeInOutQuart'},interaction:{mode:'index',intersect:false},
+        plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:11},usePointStyle:true,pointStyle:'circle',padding:14}},tooltip:Object.assign({},_ttA,{callbacks:{label:ctx=>' '+ctx.dataset.label+': Gs. '+ctx.parsed.y.toLocaleString('es-PY')}})},
+        scales:{x:{ticks:{maxTicksLimit:10,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:gc}}}}});
     }
   },100);
 };
