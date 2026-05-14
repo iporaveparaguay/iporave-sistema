@@ -518,6 +518,11 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .llogo p{font-size:11px;}
   /* Bandera PY: dentro del card, sin salirse */
   .llogo > span[title="Paraguay"]{right:-8px!important;font-size:15px!important;top:2px!important;}
+  /* Padding uniforme en recuadros — igual a Liquidación */
+  .lcard2{padding:14px 14px 14px 20px;}
+  /* Topbar mobile: título arriba, acciones abajo */
+  .topbar{flex-wrap:wrap;gap:4px;padding:8px 14px;}
+  .tbar-actions{flex-wrap:wrap;gap:6px;}
 }
 /* En desktop: ocultar elementos que solo deben verse en mobile */
 .col-show-mobile{display:none;}
@@ -2515,6 +2520,7 @@ async function doLogin(){
     const aib=$('aiBtn');if(aib){aib.style.display='flex';initAIDrag();}
     DL.getMensajesNoLeidos(CU.id).then(n=>{_unreadMsgs=n;updateAIBadge();});
     _cargarMensajesPrevios();
+    _notifSessionInit(); // Inicializar notificaciones después del login
     if(_pollInterval)clearInterval(_pollInterval);
     _pollInterval=setInterval(_pollMensajes,5000);
     if(['admin','superadmin'].includes(CU.rol)&&_supaConnected){
@@ -3207,7 +3213,7 @@ function _notifSessionInit(){
     window._notifSessionSwBound=true;
   }
 }
-setTimeout(_notifSessionInit,0);
+setTimeout(function(){if(typeof CU!=='undefined'&&CU&&CU.id)_notifSessionInit();},500);
 function _b2bUser(){
   return (typeof _currentUser!=='undefined'&&_currentUser)?_currentUser:CU;
 }
