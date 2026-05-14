@@ -3030,6 +3030,7 @@ function nextDocNum(){
 
   function _bgCerrar(){
     _bgOpen=false;
+    if(_bgTimer){clearTimeout(_bgTimer);_bgTimer=null;}
     var dd=document.getElementById('bgDropdown');
     if(dd){dd.style.display='none';}
   }
