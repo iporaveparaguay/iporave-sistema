@@ -2046,7 +2046,7 @@ const AI_TOOL_EXEC={
     if(CU.rol==='vendedor'&&o.vendedorId!==CU.id)return'Solo podés actualizar tus propios pedidos.';
     if(CU.rol==='dropshipper'&&o.dropId!==CU.id)return'Solo podés actualizar tus propios pedidos.';
     if(CU.rol==='delivery'&&o.deliveryId!==CU.id)return'Solo podés actualizar pedidos asignados a vos.';
-    if(CU.rol==='proveedor'&&o.vendedorId!==CU.id&&o.proveedorId!==CU.id&&(o.proveedor||'').toLowerCase()!==CU.nombre.toLowerCase())return'Solo podés actualizar tus propios pedidos.';
+    if(CU.rol==='proveedor'&&o.proveedorId!==CU.id)return'Solo podés actualizar tus propios pedidos.';
     if(CU.rol==='cliente')return'Sin permisos para actualizar estados.';
     const prev=o.estado;
     o.estado=args.estado;o.notas=args.notas||o.notas;
