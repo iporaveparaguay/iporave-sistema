@@ -230,7 +230,7 @@ python .agentes/tester-visual.py --user iporaveparaguay@gmail.com --pass ivan123
 ### ALTA PRIORIDAD
 
 - [x] ~~**Contraseña para acceder a Config/SQL**~~ — **RESUELTO en commit `5524c30`** (modal re-auth + 5 min de gracia)
-- [ ] **Agregar columna `prioridad` (boolean) a tabla `pedidos` en Supabase** — ⚠️ MANUAL: ir a Supabase SQL Editor y ejecutar: `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS prioridad boolean DEFAULT false;`
+- [x] ~~**Agregar columna `prioridad` (boolean) a tabla `pedidos` en Supabase**~~ — **RESUELTO (2026-05-14)** — `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS prioridad boolean DEFAULT false;` ejecutado manualmente por el usuario
 - [x] ~~**Notificación push al delivery cuando pedido marcado como prioridad**~~ — **RESUELTO commit `67d97ec`** (`_notifDeliveryPrioridad` implementada)
 - [ ] **Correr tester visual** para verificar pantallas reales post-login
   - `playwright_state.json` guardado, login funciona en tester (SPA navigation corregida)
@@ -462,8 +462,8 @@ Ninguno — todos los agentes de la sesión completaron.
 ### ❌ PENDIENTE
 | Área | Prioridad |
 |---|---|
-| Columna `prioridad` en tabla `pedidos` (Supabase) | ALTA — sin esto pines no funcionan en producción |
-| Push al delivery cuando pedido es prioridad | ALTA |
+| ~~Columna `prioridad` en tabla `pedidos` (Supabase)~~ | ✅ RESUELTO 2026-05-14 |
+| ~~Push al delivery cuando pedido es prioridad~~ | ✅ RESUELTO commit `67d97ec` |
 | Prueba visual con tester-visual.py | ALTA — PRÓXIMA SESIÓN |
 | campanita antes del auth (codexNotifBell pre-login) | MEDIA |
 | WHATSAPP_APP_SECRET | MEDIA (usuario) |
