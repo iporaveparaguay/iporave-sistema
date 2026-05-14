@@ -5778,18 +5778,23 @@ PAGES.estadisticas=function(){
       '<div class="sc gr"><div class="slabel">Recaudación total</div><div class="sval" style="font-size:14px">'+fmt(revenue)+'</div></div>'+
       '<div class="sc pu"><div class="slabel">Top delivery</div><div class="sval" style="font-size:14px">'+topDlv+'</div><div class="ssub">'+((dlvCounts[topDlvId]||0)+' entregas')+'</div></div>'+
     '</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px">'+
-      '<div style="background:var(--card);border-radius:12px;padding:16px;grid-column:1/-1">'+
-        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Pedidos últimos 30 días</div>'+
-        '<canvas id="estLinea" height="80"></canvas>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px">'+
+      '<div style="background:var(--card);border-radius:16px;padding:18px 18px 12px;box-shadow:0 4px 20px rgba(0,0,0,.10);grid-column:1/-1;border-top:3px solid transparent;background-image:linear-gradient(var(--card),var(--card)),linear-gradient(90deg,#3b82f6,#22c55e);background-origin:border-box;background-clip:padding-box,border-box">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+          '<div><div style="font-size:14px;font-weight:800;color:var(--text)">📈 Pedidos — últimos 30 días</div>'+
+          '<div style="font-size:11px;color:var(--text3);margin-top:2px">Pedidos totales vs. entregados por día</div></div>'+
+        '</div>'+
+        '<canvas id="estLinea" height="75"></canvas>'+
       '</div>'+
-      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
-        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">🛵 Entregados por delivery</div>'+
-        '<canvas id="estDlv" height="200"></canvas>'+
+      '<div style="background:var(--card);border-radius:16px;padding:18px 18px 10px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid #22c55e">'+
+        '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">🛵 Ranking Deliverys</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">Entregados vs. asignados</div>'+
+        '<canvas id="estDlv" height="190"></canvas>'+
       '</div>'+
-      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
-        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">🌎 Pedidos por zona</div>'+
-        '<canvas id="estZona" height="200"></canvas>'+
+      '<div style="background:var(--card);border-radius:16px;padding:18px 18px 10px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid #f59e0b">'+
+        '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">🌎 Pedidos por zona</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">Zonas más activas</div>'+
+        '<canvas id="estZona" height="190"></canvas>'+
       '</div>'+
     '</div>'+
     '<div style="background:var(--card);border-radius:12px;padding:16px;margin-top:14px">'+
@@ -5815,34 +5820,54 @@ PAGES.estadisticas=function(){
 
   setTimeout(()=>{
     const dark=document.documentElement.getAttribute('data-theme')==='dark';
-    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+    const tc=dark?'#94a3b8':'#64748b';
+    const gc=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
+    const cb=dark?'#1e293b':'#ffffff';
     Chart.defaults.color=tc;Chart.defaults.borderColor=gc;
-    // Línea 30 días
+    Chart.defaults.font.family="'Inter','system-ui',sans-serif";
+    const _tt={backgroundColor:cb,titleColor:dark?'#f1f5f9':'#0f172a',bodyColor:tc,borderColor:dark?'#334155':'#e2e8f0',borderWidth:1,cornerRadius:10,padding:10,boxPadding:4};
+    // ── Línea 30 días ──
     const ctxL=$('estLinea');
     if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
-      ctxL._ci=new Chart(ctxL,{type:'line',data:{labels:days30,
-        datasets:[
-          {label:'Pedidos',data:days30.map(d=>dayMap[d]?dayMap[d].total:0),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.15)',tension:.4,fill:true,pointRadius:2},
-          {label:'Entregados',data:days30.map(d=>dayMap[d]?dayMap[d].ent:0),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',tension:.4,fill:true,pointRadius:2}
-        ]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true}}}});
+      const glx=ctxL.getContext('2d');
+      const h=ctxL.offsetHeight||150;
+      const gBlue=glx.createLinearGradient(0,0,0,h);gBlue.addColorStop(0,'rgba(59,130,246,.40)');gBlue.addColorStop(1,'rgba(59,130,246,.02)');
+      const gGreen=glx.createLinearGradient(0,0,0,h);gGreen.addColorStop(0,'rgba(34,197,94,.35)');gGreen.addColorStop(1,'rgba(34,197,94,.02)');
+      ctxL._ci=new Chart(ctxL,{type:'line',data:{labels:days30,datasets:[
+        {label:'Pedidos',data:days30.map(d=>dayMap[d]?dayMap[d].total:0),borderColor:'#3b82f6',backgroundColor:gBlue,tension:.45,fill:true,pointRadius:2,pointHoverRadius:6,pointBackgroundColor:'#3b82f6',pointBorderColor:cb,pointBorderWidth:1.5,borderWidth:2.5},
+        {label:'Entregados',data:days30.map(d=>dayMap[d]?dayMap[d].ent:0),borderColor:'#22c55e',backgroundColor:gGreen,tension:.45,fill:true,pointRadius:2,pointHoverRadius:6,pointBackgroundColor:'#22c55e',pointBorderColor:cb,pointBorderWidth:1.5,borderWidth:2.5}
+      ]},options:{responsive:true,animation:{duration:1200,easing:'easeInOutQuart'},interaction:{mode:'index',intersect:false},
+        plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:11},usePointStyle:true,pointStyle:'circle',padding:14}},tooltip:Object.assign({},_tt)},
+        scales:{x:{ticks:{maxTicksLimit:10,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:gc}}}}});
     }
-    // Bar deliverys
+    // ── Bar deliverys (grouped) ──
     const ctxD=$('estDlv');
     if(ctxD){if(ctxD._ci)ctxD._ci.destroy();
-      ctxD._ci=new Chart(ctxD,{type:'bar',data:{labels:dlvStats.map(d=>d.nombre),
-        datasets:[
-          {label:'Entregados',data:dlvStats.map(d=>d.ent),backgroundColor:'#22c55e'},
-          {label:'Total',data:dlvStats.map(d=>d.tot),backgroundColor:'rgba(99,102,241,.4)'}
-        ]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}});
+      const labels=dlvStats.length?dlvStats.map(d=>d.nombre.split(' ')[0]):['Sin datos'];
+      const entData=dlvStats.length?dlvStats.map(d=>d.ent):[0];
+      const totData=dlvStats.length?dlvStats.map(d=>d.tot):[0];
+      ctxD._ci=new Chart(ctxD,{type:'bar',data:{labels,datasets:[
+        {label:'Entregados',data:entData,backgroundColor:'rgba(34,197,94,.85)',borderRadius:6,borderSkipped:false,borderWidth:0,hoverBackgroundColor:'#22c55e'},
+        {label:'Asignados',data:totData,backgroundColor:'rgba(99,102,241,.35)',borderRadius:6,borderSkipped:false,borderWidth:0,hoverBackgroundColor:'rgba(99,102,241,.7)'}
+      ]},options:{responsive:true,animation:{duration:950,easing:'easeOutExpo'},
+        plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:11},usePointStyle:true,pointStyle:'rectRounded',padding:12}},tooltip:Object.assign({},_tt)},
+        scales:{y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:gc}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
     }
-    // Bar zonas
+    // ── Bar zonas (horizontal) ──
     const ctxZ=$('estZona');
     if(ctxZ){if(ctxZ._ci)ctxZ._ci.destroy();
-      ctxZ._ci=new Chart(ctxZ,{type:'bar',data:{labels:zonaStats.map(z=>z.nombre),
-        datasets:[
-          {label:'Entregados',data:zonaStats.map(z=>z.ent),backgroundColor:'#f59e0b'},
-          {label:'Total',data:zonaStats.map(z=>z.tot),backgroundColor:'rgba(239,68,68,.4)'}
-        ]},options:{indexAxis:'y',responsive:true,plugins:{legend:{position:'top'}},scales:{x:{beginAtZero:true}}}});
+      const labels2=zonaStats.length?zonaStats.map(z=>z.nombre.length>16?z.nombre.substring(0,15)+'…':z.nombre):['Sin datos'];
+      const entZ=zonaStats.length?zonaStats.map(z=>z.ent):[0];
+      const totZ=zonaStats.length?zonaStats.map(z=>z.tot):[0];
+      const gzCtx=ctxZ.getContext('2d');
+      const gAmber=gzCtx.createLinearGradient(ctxZ.offsetWidth||200,0,0,0);
+      gAmber.addColorStop(0,'rgba(245,158,11,.90)');gAmber.addColorStop(1,'rgba(239,68,68,.45)');
+      ctxZ._ci=new Chart(ctxZ,{type:'bar',data:{labels:labels2,datasets:[
+        {label:'Entregados',data:entZ,backgroundColor:gAmber,borderRadius:6,borderSkipped:false,borderWidth:0,hoverBackgroundColor:'rgba(245,158,11,1)'},
+        {label:'Total',data:totZ,backgroundColor:'rgba(239,68,68,.22)',borderRadius:6,borderSkipped:false,borderWidth:0,hoverBackgroundColor:'rgba(239,68,68,.5)'}
+      ]},options:{indexAxis:'y',responsive:true,animation:{duration:1000,easing:'easeOutExpo'},
+        plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:11},usePointStyle:true,pointStyle:'rectRounded',padding:12}},tooltip:Object.assign({},_tt)},
+        scales:{x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:gc}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
     }
   },100);
 };
@@ -5994,9 +6019,10 @@ PAGES.analitica_prov=function(){
         '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+canc.length+' órdenes</div>'+
       '</div>'+
     '</div>'+
-    '<div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px">'+
-      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Actividad — últimos 30 días</div>'+
-      '<canvas id="apLinea" height="80"></canvas>'+
+    '<div style="background:var(--card);border-radius:16px;padding:18px 18px 12px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid transparent;background-image:linear-gradient(var(--card),var(--card)),linear-gradient(90deg,#22c55e,#3b82f6);background-origin:border-box;background-clip:padding-box,border-box">'+
+      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px">📈 Actividad — últimos 30 días</div>'+
+      '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Pedidos enviados vs. entregados</div>'+
+      '<canvas id="apLinea" height="75"></canvas>'+
     '</div>';
   if(topProd.length){
     html+=
@@ -6048,14 +6074,21 @@ PAGES.analitica_prov=function(){
   $('ca').innerHTML=html;
   setTimeout(()=>{
     const dark=document.documentElement.getAttribute('data-theme')==='dark';
-    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
-    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;
+    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
+    const cb=dark?'#1e293b':'#ffffff';
+    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;Chart.defaults.font.family="'Inter','system-ui',sans-serif";
+    const _tt={backgroundColor:cb,titleColor:dark?'#f1f5f9':'#0f172a',bodyColor:tc,borderColor:dark?'#334155':'#e2e8f0',borderWidth:1,cornerRadius:10,padding:10,boxPadding:4};
     const ctxL=$('apLinea');
     if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
+      const gl=ctxL.getContext('2d');const h=ctxL.offsetHeight||150;
+      const gG=gl.createLinearGradient(0,0,0,h);gG.addColorStop(0,'rgba(34,197,94,.38)');gG.addColorStop(1,'rgba(34,197,94,.02)');
+      const gB=gl.createLinearGradient(0,0,0,h);gB.addColorStop(0,'rgba(59,130,246,.30)');gB.addColorStop(1,'rgba(59,130,246,.02)');
       ctxL._ci=new Chart(ctxL,{type:'line',data:{labels,datasets:[
-        {label:'Entregados',data:days30.map(d=>entByDay[d]),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',tension:.35,fill:true,pointRadius:2},
-        {label:'Pedidos',data:days30.map(d=>pedByDay[d]),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',tension:.35,fill:true,pointRadius:2},
-      ]},options:{responsive:true,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+        {label:'Entregados',data:days30.map(d=>entByDay[d]),borderColor:'#22c55e',backgroundColor:gG,tension:.45,fill:true,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:'#22c55e',pointBorderColor:cb,pointBorderWidth:1.5,borderWidth:2.5},
+        {label:'Pedidos',data:days30.map(d=>pedByDay[d]),borderColor:'#3b82f6',backgroundColor:gB,tension:.45,fill:true,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:'#3b82f6',pointBorderColor:cb,pointBorderWidth:1.5,borderWidth:2.5},
+      ]},options:{responsive:true,animation:{duration:1200,easing:'easeInOutQuart'},interaction:{mode:'index',intersect:false},
+        plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:11},usePointStyle:true,pointStyle:'circle',padding:14}},tooltip:Object.assign({},_tt)},
+        scales:{x:{ticks:{maxTicksLimit:10,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:gc}}}}});
     }
   },100);
 };
@@ -6125,9 +6158,10 @@ PAGES.analitica_vend=function(periodo){
         '<div style="font-size:17px;font-weight:800;color:var(--purple)">'+fmt(ticketProm)+'</div>'+
       '</div>'+
     '</div>'+
-    '<div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px">'+
-      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Ganancia diaria — últimos 30 días</div>'+
-      '<canvas id="avLinea" height="80"></canvas>'+
+    '<div style="background:var(--card);border-radius:16px;padding:18px 18px 12px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid transparent;background-image:linear-gradient(var(--card),var(--card)),linear-gradient(90deg,#6366f1,#f59e0b);background-origin:border-box;background-clip:padding-box,border-box">'+
+      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px">💰 Ganancia neta diaria — últimos 30 días</div>'+
+      '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Ingresos después de costos y logística</div>'+
+      '<canvas id="avLinea" height="75"></canvas>'+
     '</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'+
       '<div style="background:var(--card);border-radius:12px;padding:16px">'+
@@ -6201,13 +6235,18 @@ PAGES.analitica_vend=function(periodo){
   $('ca').innerHTML=html;
   setTimeout(()=>{
     const dark=document.documentElement.getAttribute('data-theme')==='dark';
-    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
-    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;
+    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
+    const cb=dark?'#1e293b':'#ffffff';
+    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;Chart.defaults.font.family="'Inter','system-ui',sans-serif";
     const ctxL=$('avLinea');
     if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
+      const gl=ctxL.getContext('2d');const h=ctxL.offsetHeight||150;
+      const gI=gl.createLinearGradient(0,0,0,h);gI.addColorStop(0,'rgba(99,102,241,.45)');gI.addColorStop(.5,'rgba(245,158,11,.20)');gI.addColorStop(1,'rgba(99,102,241,.02)');
       ctxL._ci=new Chart(ctxL,{type:'line',data:{labels,datasets:[
-        {label:'Ganancia neta (Gs.)',data:days30.map(d=>ganByDay[d]),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.1)',tension:.35,fill:true,pointRadius:2},
-      ]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true}}}});
+        {label:'Ganancia (Gs.)',data:days30.map(d=>ganByDay[d]),borderColor:'#6366f1',backgroundColor:gI,tension:.45,fill:true,pointRadius:3,pointHoverRadius:7,pointBackgroundColor:'#6366f1',pointBorderColor:cb,pointBorderWidth:2,borderWidth:3},
+      ]},options:{responsive:true,animation:{duration:1200,easing:'easeInOutQuart'},interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false},tooltip:{backgroundColor:cb,titleColor:dark?'#f1f5f9':'#0f172a',bodyColor:tc,borderColor:dark?'#334155':'#e2e8f0',borderWidth:1,cornerRadius:10,padding:10,callbacks:{label:ctx=>' Gs. '+ctx.parsed.y.toLocaleString('es-PY')}}},
+        scales:{x:{ticks:{maxTicksLimit:10,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:gc}}}}});
     }
   },100);
 };
@@ -6262,9 +6301,10 @@ PAGES.analitica_drop=function(){
         '<div style="font-size:11px;color:var(--text3);margin-top:2px">por entrega exitosa</div>'+
       '</div>'+
     '</div>'+
-    '<div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px">'+
-      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Actividad — últimos 30 días</div>'+
-      '<canvas id="adLinea" height="80"></canvas>'+
+    '<div style="background:var(--card);border-radius:16px;padding:18px 18px 12px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid transparent;background-image:linear-gradient(var(--card),var(--card)),linear-gradient(90deg,#6366f1,#a855f7);background-origin:border-box;background-clip:padding-box,border-box">'+
+      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px">📈 Actividad — últimos 30 días</div>'+
+      '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Pedidos dropshipping por día</div>'+
+      '<canvas id="adLinea" height="75"></canvas>'+
     '</div>'+
     (topProd.length?
       '<div class="tc" style="margin-bottom:14px"><div class="th2"><span class="tt">📦 Top Productos</span></div>'+
@@ -6281,13 +6321,18 @@ PAGES.analitica_drop=function(){
   $('ca').innerHTML=html;
   setTimeout(()=>{
     const dark=document.documentElement.getAttribute('data-theme')==='dark';
-    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
-    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;
+    const tc=dark?'#94a3b8':'#64748b';const gc=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
+    const cb=dark?'#1e293b':'#ffffff';
+    Chart.defaults.color=tc;Chart.defaults.borderColor=gc;Chart.defaults.font.family="'Inter','system-ui',sans-serif";
     const ctxL=$('adLinea');
     if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
+      const gl=ctxL.getContext('2d');const h=ctxL.offsetHeight||150;
+      const gP=gl.createLinearGradient(0,0,0,h);gP.addColorStop(0,'rgba(99,102,241,.95)');gP.addColorStop(1,'rgba(168,85,247,.45)');
       ctxL._ci=new Chart(ctxL,{type:'bar',data:{labels,datasets:[
-        {label:'Pedidos',data:days30.map(d=>pedByDay[d]),backgroundColor:'rgba(99,102,241,.7)',borderRadius:4},
-      ]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+        {label:'Pedidos',data:days30.map(d=>pedByDay[d]),backgroundColor:gP,borderRadius:6,borderSkipped:false,borderWidth:0,hoverBackgroundColor:'rgba(99,102,241,1)'},
+      ]},options:{responsive:true,animation:{duration:1000,easing:'easeOutExpo'},
+        plugins:{legend:{display:false},tooltip:{backgroundColor:cb,titleColor:dark?'#f1f5f9':'#0f172a',bodyColor:tc,borderColor:dark?'#334155':'#e2e8f0',borderWidth:1,cornerRadius:10,padding:10,callbacks:{label:ctx=>' '+ctx.parsed.y+' pedidos'}}},
+        scales:{x:{ticks:{maxTicksLimit:10,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:gc}}}}});
     }
   },100);
 };
