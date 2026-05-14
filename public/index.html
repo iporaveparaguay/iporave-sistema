@@ -3594,11 +3594,15 @@ function _ensureFacturasB2BNavCfg(){
     if(typeof NAV_CFG==='undefined'||!NAV_CFG)return;
     ['proveedor','dropshipper'].forEach(role=>{
       const list=NAV_CFG[role];
-      if(!Array.isArray(list)||list.some(it=>(it&&((it.id||it.page||it.key||it.route)==='facturas_b2b'||it[0]==='facturas_b2b'||it==='facturas_b2b'))))return;
-      const sample=list.find(Boolean);
-      if(Array.isArray(sample))list.push(['facturas_b2b','🧾 Facturas']);
-      else if(sample&&typeof sample==='object')list.push({id:'facturas_b2b',page:'facturas_b2b',key:'facturas_b2b',route:'facturas_b2b',icon:'🧾',label:'Facturas',title:'Facturas'});
-      else list.push('facturas_b2b');
+      if(!Array.isArray(list))return;
+      // Estructura correcta: list es array de {s, items}. Buscar si facturas_b2b ya está en algún items.
+      const yaTiene=list.some(sec=>Array.isArray(sec.items)&&sec.items.some(it=>it&&it.id==='facturas_b2b'));
+      if(yaTiene)return;
+      // Agregarlo a la sección "Reportes" si existe, sino crear una sección nueva
+      let reportes=list.find(sec=>sec&&sec.s==='Reportes'&&Array.isArray(sec.items));
+      const item={id:'facturas_b2b',l:'🧾 Facturas B2B',ic:'receipt'};
+      if(reportes){reportes.items.push(item);}
+      else{list.push({s:'Reportes',items:[item]});}
     });
   }catch(e){console.warn('No se pudo agregar facturas_b2b al NAV_CFG:',e.message);}
 }
