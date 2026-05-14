@@ -851,7 +851,7 @@ const isAdminLike = r => ['admin','superadmin'].includes(r);
 const today = () => new Date().toISOString().slice(0,10);
 const nowStr = () => new Date().toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const mesActual = () => new Date().toISOString().slice(0,7);
-const ganVend = o => (o.precio*o.qty)-(o.costo*o.qty)-_getZonaO(o).precio;
+const ganVend = o => ((o.precio||0)*(o.qty||1))-((o.costo||0)*(o.qty||1))-(_getZonaO(o).precio||0);
 
 function togglePwd(inputId,btn){
   const el=$(inputId);if(!el)return;
@@ -5067,8 +5067,8 @@ function editOrder(id){
     '<div class="frow"><div class="fg"><label>Proveedor</label><select id="eProv">'+provOpts+'</select></div>'+
     '<div class="fg"><label>Producto *</label><input type="text" id="eProd" value="'+escAttr(o.producto)+'"></div></div>'+
     '<div class="frow3"><div class="fg"><label>Cantidad</label><input type="number" id="eQty" value="'+(o.qty||1)+'" min="1"></div>'+
-    '<div class="fg"><label>Precio venta (Gs.)</label><input type="number" id="ePrec" value="'+(o.precio||0)+'"></div>'+
-    '<div class="fg"><label>Costo (Gs.)</label><input type="number" id="eCost" value="'+(o.costo||0)+'"></div></div>'+
+    '<div class="fg"><label>Precio venta (Gs.)</label><input type="number" id="ePrec" value="'+(o.precio||0)+'" min="0"></div>'+
+    '<div class="fg"><label>Costo (Gs.)</label><input type="number" id="eCost" value="'+(o.costo||0)+'" min="0"></div></div>'+
     '<div class="fg"><label>Comisión dropshipper (Gs.) <span style="font-weight:400;color:var(--text3);font-size:11px">— opcional</span></label><input type="number" id="eComision" value="'+(o.comision||0)+'" min="0"></div>'+
     '<div class="stitle">Logística</div>'+
     '<div class="fg"><label>Estado</label><select id="eEst">'+ESTADOS.map(e=>'<option value="'+e+'" '+(o.estado===e?'selected':'')+'>'+e+'</option>').join('')+'</select></div>'+
@@ -6293,7 +6293,7 @@ PAGES.estadisticas=function(){
   orders.forEach(o=>{
     if(!o.historial||!o.historial.length)return;
     const f=o.historial[0].fecha||'';const p=f.split(', ');if(p.length<2)return;
-    const[d,m,y]=p[0].split('/');const key=d+'/'+m;
+    const[d,m,y]=p[0].split('/');if(!d||!m)return;const key=d+'/'+m;
     if(!dayMap[key])dayMap[key]={total:0,ent:0};
     dayMap[key].total++;
     if(o.estado==='Entregado')dayMap[key].ent++;
@@ -6385,7 +6385,7 @@ PAGES.estadisticas=function(){
     // ── Bar deliverys (grouped) ──
     const ctxD=$('estDlv');
     if(ctxD){if(ctxD._ci)ctxD._ci.destroy();
-      const labels=dlvStats.length?dlvStats.map(d=>d.nombre.split(' ')[0]):['Sin datos'];
+      const labels=dlvStats.length?dlvStats.map(d=>(d.nombre||'?').split(' ')[0]):['Sin datos'];
       const entData=dlvStats.length?dlvStats.map(d=>d.ent):[0];
       const totData=dlvStats.length?dlvStats.map(d=>d.tot):[0];
       ctxD._ci=new Chart(ctxD,{type:'bar',data:{labels,datasets:[
