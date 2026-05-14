@@ -1750,15 +1750,15 @@ function waDespachado(o){
 }
 async function notifEnRutaAdmin(o){
   if(!_supa)return;
-  const {data:admins}=await _supa.from('usuarios').select('username').in('rol',['admin','superadmin']);
-  const destinos=new Set((admins||[]).map(a=>a.username));
+  const {data:admins}=await _supa.from('usuarios').select('id').in('rol',['admin','superadmin']);
+  const destinos=new Set((admins||[]).map(a=>a.id));
   if(o.vendedorId){
     const vend=_usersCache.find(u=>u.id===o.vendedorId);
-    if(vend&&vend.username&&vend.rol!=='delivery')destinos.add(vend.username);
+    if(vend&&vend.rol!=='delivery')destinos.add(vend.id);
   }
-  destinos.delete(CU.username);
-  const msgs=[...destinos].map(para=>({
-    de:CU.username,para,
+  destinos.delete(CU.id);
+  const msgs=[...destinos].map(para_id=>({
+    de_id:CU.id, de_nombre:CU.nombre||CU.username, para_id,
     mensaje:'🛵 EN RUTA: Pedido #'+o.id+' — '+o.cliente+' | Delivery: '+CU.nombre
   }));
   if(msgs.length)await _supa.from('mensajes').insert(msgs);
