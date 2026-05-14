@@ -833,6 +833,7 @@ function pushNotif(msg,type,action){
   _renderNotifList();
 }
 function _updateBell(){
+  if(!window.CU || !window.CU.id) return;
   const c=$('nbCount');if(!c)return;
   if(_notifUnread>0){c.style.display='flex';c.textContent=_notifUnread>99?'99+':_notifUnread;}
   else{c.style.display='none';}
@@ -5304,20 +5305,20 @@ function _boletaHTML(o){
     '</div></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;font-size:11px;border-bottom:1px solid #eee;padding-bottom:10px">'+
     '<div><div style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:2px;font-weight:700">Cliente / Comprador</div>'+
-    '<div style="font-weight:700;font-size:13px">'+o.cliente+'</div>'+
-    (o.razonSocial?'<div>'+o.razonSocial+'</div>':'')+
-    '<div>CI: '+(o.cedula||'—')+(o.ruc?' · RUC: '+o.ruc:'')+'</div><div>'+(o.telefono||'—')+'</div></div>'+
+    '<div style="font-weight:700;font-size:13px">'+escHtml(o.cliente||'')+'</div>'+
+    (o.razonSocial?'<div>'+escHtml(o.razonSocial||'')+'</div>':'')+
+    '<div>CI: '+(escHtml(o.cedula||'')||'—')+(o.ruc?' · RUC: '+escHtml(o.ruc||''):'')+'</div><div>'+(escHtml(o.telefono||'')||'—')+'</div></div>'+
     '<div><div style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:2px;font-weight:700">Entrega</div>'+
     '<div>'+(o.direccion||'—')+'</div><div style="color:#888">'+zona.nombre+' · '+zona.tiempoEntrega+'</div>'+
     '<div style="margin-top:5px"><b>Condición:</b> Contado &nbsp;|&nbsp; <b>IVA:</b> '+(o.tipoIva||'10%')+'</div></div></div>'+
     '<div class="bt-wrap"><table class="bt"><thead><tr><th>Cant.</th><th>Descripción</th><th>Precio unit.</th><th>Total</th></tr></thead><tbody>'+
-    '<tr><td>'+o.qty+'</td><td>'+o.producto+'<br><span style="font-size:10px;color:#888">Prov: '+(o.proveedor||'—')+'</span></td>'+
+    '<tr><td>'+o.qty+'</td><td>'+escHtml(o.producto||'')+'<br><span style="font-size:10px;color:#888">Prov: '+(escHtml(o.proveedor||'')||'—')+'</span></td>'+
     '<td>Gs. '+fmtN(o.precio)+'</td><td>Gs. '+fmtN(o.precio*o.qty)+'</td></tr>'+
     '<tr><td>1</td><td>Flete — Zona '+zona.nombre+'</td><td>Gs. '+fmtN(flete)+'</td><td>Gs. '+fmtN(flete)+'</td></tr>'+
     '</tbody></table></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;margin-top:10px;font-size:11px">'+
-    '<div><div style="color:#888">Vendedor: '+getUser(o.vendedorId).nombre+'</div>'+
-    (o.metodoCobro?'<div style="color:#888">Cobrado: '+MICON[o.metodoCobro]+' '+o.metodoCobro+'</div>':'')+
+    '<div><div style="color:#888">Vendedor: '+escHtml(getUser(o.vendedorId)?.nombre||'')+'</div>'+
+    (o.metodoCobro?'<div style="color:#888">Cobrado: '+MICON[o.metodoCobro]+' '+escHtml(o.metodoCobro||'')+'</div>':'')+
     (o.estado==='Entregado'?'<div style="color:green;font-weight:700;margin-top:5px">✓ ENTREGADO Y COBRADO</div>':'')+'</div>'+
     '<div style="text-align:right">'+
     '<div style="display:flex;justify-content:space-between"><span>Base imponible:</span><span>Gs. '+fmtN(base)+'</span></div>'+
@@ -8052,18 +8053,18 @@ function imprimirTicket(id){
     +'<div class="tkb">'
     +'<div class="tkq"><img src="'+qrUrl+'" style="width:88px;height:88px"><div style="font-size:7px;color:#999;text-align:center;margin-top:2px">'+(o.gpsLat?'GPS Cliente':'N. Pedido')+'</div></div>'
     +'<div class="tki">'
-    +'<div class="lb">Destinatario</div><div class="vl lg">'+(o.cliente||'')+'</div>'
-    +'<div class="lb">Telefono</div><div class="vl" style="color:#3b82f6">'+(o.telefono||'')+'</div>'
-    +'<div class="lb">Direccion</div><div class="vl" style="font-size:10px;font-weight:600">'+(o.direccion||'')+'</div>'
-    +'<div class="lb">Zona</div><div class="vl" style="font-size:10px">'+z.nombre+'</div>'
+    +'<div class="lb">Destinatario</div><div class="vl lg">'+escHtml(o.cliente||'')+'</div>'
+    +'<div class="lb">Telefono</div><div class="vl" style="color:#3b82f6">'+escHtml(o.telefono||'')+'</div>'
+    +'<div class="lb">Direccion</div><div class="vl" style="font-size:10px;font-weight:600">'+escHtml(o.direccion||'')+'</div>'
+    +'<div class="lb">Zona</div><div class="vl" style="font-size:10px">'+escHtml(z.nombre||'')+'</div>'
     +'</div></div>'
     +'<div class="tkp">'
-    +'<div><div class="lb">Producto</div><div class="vl">'+(o.producto||'')+' x'+(o.qty||1)+'</div></div>'
+    +'<div><div class="lb">Producto</div><div class="vl">'+escHtml(o.producto||'')+' x'+(o.qty||1)+'</div></div>'
     +'<div style="text-align:right"><div class="lb">A cobrar</div><div class="vl" style="font-size:16px;color:#16a34a">'+fmt(o.precio*(o.qty||1))+'</div></div>'
     +'</div>'
     +'<div class="tkf">'
-    +'<div><div class="lb">Delivery</div><div class="vl">'+dlv.nombre+'</div></div>'
-    +'<div><div class="lb">Cobro</div><div class="vl">'+(o.metodoCobro||'Efectivo')+'</div></div>'
+    +'<div><div class="lb">Delivery</div><div class="vl">'+escHtml(dlv.nombre||'')+'</div></div>'
+    +'<div><div class="lb">Cobro</div><div class="vl">'+escHtml(o.metodoCobro||'Efectivo')+'</div></div>'
     +'<div><div class="lb">Fecha</div><div class="vl">'+(o.fecha||today())+'</div></div>'
     +'</div>'
     +'<div class="tkft">'+(emp.tel||'')+((emp.tel&&emp.web)?' | ':'')+''+(emp.web||'iporaveparaguay.com')+'</div>'
