@@ -2855,7 +2855,7 @@ const NAV_CFG={
   ],
   dropshipper:[
     {s:'Mi Panel',items:[
-      {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis productos',ic:'pkg'},
+      {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis pedidos',ic:'pkg'},
       {id:'balance',l:'Mis comisiones',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
     ]},
@@ -3774,7 +3774,9 @@ PAGES.dashboard=async function(){
     const ing=ent.reduce((a,b)=>a+b.precio*b.qty,0);
     const cos=ent.reduce((a,b)=>a+b.costo*b.qty,0);
     const tar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
+    const hoyV=mine.filter(o=>{const d=new Date(o.fecha||o.created_at||'');const n=new Date();return d.getDate()===n.getDate()&&d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}).length;
     html+='<div class="sgrid">'+
+      '<div class="sc bl"><div class="slabel">Hoy</div><div class="sval">'+hoyV+'</div></div>'+
       '<div class="sc ac"><div class="slabel">Total pedidos</div><div class="sval">'+mine.length+'</div></div>'+
       '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+(mine.length?Math.round(ent.length/mine.length*100):0)+'% éxito</div></div>'+
       '<div class="sc bl"><div class="slabel">En tránsito</div><div class="sval">'+mine.filter(o=>['Despachado','En ruta'].includes(o.estado)).length+'</div></div>'+
@@ -3822,12 +3824,14 @@ PAGES.dashboard=async function(){
     const act=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
     const comision=ent.reduce((a,b)=>a+(b.comision||0),0);
+    const comisionPendiente=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado)).reduce((a,b)=>a+(b.comision||0),0);
     html+='<div class="sgrid">'+
       '<div class="sc ac"><div class="slabel">Mis pedidos</div><div class="sval">'+mine.length+'</div></div>'+
       '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+(mine.length?Math.round(ent.length/mine.length*100):0)+'% éxito</div></div>'+
       '<div class="sc bl"><div class="slabel">En tránsito</div><div class="sval">'+act.length+'</div></div>'+
       '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+canc.length+'</div></div>'+
       '<div class="sc" style="border:2px solid var(--accent)"><div class="slabel" style="color:var(--accent)">💰 Comisión cobrada</div><div class="sval" style="color:var(--accent);font-size:14px">'+fmt(comision)+'</div></div>'+
+      '<div class="sc" style="border:2px solid #f59e0b"><div class="slabel" style="color:#f59e0b">⏳ Comisión pendiente</div><div class="sval" style="color:#f59e0b;font-size:14px">'+fmt(comisionPendiente)+'</div></div>'+
     '</div>';
   }
   if(CU.rol==='proveedor'){
@@ -8192,6 +8196,7 @@ function _perfilCompleto(u){
   if(!u?.nombre)missing.push('Nombre completo');
   if(!u?.email)missing.push('Email');
   if(!u?.whatsapp&&!u?.telefono2)missing.push('Teléfono o WhatsApp');
+  if(u.rol==='cliente')return true;
   const tieneBanco=u?.banco&&u?.nro_cuenta&&u?.titular_cuenta;
   const tieneWallet=u?.wallet_tipo&&u?.wallet_nro;
   if(!tieneBanco&&!tieneWallet)missing.push('Método de pago (banco o billetera)');
@@ -8287,6 +8292,7 @@ function openPerfilUsuario(){
       '<option value="pasaporte" '+(u.tipo_doc==='pasaporte'?'selected':'')+'>Pasaporte</option>'+
       '</select></div>'+
       '<div class="fg"><label>Número de documento</label><input type="text" id="pfCedula" value="'+escAttr(u.cedula)+'" placeholder="4.123.456"></div></div>'+
+      '<div class="frow" style="margin-top:10px"><div class="fg"><label>Vehículo</label><select id="pfVeh"><option value="moto" '+(u.vehiculo==='moto'?'selected':'')+'>Moto</option><option value="auto" '+(u.vehiculo==='auto'?'selected':'')+'>Auto</option></select></div><div class="fg"><label>Patente</label><input type="text" id="pfPat" value="'+escAttr(u.patente||'')+'"></div></div>'+
       '</div>'
     :
       '<input type="hidden" id="pfTipoDoc" value="'+escAttr(u.tipo_doc)+'"><input type="hidden" id="pfCedula" value="'+escAttr(u.cedula)+'">'
@@ -8413,6 +8419,8 @@ async function guardarPerfilUsuario(){
     wallet_nro:gv('pfWalletNro'),wallet_alias:gv('pfWalletAlias'),logo:CU.logo||'',
     foto_cedula_frente:CU.foto_cedula_frente||'',
     foto_cedula_dorso:CU.foto_cedula_dorso||'',
+    vehiculo:CU.rol==='delivery'?(gv('pfVeh')||CU.vehiculo||''):CU.vehiculo,
+    patente:CU.rol==='delivery'?(gv('pfPat')||CU.patente||''):CU.patente,
     contactos:Array.isArray(CU.contactos)?CU.contactos:[],
   };
   const check={...CU,...data};
