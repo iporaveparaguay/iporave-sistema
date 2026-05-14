@@ -2772,9 +2772,72 @@ async function _doSensitiveAuth() {
   }
 }
 
+/* ── RE-AUTH para gestión de usuarios (SIEMPRE pide password, sin unlock persistente) ── */
+function _requireUserAuth(callback) {
+  const modal = document.createElement('div');
+  modal.id = '_userAuthModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML =
+    '<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px 24px;width:min(360px,90vw);box-shadow:var(--shadow)">' +
+      '<div style="font-size:16px;font-weight:700;margin-bottom:6px">🔒 Gestión de usuarios</div>' +
+      '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">Ingresá tu contraseña para acceder a esta sección.</div>' +
+      '<input id="_userAuthPwd" type="password" placeholder="Contraseña" autocomplete="off"' +
+        ' style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;margin-bottom:12px">' +
+      '<div id="_userAuthErr" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none">Contraseña incorrecta.</div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+        '<button class="btn btn-secondary" onclick="_cancelUserAuth()">Cancelar</button>' +
+        '<button class="btn btn-primary" id="_userAuthBtn" onclick="_doUserAuth()">Verificar</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+  modal.querySelector('#_userAuthPwd').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') _doUserAuth();
+  });
+  setTimeout(function() {
+    var f = modal.querySelector('#_userAuthPwd');
+    if (f) f.focus();
+  }, 50);
+  window._userAuthCallback = callback;
+}
+function _cancelUserAuth() {
+  var m = document.getElementById('_userAuthModal');
+  if (m) m.remove();
+  window._userAuthCallback = null;
+  // Volver al dashboard al cancelar
+  if (typeof go === 'function') { try { go('dashboard'); } catch(e){} }
+}
+async function _doUserAuth() {
+  var pwd = (document.getElementById('_userAuthPwd') || {}).value || '';
+  var btn = document.getElementById('_userAuthBtn');
+  var err = document.getElementById('_userAuthErr');
+  if (!pwd) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+  try {
+    var email = (CU && CU.email) ? CU.email : '';
+    var res = await _supa.auth.signInWithPassword({ email: email, password: pwd });
+    if (res.error) {
+      if (err) { err.style.display = 'block'; err.textContent = 'Contraseña incorrecta.'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Verificar'; }
+      return;
+    }
+    var m = document.getElementById('_userAuthModal');
+    if (m) m.remove();
+    if (window._userAuthCallback) {
+      var cb = window._userAuthCallback;
+      window._userAuthCallback = null;
+      cb();
+    }
+  } catch(e) {
+    if (err) { err.style.display = 'block'; err.textContent = 'Error al verificar. Intentá de nuevo.'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Verificar'; }
+  }
+}
+
 function doLogout(){
   if(_trackRefreshTimer){clearInterval(_trackRefreshTimer);_trackRefreshTimer=null;}
   ['users','usersVer','orders','zonas','cupos','jornadas','catalogo'].forEach(k => localStorage.removeItem('ipv5_' + k));
+  _sensitiveUnlocked=false;
+  if(_sensitiveUnlockTimer){clearTimeout(_sensitiveUnlockTimer);_sensitiveUnlockTimer=null;}
   _clearSensitiveCfg();
   if(_supa)_supa.auth.signOut().catch(()=>{});
   CU=null;
@@ -6782,37 +6845,39 @@ PAGES.analitica_admin=function(){
 
 /* ─── USUARIOS ─── */
 PAGES.usuarios=async function(){
-  await refreshCache();
-  $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNewUser()">+ Nuevo usuario</button>';
-  $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Usuarios ('+_usersCache.length+')</span></div>'+
-  '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
-  '<th class="col-hide">ID</th><th>Nombre</th><th class="th-user">Usuario</th><th>Rol</th>'+
-  '<th class="col-hide">Vehículo</th><th class="col-hide">Patente</th>'+
-  '<th class="col-hide">WhatsApp</th><th class="col-hide">Calificación</th><th>Acciones</th></tr></thead><tbody>'+
-  _usersCache.map(u=>'<tr>'+
-    '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">#'+u.id+'</td>'+
-    '<td style="font-weight:600">'+
-      (u.foto_perfil?'<img src="'+safeUrl(u.foto_perfil)+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:6px;vertical-align:middle">':'')+
-      escHtml(u.nombre||'')+
-      (u.badge_confianza?' <span class="badge-confianza" style="font-size:9px">🛡️</span>':'')+
-      (u.verificado?' <span class="badge-verif" style="font-size:9px">✓</span>':'')+
-    '</td>'+
-    '<td class="td-user" style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--text2)" title="'+escAttr(u.username)+'">'+escHtml(u.username||'')+'</td>'+
-    '<td><span class="badge '+(u.rol==='admin'?'bc':u.rol==='vendedor'?'bdisp':u.rol==='dropshipper'?'bn1':u.rol==='delivery'?'be':u.rol==='proveedor'?'bprov':'br')+'">'+escHtml(capRole(u.rol))+'</span></td>'+
-    '<td class="col-hide" style="font-size:12px">'+escHtml(u.vehiculo||'—')+'</td>'+
-    '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">'+escHtml(u.patente||'—')+'</td>'+
-    '<td class="col-hide" style="font-size:11px;color:var(--cyan)">'+escHtml(u.whatsapp||'—')+'</td>'+
-    '<td class="col-hide" style="font-size:12px">'+
-      (u.calificacion_prom>0?_renderStars(u.calificacion_prom)+' <span style="color:var(--text3);font-size:10px">'+u.calificacion_prom.toFixed(1)+' ('+u.calificaciones_total+')</span>':'<span style="color:var(--text3)">—</span>')+
-    '</td>'+
-    '<td style="white-space:nowrap"><div class="order-menu-wrap">'+
-      '<button class="order-menu-btn" onclick="_toggleUserMenu(event,'+u.id+')" title="Acciones">⋮</button>'+
-      '<div class="order-dropdown" id="udrop-'+u.id+'">'+
-        '<button onclick="_closeUserMenus();editUser('+u.id+')">✏️ Editar</button>'+
-        (u.id!==1?'<div class="od-sep"></div><button onclick="_closeUserMenus();delUser('+u.id+')" style="color:var(--red)">🗑 Eliminar</button>':'')+
-      '</div>'+
-    '</div></td></tr>'
-  ).join('')+'</tbody></table></div></div>';
+  _requireUserAuth(async function(){
+    await refreshCache();
+    $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNewUser()">+ Nuevo usuario</button>';
+    $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Usuarios ('+_usersCache.length+')</span></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+    '<th class="col-hide">ID</th><th>Nombre</th><th class="th-user">Usuario</th><th>Rol</th>'+
+    '<th class="col-hide">Vehículo</th><th class="col-hide">Patente</th>'+
+    '<th class="col-hide">WhatsApp</th><th class="col-hide">Calificación</th><th>Acciones</th></tr></thead><tbody>'+
+    _usersCache.map(u=>'<tr>'+
+      '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">#'+u.id+'</td>'+
+      '<td style="font-weight:600">'+
+        (u.foto_perfil?'<img src="'+safeUrl(u.foto_perfil)+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:6px;vertical-align:middle">':'')+
+        escHtml(u.nombre||'')+
+        (u.badge_confianza?' <span class="badge-confianza" style="font-size:9px">🛡️</span>':'')+
+        (u.verificado?' <span class="badge-verif" style="font-size:9px">✓</span>':'')+
+      '</td>'+
+      '<td class="td-user" style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--text2)" title="'+escAttr(u.username)+'">'+escHtml(u.username||'')+'</td>'+
+      '<td><span class="badge '+(u.rol==='admin'?'bc':u.rol==='vendedor'?'bdisp':u.rol==='dropshipper'?'bn1':u.rol==='delivery'?'be':u.rol==='proveedor'?'bprov':'br')+'">'+escHtml(capRole(u.rol))+'</span></td>'+
+      '<td class="col-hide" style="font-size:12px">'+escHtml(u.vehiculo||'—')+'</td>'+
+      '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">'+escHtml(u.patente||'—')+'</td>'+
+      '<td class="col-hide" style="font-size:11px;color:var(--cyan)">'+escHtml(u.whatsapp||'—')+'</td>'+
+      '<td class="col-hide" style="font-size:12px">'+
+        (u.calificacion_prom>0?_renderStars(u.calificacion_prom)+' <span style="color:var(--text3);font-size:10px">'+u.calificacion_prom.toFixed(1)+' ('+u.calificaciones_total+')</span>':'<span style="color:var(--text3)">—</span>')+
+      '</td>'+
+      '<td style="white-space:nowrap"><div class="order-menu-wrap">'+
+        '<button class="order-menu-btn" onclick="_toggleUserMenu(event,'+u.id+')" title="Acciones">⋮</button>'+
+        '<div class="order-dropdown" id="udrop-'+u.id+'">'+
+          '<button onclick="_closeUserMenus();editUser('+u.id+')">✏️ Editar</button>'+
+          (u.id!==1?'<div class="od-sep"></div><button onclick="_closeUserMenus();delUser('+u.id+')" style="color:var(--red)">🗑 Eliminar</button>':'')+
+        '</div>'+
+      '</div></td></tr>'
+    ).join('')+'</tbody></table></div></div>';
+  });
 };
 function openNewUser(){
   openA('Nuevo usuario',
