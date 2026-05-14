@@ -3180,7 +3180,7 @@ function _notifSessionRender(){
   }
   if(!list)return;
   if(!_notificaciones.length){
-    list.innerHTML='<div style="padding:32px 12px;text-align:center;color:var(--text3);font-size:13px">Sin notificaciones nuevas</div>';
+    list.innerHTML='<div style="padding:36px 16px;text-align:center;color:var(--text3);font-size:13px"><div style="font-size:36px;margin-bottom:10px;opacity:.5">📭</div><div style="font-weight:700;color:var(--text2);margin-bottom:4px">Sin notificaciones</div><div style="font-size:11px">Cuando llegue algo importante aparecerá aquí.</div></div>';
     return;
   }
   list.innerHTML=_notificaciones.slice().reverse().map(n=>{
@@ -5751,7 +5751,7 @@ PAGES.estadisticas=function(){
     if(CU.rol==='vendedor'){PAGES.analitica_vend();return;}
     if(CU.rol==='dropshipper'){PAGES.analitica_drop();return;}
     if(CU.rol==='proveedor'){PAGES.analitica_prov();return;}
-    $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Sin acceso</div>';return;
+    $('ca').innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:42px;margin-bottom:16px;opacity:.55">🔒</div><div style="font-size:16px;font-weight:800;margin-bottom:8px;color:var(--text)">Acceso restringido</div><div style="font-size:13px;color:var(--text3);max-width:320px;margin:0 auto 18px">No tenés permisos para ver esta sección. Contactá a un administrador si pensás que es un error.</div><button class="btn btn-secondary btn-sm" onclick="nav(\'inicio\')">← Volver al inicio</button></div>';return;
   }
   const orders=_ordersCache;
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
@@ -6405,7 +6405,7 @@ PAGES.clientes_recurrentes=function(){
 
 /* ─── ANALÍTICA ECOSISTEMA (admin / superadmin) ─── */
 PAGES.analitica_admin=function(){
-  if(!isAdminLike(CU.rol)){$('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Sin acceso</div>';return;}
+  if(!isAdminLike(CU.rol)){$('ca').innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:42px;margin-bottom:16px;opacity:.55">🔒</div><div style="font-size:16px;font-weight:800;margin-bottom:8px;color:var(--text)">Acceso restringido</div><div style="font-size:13px;color:var(--text3);max-width:320px;margin:0 auto 18px">No tenés permisos para ver esta sección. Contactá a un administrador si pensás que es un error.</div><button class="btn btn-secondary btn-sm" onclick="nav(\'inicio\')">← Volver al inicio</button></div>';return;}
   $('tbActions').innerHTML='';
   const orders=_ordersCache;
   const ent=orders.filter(o=>o.estado==='Entregado');
