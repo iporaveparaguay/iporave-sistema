@@ -4977,10 +4977,10 @@ PAGES.liquidacion=function(){
   btn.textContent='↑';
   btn.setAttribute('aria-label','Subir al inicio');
   btn.setAttribute('style',
-    'position:fixed;bottom:80px;right:16px;z-index:9980;'+
+    'position:fixed;bottom:130px;right:16px;z-index:9980;'+
     'width:40px;height:40px;border-radius:50%;'+
-    'background:var(--accent,#6c63ff);color:#fff;'+
-    'border:none;font-size:18px;font-weight:900;line-height:1;'+
+    'background:var(--bg2,#1e293b);color:var(--text,#e2e8f0);'+
+    'border:1px solid var(--border2,#334155);font-size:18px;font-weight:900;line-height:1;'+
     'cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.30);'+
     'display:none;align-items:center;justify-content:center;'+
     'transition:opacity .2s,transform .2s;opacity:0;transform:translateY(8px);'
@@ -4988,9 +4988,18 @@ PAGES.liquidacion=function(){
   btn.addEventListener('click',function(){
     var ca=document.getElementById('ca');
     var main=document.querySelector('.main')||document.querySelector('main');
-    var target=ca||main||window;
-    if(target===window){window.scrollTo({top:0,behavior:'smooth'});}
-    else{target.scrollTo({top:0,behavior:'smooth'});}
+    /* elegir el contenedor que realmente tiene scroll activo */
+    var target=null;
+    if(ca&&ca.scrollTop>0)target=ca;
+    else if(main&&main.scrollTop>0)target=main;
+    else if(document.documentElement.scrollTop>0)target=document.documentElement;
+    else if(window.pageYOffset>0)target=window;
+    else target=ca||main||window; /* fallback */
+    if(target===window||target===document.documentElement){
+      window.scrollTo({top:0,behavior:'smooth'});
+    }else{
+      target.scrollTo({top:0,behavior:'smooth'});
+    }
   });
   document.body.appendChild(btn);
   function _onScroll(){
