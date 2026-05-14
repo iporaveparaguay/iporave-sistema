@@ -3,4 +3,24 @@ node_modules/
 CLAUDE.md
 CREDENCIALES.txt
 Nuevo documento de texto.txt
+api-keys.json
+*.api-keys.json
+secrets.json
+.dev.vars
+*.pem
+*.key
+*.p12
 *.log
+.agentes/__pycache__/
+.agentes/**/__pycache__/
+.agentes/locks/
+.agentes/logs/
+.agentes/pool_estado.json
+.agentes/alerts.json
+.agentes/PARADA_CRITICA.txt
+.agentes/telegram-memoria.json
+.agentes/telegram-config.json
+.agentes/*.pyc
+.aider.chat.history.md
+.aider.input.history
+.aider*
