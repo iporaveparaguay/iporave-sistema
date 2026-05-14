@@ -329,10 +329,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .offline-badge{background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:var(--accent);font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;display:none;}
 .offline-badge.show{display:inline-flex;align-items:center;gap:4px;}
 /* Ocultar elementos flotantes en pantalla de login */
-#ntBell,#aiBtn,#aiPanel,#notifArea{display:none;}
-#appScreen.show #ntBell{display:flex;}
-#appScreen.show ~ #aiBtn{display:flex;}
-#appScreen.show ~ #notifArea{display:flex;}
+/* Ocultar elementos flotantes en pantalla de login (forzar !important para vencer cache) */
+#ntBell,#aiBtn,#aiPanel,#notifArea{display:none !important;}
+#appScreen.show #ntBell,
+#appScreen.show #aiBtn,
+body:has(#appScreen.show) #notifArea{display:flex !important;}
 /* CATÁLOGO GRID */
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
 .prod-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);overflow:hidden;display:flex;flex-direction:column;transition:border-color .18s,box-shadow .18s;}
