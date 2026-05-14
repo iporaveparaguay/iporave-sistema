@@ -467,9 +467,9 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   #ordersMap{height:calc(100vh - 260px)!important;min-height:280px!important;}
   /* Ocultar columna usuario en mobile */
   .tbl td.td-user,.tbl th.th-user{display:none;}
-  /* Botones acción tabla usuarios — compactos y apilados en mobile */
-  .tbl td.td-actions{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:4px;}
-  .tbl td.td-actions .btn{width:100%;justify-content:center;padding:7px 8px;font-size:11px;margin:0;}
+  /* Botones acción tabla — compactos y táctiles en mobile */
+  .tbl td.td-actions{display:flex;flex-wrap:wrap;gap:4px;padding:6px 4px;}
+  .tbl td.td-actions .btn{flex:0 0 auto;justify-content:center;padding:6px 10px;font-size:11px;margin:0;min-height:36px;min-width:52px;}
   /* Modal — evitar desborde en pantallas angostas */
   .moverlay{padding:10px;}
   .mbox{border-radius:var(--radius);max-width:calc(100vw - 20px)!important;width:100%!important;box-sizing:border-box;max-height:95vh!important;display:flex!important;flex-direction:column!important;}
@@ -521,9 +521,13 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .llogo > span[title="Paraguay"]{right:-8px!important;font-size:15px!important;top:2px!important;}
   /* Padding uniforme en recuadros — igual a Liquidación */
   .lcard2{padding:14px 14px 14px 20px;}
-  /* Topbar mobile: título arriba, acciones abajo */
-  .topbar{flex-wrap:wrap;gap:4px;padding:8px 14px;}
-  .tbar-actions{flex-wrap:wrap;gap:6px;}
+  /* Tablas con borde amarillo (.tc): mismo espacio interno que .lcard2 */
+  .tc{padding-left:8px;}
+  /* Topbar mobile: título arriba en fila propia, ☰ + botones en fila 2 */
+  .topbar{flex-wrap:wrap;gap:0;padding:8px 14px;}
+  .tbtitle{order:-1;flex:0 0 100%;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:0 0 7px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+  #menuBtn{order:0;flex-shrink:0;margin-top:2px;}
+  .tbactions{order:1;flex:1;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-start;margin-top:2px;}
   /* Botón kebab siempre a la derecha */
   .lcard2 .order-menu-wrap{margin-left:auto;flex-shrink:0;}
   /* Botones acción táctiles en mobile */
@@ -5149,10 +5153,10 @@ PAGES.liquidacion=function(){
   btn.setAttribute('aria-label','Subir al inicio');
   btn.setAttribute('style',
     'position:fixed;bottom:130px;right:16px;z-index:9980;'+
-    'width:40px;height:40px;border-radius:50%;'+
-    'background:var(--bg2,#1e293b);color:var(--text,#e2e8f0);'+
-    'border:1px solid var(--border2,#334155);font-size:18px;font-weight:900;line-height:1;'+
-    'cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.30);'+
+    'width:44px;height:44px;border-radius:50%;'+
+    'background:var(--accent,#f5a623);color:#000;'+
+    'border:2px solid rgba(0,0,0,.15);font-size:20px;font-weight:900;line-height:1;'+
+    'cursor:pointer;box-shadow:0 4px 18px rgba(245,166,35,.45);'+
     'display:none;align-items:center;justify-content:center;'+
     'transition:opacity .2s,transform .2s;opacity:0;transform:translateY(8px);'
   );
