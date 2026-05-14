@@ -215,7 +215,7 @@ REGLA CRÍTICA para TODAS las tareas de esta zona:
 - [x] **visual-cards-hover** — transition:box-shadow .2s ease y .lcard2:hover agregados. OK.
 - [x] **visual-btn-primary** — box-shadow:0 4px 14px rgba(245,166,35,.35) agregado a .btn-primary. OK.
 - [x] **visual-scrollbar** — ya existia en L53. OK.
-- [~] **visual-campanita-scroll** — En el bloque style de index.html agregar: #codexNotifBell.scroll-faded{opacity:0.3;} y en el bloque script existente (al final, antes del cierre) agregar listener: window.addEventListener('scroll',function(){var b=document.getElementById('codexNotifBell');if(!b)return;b.classList.toggle('scroll-faded',window.scrollY>80);},{passive:true}); NUNCA escribir sin escapar las etiquetas script.
+- [x] **visual-campanita-scroll** — En el bloque style de index.html agregar: #codexNotifBell.scroll-faded{opacity:0.3;} y en el bloque script existente (al final, antes del cierre) agregar listener: window.addEventListener('scroll',function(){var b=document.getElementById('codexNotifBell');if(!b)return;b.classList.toggle('scroll-faded',window.scrollY>80);},{passive:true}); NUNCA escribir sin escapar las etiquetas script.
 - [x] **visual-order-menu-right** — .lcard2 .order-menu-wrap{margin-left:auto;flex-shrink:0;} aplicado. OK.
 - [x] **visual-mobile-btn-spacing** — .act-btns spacing y .order-menu-btn min-size aplicados en mobile. OK.
 
@@ -235,7 +235,7 @@ REGLA CRÍTICA para TODAS las tareas de esta zona:
 - [x] **worker-geocode** — En geocode.js: agregar validacion de parametros al inicio — si falta lat o lng, retornar json({error:'Parametros requeridos: lat, lng'},400).
 - [x] **worker-order-status-logs** — En order-status.js: agregar campo updated_at con timestamp en cada actualizacion de estado. No cambiar logica principal.
 - [x] **worker-audit-validaciones** — Revisar TODOS los archivos en src/api/: cualquier endpoint que reciba body JSON debe validar campos obligatorios al inicio y retornar json({error:'Campo X requerido'},400) si faltan. No cambiar logica existente, solo agregar validaciones faltantes al inicio de cada handler.
-- [ ] **worker-headers-seguridad** — En src/index.js, verificar que corsHeaders() incluya: X-Content-Type-Options:nosniff, X-Frame-Options:DENY, Referrer-Policy:strict-origin-when-cross-origin. Agregarlos si faltan. No tocar verifyToken ni login.js.
+- [x] **worker-headers-seguridad** — En src/index.js, verificar que corsHeaders() incluya: X-Content-Type-Options:nosniff, X-Frame-Options:DENY, Referrer-Policy:strict-origin-when-cross-origin. Agregarlos si faltan. No tocar verifyToken ni login.js.
 
 #### ZONA PAGINAS PUBLICAS — otras paginas — Gemini
 - [x] **paginas-meta-tags** — En todas las paginas publicas (tracking.html, faq.html, contacto.html): verificar que tengan meta description y og:title correctos.
