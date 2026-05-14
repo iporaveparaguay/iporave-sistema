@@ -2219,7 +2219,8 @@ const AI_TOOL_EXEC={
     if(!['admin','superadmin','vendedor','proveedor','dropshipper'].includes(CU.rol))return'Sin permisos para crear pedidos.';
     const zona=_zonasCache.find(z=>z.id===args.zona_id);
     if(!zona)return'Zona no encontrada. Zonas disponibles: '+_zonasCache.map(z=>`${z.id}:${z.nombre}`).join(', ');
-    const newId=Math.max(..._ordersCache.map(o=>o.id),1000)+1;
+    const _idsAI=_ordersCache.map(o=>parseInt(o.id)||0).filter(n=>n>0);
+    const newId=(_idsAI.length?Math.max(..._idsAI):1000)+1;
     const o={id:newId,fecha:args.fecha||today(),cliente:args.cliente,cedula:args.cedula||'',
       telefono:args.telefono||'',direccion:args.direccion||'',zona:args.zona_id,
       proveedor:args.proveedor,producto:args.producto,qty:args.qty||1,
@@ -3984,6 +3985,30 @@ PAGES.dashboard=async function(){
       '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
       '<div class="sc gr"><div class="slabel">Ganancia neta</div><div class="sval" style="font-size:15px">'+fmt(ing-cos-tar)+'</div></div>'+
       '</div>';
+    // ── Usuarios activos por rol (solo admin/superadmin) ──
+    if(['admin','superadmin'].includes(CU.rol)&&Array.isArray(_usersCache)&&_usersCache.length){
+      const _uRoles=[['vendedor','🧑‍💼','var(--blue)'],['delivery','🛵','var(--accent)'],['proveedor','🏭','var(--cyan)'],['dropshipper','📦','#a78bfa'],['cliente','👤','var(--text2)']];
+      html+='<div style="margin-top:14px"><div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:8px">👥 Usuarios activos por rol</div>'+
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px">';
+      _uRoles.forEach(function(_rc){
+        var _rol=_rc[0],_icon=_rc[1],_color=_rc[2];
+        var _cnt=_usersCache.filter(function(u){return u.rol===_rol&&u.activo!==false;}).length;
+        html+='<div class="sc" style="border-top:2px solid '+_color+';text-align:center;padding:10px 6px">'+
+          '<div style="font-size:18px;margin-bottom:2px">'+_icon+'</div>'+
+          '<div style="font-size:20px;font-weight:900;color:'+_color+'">'+_cnt+'</div>'+
+          '<div style="font-size:10px;text-transform:capitalize;color:var(--text2);margin-top:3px">'+_rol+'s</div>'+
+        '</div>';
+      });
+      html+='</div></div>';
+    }
+    // ── Acciones rápidas (admin/superadmin) ──
+    if(['admin','superadmin'].includes(CU.rol)){
+      html+='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">'+
+        '<button class="btn btn-primary btn-sm" onclick="nav(\'neworder\')">➕ Nuevo pedido</button>'+
+        '<button class="btn btn-secondary btn-sm" onclick="nav(\'usuarios\')">👥 Gestionar usuarios</button>'+
+        '<button class="btn btn-secondary btn-sm" onclick="nav(\'pedidos\')">📋 Todos los pedidos</button>'+
+      '</div>';
+    }
   }
   if(CU.rol==='delivery'){
     const mine=orders.filter(o=>o.deliveryId===CU.id);
@@ -4117,7 +4142,7 @@ PAGES.dashboard=async function(){
         '</div>'+
       '</div>';
   }
-  html+=renderTable(getVisibleOrders().slice(0,8),'Últimos pedidos',false);
+  html+=renderTable(getVisibleOrders().slice(0,10),'Últimos pedidos',false);
   $('ca').innerHTML=html;
   _styleDashboardStats();
   if(['admin','superadmin','vendedor','dropshipper','delivery'].includes(CU.rol))_renderCharts();
@@ -4676,7 +4701,27 @@ function _toggleCatMenu(e,id){
 }
 function renderTable(orders,title,showActs,highlightChanges){
   if(highlightChanges)_prepareOrderStateHighlights(orders);
-  if(!orders.length){if(highlightChanges)_commitOrderStateSnapshot(orders);return '<div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:64px;margin-bottom:16px">📦</div><div style="font-size:16px;font-weight:600;margin-bottom:6px">No hay pedidos</div><div style="font-size:13px;color:var(--text3);margin-bottom:18px">Comenzá creando tu primer pedido</div>'+(typeof PAGES!=="undefined"&&PAGES.neworder?'<button class="btn btn-primary" onclick="nav(\'neworder\')">+ Nuevo pedido</button>':'')+'</div>';}
+  if(!orders.length){
+    if(highlightChanges)_commitOrderStateSnapshot(orders);
+    const _rol=typeof CU!=='undefined'?CU.rol:'';
+    const _emptyMsgs={
+      vendedor:{icon:'📋',titulo:'Todavía no creaste pedidos',sub:'Registrá tu primer pedido para un cliente y empezá a vender.',btn:true},
+      dropshipper:{icon:'🛒',titulo:'Sin pedidos asignados',sub:'Aún no tenés pedidos activos. Cuando se te asigne uno aparecerá aquí.',btn:true},
+      delivery:{icon:'🛵',titulo:'Sin pedidos para entregar',sub:'No hay pedidos asignados a tu cuenta en este momento.',btn:false},
+      cliente:{icon:'🛍️',titulo:'Todavía no hiciste pedidos',sub:'Explorá el catálogo y realizá tu primer compra.',btn:false},
+      proveedor:{icon:'📦',titulo:'Sin pedidos registrados',sub:'No hay pedidos vinculados a tu cuenta de proveedor todavía.',btn:false},
+      admin:{icon:'📊',titulo:'Sin pedidos en el sistema',sub:'Aún no hay pedidos registrados. Podés crear el primero o importar desde CSV.',btn:true},
+      superadmin:{icon:'📊',titulo:'Sin pedidos en el sistema',sub:'Aún no hay pedidos registrados. Podés crear el primero o importar desde CSV.',btn:true},
+    };
+    const _em=_emptyMsgs[_rol]||{icon:'📦',titulo:'No hay pedidos',sub:'Comenzá creando tu primer pedido.',btn:true};
+    const _canCreate=['admin','superadmin','vendedor','proveedor','dropshipper'].includes(_rol);
+    return '<div style="text-align:center;padding:60px 20px;color:var(--text2)">'+
+      '<div style="font-size:64px;margin-bottom:16px">'+_em.icon+'</div>'+
+      '<div style="font-size:16px;font-weight:600;margin-bottom:6px">'+_em.titulo+'</div>'+
+      '<div style="font-size:13px;color:var(--text3);margin-bottom:18px;max-width:320px;margin-left:auto;margin-right:auto">'+_em.sub+'</div>'+
+      (_em.btn&&_canCreate?'<button class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
+      '</div>';
+  }
   const canEdit=['admin','superadmin','vendedor'].includes(CU.rol);
   const isDel=CU.rol==='delivery';
   const html='<div class="tc"><div class="th2"><span class="tt">'+escHtml(title||'')+'</span></div>'+
@@ -5497,7 +5542,8 @@ async function saveNewOrder(){
   if(esManual&&!zonaCustomNombre)faltantes.push('Nombre de zona (manual)');
   if(faltantes.length){showAlert('noAlert','e','⚠️ Campos obligatorios faltantes: '+faltantes.join(', '));return;}
   const orders=_ordersCache;
-  const newId=Math.max(...orders.map(o=>o.id),1000)+1;
+  const _ids=orders.map(o=>parseInt(o.id)||0).filter(n=>n>0);
+  const newId=(_ids.length?Math.max(..._ids):1000)+1;
   let gpsLat=_validGps(gv('nGpsLat'),gv('nGpsLng'))?gv('nGpsLat'):null,gpsLng=_validGps(gv('nGpsLat'),gv('nGpsLng'))?gv('nGpsLng'):null;
   if(!gpsLat||!gpsLng){
     const searchQ=(gv('nSitio')||gv('nDir')||'').trim();
@@ -5507,17 +5553,20 @@ async function saveNewOrder(){
     }
   }
   const vendedorIdSel=parseInt(gv('nVendedorId'))||CU.id;
+  // Si el creador es dropshipper, asignar automáticamente como drop del pedido
+  const dropIdSel=CU.rol==='dropshipper'?CU.id:(parseInt(gv('nDrop'))||null);
+  const estadoInicial=CU.rol==='dropshipper'?'Confirmado':'Pendiente';
   const o={
     id:newId,fecha:gv('nFecha')||today(),cliente:cli,cedula:gv('nCed'),
     telefono:gv('nTel'),direccion:gv('nDir'),zona,zonaCustomNombre,zonaCustomPrecio,
     proveedor:prov,producto:prod,
-    qty:parseInt(gv('nQty'))||1,precio,costo,estado:'Pendiente',
+    qty:parseInt(gv('nQty'))||1,precio,costo,estado:estadoInicial,
     vendedorId:vendedorIdSel,created_by:CU.id,
-    dropId:parseInt(gv('nDrop'))||null,deliveryId:parseInt(gv('nDlv'))||null,
+    dropId:dropIdSel,deliveryId:parseInt(gv('nDlv'))||null,
     metodoCobro:null,fotoEntrega:false,gpsLat,gpsLng,sitio:gv('nSitio')||null,notas:gv('nNotas'),
     boletaNum:'B-'+String(newId).padStart(4,'0'),numDoc:nextDocNum(),
     razonSocial:gv('nRazon'),ruc:gv('nRuc'),tipoIva:gv('nIva')||'10%',
-    historial:[{estado:'Pendiente',usuario:CU.nombre,fecha:nowStr(),obs:'Pedido creado'}],
+    historial:[{estado:estadoInicial,usuario:CU.nombre,fecha:nowStr(),obs:'Pedido creado'}],
   };
   await DL.saveOrder(o);
   await refreshCache();
