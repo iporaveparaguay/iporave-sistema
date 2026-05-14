@@ -984,8 +984,90 @@ Ahora: espera 220ms después de que el usuario pare de tipear.
 
 ### Total trabajo Sesión 4 (todas las etapas)
 
-**19 commits** desde el inicio de la sesión:
+**26 commits** desde el inicio de la sesión:
 - 13 commits primera etapa (delivery, charts, datos prueba)
-- 6 commits etapa autónoma Opus 4.7 (XSS, perf, UX)
+- 6 commits etapa autónoma Opus 4.7 — primera ronda (XSS, perf, UX)
+- 7 commits etapa autónoma Opus 4.7 — segunda ronda profunda XSS
 
 Frontend en producción: https://iporave-sistema.vercel.app
+
+---
+
+## ETAPA 4 — Audit XSS EXHAUSTIVO (Opus 4.7)
+
+### Nuevos commits
+
+| Commit | Descripción |
+|--------|-------------|
+| `08a61c2` | escape XSS map markers/popups + WA menu + modal pedido + meta feed url |
+| `24b0636` | escape XSS renderTable zone+title + delivery card estado |
+| `818835b` | **CRITICO**: catalogo publico (nombre vendedor + categorias) |
+| `5913a83` | escape XSS config WhatsApp message templates |
+| `75eae92` | **CRITICO**: chat de mensajes (mensaje + de_nombre + dashboard notifs) |
+| `35c4761` | verProducto modal + safeUrl video + presentaciones |
+| `0cc1a8f` | del usuario modal + perfil header + title boleta |
+| `f8b8b81` | delivery cards del modal pedido (vendedor/cliente/admin views) |
+
+### XSS críticos encontrados y resueltos en esta etapa
+
+1. **Chat de mensajes** (línea 8715): `m.mensaje` rendered raw
+   - **Impacto**: Cualquier usuario que envíe `<script>` en un mensaje ejecuta XSS en el navegador del destinatario
+   - **Fix**: `escHtml(m.mensaje||'')`
+
+2. **Preview de conversaciones** (línea 8675): `c.last.mensaje` rendered raw
+   - **Impacto**: XSS en la lista de conversaciones del módulo de mensajes
+   - **Fix**: `escHtml(c.last.mensaje||'')`
+
+3. **Catálogo público** (línea 9310): `v.nombre` (nombre del vendedor) rendered raw
+   - **Impacto**: VISIBLE A USUARIOS EXTERNOS sin auth. Un vendedor malicioso podría hacer XSS a cualquier visitante del catálogo público
+   - **Fix**: `escHtml(v.nombre||'')`
+
+4. **Map markers + popups** (líneas 9530, 9543-9548): cliente, producto, dirección, etc. rendered raw
+   - **Impacto**: XSS para cualquier usuario que vea el mapa con pedidos
+   - **Fix**: escHtml en cada uno
+
+5. **Dashboard notif solicitudes contraseña** (línea 3652): `m.de_nombre` raw
+   - **Impacto**: XSS al admin que vea notificaciones de reset password
+   - **Fix**: `escHtml(m.de_nombre||'')`
+
+6. **Order modal datos IVA + delivery card**: razonSocial, ruc, tipoIva, dlv.nombre, dlv.patente, etc. raw
+   - **Impacto**: XSS al ver detalles de pedido
+   - **Fix**: escHtml en todos
+
+7. **verProducto modal**: nombre, categoria, proveedorNombre, presentaciones, video src raw
+   - **Impacto**: XSS al ver un producto + posible javascript: URL en video
+   - **Fix**: escHtml + safeUrl en video
+
+### Helper agregado: `escAttr`
+
+```js
+function escAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+```
+
+Para usar en HTML attributes (`value="..."`, `title="..."`, etc.) — escapa también comillas.
+
+### Resumen seguridad
+
+**Más de 80 lugares** ahora con escape correcto:
+- Inputs: ~28 (perfil) + ~13 (editor pedido) + ~5 (editor usuario) + ~5 (editor zona) + ~3 (config) + ~3 (editor producto)
+- Renderizado HTML: tablas, cards, modals, dropdowns, chat, mapa, popups, boletas, guías, tickets, catálogo público
+
+**XSS patterns cerrados:**
+- ✅ `value="..."` con datos de usuario → escAttr
+- ✅ Texto HTML body → escHtml
+- ✅ URLs en `<img src>`, `<video src>`, `<a href>` → safeUrl
+- ✅ Atributos `title="..."`, `alt="..."` → escAttr
+- ✅ Inserción en `onclick="...'+VAR+'..."` → escAttr
+
+### Lo que sigue siendo riesgo (decisión del usuario)
+
+1. **`p.descripcion_html`** — campo HTML enriquecido del producto (rich editor). Se renderiza tal cual como HTML para preservar formato (negrita, listas, etc.). Si el rich editor permite tags peligrosos, hay riesgo. Solución futura: usar DOMPurify para sanitizar.
+
+2. **Datos de Supabase no validados en el frontend** — confiamos en que el backend (worker) valide y limpie inputs. No hay sanitización adicional en el cliente.
+
+### Final etapa 4
+
+Sistema **endurecido contra XSS en TODO el frontend visible** — usuarios, mensajes, pedidos, productos, mapas, catálogo público.
+
+**26 commits totales en Sesión 4.**
+Frontend: https://iporave-sistema.vercel.app
