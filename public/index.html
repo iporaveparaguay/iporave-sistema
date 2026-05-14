@@ -5298,14 +5298,16 @@ function openNewOrder(){
         '<option value="manual">✏️ Otra ubicación (ingresar manualmente)...</option>'+
       '</select>'+
     '</div>'+
-    '<div class="zgrid" id="zG">'+_zonasCache.map(z=>
-      '<div class="zcard" data-zona-id="'+z.id+'" onclick="selZona('+z.id+',this)">'+
-        '<div class="znm">'+escHtml(z.nombre||'')+'</div>'+
-        '<div class="zpr">'+fmt(z.precio)+'</div>'+
-        '<div class="zdsc">'+escHtml(z.desc||'')+'</div>'+
-        '<div style="margin-top:3px;font-size:10px;color:var(--cyan)">⏱ '+escHtml(z.tiempoEntrega||'')+(z.extraDelivery>0?' · +'+fmtN(z.extraDelivery)+' delivery':'')+'</div>'+
-      '</div>'
-    ).join('')+'</div>'+
+    '<div class="zgrid" id="zG">'+(_zonasCache.length===0
+      ?'<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:13px">No hay zonas configuradas. El admin debe crear zonas en <strong>Zonas de entrega</strong>, o ingresá la ubicación manualmente.</div>'
+      :_zonasCache.map(z=>
+        '<div class="zcard" data-zona-id="'+z.id+'" onclick="selZona('+z.id+',this)">'+
+          '<div class="znm">'+escHtml(z.nombre||'')+'</div>'+
+          '<div class="zpr">'+fmt(z.precio)+'</div>'+
+          '<div class="zdsc">'+escHtml(z.desc||'')+'</div>'+
+          '<div style="margin-top:3px;font-size:10px;color:var(--cyan)">⏱ '+escHtml(z.tiempoEntrega||'')+(z.extraDelivery>0?' · +'+fmtN(z.extraDelivery)+' delivery':'')+'</div>'+
+        '</div>'
+      ).join(''))+'</div>'+
     '<input type="hidden" id="nZona">'+
     '<div id="zonaManualDiv" style="display:none;padding:10px;background:var(--bg3);border-radius:8px;border:1px dashed var(--accent);margin-bottom:8px">'+
       '<div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">✏️ Zona personalizada</div>'+
@@ -5938,43 +5940,62 @@ PAGES.recaudacion=function(){
 
 /* ─── CUPO ─── */
 PAGES.cupo=function(){
-  const cfg=getCfg();
-  const u=getUser(CU.id);
-  const max=u.vehiculo==='auto'?cfg.cupoAuto:cfg.cupoMoto;
-  const cupos=DL._lg('cupos')||[];
-  const found=cupos.find(c=>c.did===CU.id&&c.fecha===today());
-  const used=found?found.used:0;
-  const disp=max-used;
-  const pct=Math.round(used/max*100);
-  const fc=pct<60?'plow':pct<85?'pmid':'phigh';
-  const mes=mesActual();
-  const monAcu=cupos.filter(c=>c.did===CU.id&&c.fecha.startsWith(mes)).reduce((a,b)=>a+b.used,0);
-  const diasMes=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
-  const metaMes=max*diasMes;
-  const pctMes=Math.round(monAcu/metaMes*100);
-  const fcM=pctMes<60?'plow':pctMes<85?'pmid':'phigh';
-  const hoyO=_ordersCache.filter(o=>o.deliveryId===CU.id&&o.fecha===today());
-  $('ca').innerHTML=
-    '<div class="sgrid">'+
-      '<div class="sc bl"><div class="slabel">Cupo hoy</div><div class="sval">'+max+'</div><div class="ssub">'+(u.vehiculo||'moto')+'</div></div>'+
-      '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+used+'</div></div>'+
-      '<div class="sc '+(disp>0?'ac':'re')+'"><div class="slabel">Disponibles</div><div class="sval">'+disp+'</div></div>'+
-      '<div class="sc cy"><div class="slabel">Entregas mes</div><div class="sval">'+monAcu+'</div><div class="ssub">Meta: '+metaMes+'</div></div>'+
-    '</div>'+
-    '<div class="lcard2"><div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-weight:700">Progreso cupo hoy</span><span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent)">'+pct+'%</span></div>'+
-    '<div class="progbar"><div class="progfill '+fc+'" style="width:'+Math.min(pct,100)+'%"></div></div>'+
-    '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:5px"><span>'+used+' entregados</span><span>'+(used>=max?'🏆 ¡Cupo completado — generás premios extra!':disp+' restantes')+'</span></div></div>'+
-    '<div class="lcard2"><div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-weight:700">Progreso mensual</span><span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent)">'+monAcu+'/'+metaMes+'</span></div>'+
-    '<div class="progbar"><div class="progfill '+fcM+'" style="width:'+Math.min(pctMes,100)+'%"></div></div></div>'+
-    '<div class="stitle">Estructura de ingresos</div>'+
-    '<div class="lcard2">'+
-      '<div class="lrow"><span class="llbl">Sueldo fijo diario</span><span style="color:var(--green)">'+fmt(cfg.sueldoFijo)+'</span></div>'+
-      '<div class="lrow"><span class="llbl">Sueldo fijo mensual</span><span style="color:var(--green)">'+fmt(cfg.sueldoFijo*diasMes)+'</span></div>'+
-      '<div class="lrow"><span class="llbl">Premio mes completo</span><span style="color:var(--green)">'+fmt(cfg.premioMes)+'</span></div>'+
-      '<div class="lrow"><span class="llbl">Premio 1–2 extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra12)+'</span></div>'+
-      '<div class="lrow"><span class="llbl">Premio 3+ extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra3)+'</span></div>'+
-    '</div>'+
-    renderTable(hoyO,'Pedidos de hoy',true);
+  // Mostrar skeleton mientras cargan los datos async
+  $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">Cargando cupo...</div>';
+  (async()=>{
+    const cfg=getCfg();
+    const u=getUser(CU.id);
+    // Usar getCupoData para soportar Supabase y localStorage correctamente
+    let cupoData;
+    try{cupoData=await DL.getCupoData(CU.id);}catch(e){cupoData={max:u.vehiculo==='auto'?cfg.cupoAuto:cfg.cupoMoto,used:0};}
+    const max=cupoData.max||0;
+    const used=cupoData.used||0;
+    // Empty state: delivery sin cupo configurado
+    if(!max){
+      $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">'+
+        '<div style="font-size:32px;margin-bottom:12px">📋</div>'+
+        '<div style="font-weight:700;margin-bottom:8px">Sin cupo asignado</div>'+
+        '<div style="font-size:13px">No tenés un cupo configurado para hoy.<br>'+
+        'Pedile al administrador que configure tu vehículo y los cupos diarios en Ajustes del sistema.</div>'+
+        '</div>';
+      return;
+    }
+    const disp=max-used;
+    const pct=Math.round(used/max*100);
+    const fc=pct<60?'plow':pct<85?'pmid':'phigh';
+    const mes=mesActual();
+    let monAcu=0;
+    try{monAcu=await DL.getMonthlyCupo(CU.id);}catch(e){
+      const cuposLocal=DL._lg('cupos')||[];
+      monAcu=cuposLocal.filter(c=>c.did===CU.id&&c.fecha.startsWith(mes)).reduce((a,b)=>a+b.used,0);
+    }
+    const diasMes=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
+    const metaMes=max*diasMes;
+    const pctMes=metaMes>0?Math.round(monAcu/metaMes*100):0;
+    const fcM=pctMes<60?'plow':pctMes<85?'pmid':'phigh';
+    const hoyO=_ordersCache.filter(o=>o.deliveryId===CU.id&&o.fecha===today());
+    $('ca').innerHTML=
+      '<div class="sgrid">'+
+        '<div class="sc bl"><div class="slabel">Cupo hoy</div><div class="sval">'+max+'</div><div class="ssub">'+(u.vehiculo||'moto')+'</div></div>'+
+        '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+used+'</div></div>'+
+        '<div class="sc '+(disp>0?'ac':'re')+'"><div class="slabel">Disponibles</div><div class="sval">'+disp+'</div></div>'+
+        '<div class="sc cy"><div class="slabel">Entregas mes</div><div class="sval">'+monAcu+'</div><div class="ssub">Meta: '+metaMes+'</div></div>'+
+      '</div>'+
+      '<div class="lcard2"><div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-weight:700">Progreso cupo hoy</span><span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent)">'+pct+'%</span></div>'+
+      '<div class="progbar"><div class="progfill '+fc+'" style="width:'+Math.min(pct,100)+'%"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:5px"><span>'+used+' entregados</span><span>'+(used>=max?'🏆 ¡Cupo completado — generás premios extra!':disp+' restantes')+'</span></div></div>'+
+      '<div class="lcard2"><div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-weight:700">Progreso mensual</span><span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent)">'+monAcu+'/'+metaMes+'</span></div>'+
+      '<div class="progbar"><div class="progfill '+fcM+'" style="width:'+Math.min(pctMes,100)+'%"></div></div></div>'+
+      '<div class="stitle">Estructura de ingresos</div>'+
+      '<div class="lcard2">'+
+        '<div class="lrow"><span class="llbl">Sueldo fijo diario</span><span style="color:var(--green)">'+fmt(cfg.sueldoFijo)+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Sueldo fijo mensual</span><span style="color:var(--green)">'+fmt(cfg.sueldoFijo*diasMes)+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Premio mes completo</span><span style="color:var(--green)">'+fmt(cfg.premioMes)+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Premio 1–2 extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra12)+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Premio 3+ extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra3)+'</span></div>'+
+      '</div>'+
+      renderTable(hoyO,'Pedidos de hoy',true);
+  })();
 };
 
 /* ─── BOLETAS ─── */
@@ -7202,7 +7223,12 @@ PAGES.suministros=function(){
   $('tbActions').innerHTML='';
   const mine=_ordersCache.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
   if(!mine.length){
-    $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">No hay órdenes asignadas a tu nombre de proveedor.<br><span style="font-size:12px;margin-top:8px;display:block">El vendedor debe ingresar tu nombre en el campo "Proveedor" al crear el pedido.</span></div>';
+    $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">'+
+      '<div style="font-size:32px;margin-bottom:12px">📦</div>'+
+      '<div style="font-weight:700;margin-bottom:8px">Sin suministros asignados</div>'+
+      '<div style="font-size:13px;line-height:1.6">No hay órdenes asignadas a tu cuenta.<br>'+
+      'El vendedor debe ingresar exactamente <strong style="color:var(--accent)">'+escHtml(CU.nombre||'tu nombre')+'</strong> en el campo "Proveedor" al crear el pedido.</div>'+
+      '</div>';
     return;
   }
   $('ca').innerHTML=renderTable(mine,'Mis suministros ('+mine.length+')',false);
