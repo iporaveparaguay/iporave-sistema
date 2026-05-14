@@ -339,96 +339,149 @@ def crear_productos_supabase(token, anon_key, owner_user_id):
 # Número de contacto para pruebas (real, del dueño del sistema)
 TEL_PRUEBA = "982547222"  # +595 982 547 222 → sin prefijo +595 (el sistema lo agrega)
 
+PROV_NOMBRE = "Distribuidora Central"  # coincide con usuario proveedor1@iporave.test
+
 PEDIDOS_PRUEBA = [
-    # ── Pedidos base ──────────────────────────────────────────────────
+    # ── 1. PENDIENTE — base, normal ───────────────────────────────────
     {
         "cliente":   "María García",
         "telefono":  TEL_PRUEBA,
         "direccion": "Avda. España 1234, Villa Morra, Asunción",
         "notas":     "Tocar timbre. Edificio Olimpia, 3er piso.",
         "producto":  "Yerba Mate 1kg",
+        "proveedor": PROV_NOMBRE,
         "qty":       2,
         "precio":    15000,
-        "estado":    "pendiente",
+        "costo":     9000,   # costo proveedor (60%)
+        "estado":    "Pendiente",
         "prioridad": False,
     },
+    # ── 2. DESPACHADO — en camino ─────────────────────────────────────
     {
         "cliente":   "Juan López",
         "telefono":  TEL_PRUEBA,
         "direccion": "Calle Palma 567, Centro, Asunción",
         "notas":     "Casa color verde. Frente a la panadería.",
         "producto":  "Aceite Cañuelas 900ml",
+        "proveedor": PROV_NOMBRE,
         "qty":       3,
         "precio":    8500,
-        "estado":    "En camino",
+        "costo":     5500,
+        "estado":    "Despachado",
         "prioridad": False,
     },
+    # ── 3. ENTREGADO — métricas ganancia ──────────────────────────────
     {
         "cliente":   "Ana Rodríguez",
         "telefono":  TEL_PRUEBA,
         "direccion": "Calle Brasil 890, San Lorenzo, Paraguay",
         "notas":     "Entregar a vecina si no hay nadie.",
         "producto":  "Azúcar 1kg",
+        "proveedor": PROV_NOMBRE,
         "qty":       5,
         "precio":    4500,
+        "costo":     2800,
         "estado":    "Entregado",
         "prioridad": False,
     },
-    # ── Pedidos extendidos — distintos formatos de dirección ──────────
+    # ── 4. PENDIENTE PRIORIDAD — pin rojo animado en mapa ─────────────
     {
         "cliente":   "Carlos Benítez",
         "telefono":  TEL_PRUEBA,
         "direccion": "Mercado 4, Asunción, Paraguay",
-        "notas":     "Cliente en puesto 42, sector frutas.",
+        "notas":     "Cliente en puesto 42, sector frutas. ¡URGENTE!",
         "producto":  "Fideos Tallarin 500g",
+        "proveedor": PROV_NOMBRE,
         "qty":       10,
         "precio":    3200,
-        "estado":    "pendiente",
-        "prioridad": True,   # ⚡ prioridad para probar animación del pin
+        "costo":     2000,
+        "estado":    "Pendiente",
+        "prioridad": True,   # ⚡ para probar pin rojo animado
     },
+    # ── 5. DESPACHADO — GPS exacto ────────────────────────────────────
     {
         "cliente":   "Laura Gómez",
         "telefono":  TEL_PRUEBA,
-        "direccion": "-25.2867, -57.6470",   # coordenadas GPS exactas (Asunción centro)
+        "direccion": "-25.2867, -57.6470",
         "notas":     "GPS confirmado. Depto 4B, intercomunicador 42.",
         "producto":  "Leche Entera 1L",
+        "proveedor": PROV_NOMBRE,
         "qty":       4,
         "precio":    5800,
+        "costo":     3600,
+        "comision":  2320,   # 10% × precio × qty (dropshipper)
         "estado":    "Despachado",
         "prioridad": False,
     },
+    # ── 6. EN RUTA ────────────────────────────────────────────────────
     {
         "cliente":   "Miguel Torres",
         "telefono":  TEL_PRUEBA,
         "direccion": "Av. Mcal. López 1234, Barrio Manorá, Asunción",
         "notas":     "Llamar 10 min antes de llegar.",
         "producto":  "Arroz Largo Fino 1kg",
+        "proveedor": PROV_NOMBRE,
         "qty":       2,
         "precio":    6500,
-        "estado":    "pendiente",
+        "costo":     4200,
+        "estado":    "En Ruta",
         "prioridad": False,
     },
+    # ── 7. CANCELADO ─────────────────────────────────────────────────
     {
         "cliente":   "Rosa Ferreira",
         "telefono":  TEL_PRUEBA,
         "direccion": "Av. Artigas 3650, Barrio Herrera, Asunción",
-        "notas":     "Portón azul. Buscar a Doña Rosa.",
+        "notas":     "Portón azul. No atendió 3 llamadas.",
         "producto":  "Yerba Mate 1kg",
+        "proveedor": PROV_NOMBRE,
         "qty":       1,
         "precio":    15000,
+        "costo":     9000,
         "estado":    "Cancelado",
         "prioridad": False,
     },
-    # ── Pedido extra — para probar mapa con estado En Ruta ────────────
+    # ── 8. ENTREGADO — para métricas delivery ─────────────────────────
     {
         "cliente":   "Pedro Villalba",
         "telefono":  TEL_PRUEBA,
         "direccion": "Av. Eusebio Ayala 4521, Asunción",
         "notas":     "Segundo piso, oficina 8. Horario: 8am-6pm.",
         "producto":  "Aceite Cañuelas 900ml",
+        "proveedor": PROV_NOMBRE,
         "qty":       6,
         "precio":    8500,
-        "estado":    "En Ruta",
+        "costo":     5500,
+        "estado":    "Entregado",
+        "prioridad": False,
+    },
+    # ── 9. ENTREGADO — múltiples para estadísticas ────────────────────
+    {
+        "cliente":   "Sofía Martínez",
+        "telefono":  TEL_PRUEBA,
+        "direccion": "Av. Boggiani 2345, Asunción",
+        "notas":     "Recepcionista toma el pedido.",
+        "producto":  "Azúcar 1kg",
+        "proveedor": PROV_NOMBRE,
+        "qty":       8,
+        "precio":    4500,
+        "costo":     2800,
+        "comision":  3600,   # para dropshipper
+        "estado":    "Entregado",
+        "prioridad": False,
+    },
+    # ── 10. REPROGRAMADO ──────────────────────────────────────────────
+    {
+        "cliente":   "Diego Acosta",
+        "telefono":  TEL_PRUEBA,
+        "direccion": "Calle Quesada 890, Fernando de la Mora",
+        "notas":     "Ausente hoy. Reprogramado para mañana 9am.",
+        "producto":  "Leche Entera 1L",
+        "proveedor": PROV_NOMBRE,
+        "qty":       3,
+        "precio":    5800,
+        "costo":     3600,
+        "estado":    "Reprogramado",
         "prioridad": False,
     },
 ]
@@ -468,11 +521,14 @@ def crear_pedidos(token, anon_key, vendedor_id):
 
     creados = 0
     for i, p in enumerate(PEDIDOS_PRUEBA):
-        telefono = p.get("telefono", "")
-        notas    = p.get("notas", f"Pedido de prueba — {p['producto']}")
-        qty      = p.get("qty", 1)
-        precio   = p.get("precio", 0)
-        prioridad= p.get("prioridad", False)
+        telefono  = p.get("telefono", "")
+        notas     = p.get("notas", f"Pedido de prueba — {p['producto']}")
+        qty       = p.get("qty", 1)
+        precio    = p.get("precio", 0)
+        costo     = p.get("costo", 0)
+        comision  = p.get("comision", 0)
+        prioridad = p.get("prioridad", False)
+        proveedor = p.get("proveedor", "")
 
         body_worker = {
             "cliente":   p["cliente"],
@@ -482,9 +538,15 @@ def crear_pedidos(token, anon_key, vendedor_id):
             "estado":    p["estado"],
             "qty":       qty,
             "precio":    precio,
+            "costo":     costo,
             "notas":     notas,
             "prioridad": prioridad,
         }
+        if proveedor:
+            body_worker["proveedor"] = proveedor
+        if comision:
+            body_worker["comision"] = comision
+
         body_supa = {
             "cliente":    p["cliente"],
             "telefono":   telefono,
@@ -494,8 +556,13 @@ def crear_pedidos(token, anon_key, vendedor_id):
             "vendedor_id": vendedor_id,
             "qty":        qty,
             "precio":     precio,
+            "costo":      costo,
             "prioridad":  prioridad,
         }
+        if proveedor:
+            body_supa["proveedor"] = proveedor
+        if comision:
+            body_supa["comision"] = comision
         if anon_key:
             body_supa["id"] = max_id + i + 1
 
