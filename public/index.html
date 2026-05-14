@@ -330,11 +330,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .offline-badge.show{display:inline-flex;align-items:center;gap:4px;}
 /* Ocultar elementos flotantes en pantalla de login */
 /* Ocultar elementos flotantes en pantalla de login (forzar !important para vencer cache) */
-#ntBell,#aiBtn,#aiPanel,#notifArea,#codexNotifBell{display:none !important;}
+#ntBell,#aiBtn,#aiPanel,#notifArea,#codexNotifBell,#bgWrap{display:none !important;}
 #appScreen.show #ntBell,
 #appScreen.show #aiBtn,
 body:has(#appScreen.show) #notifArea,
 body:has(#appScreen.show) #codexNotifBell{display:flex !important;}
+body:has(#appScreen.show) #bgWrap{display:inline-block !important;}
 /* CATÁLOGO GRID */
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
 .prod-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);overflow:hidden;display:flex;flex-direction:column;transition:border-color .18s,box-shadow .18s;}
@@ -610,7 +611,7 @@ body:has(#appScreen.show) #codexNotifBell{display:flex !important;}
     </div>
   </nav>
   <!-- AI CHAT — solo visible después del login -->
-  <div id="aiBtn" onclick="toggleAI()" onpointerdown="startAIDrag(event)" title="Asistente IA" style="display:none">🤖</div>
+  <div id="aiBtn" onpointerdown="startAIDrag(event)" title="Asistente IA" style="display:none">🤖</div>
   <div id="aiPanel">
     <div class="ai-head">
       <div class="ai-head-title">
@@ -1855,13 +1856,18 @@ window.addEventListener('pointermove',function(e){
 window.addEventListener('pointerup',function(e){
   if(!_aiDragState)return;
   const btn=$('aiBtn');
+  const wasMoved=_aiDragState.moved;
   if(btn){
     btn.classList.remove('dragging');
     try{btn.releasePointerCapture(_aiDragState.id);}catch(_){}
   }
-  if(_aiDragState.moved){
+  if(wasMoved){
     _aiDragSuppressClick=true;
     setTimeout(()=>{_aiDragSuppressClick=false;},220);
+  }else{
+    // fue click (sin movimiento): abrir/cerrar panel directamente
+    // el setPointerCapture puede bloquar el evento onclick, así que lo llamamos aquí
+    setTimeout(()=>toggleAI(),0);
   }
   _aiDragState=null;
 });
