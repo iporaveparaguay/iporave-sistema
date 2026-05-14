@@ -1129,8 +1129,7 @@ const DL = {
 
   // USERS
   _filterDemo(list){
-    const DEMO=['vendedor','dropshipper','delivery','proveedor'];
-    return(list||[]).filter(u=>!DEMO.includes((u.username||'').toLowerCase()));
+    return(list||[]); // filtro demo eliminado — usernames reales pueden coincidir con roles
   },
   async getUsers(){
     // Siempre limpiar demo del localStorage primero
