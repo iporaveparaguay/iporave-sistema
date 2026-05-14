@@ -811,7 +811,7 @@ function pushNotif(msg,type,action){
     const d=document.createElement('div');
     d.className='notif notif-'+(type||'i');
     d.innerHTML=msg;
-    if(action){d.style.cursor='pointer';d.onclick=()=>{if(d.parentNode)d.parentNode.removeChild(d);toggleNotifPanel();eval(action);};}
+    if(action){d.style.cursor='pointer';d.onclick=()=>{if(d.parentNode)d.parentNode.removeChild(d);toggleNotifPanel();ejecutarAccionNotif(action);};}
     area.appendChild(d);
     setTimeout(()=>{if(d.parentNode)d.parentNode.removeChild(d);},5000);
   }
@@ -838,7 +838,7 @@ function _renderNotifList(){
     '<div class="ntp-dot" style="background:'+n.color+'"></div>'+
     '<div style="flex:1;min-width:0">'+
       '<div style="color:var(--text);line-height:1.4">'+n.msg+'</div>'+
-      '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+n.time+(n.action?' — <span style="color:var(--accent)">Tocá para abrir →</span>':'')+' </div>'+
+      '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+n.time+(n.action?' — <span style="color:var(--accent)">Toca para abrir →</span>':'')+' </div>'+
     '</div>'+(n.action?'<div style="color:var(--accent);font-size:16px;align-self:center">›</div>':'')+
     '</div>'
   ).join('');
@@ -849,7 +849,7 @@ function _renderNotifList(){
     if(!n||!n.action)return;
     el.addEventListener('click',()=>{
       toggleNotifPanel();
-      try{eval(n.action);}catch(e){console.warn('notif action:',e);}
+      ejecutarAccionNotif(n.action);
     });
   });
 }
@@ -869,6 +869,34 @@ document.addEventListener('click',function(e){
   const p=$('ntPanel'),b=$('ntBell');
   if(p&&b&&p.classList.contains('open')&&!p.contains(e.target)&&!b.contains(e.target))p.classList.remove('open');
 });
+
+// Funcion segura para ejecutar acciones de notificacion
+function ejecutarAccionNotif(actionStr){
+  if(!actionStr)return;
+  const parts = actionStr.match(/^(\w+)\((.*)\)$/);
+  if (!parts) {
+    console.warn('Accion de notificacion invalida:', actionStr);
+    return;
+  }
+  const funcName = parts[1];
+  const argsStr = parts[2];
+
+  switch(funcName){
+    case 'nav':
+      // Ejemplo: nav('orders')
+      const argMatch = argsStr.match(/^'([^']+)'$/);
+      if (argMatch && typeof nav === 'function') {
+        nav(argMatch[1]);
+      } else {
+        console.warn('Accion nav invalida o funcion nav no disponible:', actionStr);
+      }
+      break;
+    // Agrega otras acciones permitidas aqui si es necesario en el futuro
+    default:
+      console.warn('Accion de notificacion no permitida:', actionStr);
+  }
+}
+
 function bE(e){
   const m={Pendiente:'bp',Despachado:'bdisp','En ruta':'br',Entregado:'be',Cancelado:'bc',
     'No contesta 1°':'bn1','No contesta 2°':'bn2','No contesta 3°':'bn3',Reprogramado:'brp',Devuelto:'bret'};
@@ -6593,54 +6621,67 @@ async function procesarImportCSV(){
   let ok=0;
   const maxId=(_catalogoCache&&_catalogoCache.length)?Math.max(..._catalogoCache.map(p=>Number(p.id)||0),0):0;
   let nextId=maxId+1;
-  for(const h of keys){
-    const rows=grupos[h];const r0=rows[0];
-    let nombre,presentaciones,nuevo;
-    if(formato==='shopify'){
-      nombre=r0['Title']||h;
-      if(_catalogoCache.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase()))continue;
-      presentaciones=rows.filter(r=>r['Option1 Value']).map((r,i)=>({
-        id:i+1,nombre:r['Option1 Value']||'Unidad',
-        precio:parseFloat(r['Variant Price']||0)||0,
-        precioVendedor:0,precioDropshipper:0,
-        precioProveedor:parseFloat(r['Variant Cost']||0)||0,
-      }));
-      nuevo={id:nextId++,nombre,
-        descripcion_html:r0['Body (HTML)']||r0['Body']||'',
-        categoria:r0['Type']||r0['Product Category']||'',
-        proveedorNombre:r0['Vendor']||'',
-        foto:r0['Image Src']||null,fotos:r0['Image Src']?[r0['Image Src']]:[],
-        videos:[],precio_comparacion:parseFloat(r0['Variant Compare At Price']||0)||0,
-        stock:parseInt(r0['Variant Inventory Qty']||0)||0,
-        codigo_barras:r0['Variant Barcode']||r0['Barcode']||'',
-        publicar_tienda:false,presentaciones,owner_id:CU.id,owner_nombre:CU.nombre};
-    }else{
-      // Formato Dropi o Genérico — columnas flexibles
-      nombre=r0['nombre']||r0['Nombre']||r0['title']||r0['Title']||r0['NOMBRE']||h;
-      if(!nombre||_catalogoCache.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase()))continue;
-      const precio=parseFloat(r0['precio']||r0['Precio']||r0['price']||r0['Price']||r0['precio_publico']||0)||0;
-      const pCosto=parseFloat(r0['precio_proveedor']||r0['precio_costo']||r0['costo']||r0['cost']||0)||0;
-      const pComp=parseFloat(r0['precio_comparacion']||r0['precio_anterior']||r0['compare_at']||0)||0;
-      presentaciones=precio>0?[{id:1,nombre:'Unidad',precio,precioVendedor:0,precioDropshipper:0,precioProveedor:pCosto}]:[];
-      nuevo={id:nextId++,nombre,
-        descripcion_html:r0['descripcion']||r0['description']||r0['Descripcion']||'',
-        categoria:r0['categoria']||r0['Categoria']||r0['type']||r0['Type']||r0['category']||'',
-        proveedorNombre:r0['proveedor']||r0['Proveedor']||r0['vendor']||r0['Vendor']||'',
-        foto:r0['foto']||r0['imagen']||r0['image']||r0['Image Src']||null,
-        fotos:[],videos:[],
-        precio_comparacion:pComp,
-        stock:parseInt(r0['stock']||r0['Stock']||r0['inventory']||r0['qty']||0)||0,
-        codigo_barras:r0['codigo_barras']||r0['barcode']||r0['Barcode']||r0['ean']||'',
-        publicar_tienda:false,presentaciones,owner_id:CU.id,owner_nombre:CU.nombre};
+  try {
+    for(const h of keys){
+      const rows=grupos[h];const r0=rows[0];
+      let nombre,presentaciones,nuevo;
+      if(formato==='shopify'){
+        nombre=r0['Title']||h;
+        if(_catalogoCache.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase()))continue;
+        presentaciones=rows.filter(r=>r['Option1 Value']).map((r,i)=>({
+          id:i+1,nombre:r['Option1 Value']||'Unidad',
+          precio:parseFloat(r['Variant Price']||0)||0,
+          precioVendedor:0,precioDropshipper:0,
+          precioProveedor:parseFloat(r['Variant Cost']||0)||0,
+        }));
+        nuevo={id:nextId++,nombre,
+          descripcion_html:r0['Body (HTML)']||r0['Body']||'',
+          categoria:r0['Type']||r0['Product Category']||'',
+          proveedorNombre:r0['Vendor']||'',
+          foto:r0['Image Src']||null,fotos:r0['Image Src']?[r0['Image Src']]:[],
+          videos:[],precio_comparacion:parseFloat(r0['Variant Compare At Price']||0)||0,
+          stock:parseInt(r0['Variant Inventory Qty']||0)||0,
+          codigo_barras:r0['Variant Barcode']||r0['Barcode']||'',
+          publicar_tienda:false,presentaciones,owner_id:CU.id,owner_nombre:CU.nombre};
+      }else{
+        // Formato Dropi o Genérico — columnas flexibles
+        nombre=r0['nombre']||r0['Nombre']||r0['title']||r0['Title']||r0['NOMBRE']||h;
+        if(!nombre||_catalogoCache.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase()))continue;
+        const precio=parseFloat(r0['precio']||r0['Precio']||r0['price']||r0['Price']||r0['precio_publico']||0)||0;
+        const pCosto=parseFloat(r0['precio_proveedor']||r0['precio_costo']||r0['costo']||r0['cost']||0)||0;
+        const pComp=parseFloat(r0['precio_comparacion']||r0['precio_anterior']||r0['compare_at']||0)||0;
+        presentaciones=precio>0?[{id:1,nombre:'Unidad',precio,precioVendedor:0,precioDropshipper:0,precioProveedor:pCosto}]:[];
+        nuevo={id:nextId++,nombre,
+          descripcion_html:r0['descripcion']||r0['description']||r0['Descripcion']||'',
+          categoria:r0['categoria']||r0['Categoria']||r0['type']||r0['Type']||r0['category']||'',
+          proveedorNombre:r0['proveedor']||r0['Proveedor']||r0['vendor']||r0['Vendor']||'',
+          foto:r0['foto']||r0['imagen']||r0['image']||r0['Image Src']||null,
+          fotos:[],videos:[],
+          precio_comparacion:pComp,
+          stock:parseInt(r0['stock']||r0['Stock']||r0['inventory']||r0['qty']||0)||0,
+          codigo_barras:r0['codigo_barras']||r0['barcode']||r0['Barcode']||r0['ean']||'',
+          publicar_tienda:false,presentaciones,owner_id:CU.id,owner_nombre:CU.nombre};
+      }
+      if(nuevo.foto&&!nuevo.fotos.length)nuevo.fotos=[nuevo.foto];
+
+      const saveResult = await DL.saveProducto(nuevo);
+      if (saveResult && saveResult.ok === false) {
+        pushNotif('Error al guardar producto ' + nuevo.nombre + ': ' + (saveResult.error || 'Desconocido'), 'e');
+        // No incrementar 'ok' si falla el guardado
+      } else {
+        _catalogoCache=[..._catalogoCache,nuevo]; // Agregar al cache solo si el guardado fue exitoso
+        ok++;
+      }
     }
-    if(nuevo.foto&&!nuevo.fotos.length)nuevo.fotos=[nuevo.foto];
-    _catalogoCache=[..._catalogoCache,nuevo];
-    await DL.saveProducto(nuevo);
-    ok++;
+    closeA();PAGES.catalogo();
+    pushNotif('✅ '+ok+' producto(s) importados','s');
+  } catch (e) {
+    pushNotif('Error durante la importacion: ' + e.message, 'e');
+    console.error('Error en procesarImportCSV:', e);
+  } finally {
+    if(btn){btn.disabled=false;btn.textContent='Importar todos';}
+    window._csvImportGrupos=null;window._csvImportRows=null;
   }
-  closeA();PAGES.catalogo();
-  pushNotif('✅ '+ok+' producto(s) importados','s');
-  window._csvImportGrupos=null;window._csvImportRows=null;
 }
 
 // Exportar catálogo a CSV compatible con Shopify
