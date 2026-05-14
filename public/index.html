@@ -494,8 +494,10 @@ body:has(#appScreen.show) #notifArea{display:flex !important;}
   }
   /* Ajustes para la pantalla de login en móviles */
   .lcard{padding:36px 26px;}
-  .llogo h1{font-size:40px;letter-spacing:3px;}
+  .llogo h1{font-size:44px;letter-spacing:3px;}
   .llogo p{font-size:11px;}
+  /* Bandera PY: más cerca de la Y final, sin salirse del card */
+  .llogo > span[title="Paraguay"]{right:-18px!important;font-size:17px!important;top:2px!important;}
 }
 /* En desktop: ocultar elementos que solo deben verse en mobile */
 .col-show-mobile{display:none;}
