@@ -5602,13 +5602,13 @@ function _boletaHTML(o){
   return {zona,total,flete,totalFact,iva,base,
     html:'<div class="boleta" id="boletaDiv">'+
     '<div style="display:flex;justify-content:space-between;border-bottom:3px double #000;padding-bottom:12px;margin-bottom:12px">'+
-    '<div><div class="boleta-logo">IPORÃVE</div><div style="font-size:11px;font-weight:600">'+EMPRESA.nombre+'</div>'+
-    '<div style="font-size:10px">'+EMPRESA.dir+'</div><div style="font-size:10px">Tel: '+EMPRESA.tel+'</div>'+
-    '<div style="font-size:10px">RUC: '+EMPRESA.ruc+'</div><div style="font-size:10px">'+EMPRESA.web+' · '+EMPRESA.ig+'</div></div>'+
+    '<div><div class="boleta-logo">IPORÃVE</div><div style="font-size:11px;font-weight:600">'+escHtml(EMPRESA.nombre)+'</div>'+
+    '<div style="font-size:10px">'+escHtml(EMPRESA.dir)+'</div><div style="font-size:10px">Tel: '+escHtml(EMPRESA.tel)+'</div>'+
+    '<div style="font-size:10px">RUC: '+escHtml(EMPRESA.ruc)+'</div><div style="font-size:10px">'+escHtml(EMPRESA.web)+' · '+escHtml(EMPRESA.ig)+'</div></div>'+
     '<div style="text-align:right">'+
     '<div style="font-size:17px;font-weight:900;border:3px solid #f5a623;padding:7px 13px;border-radius:6px;color:#f5a623;margin-bottom:5px">BOLETA DE VENTA</div>'+
-    '<div style="font-size:12px"><b>Timbrado:</b> <span style="font-family:monospace">'+EMPRESA.timbrado+'</span></div>'+
-    '<div style="font-size:12px"><b>N° documento:</b> <span style="font-family:monospace">'+(o.numDoc||o.boletaNum)+'</span></div>'+
+    '<div style="font-size:12px"><b>Timbrado:</b> <span style="font-family:monospace">'+escHtml(EMPRESA.timbrado)+'</span></div>'+
+    '<div style="font-size:12px"><b>N° documento:</b> <span style="font-family:monospace">'+escHtml(o.numDoc||o.boletaNum||'')+'</span></div>'+
     '<div style="font-size:12px"><b>Fecha:</b> '+fmtDate(o.fecha)+'</div>'+
     '<div style="margin-top:5px;font-size:10px;padding:3px 8px;border:1px solid #f5a623;border-radius:4px;color:#f5a623;display:inline-block">COMPROBANTE IVA VÁLIDO</div>'+
     '</div></div>'+
@@ -5618,12 +5618,12 @@ function _boletaHTML(o){
     (o.razonSocial?'<div>'+escHtml(o.razonSocial||'')+'</div>':'')+
     '<div>CI: '+(escHtml(o.cedula||'')||'—')+(o.ruc?' · RUC: '+escHtml(o.ruc||''):'')+'</div><div>'+(escHtml(o.telefono||'')||'—')+'</div></div>'+
     '<div><div style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:2px;font-weight:700">Entrega</div>'+
-    '<div>'+(o.direccion||'—')+'</div><div style="color:#888">'+zona.nombre+' · '+zona.tiempoEntrega+'</div>'+
-    '<div style="margin-top:5px"><b>Condición:</b> Contado &nbsp;|&nbsp; <b>IVA:</b> '+(o.tipoIva||'10%')+'</div></div></div>'+
+    '<div>'+escHtml(o.direccion||'—')+'</div><div style="color:#888">'+escHtml(zona.nombre||'')+' · '+escHtml(zona.tiempoEntrega||'')+'</div>'+
+    '<div style="margin-top:5px"><b>Condición:</b> Contado &nbsp;|&nbsp; <b>IVA:</b> '+escHtml(o.tipoIva||'10%')+'</div></div></div>'+
     '<div class="bt-wrap"><table class="bt"><thead><tr><th>Cant.</th><th>Descripción</th><th>Precio unit.</th><th>Total</th></tr></thead><tbody>'+
     '<tr><td>'+o.qty+'</td><td>'+escHtml(o.producto||'')+'<br><span style="font-size:10px;color:#888">Prov: '+(escHtml(o.proveedor||'')||'—')+'</span></td>'+
     '<td>Gs. '+fmtN(o.precio)+'</td><td>Gs. '+fmtN(o.precio*o.qty)+'</td></tr>'+
-    '<tr><td>1</td><td>Flete — Zona '+zona.nombre+'</td><td>Gs. '+fmtN(flete)+'</td><td>Gs. '+fmtN(flete)+'</td></tr>'+
+    '<tr><td>1</td><td>Flete — Zona '+escHtml(zona.nombre||'')+'</td><td>Gs. '+fmtN(flete)+'</td><td>Gs. '+fmtN(flete)+'</td></tr>'+
     '</tbody></table></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;margin-top:10px;font-size:11px">'+
     '<div><div style="color:#888">Vendedor: '+escHtml(getUser(o.vendedorId)?.nombre||'')+'</div>'+
@@ -5635,7 +5635,7 @@ function _boletaHTML(o){
     '<div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;border-top:2px solid #000;padding-top:5px;margin-top:5px">'+
     '<span>TOTAL:</span><span>Gs. '+fmtN(totalFact)+'</span></div></div></div>'+
     '<div style="margin-top:12px;font-size:9px;color:#aaa;text-align:center;border-top:1px dashed #ddd;padding-top:7px">'+
-    EMPRESA.nombre+' · '+EMPRESA.dir+' · Timbrado: '+EMPRESA.timbrado+' · Válido según Ley N° 125/91</div>'+
+    escHtml(EMPRESA.nombre)+' · '+escHtml(EMPRESA.dir)+' · Timbrado: '+escHtml(EMPRESA.timbrado)+' · Válido según Ley N° 125/91</div>'+
     '</div>'};
 }
 
@@ -8438,7 +8438,7 @@ function imprimirTicket(id){
     +'<div><div class="lb">Cobro</div><div class="vl">'+escHtml(o.metodoCobro||'Efectivo')+'</div></div>'
     +'<div><div class="lb">Fecha</div><div class="vl">'+(o.fecha||today())+'</div></div>'
     +'</div>'
-    +'<div class="tkft">'+(emp.tel||'')+((emp.tel&&emp.web)?' | ':'')+''+(emp.web||'iporaveparaguay.com')+'</div>'
+    +'<div class="tkft">'+escHtml(emp.tel||'')+((emp.tel&&emp.web)?' | ':'')+''+escHtml(emp.web||'iporaveparaguay.com')+'</div>'
     +'</div>'
     +'</body></html>';
   var w=window.open('','_blank');
@@ -8487,7 +8487,7 @@ function imprimirGuia(id){
   const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Guía #'+o.id+'</title><style>'+css+'</style></head><body>'+
     '<div class="guia">'+
     '<div class="g-head">'+
-      '<div>'+logoHtml+'<div class="g-sub">'+(emp.nombre||'Sistema Iporãve')+'</div></div>'+
+      '<div>'+logoHtml+'<div class="g-sub">'+escHtml(emp.nombre||'Sistema Iporãve')+'</div></div>'+
       '<div style="text-align:right"><div style="font-size:10px;color:#94a3b8">GUÍA DE ENTREGA</div><div class="g-num">#'+String(o.id).padStart(4,'0')+'</div></div>'+
     '</div>'+
     '<div class="g-body">'+
@@ -8516,11 +8516,11 @@ function imprimirGuia(id){
         '<div><div class="g-lbl">Fecha</div><div class="g-val">'+(o.fecha||today())+'</div></div>'+
       '</div>'+
       (emp.tel||emp.dir?'<div style="margin-top:6px;padding:8px;background:#fefce8;border-radius:6px;font-size:11px;color:#78350f">'+
-        (emp.tel?'📞 '+emp.tel+'  ':'')+
-        (emp.dir?'📍 '+emp.dir:'')+'</div>':'')+
+        (emp.tel?'📞 '+escHtml(emp.tel)+'  ':'')+
+        (emp.dir?'📍 '+escHtml(emp.dir):'')+'</div>':'')+
     '</div>'+
     '<div class="g-foot">'+
-      '<p>'+(emp.web||'iporaveparaguay.com')+'</p>'+
+      '<p>'+escHtml(emp.web||'iporaveparaguay.com')+'</p>'+
       '<p>'+nowStr()+'</p>'+
     '</div>'+
     '</div>'+
