@@ -1624,18 +1624,30 @@ function initRealtime(){
         const esDrop=rol==='dropshipper'&&String(r.drop_id)===String(CU?.id);
         const esDlv=rol==='delivery'&&String(r.delivery_id)===String(CU?.id);
         const esProv=rol==='proveedor'&&String(r.vendedor_id)===String(CU?.id);
-        const esRelevante=esAdm||esVend||esDrop||esDlv||esProv;
+        const esCli=rol==='cliente'&&(r.cliente||'')===(CU?.nombre||'');
+        const esRelevante=esAdm||esVend||esDrop||esDlv||esProv||esCli;
         if(!esRelevante)return;
         // Mensaje diferenciado por estado y por quién es el destinatario
         let notifMsg,notifType;
         if(esEntregado){
-          const cli=escHtml((r.cliente||'')+'').substring(0,28);
-          if(esAdm||esVend||esDrop)
-            notifMsg='✅ Pedido #'+(r.id||'')+' ENTREGADO'+(cli?' — '+cli:'');
-          else if(esDlv)
-            notifMsg='🏁 Entregaste el pedido #'+(r.id||'')+' correctamente';
-          else
-            notifMsg='✅ Pedido #'+(r.id||'')+' fue entregado';
+          // El delivery que entregó ya sabe — no notificamos al mismo delivery
+          if(esDlv)return;
+          const pid=r.id||'';
+          const cliNom=escHtml((r.cliente||'')+'').substring(0,28);
+          const dlvUser=Array.isArray(_usersCache)?_usersCache.find(u=>String(u.id)===String(r.delivery_id)):null;
+          const dlvNom=escHtml((dlvUser&&dlvUser.nombre)||'');
+          if(esAdm){
+            notifMsg='🚚 Delivery '+(dlvNom||'')+' marcó el pedido #'+pid+' como ENTREGADO — cliente '+cliNom;
+          }else if(esVend){
+            notifMsg='✅ Tu pedido #'+pid+' fue entregado a '+cliNom+' por '+(dlvNom||'el delivery');
+          }else if(esDrop){
+            notifMsg='💰 Pedido #'+pid+' entregado — comisión generada por '+fmt(r.comision||0);
+          }else if(esCli){
+            notifMsg='📦 ¡Tu pedido #'+pid+' fue entregado! ¿Cómo estuvo el servicio? Calificá al delivery.';
+          }else{
+            // proveedor u otro rol relevante: mensaje neutro
+            notifMsg='✅ Pedido #'+pid+' ENTREGADO'+(cliNom?' — '+cliNom:'');
+          }
           notifType='s';
         }else if(esEnRuta&&esDlv){
           notifMsg='🛵 Pedido #'+(r.id||'')+' — ya estás en ruta';
@@ -3846,11 +3858,52 @@ PAGES.dashboard=async function(){
   }
   if(CU.rol==='cliente'){
     const mine=orders.filter(o=>o.cliente===CU.nombre);
-    html+='<div class="sgrid">'+
-      '<div class="sc ac"><div class="slabel">Mis pedidos</div><div class="sval">'+mine.length+'</div></div>'+
-      '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+mine.filter(o=>o.estado==='Entregado').length+'</div></div>'+
-      '<div class="sc bl"><div class="slabel">En camino</div><div class="sval">'+mine.filter(o=>['En ruta','Despachado'].includes(o.estado)).length+'</div></div>'+
-      '</div>';
+    if(!mine.length){
+      // Cliente sin pedidos: mensaje de bienvenida con CTA al catálogo
+      html+='<div class="lcard2" style="border-left:3px solid var(--accent);text-align:center;padding:36px 22px">'+
+        '<div style="font-size:48px;margin-bottom:10px">🛍️</div>'+
+        '<div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:6px">¡Bienvenido'+(CU.nombre?', '+escHtml(CU.nombre.split(' ')[0]):'')+'!</div>'+
+        '<div style="font-size:13px;color:var(--text2);margin-bottom:18px;max-width:360px;margin-left:auto;margin-right:auto">Todavía no hiciste tu primer pedido. Explorá nuestro catálogo y descubrí nuestros productos.</div>'+
+        '<button class="btn btn-primary" onclick="nav(\'catalogo\')">🛒 Ver catálogo</button>'+
+        '</div>';
+    } else {
+      const ent=mine.filter(o=>o.estado==='Entregado');
+      const enCamino=mine.filter(o=>['En ruta','Despachado'].includes(o.estado));
+      const gastado=ent.reduce((a,b)=>a+((parseFloat(b.precio)||0)*(parseInt(b.qty)||1)),0);
+      // Encontrar el último pedido (por id descendente — id autoincremental)
+      const ultimo=[...mine].sort((a,b)=>(b.id||0)-(a.id||0))[0];
+      const _EC_CL={'Pendiente':'#f59e0b','Despachado':'#3b82f6','En ruta':'#f97316','Entregado':'#22c55e','Cancelado':'#ef4444','Devuelto':'#8b5cf6','Reprogramado':'#64748b'};
+      const _EI_CL={'Pendiente':'⏳','Despachado':'📦','En ruta':'🛵','Entregado':'✅','Cancelado':'❌','Devuelto':'↩️','Reprogramado':'🔁'};
+      const colorEst=_EC_CL[ultimo.estado]||'#64748b';
+      const iconEst=_EI_CL[ultimo.estado]||'•';
+      html+='<div class="sgrid">'+
+        '<div class="sc ac"><div class="slabel">Mis pedidos</div><div class="sval">'+mine.length+'</div></div>'+
+        '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div></div>'+
+        '<div class="sc bl"><div class="slabel">En camino</div><div class="sval">'+enCamino.length+'</div></div>'+
+        '<div class="sc gr"><div class="slabel">Total gastado</div><div class="sval" style="font-size:15px">'+fmt(gastado)+'</div><div class="ssub">en pedidos entregados</div></div>'+
+        '</div>';
+      // Tarjeta destacada del último pedido
+      const qty=ultimo.qty||1;
+      const totalUlt=(parseFloat(ultimo.precio)||0)*qty;
+      const fechaUlt=ultimo.fecha?fmtDate(ultimo.fecha):'—';
+      html+='<div class="lcard2" style="border-left:3px solid '+colorEst+';margin-top:6px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">'+
+        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700">📌 Tu último pedido</div>'+
+        '<div style="background:'+colorEst+'22;color:'+colorEst+';font-weight:800;font-size:12px;padding:5px 11px;border-radius:99px;border:1px solid '+colorEst+'66">'+iconEst+' '+escHtml(ultimo.estado||'—')+'</div>'+
+        '</div>'+
+        '<div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px">'+escHtml(ultimo.producto||'Pedido #'+ultimo.id)+(qty>1?' × '+qty:'')+'</div>'+
+        '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--text2);margin-bottom:14px">'+
+        '<span>📅 '+escHtml(fechaUlt)+' · #'+ultimo.id+'</span>'+
+        '<span style="color:var(--green);font-weight:700;font-family:\'JetBrains Mono\',monospace">'+fmt(totalUlt)+'</span>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+        '<button class="btn btn-secondary btn-sm" onclick="nav(\'mispedidos\')">📋 Ver detalles</button>'+
+        (ultimo.estado==='En ruta'?'<button class="btn btn-primary" style="flex:1;min-width:160px" onclick="window.open(\'?track=\'+'+ultimo.id+',\'_blank\')">🛵 Rastrear envío</button>':'')+
+        (ultimo.estado==='Despachado'?'<button class="btn btn-secondary btn-sm" onclick="window.open(\'?track=\'+'+ultimo.id+',\'_blank\')">📦 Ver seguimiento</button>':'')+
+        (ultimo.estado==='Entregado'&&ultimo.deliveryId?'<button class="btn btn-primary btn-sm" onclick="_clienteCalificarUltimo('+ultimo.id+','+ultimo.deliveryId+')">⭐ Calificar</button>':'')+
+        '</div>'+
+        '</div>';
+    }
   }
   if(['admin','superadmin','vendedor','dropshipper','delivery'].includes(CU.rol)){
     html+=
@@ -8489,6 +8542,11 @@ function _abrirCalificacion(pedidoId,paraId,paraRol,paraNombre){
     '<button class="btn btn-secondary" onclick="closeA()">Omitir</button>'+
     '<button class="btn btn-primary" onclick="_enviarCalificacion('+pedidoId+','+paraId+',\''+paraRol+'\')">Enviar reseña ⭐</button>'
   );
+}
+// Helper para el dashboard del cliente: abrir calificación del delivery del último pedido
+function _clienteCalificarUltimo(pedidoId,deliveryId){
+  const d=getUser(deliveryId);
+  _abrirCalificacion(pedidoId,deliveryId,'delivery',(d&&d.nombre)||'Delivery');
 }
 let _califStarSelected=0;
 function _califSetStar(n){
