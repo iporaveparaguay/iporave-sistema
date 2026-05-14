@@ -778,7 +778,7 @@ function renderizar(lista) {
     <div class="card" onclick="abrirModalDetalle(${p.id})">
       <div class="card-img">
         ${p.foto
-          ? `<img src="${p.foto}" alt="${esc(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'">`
+          ? `<img src="${safeUrl(p.foto)}" alt="${esc(p.nombre)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'">`
           : '📦'}
       </div>
       <div class="card-body">
@@ -819,7 +819,7 @@ function abrirModalDetalle(id) {
   if (!p) return;
   
   const imgCont = document.querySelector('#modalDetalle .detalle-img');
-  imgCont.innerHTML = p.foto ? `<img src="${p.foto}" alt="${esc(p.nombre)}">` : '📦';
+  imgCont.innerHTML = p.foto ? `<img src="${safeUrl(p.foto)}" alt="${esc(p.nombre)}">` : '📦';
   
   document.getElementById('detNombre').textContent = p.nombre;
   document.getElementById('detCat').textContent = p.categoria || '';
@@ -880,6 +880,9 @@ function compartirWA(id) {
 
 function esc(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function safeUrl(u) {
+  return (typeof u === 'string' && /^https?:\/\//i.test(u)) ? u : '';
 }
 
 function fmt(n) {
