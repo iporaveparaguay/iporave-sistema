@@ -4216,9 +4216,9 @@ function viewOrder(id){
   const fotoSection=canSeeFoto&&o.fotoEntrega&&o.fotoEntrega!==true
     ?'<div class="stitle">📷 Foto de entrega</div>'+
       '<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;text-align:center;padding:8px">'+
-        '<img src="'+o.fotoEntrega+'" onclick="verFotoCompleta(\''+o.id+'\')" style="max-width:100%;max-height:260px;border-radius:8px;object-fit:contain;cursor:zoom-in" alt="Foto entrega" title="Toca para ver completa">'+
+        '<img src="'+safeUrl(o.fotoEntrega)+'" onclick="verFotoCompleta(\''+o.id+'\')" style="max-width:100%;max-height:260px;border-radius:8px;object-fit:contain;cursor:zoom-in" alt="Foto entrega" title="Toca para ver completa">'+
         '<div style="margin-top:8px">'+
-          '<a href="'+o.fotoEntrega+'" download="entrega-pedido-'+o.id+'.jpg" class="btn btn-secondary btn-sm">⬇ Descargar foto</a>'+
+          '<a href="'+safeUrl(o.fotoEntrega)+'" download="entrega-pedido-'+o.id+'.jpg" class="btn btn-secondary btn-sm">⬇ Descargar foto</a>'+
         '</div>'+
       '</div>'
     :(canSeeFoto&&!o.fotoEntrega?'':'');
@@ -4930,7 +4930,7 @@ PAGES.liquidacion=function(){
       const rec=dO.reduce((a,b)=>a+b.precio*b.qty,0);
       const max=d.vehiculo==='auto'?cfg.cupoAuto:cfg.cupoMoto;
       return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:8px">'+
-        (d.foto_perfil?'<img src="'+d.foto_perfil+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover">':'')+
+        (d.foto_perfil?'<img src="'+safeUrl(d.foto_perfil)+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover">':'')+
         '🚴 '+d.nombre+
         (d.badge_confianza?' <span class="badge-confianza">🛡️ De Confianza</span>':'')+
         ' <span style="font-size:11px;font-weight:400;color:var(--text2)">'+(d.vehiculo||'moto')+' · cupo '+max+'/día</span>'+
@@ -6199,7 +6199,7 @@ PAGES.usuarios=async function(){
   _usersCache.map(u=>'<tr>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">#'+u.id+'</td>'+
     '<td style="font-weight:600">'+
-      (u.foto_perfil?'<img src="'+u.foto_perfil+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:6px;vertical-align:middle">':'')+
+      (u.foto_perfil?'<img src="'+safeUrl(u.foto_perfil)+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:6px;vertical-align:middle">':'')+
       u.nombre+
       (u.badge_confianza?' <span class="badge-confianza" style="font-size:9px">🛡️</span>':'')+
       (u.verificado?' <span class="badge-verif" style="font-size:9px">✓</span>':'')+
@@ -6619,7 +6619,7 @@ function importarCatalogoCSV(){
         const precio=r['Variant Price']||r['precio']||r['Precio']||'';
         const img=r['Image Src']||r['foto']||r['imagen']||'';
         return '<div style="padding:4px 0;border-bottom:1px solid var(--border2)">'+
-          (img?'<img src="'+img+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px">':'')+
+          (img?'<img src="'+safeUrl(img)+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px">':'')+
           '<b>'+nom+'</b>'+(grupos[h].length>1?' — '+grupos[h].length+' variantes':'')+
           (precio?' — Gs.'+precio:'')+'</div>';
       }).join('');
@@ -6772,8 +6772,8 @@ function _renderProductoCard(p,canEdit,canOrder=false){
   const esAdmin=isAdminLike(CU.rol);
   const tieneOferta=p.precio_comparacion>0;
   const fotoHtml=p.foto
-    ?'<img src="'+p.foto+'" alt="'+p.nombre+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">'
-    :(p.fotos&&p.fotos.length?'<img src="'+p.fotos[0]+'" alt="'+p.nombre+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">':'<div class="prod-img-placeholder">📦</div>');
+    ?'<img src="'+safeUrl(p.foto)+'" alt="'+p.nombre+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">'
+    :(p.fotos&&p.fotos.length?'<img src="'+safeUrl(p.fotos[0])+'" alt="'+p.nombre+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">':'<div class="prod-img-placeholder">📦</div>');
   const presHtml=p.presentaciones&&p.presentaciones.length
     ?'<div class="prod-pres-grid">'+
       p.presentaciones.map(pr=>{
@@ -7212,8 +7212,8 @@ async function _insertMediaInEditor(visualId,input,tipo){
   const v=$(visualId);if(!v)return;
   v.focus();
   const tag=tipo==='img'
-    ?'<img src="'+url+'" style="max-width:100%;border-radius:8px;margin:6px 0;display:block">'
-    :'<video src="'+url+'" controls playsinline style="max-width:100%;border-radius:8px;margin:6px 0;display:block"></video>';
+    ?'<img src="'+safeUrl(url)+'" style="max-width:100%;border-radius:8px;margin:6px 0;display:block">'
+    :'<video src="'+safeUrl(url)+'" controls playsinline style="max-width:100%;border-radius:8px;margin:6px 0;display:block"></video>';
   document.execCommand('insertHTML',false,tag);
   input.value='';
   pushNotif('Archivo insertado en la descripción','s');
@@ -7226,7 +7226,7 @@ function _renderGaleriaEdit(){
   c.innerHTML=(fotos.length
     ?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+
       fotos.map((f,i)=>'<div style="position:relative">'+
-        '<img src="'+f+'" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid '+(i===0?'var(--accent)':'var(--border2)')+'">'+
+        '<img src="'+safeUrl(f)+'" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid '+(i===0?'var(--accent)':'var(--border2)')+'">'+
         '<button type="button" onclick="_eliminarFotoEdit('+i+')" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>'+
       '</div>').join('')+
     '</div>'
@@ -7303,11 +7303,11 @@ function verProducto(id){
   // Imagen principal grande — vertical, sin recorte
   const mainImgHtml=mainFoto
     ?'<div style="width:100%;background:var(--bg3);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:320px;max-height:480px">'+
-       '<img id="vpMain" src="'+mainFoto+'" style="width:100%;max-height:480px;object-fit:contain;display:block"></div>'
+       '<img id="vpMain" src="'+safeUrl(mainFoto)+'" style="width:100%;max-height:480px;object-fit:contain;display:block"></div>'
     :'<div style="width:100%;height:220px;background:var(--bg3);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:64px">📦</div>';
   // Galería de miniaturas
   const galeria=fotos.length>1?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'+
-    fotos.map((f,i)=>'<img src="'+f+'" onclick="$(\'vpMain\').src=\''+f+'\';this.parentNode.querySelectorAll(\'img\').forEach(x=>x.style.borderColor=\'var(--border2)\');this.style.borderColor=\'var(--accent)\'" style="width:70px;height:70px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid '+(i===0?'var(--accent)':'var(--border2)')+'">').join('')+
+    fotos.map((f,i)=>'<img src="'+safeUrl(f)+'" onclick="$(\'vpMain\').src=\''+safeUrl(f)+'\';this.parentNode.querySelectorAll(\'img\').forEach(x=>x.style.borderColor=\'var(--border2)\');this.style.borderColor=\'var(--accent)\'" style="width:70px;height:70px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid '+(i===0?'var(--accent)':'var(--border2)')+'">').join('')+
   '</div>':'';
   const videoHtml=p.videos&&p.videos.length
     ?'<div style="margin-top:10px">'+p.videos.map(v=>'<video src="'+v+'" controls playsinline style="width:100%;border-radius:8px;margin-bottom:8px;max-height:280px"></video>').join('')+'</div>':'';
@@ -8899,7 +8899,7 @@ function _renderCatalogoPublico(wrap,data){
       const waMsg=encodeURIComponent('Hola! Me interesa el producto: *'+p.nombre+'* — Precio: Gs. '+p.precio.toLocaleString('es-PY')+'. ¿Está disponible?');
       const waLink=wa?'https://wa.me/595'+wa+'?text='+waMsg:'';
       return '<div style="background:#fff;border-radius:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden">'+
-        (foto?'<img src="'+foto+'" style="width:100%;height:200px;object-fit:cover" onerror="this.style.display=\'none\'">':
+        (foto?'<img src="'+safeUrl(foto)+'" style="width:100%;height:200px;object-fit:cover" onerror="this.style.display=\'none\'">':
           '<div style="width:100%;height:120px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:40px">📦</div>')+
         '<div style="padding:14px">'+
           (p.categoria?'<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">'+escHtml(p.categoria)+'</div>':'')+
@@ -8982,9 +8982,9 @@ function verFotoCompleta(orderId){
   if(!o||!o.fotoEntrega||o.fotoEntrega===true)return;
   openA('📷 Foto de entrega — Pedido #'+orderId,
     '<div style="text-align:center">'+
-      '<img src="'+o.fotoEntrega+'" style="max-width:100%;max-height:70vh;border-radius:8px;object-fit:contain" alt="Foto entrega">'+
+      '<img src="'+safeUrl(o.fotoEntrega)+'" style="max-width:100%;max-height:70vh;border-radius:8px;object-fit:contain" alt="Foto entrega">'+
       '<div style="margin-top:12px">'+
-        '<a href="'+o.fotoEntrega+'" download="entrega-pedido-'+orderId+'.jpg" class="btn btn-secondary">⬇ Descargar foto</a>'+
+        '<a href="'+safeUrl(o.fotoEntrega)+'" download="entrega-pedido-'+orderId+'.jpg" class="btn btn-secondary">⬇ Descargar foto</a>'+
       '</div>'+
     '</div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>'
