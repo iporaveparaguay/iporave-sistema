@@ -123,7 +123,7 @@ Vos le das el texto de la tarea y el archivo. El usuario copia y pega el comando
 ## Tareas pendientes (prioridad alta)
 
 1. **Auditoría JWT+RLS** — revisar que los tokens JWT sean validados correctamente en todos los endpoints y que las políticas RLS de Supabase estén bien configuradas. Esta tarea es para Claude Code cuando vuelva.
-2. **Ian delivery** — crear usuario delivery "Ian" en el sistema y asignarle push notifications
+2. ~~**Ian delivery**~~ — CANCELADO por el usuario
 3. **Tienda pública** — auto-registro de clientes, flujo de compra completo
 4. **Codex (cuando vuelva)** — más mejoras visuales al panel según feedback del usuario
 
