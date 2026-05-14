@@ -1534,7 +1534,7 @@ function _mostrarMensajeEntrante(msg){
     const d=document.createElement('div');
     d.className='mc-bubble recv';
     const now=new Date(msg.created_at||Date.now()).toLocaleString('es-PY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    d.innerHTML='<div class="mc-recv-name">'+msg.de_nombre+'</div>'+msg.mensaje+'<div class="mc-btime">'+now+'</div>';
+    d.innerHTML='<div class="mc-recv-name">'+escHtml(msg.de_nombre||'')+'</div>'+escHtml(msg.mensaje||'')+'<div class="mc-btime">'+now+'</div>';
     b.appendChild(d);b.scrollTop=b.scrollHeight;
     _supa.from('mensajes').update({leido:true}).eq('id',msg.id).then(()=>{_unreadMsgs--;updateAIBadge();});
   }
@@ -3934,10 +3934,10 @@ function _renderDlvCard(o,dist){
       '</div>'+
       '<span style="background:'+ec+';color:'+(enRuta?'#000':'#fff')+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap">'+o.estado+'</span>'+
     '</div>'+
-    '<div style="font-size:13px;'+(enRuta?'color:#000;font-weight:600':'color:var(--text1)')+';margin-bottom:4px">📦 '+o.producto+(o.qty>1?' × '+o.qty:'')+(o.proveedor?' · '+o.proveedor:'')+'</div>'+
-    '<div style="font-size:14px;font-weight:700;'+(enRuta?'color:#000':'color:var(--text1)')+';margin-bottom:4px">📍 '+(o.direccion||'Sin dirección')+
+    '<div style="font-size:13px;'+(enRuta?'color:#000;font-weight:600':'color:var(--text1)')+';margin-bottom:4px">📦 '+escHtml(o.producto||'')+(o.qty>1?' × '+o.qty:'')+(o.proveedor?' · '+escHtml(o.proveedor):'')+'</div>'+
+    '<div style="font-size:14px;font-weight:700;'+(enRuta?'color:#000':'color:var(--text1)')+';margin-bottom:4px">📍 '+escHtml(o.direccion||'Sin dirección')+
       (distStr?'<span style="font-size:12px;color:'+(enRuta?'#004d00':ec)+';font-weight:700;margin-left:8px">~'+distStr+'</span>':'')+'</div>'+
-    (o.telefono?'<div style="font-size:13px;'+(enRuta?'color:#1a4d1a':'color:var(--text2)')+';margin-bottom:10px">📞 '+o.telefono+'</div>':'')+
+    (o.telefono?'<div style="font-size:13px;'+(enRuta?'color:#1a4d1a':'color:var(--text2)')+';margin-bottom:10px">📞 '+escHtml(o.telefono)+'</div>':'')+
     (entregado
       ?'<div style="text-align:center;padding:8px 0;font-size:13px;font-weight:700;color:var(--text2)">✅ Entregado</div>'
       :'<div style="display:flex;gap:8px;flex-wrap:wrap">'+
@@ -4036,12 +4036,12 @@ function renderTable(orders,title,showActs,highlightChanges){
   orders.map(o=>'<tr'+(highlightChanges?' style="'+_orderStateRowStyle(o)+'"':'')+'>'+
     '<td class="col-hide"><span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">#'+o.id+'</span></td>'+
     '<td class="col-hide">'+fmtDate(o.fecha)+'</td>'+
-    '<td><div style="font-weight:600;line-height:1.3;margin:0">'+o.cliente+'</div>'+
-      '<div style="font-size:11px;color:var(--text2)">'+o.telefono+'</div>'+
+    '<td><div style="font-weight:600;line-height:1.3;margin:0">'+escHtml(o.cliente||'')+'</div>'+
+      '<div style="font-size:11px;color:var(--text2)">'+escHtml(o.telefono||'')+'</div>'+
       '<div class="col-show-mobile" style="font-size:11px;color:var(--accent)">'+bE(o.estado)+'</div>'+
     '</td>'+
-    '<td class="col-hide"><div>'+o.producto+'</div><div style="font-size:11px;color:var(--text2)">x'+o.qty+'</div></td>'+
-    '<td class="col-hide" style="font-size:12px;color:var(--text2)">'+(o.proveedor||'—')+'</td>'+
+    '<td class="col-hide"><div>'+escHtml(o.producto||'')+'</div><div style="font-size:11px;color:var(--text2)">x'+o.qty+'</div></td>'+
+    '<td class="col-hide" style="font-size:12px;color:var(--text2)">'+escHtml(o.proveedor||'—')+'</td>'+
     '<td class="col-hide" style="font-size:12px">'+_getZonaO(o).nombre+'</td>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--green)">'+fmt(o.precio*o.qty)+'</td>'+
     '<td class="col-hide">'+bE(o.estado)+'</td>'+
@@ -4689,8 +4689,8 @@ function sugerirClienteAnterior(){
   sug.innerHTML=matches.map(o=>
     '<div onclick="autoFillCliente('+o.id+')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px" '+
     'onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'\'">'+
-    '<div style="font-weight:700">'+o.cliente+'</div>'+
-    '<div style="color:var(--text3)">📍 '+(o.direccion||'Sin dirección')+(o.gpsLat?' · 📡 GPS':'')+'</div>'+
+    '<div style="font-weight:700">'+escHtml(o.cliente||'')+'</div>'+
+    '<div style="color:var(--text3)">📍 '+escHtml(o.direccion||'Sin dirección')+(o.gpsLat?' · 📡 GPS':'')+'</div>'+
     '</div>'
   ).join('');
 }
@@ -8341,7 +8341,7 @@ async function sendMsgThread(toId,toNom){
       const d=document.createElement('div');
       d.className='mc-bubble sent';
       const now=new Date().toLocaleString('es-PY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-      d.innerHTML=txt+'<div class="mc-btime">'+now+'</div>';
+      d.innerHTML=escHtml(txt)+'<div class="mc-btime">'+now+'</div>';
       b.appendChild(d);
       b.scrollTop=b.scrollHeight;
     }
@@ -8733,16 +8733,16 @@ function _trackUpdateUI(data){
     '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">'+
       '<div style="font-size:36px">'+ei+'</div>'+
       '<div>'+
-        '<div style="font-size:11px;color:#64748b;font-weight:600;letter-spacing:.5px;text-transform:uppercase">Pedido #'+data.id+'</div>'+
-        '<div style="font-size:20px;font-weight:800;color:#0f172a;line-height:1.2">'+data.cliente+'</div>'+
-        '<div style="font-size:13px;color:#475569;margin-top:2px">📦 '+data.producto+'</div>'+
+        '<div style="font-size:11px;color:#64748b;font-weight:600;letter-spacing:.5px;text-transform:uppercase">Pedido #'+escHtml(String(data.id||''))+'</div>'+
+        '<div style="font-size:20px;font-weight:800;color:#0f172a;line-height:1.2">'+escHtml(data.cliente||'')+'</div>'+
+        '<div style="font-size:13px;color:#475569;margin-top:2px">📦 '+escHtml(data.producto||'')+'</div>'+
       '</div>'+
     '</div>'+
     '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
-      '<span style="background:'+ec+';color:#fff;font-size:13px;font-weight:700;padding:4px 14px;border-radius:20px">'+ei+' '+data.estado+'</span>'+
-      (data.delivery?'<span style="font-size:12px;color:#64748b">🛵 '+data.delivery.nombre+'</span>':'')+
+      '<span style="background:'+ec+';color:#fff;font-size:13px;font-weight:700;padding:4px 14px;border-radius:20px">'+ei+' '+escHtml(data.estado||'')+'</span>'+
+      (data.delivery?'<span style="font-size:12px;color:#64748b">🛵 '+escHtml(data.delivery.nombre||'')+'</span>':'')+
     '</div>'+
-    (data.direccion?'<div style="margin-top:8px;font-size:12px;color:#64748b">📍 '+data.direccion+'</div>':'')+
+    (data.direccion?'<div style="margin-top:8px;font-size:12px;color:#64748b">📍 '+escHtml(data.direccion)+'</div>':'')+
     (data.delivery&&data.delivery.at?'<div style="margin-top:6px;font-size:11px;color:#94a3b8">GPS actualizado '+_trackMinsAgo(data.delivery.at)+'</div>':'');
 
   if(!_trackMapInst)return;
@@ -8753,7 +8753,7 @@ function _trackUpdateUI(data){
     else{
       const ic=document.createElement('div');
       ic.innerHTML='<div style="background:#1d4ed8;color:#fff;width:46px;height:46px;border-radius:50%;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:22px">🛵</div>';
-      _trackDlvMarker=new mapboxgl.Marker(ic.firstChild).setLngLat(lngLat).setPopup(new mapboxgl.Popup({offset:28}).setHTML('<b>'+dlv.nombre+'</b><br>Delivery en camino')).addTo(_trackMapInst);
+      _trackDlvMarker=new mapboxgl.Marker(ic.firstChild).setLngLat(lngLat).setPopup(new mapboxgl.Popup({offset:28}).setHTML('<b>'+escHtml(dlv.nombre||'')+'</b><br>Delivery en camino')).addTo(_trackMapInst);
     }
     if(!_trackDestMarker)_trackMapInst.flyTo({center:lngLat,zoom:15});
   }
@@ -8874,9 +8874,9 @@ function _renderCatalogoPublico(wrap,data){
         (foto?'<img src="'+foto+'" style="width:100%;height:200px;object-fit:cover" onerror="this.style.display=\'none\'">':
           '<div style="width:100%;height:120px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:40px">📦</div>')+
         '<div style="padding:14px">'+
-          (p.categoria?'<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">'+p.categoria+'</div>':'')+
-          '<div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:6px">'+p.nombre+'</div>'+
-          (p.descripcion?'<div style="font-size:13px;color:#64748b;margin-bottom:10px;line-height:1.4">'+p.descripcion+'</div>':'')+
+          (p.categoria?'<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">'+escHtml(p.categoria)+'</div>':'')+
+          '<div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:6px">'+escHtml(p.nombre||'')+'</div>'+
+          (p.descripcion?'<div style="font-size:13px;color:#64748b;margin-bottom:10px;line-height:1.4">'+escHtml(p.descripcion)+'</div>':'')+
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+
             '<div style="font-size:22px;font-weight:900;color:#16a34a">Gs. '+p.precio.toLocaleString('es-PY')+'</div>'+
             (tieneOferta?'<div style="font-size:13px;color:#94a3b8;text-decoration:line-through">Gs. '+p.precio_comparacion.toLocaleString('es-PY')+'</div>':'')+
