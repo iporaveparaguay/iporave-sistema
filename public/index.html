@@ -4187,9 +4187,9 @@ function _renderDlvCard(o,dist){
       '<div>'+
         '<div style="font-size:11px;font-family:monospace;'+(enRuta?'color:#1a4d1a':'color:var(--text2)')+'">'+
           '#'+o.id+(o.fecha?' · '+fmtDate(o.fecha):'')+'</div>'+
-        '<div style="font-size:18px;font-weight:800;line-height:1.2;margin-top:2px;'+(enRuta?'color:#000':'')+'">'+o.cliente+'</div>'+
+        '<div style="font-size:18px;font-weight:800;line-height:1.2;margin-top:2px;'+(enRuta?'color:#000':'')+'">'+escHtml(o.cliente||'')+'</div>'+
       '</div>'+
-      '<span style="background:'+ec+';color:'+(enRuta?'#000':'#fff')+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap">'+o.estado+'</span>'+
+      '<span style="background:'+ec+';color:'+(enRuta?'#000':'#fff')+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap">'+escHtml(o.estado||'')+'</span>'+
     '</div>'+
     '<div style="font-size:13px;'+(enRuta?'color:#000;font-weight:600':'color:var(--text1)')+';margin-bottom:4px">📦 '+escHtml(o.producto||'')+(o.qty>1?' × '+o.qty:'')+(o.proveedor?' · '+escHtml(o.proveedor):'')+'</div>'+
     '<div style="font-size:14px;font-weight:700;'+(enRuta?'color:#000':'color:var(--text1)')+';margin-bottom:4px">📍 '+escHtml(o.direccion||'Sin dirección')+
@@ -4599,13 +4599,13 @@ function editOrder(id){
   const vends=_usersCache.filter(u=>u.rol==='vendedor');
   const provs=_usersCache.filter(u=>u.rol==='proveedor');
   const esManualEdit=!o.zona&&o.zonaCustomNombre;
-  const zonaOpts=_zonasCache.map(z=>'<option value="'+z.id+'" '+(o.zona===z.id?'selected':'')+'>'+z.nombre+' (Gs. '+fmtN(z.precio)+')</option>').join('')+
+  const zonaOpts=_zonasCache.map(z=>'<option value="'+z.id+'" '+(o.zona===z.id?'selected':'')+'>'+escHtml(z.nombre||'')+' (Gs. '+fmtN(z.precio)+')</option>').join('')+
     '<option value="manual" '+(esManualEdit?'selected':'')+'>✏️ Otra ubicación (manual)...</option>';
-  const dlvOpts='<option value="">Sin asignar</option>'+dlvs.map(d=>'<option value="'+d.id+'" '+(o.deliveryId===d.id?'selected':'')+'>'+d.nombre+' ('+(d.vehiculo||'moto')+')</option>').join('');
-  const dropOpts='<option value="">Sin asignar</option>'+drops.map(d=>'<option value="'+d.id+'" '+(o.dropId===d.id?'selected':'')+'>'+d.nombre+'</option>').join('');
-  const provOpts='<option value="">Sin proveedor</option>'+provs.map(d=>'<option value="'+d.id+'" '+(o.proveedorId===d.id?'selected':'')+'>'+d.nombre+'</option>').join('');
+  const dlvOpts='<option value="">Sin asignar</option>'+dlvs.map(d=>'<option value="'+d.id+'" '+(o.deliveryId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+' ('+escHtml(d.vehiculo||'moto')+')</option>').join('');
+  const dropOpts='<option value="">Sin asignar</option>'+drops.map(d=>'<option value="'+d.id+'" '+(o.dropId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+'</option>').join('');
+  const provOpts='<option value="">Sin proveedor</option>'+provs.map(d=>'<option value="'+d.id+'" '+(o.proveedorId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+'</option>').join('');
   const allSales=_usersCache.filter(u=>['vendedor','proveedor','dropshipper','administrador','superadmin'].includes(u.rol));
-  const vendOpts='<option value="">Sin asignar</option>'+allSales.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+d.nombre+' ('+capRole(d.rol)+')</option>').join('');
+  const vendOpts='<option value="">Sin asignar</option>'+allSales.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+' ('+capRole(d.rol)+')</option>').join('');
   openA('✏️ Editar pedido #'+id,
     '<div class="stitle">Datos del cliente</div>'+
     '<div class="frow"><div class="fg"><label>Nombre cliente *</label><input type="text" id="eCli" value="'+escAttr(o.cliente)+'"></div>'+
@@ -5378,7 +5378,7 @@ function _liqVend(){
     '<th>Ganancia</th></tr></thead><tbody>'+
     ent.map(o=>{const g=ganVend(o);return '<tr>'+
       '<td style="color:var(--accent);font-size:11px">#'+o.id+'</td>'+
-      '<td>'+fmtDate(o.fecha)+'</td><td>'+o.cliente+'</td><td>'+o.producto+'</td>'+
+      '<td>'+fmtDate(o.fecha)+'</td><td>'+escHtml(o.cliente||'')+'</td><td>'+escHtml(o.producto||'')+'</td>'+
       '<td class="col-hide">'+fmt(o.precio*o.qty)+'</td>'+
       '<td class="col-hide" style="color:var(--red)">'+fmt(o.costo*o.qty)+'</td>'+
       '<td class="col-hide" style="color:var(--blue)">'+fmt(_getZonaO(o).precio)+'</td>'+
@@ -5418,7 +5418,7 @@ function _liqDrop(){
     '<th>Ganancia</th></tr></thead><tbody>'+
     ent.map(o=>{const g=ganVend(o);return '<tr>'+
       '<td style="color:var(--accent);font-size:11px">#'+o.id+'</td>'+
-      '<td>'+fmtDate(o.fecha)+'</td><td>'+o.cliente+'</td><td>'+o.producto+'</td>'+
+      '<td>'+fmtDate(o.fecha)+'</td><td>'+escHtml(o.cliente||'')+'</td><td>'+escHtml(o.producto||'')+'</td>'+
       '<td class="col-hide">'+fmt(o.precio*o.qty)+'</td>'+
       '<td class="col-hide" style="color:var(--red)">'+fmt(o.costo*o.qty)+'</td>'+
       '<td style="color:'+(g>=0?'var(--green)':'var(--red)')+'">'+fmt(g)+'</td>'+
@@ -5450,7 +5450,7 @@ function _liqProv(){
     '<th style="text-align:center">Cant.</th><th>Costo unit.</th><th style="color:var(--accent)">Total</th></tr></thead><tbody>'+
     ent.map(o=>'<tr>'+
       '<td style="color:var(--accent);font-size:11px">#'+o.id+'</td>'+
-      '<td>'+fmtDate(o.fecha)+'</td><td>'+o.cliente+'</td><td>'+o.producto+'</td>'+
+      '<td>'+fmtDate(o.fecha)+'</td><td>'+escHtml(o.cliente||'')+'</td><td>'+escHtml(o.producto||'')+'</td>'+
       '<td style="text-align:center">'+o.qty+'</td>'+
       '<td>'+fmt(o.costo)+'</td>'+
       '<td style="color:var(--accent);font-weight:700">'+fmt(o.costo*o.qty)+'</td>'+
@@ -5490,9 +5490,9 @@ PAGES.recaudacion=function(){
     '<th>Cobrado</th><th>Foto</th></tr></thead><tbody>'+
     (dO.length?dO.map(o=>'<tr>'+
       '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">#'+o.id+'</td>'+
-      '<td>'+fmtDate(o.fecha)+'</td><td>'+o.cliente+'</td>'+
-      '<td class="col-hide" style="font-size:11px">'+_getZonaO(o).nombre+'</td>'+
-      '<td>'+(o.metodoCobro?'<span class="badge be">'+MICON[o.metodoCobro]+' '+o.metodoCobro+'</span>':'—')+'</td>'+
+      '<td>'+fmtDate(o.fecha)+'</td><td>'+escHtml(o.cliente||'')+'</td>'+
+      '<td class="col-hide" style="font-size:11px">'+escHtml(_getZonaO(o).nombre||'')+'</td>'+
+      '<td>'+(o.metodoCobro?'<span class="badge be">'+MICON[o.metodoCobro]+' '+escHtml(o.metodoCobro)+'</span>':'—')+'</td>'+
       '<td class="col-hide" style="color:var(--blue);font-size:12px">'+fmt(_getZonaO(o).precio)+'</td>'+
       '<td class="col-hide" style="color:var(--purple);font-size:12px">'+((_getZonaO(o).extraDelivery||0)>0?fmt(_getZonaO(o).extraDelivery):'—')+'</td>'+
       '<td style="color:var(--green);font-size:12px">'+fmt(o.precio*o.qty)+'</td>'+
@@ -6561,15 +6561,15 @@ PAGES.usuarios=async function(){
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">#'+u.id+'</td>'+
     '<td style="font-weight:600">'+
       (u.foto_perfil?'<img src="'+safeUrl(u.foto_perfil)+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:6px;vertical-align:middle">':'')+
-      u.nombre+
+      escHtml(u.nombre||'')+
       (u.badge_confianza?' <span class="badge-confianza" style="font-size:9px">🛡️</span>':'')+
       (u.verificado?' <span class="badge-verif" style="font-size:9px">✓</span>':'')+
     '</td>'+
-    '<td class="td-user" style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--text2)" title="'+u.username+'">'+u.username+'</td>'+
+    '<td class="td-user" style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--text2)" title="'+escAttr(u.username)+'">'+escHtml(u.username||'')+'</td>'+
     '<td><span class="badge '+(u.rol==='admin'?'bc':u.rol==='vendedor'?'bdisp':u.rol==='dropshipper'?'bn1':u.rol==='delivery'?'be':u.rol==='proveedor'?'bprov':'br')+'">'+capRole(u.rol)+'</span></td>'+
-    '<td class="col-hide" style="font-size:12px">'+(u.vehiculo||'—')+'</td>'+
-    '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">'+(u.patente||'—')+'</td>'+
-    '<td class="col-hide" style="font-size:11px;color:var(--cyan)">'+(u.whatsapp||'—')+'</td>'+
+    '<td class="col-hide" style="font-size:12px">'+escHtml(u.vehiculo||'—')+'</td>'+
+    '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">'+escHtml(u.patente||'—')+'</td>'+
+    '<td class="col-hide" style="font-size:11px;color:var(--cyan)">'+escHtml(u.whatsapp||'—')+'</td>'+
     '<td class="col-hide" style="font-size:12px">'+
       (u.calificacion_prom>0?_renderStars(u.calificacion_prom)+' <span style="color:var(--text3);font-size:10px">'+u.calificacion_prom.toFixed(1)+' ('+u.calificaciones_total+')</span>':'<span style="color:var(--text3)">—</span>')+
     '</td>'+
@@ -7137,8 +7137,8 @@ function _renderProductoCard(p,canEdit,canOrder=false){
   const esAdmin=isAdminLike(CU.rol);
   const tieneOferta=p.precio_comparacion>0;
   const fotoHtml=p.foto
-    ?'<img src="'+safeUrl(p.foto)+'" alt="'+p.nombre+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">'
-    :(p.fotos&&p.fotos.length?'<img src="'+safeUrl(p.fotos[0])+'" alt="'+p.nombre+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">':'<div class="prod-img-placeholder">📦</div>');
+    ?'<img src="'+safeUrl(p.foto)+'" alt="'+escAttr(p.nombre)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">'
+    :(p.fotos&&p.fotos.length?'<img src="'+safeUrl(p.fotos[0])+'" alt="'+escAttr(p.nombre)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">':'<div class="prod-img-placeholder">📦</div>');
   const presHtml=p.presentaciones&&p.presentaciones.length
     ?'<div class="prod-pres-grid">'+
       p.presentaciones.map(pr=>{
@@ -7162,9 +7162,9 @@ function _renderProductoCard(p,canEdit,canOrder=false){
       (p.publicar_tienda?'<span class="prod-badge-tienda">En tienda</span>':'')+
     '</div>'+
     '<div class="prod-info">'+
-      (p.categoria?'<div class="prod-cat">'+p.categoria+'</div>':'')+
-      '<div class="prod-nombre" onclick="verProducto('+p.id+')" style="cursor:pointer">'+p.nombre+'</div>'+
-      (p.proveedorNombre?'<div class="prod-prov">'+p.proveedorNombre+'</div>':'')+
+      (p.categoria?'<div class="prod-cat">'+escHtml(p.categoria)+'</div>':'')+
+      '<div class="prod-nombre" onclick="verProducto('+p.id+')" style="cursor:pointer">'+escHtml(p.nombre||'')+'</div>'+
+      (p.proveedorNombre?'<div class="prod-prov">'+escHtml(p.proveedorNombre)+'</div>':'')+
       '<div class="prod-precio-wrap">'+
         (tieneOferta?'<span class="prod-precio-tachado">'+fmt(p.precio_comparacion)+'</span>':'')+
         (p.presentaciones&&p.presentaciones.length?'<span class="prod-precio-actual">'+fmt(_getPrecioRol(p.presentaciones[0],CU.rol))+'</span>':'<span style="font-size:12px;color:var(--text3)">Sin precio</span>')+
@@ -7279,7 +7279,7 @@ PAGES.catalogo_todos=function(q=''){
 };
 
 function openNuevoProducto(){
-  const provs=isAdminLike(CU.rol)?_usersCache.filter(u=>u.rol==='proveedor').map(u=>'<option value="'+u.nombre+'">'+u.nombre+'</option>').join(''):'';
+  const provs=isAdminLike(CU.rol)?_usersCache.filter(u=>u.rol==='proveedor').map(u=>'<option value="'+escAttr(u.nombre)+'">'+escHtml(u.nombre||'')+'</option>').join(''):'';
   const cats=['Línea Automotriz','Línea Hogar e Industrial','Ferretería','Electrónicos','Accesorios','Otro'].map(c=>'<option value="'+c+'">'+c+'</option>').join('');
   openA('Nuevo producto',
     // MULTIMEDIA
@@ -7401,7 +7401,7 @@ function _shareDrop(q){
 }
 async function editProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
-  const provs=_usersCache.filter(u=>u.rol==='proveedor').map(u=>'<option value="'+u.nombre+'" '+(p.proveedorNombre===u.nombre?'selected':'')+'>'+u.nombre+'</option>').join('');
+  const provs=_usersCache.filter(u=>u.rol==='proveedor').map(u=>'<option value="'+escAttr(u.nombre)+'" '+(p.proveedorNombre===u.nombre?'selected':'')+'>'+escHtml(u.nombre||'')+'</option>').join('');
   let sharesHTML='';
   if(CU.rol!=='delivery'){
     let avail=[];
