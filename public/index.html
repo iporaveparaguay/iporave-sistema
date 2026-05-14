@@ -7950,6 +7950,9 @@ function openProductoPicker(){
 function exportOrdersPDF(){
   const orders=_ordersForExport();
   if(!orders.length){pushNotif('No hay pedidos para exportar','w');return;}
+  const emp=_getEmpresa();
+  const cPrimE=emp.colorPrimario||'#f5a623';
+  const cSecE=emp.colorSecundario||'#0f172a';
   const ent=orders.filter(o=>o.estado==='Entregado');
   const totV=orders.reduce((a,o)=>a+o.precio*o.qty,0);
   const totC=orders.reduce((a,o)=>a+o.costo*o.qty,0);
@@ -7975,9 +7978,12 @@ function exportOrdersPDF(){
       +'<td style="font-size:11px;color:#64748b">'+escHtml(o.proveedor||'—')+'</td>'
       +'</tr>';
   }).join('');
-  const css='*{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,Segoe UI,sans-serif;background:#f1f5f9;color:#0f172a;font-size:13px;}.page{max-width:1260px;margin:0 auto;padding:28px;}.card{background:#fff;border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);}.hdr{display:flex;justify-content:space-between;align-items:flex-start;}.brand h1{font-size:34px;font-weight:900;color:#f5a623;letter-spacing:4px;}.brand p{font-size:11px;color:#94a3b8;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}.ri h2{font-size:20px;font-weight:800;text-align:right;}.ri p{font-size:11px;color:#64748b;margin-top:3px;text-align:right;}.divl{height:3px;background:linear-gradient(90deg,#f5a623,#e8891a,#f5a623);border-radius:2px;margin:20px 0;}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}.stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 10px;text-align:center;}.stat .n{font-size:16px;font-weight:900;}.stat .l{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-top:4px;}.gold .n{color:#f5a623;}.green .n{color:#16a34a;}.blue .n{color:#3b82f6;}table{width:100%;border-collapse:collapse;}th{background:#0f172a;color:#f1f5f9;padding:11px 8px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}td{padding:9px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}.ft{display:flex;justify-content:space-between;align-items:center;}.ft p{font-size:11px;color:#94a3b8;}.seal{font-size:12px;font-weight:700;color:#f5a623;letter-spacing:2px;}@media print{body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.page{padding:0;max-width:100%;}.card{box-shadow:none;border-radius:0;}}';
-  const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Iporave Reporte '+today()+'</title><style>'+css+'</style></head><body><div class="page">'
-    +'<div class="card"><div class="hdr"><div class="brand"><h1>IPORAVE</h1><p>Distribuidora Iporave E.A.S. Paraguay</p></div>'
+  const css='*{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,Segoe UI,sans-serif;background:#f1f5f9;color:'+cSecE+';font-size:13px;}.page{max-width:1260px;margin:0 auto;padding:28px;}.card{background:#fff;border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);}.hdr{display:flex;justify-content:space-between;align-items:flex-start;}.brand h1{font-size:34px;font-weight:900;color:'+cPrimE+';letter-spacing:4px;}.brand p{font-size:11px;color:#94a3b8;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}.ri h2{font-size:20px;font-weight:800;text-align:right;}.ri p{font-size:11px;color:#64748b;margin-top:3px;text-align:right;}.divl{height:3px;background:linear-gradient(90deg,'+cPrimE+','+cPrimE+'cc,'+cPrimE+');border-radius:2px;margin:20px 0;}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}.stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 10px;text-align:center;}.stat .n{font-size:16px;font-weight:900;}.stat .l{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-top:4px;}.gold .n{color:'+cPrimE+';}.green .n{color:#16a34a;}.blue .n{color:#3b82f6;}table{width:100%;border-collapse:collapse;}th{background:'+cSecE+';color:#f1f5f9;padding:11px 8px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}td{padding:9px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}.ft{display:flex;justify-content:space-between;align-items:center;}.ft p{font-size:11px;color:#94a3b8;}.seal{font-size:12px;font-weight:700;color:'+cPrimE+';letter-spacing:2px;}@media print{body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.page{padding:0;max-width:100%;}.card{box-shadow:none;border-radius:0;}}';
+  const brandHtml=emp.logo
+    ?'<img src="'+safeUrl(emp.logo)+'" style="height:48px;object-fit:contain">'
+    :'<h1>'+escHtml(emp.nombre||'IPORAVE')+'</h1>';
+  const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>'+escHtml(emp.nombre||'Iporave')+' Reporte '+today()+'</title><style>'+css+'</style></head><body><div class="page">'
+    +'<div class="card"><div class="hdr"><div class="brand">'+brandHtml+'<p>'+escHtml(emp.razon||'Distribuidora '+( emp.nombre||'Iporave')+' Paraguay')+'</p></div>'
     +'<div class="ri"><h2>Reporte de Pedidos</h2><p>'+nowStr()+'</p><p>'+escHtml(CU.nombre)+' - '+escHtml(capRole(CU.rol))+'</p><p>'+orders.length+' pedidos</p></div></div>'
     +'<div class="divl"></div>'
     +'<div class="stats">'
@@ -7992,7 +7998,7 @@ function exportOrdersPDF(){
     +'<th>Precio</th><th>Total venta</th><th>Costo</th><th>Logistica</th><th>Ganancia</th>'
     +'<th>Zona</th><th>Estado</th><th>Cobro</th><th>Proveedor</th>'
     +'</tr></thead><tbody>'+filas+'</tbody></table></div>'
-    +'<div class="card ft"><p>Iporave Connect - iporaveparaguay.com</p><div class="seal">IPORAVE</div><p>Confidencial - '+today()+'</p></div>'
+    +'<div class="card ft"><p>'+escHtml(emp.web||'iporaveparaguay.com')+'</p><div class="seal">'+escHtml(emp.nombre||'IPORAVE')+'</div><p>Confidencial - '+today()+'</p></div>'
     +'</div><scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<'+'/script></body></html>';
   const w=window.open('','_blank');
   if(w){w.document.write(html);w.document.close();}
@@ -8532,18 +8538,20 @@ function imprimirTicket(id){
     ?('https://www.google.com/maps?q='+o.gpsLat+','+o.gpsLng)
     :('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((o.direccion||'')+' '+(z.nombre||'')+' Paraguay'));
   var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=110x110&data='+encodeURIComponent(qrBase);
-  var logoH=emp.logo?('<img src="'+safeUrl(emp.logo)+'" style="height:38px;object-fit:contain">'):('<b style="font-size:17px;color:#f5a623;letter-spacing:2px">'+(emp.nombre||'IPORAVE')+'</b>');
+  var cPrim=emp.colorPrimario||'#f5a623';
+  var cSec=emp.colorSecundario||'#0f172a';
+  var logoH=emp.logo?('<img src="'+safeUrl(emp.logo)+'" style="height:38px;object-fit:contain">'):('<b style="font-size:17px;color:'+cPrim+';letter-spacing:2px">'+escHtml(emp.nombre||'IPORAVE')+'</b>');
   var num=String(o.id).padStart(4,'0');
   var css='*{margin:0;padding:0;box-sizing:border-box;}'
     +'body{font-family:Arial,sans-serif;background:#fff;display:flex;justify-content:center;padding:6mm;}'
-    +'.tk{width:88mm;border:2px solid #0f172a;border-radius:5px;overflow:hidden;font-size:12px;}'
-    +'.tkh{background:#0f172a;padding:7px 11px;display:flex;align-items:center;justify-content:space-between;}'
-    +'.tkn{font-size:20px;font-weight:900;color:#f5a623;font-family:monospace;letter-spacing:2px;}'
+    +'.tk{width:88mm;border:2px solid '+cSec+';border-radius:5px;overflow:hidden;font-size:12px;}'
+    +'.tkh{background:'+cSec+';padding:7px 11px;display:flex;align-items:center;justify-content:space-between;}'
+    +'.tkn{font-size:20px;font-weight:900;color:'+cPrim+';font-family:monospace;letter-spacing:2px;}'
     +'.tkb{display:flex;border-bottom:1px dashed #ddd;}'
     +'.tkq{padding:9px;border-right:1px dashed #ddd;display:flex;flex-direction:column;align-items:center;justify-content:center;}'
     +'.tki{padding:9px;flex:1;}'
     +'.lb{font-size:7px;color:#999;text-transform:uppercase;font-weight:700;margin-bottom:2px;letter-spacing:.5px;}'
-    +'.vl{font-size:11px;font-weight:700;color:#0f172a;margin-bottom:4px;}'
+    +'.vl{font-size:11px;font-weight:700;color:'+cSec+';margin-bottom:4px;}'
     +'.lg{font-size:13px;font-weight:900;}'
     +'.tkp{padding:7px 11px;border-bottom:1px dashed #ddd;display:flex;justify-content:space-between;align-items:center;}'
     +'.tkf{padding:6px 11px;background:#f9f9f9;display:flex;justify-content:space-between;align-items:center;}'
@@ -8596,20 +8604,22 @@ function imprimirGuia(id){
   const emp=_getEmpresa();
   const z=_getZonaO(o);
   const delivery=_usersCache.find(u=>u.id===o.deliveryId)||{nombre:'Sin asignar'};
-  const logoHtml=emp.logo?'<img src="'+safeUrl(emp.logo)+'" style="height:56px;object-fit:contain">':'<div style="font-size:26px;font-weight:900;color:#f5a623;letter-spacing:3px">IPORÃVE</div>';
-  const css='*{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,Segoe UI,sans-serif;background:#fff;color:#0f172a;}'+
-    '.guia{width:100%;max-width:400px;margin:0 auto;border:2px solid #0f172a;border-radius:8px;overflow:hidden;}'+
-    '.g-head{background:#0f172a;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}'+
-    '.g-num{font-size:28px;font-weight:900;color:#f5a623;font-family:monospace;letter-spacing:2px;}'+
+  const cPrimG=emp.colorPrimario||'#f5a623';
+  const cSecG=emp.colorSecundario||'#0f172a';
+  const logoHtml=emp.logo?'<img src="'+safeUrl(emp.logo)+'" style="height:56px;object-fit:contain">':'<div style="font-size:26px;font-weight:900;color:'+cPrimG+';letter-spacing:3px">'+escHtml(emp.nombre||'IPORAVE')+'</div>';
+  const css='*{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,Segoe UI,sans-serif;background:#fff;color:'+cSecG+';}'+
+    '.guia{width:100%;max-width:400px;margin:0 auto;border:2px solid '+cSecG+';border-radius:8px;overflow:hidden;}'+
+    '.g-head{background:'+cSecG+';color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}'+
+    '.g-num{font-size:28px;font-weight:900;color:'+cPrimG+';font-family:monospace;letter-spacing:2px;}'+
     '.g-sub{font-size:10px;color:#94a3b8;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}'+
     '.g-body{padding:14px 16px;}'+
     '.g-sec{margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed #e2e8f0;}'+
     '.g-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:3px;}'+
-    '.g-val{font-size:13px;font-weight:600;color:#0f172a;}'+
+    '.g-val{font-size:13px;font-weight:600;color:'+cSecG+';}'+
     '.g-val.big{font-size:16px;font-weight:800;}'+
     '.g-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}'+
     '.g-cod{background:#f1f5f9;border-radius:6px;padding:10px;text-align:center;margin-bottom:10px;}'+
-    '.g-cod .num{font-size:32px;font-weight:900;font-family:monospace;letter-spacing:4px;color:#0f172a;}'+
+    '.g-cod .num{font-size:32px;font-weight:900;font-family:monospace;letter-spacing:4px;color:'+cSecG+';}'+
     '.g-cod .lbl{font-size:10px;color:#64748b;margin-top:2px;}'+
     '.g-estado{display:inline-block;background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}'+
     '.g-foot{background:#f8fafc;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;}'+
