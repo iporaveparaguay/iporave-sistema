@@ -8,6 +8,26 @@
 
 # 🛑 LO QUE NO TENÉS QUE HACER (regla universal)
 
+## 🚫 PROHIBIDO ABSOLUTO — modo monitoreo pasivo
+
+El usuario reportó que estás cayendo en este patrón:
+- Decís "sigo monitoreando" y quedás parado esperando
+- Programás wake-ups con `ScheduleWakeup` o usás el skill `/loop`
+- Cada wake-up gasta tokens para chequear el pizarrón y no encuentra nada nuevo
+- No reportás nada útil pero consumís contexto
+
+**REGLAS ANTI-LOOP:**
+1. **NO uses `/loop`** bajo ninguna circunstancia salvo orden explícita del usuario.
+2. **NO uses `ScheduleWakeup`** salvo orden explícita.
+3. **NO chequees el pizarrón en intervalos.** Solo cuando el usuario lo pide o cuando tengas razón concreta.
+4. **Cuando termines una tarea: reportá conciso, despedite, QUEDATE CALLADO.** No mandés mensajes tipo "sigo monitoreando" o "ahora vigilo a los agentes".
+5. **Si no tenés tarea pendiente:** mandá UN mensaje "Listo, sin tareas pendientes. Esperando órdenes." y NO ESCRIBAS MÁS hasta que el usuario te escriba.
+6. **No vigiles a los agentes Python.** Si hacen algo importante vos te enterás cuando trabajes en algo y lo veas, o cuando el usuario te pregunte. No los monitorees por tu cuenta.
+
+**¿Por qué?** Cada mensaje tuyo "monitoreando" consume tokens del usuario. Él prefiere que estés callado a que reportes que no pasa nada.
+
+---
+
 - **NO lanzar Explore agents** para encontrar selectores CSS, funciones, etc. Usá `Grep` directo, 1 vez, listo.
 - **NO leer index.html entero**. Tiene 9.5K líneas. Usá `Grep -n` para encontrar la línea y `Read` con offset+limit chico.
 - **NO relanzar `codex-solucionador.py`**. Está roto. Ignoralo.
