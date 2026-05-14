@@ -4622,7 +4622,7 @@ function editOrder(id){
     '<input type="text" id="eSitio" value="'+escAttr(o.sitio)+'" placeholder="Referencia del lugar"></div>'+
     '<div class="fg">'+
     '<label>🔗 Pegar enlace o coordenadas <span style="font-weight:400;color:var(--text3);font-size:11px">(Google Maps, WhatsApp, lat,lng)</span></label>'+
-    '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="procesarUbicacion(this.value)">'+
+    '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="_dbSearch(\'gpsUbic\',this.value,v=>procesarUbicacion(v),350)">'+
     '<input type="hidden" id="nGpsLat" value="'+escHtml(_validGps(o.gpsLat,o.gpsLng)?o.gpsLat:'')+'"><input type="hidden" id="nGpsLng" value="'+escHtml(_validGps(o.gpsLat,o.gpsLng)?o.gpsLng:'')+'">'+
     '<div id="nGpsStatus" style="font-size:11px;color:var(--text3);margin-top:3px">'+(_validGps(o.gpsLat,o.gpsLng)?'<span style="color:var(--green)">📍 GPS guardado: '+parseFloat(o.gpsLat).toFixed(5)+', '+parseFloat(o.gpsLng).toFixed(5)+'</span>':'')+'</div>'+
     '</div>'+
@@ -4845,7 +4845,7 @@ function openNewOrder(){
     '<input type="text" id="nSitio" placeholder="Referencia del lugar — más certero que la dirección en muchos casos"></div>'+
     '<div class="fg">'+
     '<label>🔗 Pegar enlace o coordenadas <span style="font-weight:400;color:var(--text3);font-size:11px">(Google Maps, WhatsApp, lat,lng)</span></label>'+
-    '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="procesarUbicacion(this.value)">'+
+    '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="_dbSearch(\'gpsUbic\',this.value,v=>procesarUbicacion(v),350)">'+
     '<input type="hidden" id="nGpsLat"><input type="hidden" id="nGpsLng">'+
     '<div id="nGpsStatus" style="font-size:11px;color:var(--text3);margin-top:3px"></div>'+
     '</div>'+
