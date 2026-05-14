@@ -205,16 +205,16 @@ REGLA CRÍTICA para TODAS las tareas de esta zona:
 - NUNCA modificar HTML ni JavaScript
 - Si el modelo propone cambios fuera del bloque style → rechazar, reintentar con instruccion mas acotada
 
-- [!] **visual-inputs** — SOLO CSS en bloque style existente: buscar selectores input, select, textarea. Agregar border-radius:8px en el selector base. En el selector :focus agregar border-color:var(--accent,#6c63ff); outline:none; transition:border-color .2s ease; No crear HTML. No tocar scripts.
-- [!] **visual-modals** — SOLO CSS en bloque style existente: buscar .modal-overlay o selector del fondo oscuro del modal. Agregar backdrop-filter:blur(4px); background:rgba(0,0,0,.55); Al contenedor del modal (.modal-content o similar) agregar border-radius:14px; Una regla por selector. No crear HTML. No tocar JS.
-- [!] **visual-topbar** — SOLO CSS en bloque style: buscar .topbar o #topbar. Agregar box-shadow:0 1px 8px rgba(0,0,0,.3); solo si no tiene box-shadow ya. Una linea. No tocar nada mas.
-- [~] **visual-sidebar** — SOLO CSS en bloque style: buscar .sidebar o #sidebar. Agregar transition:width .25s ease; overflow:hidden; Solo esas dos propiedades en el selector existente. No tocar HTML ni JS.
-- [~] **visual-empty-states** — SOLO CSS en bloque style: buscar .empty-state o .no-data o .lista-vacia. Agregar: text-align:center; color:var(--text2,#888); font-size:13px; padding:2rem; No crear HTML nuevo.
-- [~] **visual-loading** — SOLO CSS en bloque style: buscar @keyframes spin o .spinner o .loading. Asegurar que el keyframe sea: @keyframes spin { to { transform:rotate(360deg) } } y la animacion: animation:spin 1s linear infinite; Solo CSS, no tocar JS.
-- [~] **visual-tabs** — SOLO CSS en bloque style: buscar .tab o .nav-tab. En el selector de pestaña inactiva agregar: border-bottom:2px solid transparent; En .tab.active o .nav-tab.active agregar: border-bottom:2px solid var(--accent,#6c63ff); Solo CSS.
-- [~] **visual-cards-hover** — SOLO CSS: buscar .card, .lcard2 en bloque style. Agregar transition:box-shadow .2s ease; En el selector :hover agregar box-shadow:0 4px 20px rgba(0,0,0,.25); Solo CSS.
-- [~] **visual-btn-primary** — SOLO CSS: buscar .btn-primary o .btn.accent en bloque style. Agregar box-shadow:0 4px 14px rgba(108,99,255,.35); Solo esa propiedad. No tocar JS.
-- [~] **visual-scrollbar** — SOLO CSS: agregar al final del bloque style: ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px} Solo CSS, no tocar nada mas.
+- [x] **visual-inputs** — ya existia en .fg input con border-radius, outline:none, transition, focus color. OK.
+- [x] **visual-modals** — backdrop-filter:blur(4px) agregado a .moverlay. Background suavizado a .65. OK.
+- [x] **visual-topbar** — box-shadow:0 1px 8px rgba(0,0,0,.3) agregado a .topbar. OK.
+- [x] **visual-sidebar** — transition:width .25s ease agregado a .sidebar. OK.
+- [x] **visual-empty-states** — .empty-state,.no-data,.lista-vacia{text-align:center;...} agregado. OK.
+- [x] **visual-loading** — @keyframes spin + .spinner agregados. OK.
+- [x] **visual-tabs** — ya existia via .ptab con border-bottom:2px solid transparent y .ptab.active. OK.
+- [x] **visual-cards-hover** — transition:box-shadow .2s ease y .lcard2:hover agregados. OK.
+- [x] **visual-btn-primary** — box-shadow:0 4px 14px rgba(245,166,35,.35) agregado a .btn-primary. OK.
+- [x] **visual-scrollbar** — ya existia en L53. OK.
 
 #### ZONA CATALOGO — catalog.html — Gemini/Antigravity
 - [x] **catalog-filtros-visual** — Los botones de filtro de categoria: cuando estan activos (.active) agregar background:var(--primary) y color:white. Solo CSS.
