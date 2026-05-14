@@ -959,7 +959,7 @@ function _updateBell(){
 }
 function _renderNotifList(){
   const list=$('ntList');if(!list)return;
-  if(!_notifHistory.length){list.innerHTML='<div class="ntp-empty">Sin notificaciones</div>';return;}
+  if(!_notifHistory.length){list.innerHTML='<div class="ntp-empty" style="text-align:center;padding:32px 16px"><div style="font-size:42px;margin-bottom:8px;opacity:.7">🔔</div><div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px">Sin notificaciones</div><div style="font-size:11px;color:var(--text3)">Te avisaremos cuando llegue algo nuevo</div></div>';return;}
   list.innerHTML=_notifHistory.map((n,i)=>
     '<div class="ntp-item'+(n.read?'':' unread')+(n.action?' clickable':'')+'" data-nidx="'+i+'">'+
     '<div class="ntp-dot" style="background:'+n.color+'"></div>'+
@@ -3036,14 +3036,47 @@ function closeSidebar(){
   if(o)o.classList.remove('show');
 }
 
+const NAV_TIPS={
+  dashboard:'Vista general del sistema con métricas clave',
+  orders:'Ver y gestionar todos los pedidos',
+  mispedidos:'Ver el estado de mis pedidos',
+  balance:'Ver balance diario del negocio',
+  liquidacion:'Liquidación de comisiones y pagos',
+  usuarios:'Gestionar usuarios del sistema',
+  zonas:'Configurar zonas de entrega y tarifas',
+  catalogo:'Catálogo completo de productos',
+  config:'Configuración general del sistema',
+  setup:'Setup técnico y consultas SQL',
+  mapa:'Ver pedidos en el mapa en tiempo real',
+  recaudacion:'Recaudación del delivery por jornada',
+  boletas:'Generación y consulta de boletas IVA',
+  cierre:'Cierre de jornada del día',
+  estadisticas:'Estadísticas avanzadas del negocio',
+  analitica_admin:'Analítica integral del ecosistema',
+  analitica_vend:'Mi analítica como vendedor',
+  analitica_drop:'Mi analítica como dropshipper',
+  analitica_prov:'Mi analítica como proveedor',
+  mensajes:'Mensajes internos con el equipo',
+  neworder:'Crear un nuevo pedido',
+  entregas:'Mis entregas asignadas',
+  cupo:'Mi cupo del día y premios',
+  suministros:'Mis suministros activos',
+  pagos_prov:'Mis pagos como proveedor',
+  clientes_recurrentes:'Mis clientes recurrentes'
+};
 function buildNav(){
   const groups=NAV_CFG[CU.rol]||[];
+  const buildDate='2026-05-14';
   $('snav').innerHTML=groups.map(g=>
     '<div class="nsec">'+g.s+'</div>'+
-    g.items.map(it=>'<div class="ni" id="ni_'+it.id+'" onclick="nav(\''+it.id+'\')">'+
-      (SVG[it.ic]||'')+' '+it.l+
-      '<span class="nbadge" id="nbadge_'+it.id+'" style="display:none"></span></div>').join('')
-  ).join('');
+    g.items.map(it=>{
+      const tip=NAV_TIPS[it.id]||it.l;
+      return '<div class="ni" id="ni_'+it.id+'" title="'+escHtml(tip)+'" onclick="nav(\''+it.id+'\')">'+
+        (SVG[it.ic]||'')+' '+it.l+
+        '<span class="nbadge" id="nbadge_'+it.id+'" style="display:none"></span></div>';
+    }).join('')
+  ).join('')+
+  '<div class="snav-version" title="Versión del sistema">IPORÃVE v7.x · Build '+buildDate+'</div>';
   updateNavBadges();
 }
 function updateNavBadges(){
@@ -3103,14 +3136,46 @@ function nav(page){
   if(page==='config'||page==='setup'){
     _requireSensitiveAuth(function(){
       const fn=PAGES[page];
-      if(fn)fn();
-      else $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Página en construcción</div>';
+      _runPageWithSpinner(fn,page);
     });
     return;
   }
   const fn=PAGES[page];
-  if(fn)fn();
-  else $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Página en construcción</div>';
+  _runPageWithSpinner(fn,page);
+}
+function _runPageWithSpinner(fn,page){
+  const ca=$('ca');
+  if(!ca){if(fn)fn();return;}
+  // Mostrar overlay solo si la página tarda más de 80ms (evita flicker).
+  let shown=false;
+  const t=setTimeout(function(){
+    if(ca.querySelector('.page-loading-overlay'))return;
+    if(getComputedStyle(ca).position==='static')ca.style.position='relative';
+    const ov=document.createElement('div');
+    ov.className='page-loading-overlay';
+    ov.id='_pageLoadingOv';
+    ov.innerHTML='<div class="spinner" role="status" aria-label="Cargando"></div>';
+    ca.appendChild(ov);
+    shown=true;
+  },80);
+  const hide=function(){
+    clearTimeout(t);
+    const ov=document.getElementById('_pageLoadingOv');
+    if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);
+  };
+  try{
+    if(fn){
+      const ret=fn();
+      if(ret&&typeof ret.then==='function'){
+        ret.then(hide,hide);
+        return;
+      }
+    }else{
+      ca.innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Página en construcción</div>';
+    }
+  }catch(e){console.error('[nav]',e);}
+  // Para funciones síncronas damos un microtask para que el DOM se actualice.
+  setTimeout(hide,30);
 }
 
 /* ══════════════════════════════════════════════════
@@ -4573,7 +4638,7 @@ function _toggleCatMenu(e,id){
 }
 function renderTable(orders,title,showActs,highlightChanges){
   if(highlightChanges)_prepareOrderStateHighlights(orders);
-  if(!orders.length){if(highlightChanges)_commitOrderStateSnapshot(orders);return '<div style="text-align:center;padding:48px;color:var(--text3)">No hay pedidos</div>';}
+  if(!orders.length){if(highlightChanges)_commitOrderStateSnapshot(orders);return '<div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:64px;margin-bottom:16px">📦</div><div style="font-size:16px;font-weight:600;margin-bottom:6px">No hay pedidos</div><div style="font-size:13px;color:var(--text3);margin-bottom:18px">Comenzá creando tu primer pedido</div>'+(typeof PAGES!=="undefined"&&PAGES.neworder?'<button class="btn btn-primary" onclick="nav(\'neworder\')">+ Nuevo pedido</button>':'')+'</div>';}
   const canEdit=['admin','superadmin','vendedor'].includes(CU.rol);
   const isDel=CU.rol==='delivery';
   const html='<div class="tc"><div class="th2"><span class="tt">'+escHtml(title||'')+'</span></div>'+
@@ -6730,7 +6795,7 @@ PAGES.clientes_recurrentes=function(){
       (top?'<div class="sc bl"><div class="slabel">⭐ Más frecuente</div><div class="sval" style="font-size:14px;font-weight:700">'+top.nombre+'</div><div class="ssub">'+top.pedidos+' pedidos</div></div>':'')+''+
     '</div>'+
     (lista.length===0?
-      '<div style="text-align:center;padding:60px;color:var(--text3)">No hay pedidos registrados todavía.</div>':
+      '<div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:64px;margin-bottom:16px">📦</div><div style="font-size:16px;font-weight:600;margin-bottom:6px">Sin pedidos registrados</div><div style="font-size:13px;color:var(--text3)">Aún no hay pedidos en el sistema.</div></div>':
       '<div class="tc"><div class="th2"><span class="tt">👥 Clientes Recurrentes</span></div>'+
       '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
       '<th>Cliente</th><th style="text-align:center">Pedidos</th><th style="text-align:right">Total</th><th>Último pedido</th></tr></thead><tbody>'+
@@ -7626,7 +7691,7 @@ PAGES.catalogo_todos=function(q=''){
     grupos[oid].productos.push(p);
   });
   const keys=Object.keys(grupos);
-  if(!keys.length){$('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">No hay productos cargados aún.</div>';return;}
+  if(!keys.length){$('ca').innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:64px;margin-bottom:16px">🛍️</div><div style="font-size:16px;font-weight:600;margin-bottom:6px">Catálogo vacío</div><div style="font-size:13px;color:var(--text3);margin-bottom:18px">'+(puedeEditar?'Comenzá agregando tu primer producto':'Aún no hay productos disponibles')+'</div>'+(puedeEditar?'<button class="btn btn-primary" onclick="openNuevoProducto()">+ Nuevo producto</button>':'')+'</div>';return;}
   $('ca').innerHTML='<div style="max-width:860px">'+
     '<div style="margin-bottom:14px">'+
       '<input type="text" placeholder="🔍 Buscar producto…" value="'+escAttr(q)+'" oninput="_dbSearch(\'catTodos\',this.value,v=>PAGES.catalogo_todos(v))" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
@@ -8391,7 +8456,7 @@ function renderOrderChat(orderId){
   const o=_ordersCache.find(x=>x.id===orderId);
   const msgs=(o&&o.chat)||[];
   const wrap=$('chatMsgs_'+orderId);if(!wrap)return;
-  if(!msgs.length){wrap.innerHTML='<div style="text-align:center;color:var(--text3);font-size:12px;padding:18px">Sin mensajes aún</div>';return;}
+  if(!msgs.length){wrap.innerHTML='<div style="text-align:center;padding:32px 16px;color:var(--text2)"><div style="font-size:42px;margin-bottom:10px">💬</div><div style="font-size:13px;font-weight:600;margin-bottom:4px">Sin mensajes aún</div><div style="font-size:11px;color:var(--text3)">Escribí abajo para iniciar la conversación</div></div>';return;}
   wrap.innerHTML=msgs.map(m=>{
     const isMe=m.userId===CU.id;
     return '<div class="chat-msg">'+
