@@ -192,19 +192,100 @@ No necesitás poner variables de entorno — ya están guardadas con setx.
 - Node-RED + pizarrón operativo
 - Google Sheets escribiendo desde Node-RED
 
-### Pendiente 🔴 (prioridad alta)
+### Pendiente 🔴 — COLA DE TAREAS PARA EL ORQUESTADOR
 
-#### 1. ~~Mejoras visuales botones~~ ✅ COMPLETADO (commit f09be67)
-- Grid 2 columnas en mobile, gap aumentado, box-shadow, padding profesional
-- Barra búsqueda global: corregida para no tapar iconos topbar en mobile
+Formato: cada tarea tiene archivo, instruccion, y zona. El orquestador las ejecuta en orden.
+Estados: [ ] pendiente | [~] en progreso | [x] completada | [!] bloqueada (necesita revision humana)
+Cuando una tarea se completa, marcarla [x]. Cuando se empieza, marcarla [~].
 
-#### 2. Tienda pública — catálogo + flujo de compra (catalog.html)
-**Zona:** Antigravity
-**Pendiente:** Auto-registro de clientes, flujo de compra completo, pago
+#### ZONA FRONTEND — index.html CSS — Gemini/Codex
+REGLA CRÍTICA para TODAS las tareas de esta zona:
+- SOLO agregar/modificar reglas CSS dentro del bloque <style> ya existente
+- NUNCA escribir </script> ni tocar bloques <script>
+- NUNCA modificar HTML ni JavaScript
+- Si el modelo propone cambios fuera del bloque style → rechazar, reintentar con instruccion mas acotada
 
-#### 3. JWT + RLS Security Audit
-**SOLO Claude Code o GPT-4o**
-**No delegar a modelos baratos — es seguridad crítica**
+- [!] **visual-inputs** — SOLO CSS en bloque style existente: buscar selectores input, select, textarea. Agregar border-radius:8px en el selector base. En el selector :focus agregar border-color:var(--accent,#6c63ff); outline:none; transition:border-color .2s ease; No crear HTML. No tocar scripts.
+- [!] **visual-modals** — SOLO CSS en bloque style existente: buscar .modal-overlay o selector del fondo oscuro del modal. Agregar backdrop-filter:blur(4px); background:rgba(0,0,0,.55); Al contenedor del modal (.modal-content o similar) agregar border-radius:14px; Una regla por selector. No crear HTML. No tocar JS.
+- [!] **visual-topbar** — SOLO CSS en bloque style: buscar .topbar o #topbar. Agregar box-shadow:0 1px 8px rgba(0,0,0,.3); solo si no tiene box-shadow ya. Una linea. No tocar nada mas.
+- [~] **visual-sidebar** — SOLO CSS en bloque style: buscar .sidebar o #sidebar. Agregar transition:width .25s ease; overflow:hidden; Solo esas dos propiedades en el selector existente. No tocar HTML ni JS.
+- [~] **visual-empty-states** — SOLO CSS en bloque style: buscar .empty-state o .no-data o .lista-vacia. Agregar: text-align:center; color:var(--text2,#888); font-size:13px; padding:2rem; No crear HTML nuevo.
+- [~] **visual-loading** — SOLO CSS en bloque style: buscar @keyframes spin o .spinner o .loading. Asegurar que el keyframe sea: @keyframes spin { to { transform:rotate(360deg) } } y la animacion: animation:spin 1s linear infinite; Solo CSS, no tocar JS.
+- [~] **visual-tabs** — SOLO CSS en bloque style: buscar .tab o .nav-tab. En el selector de pestaña inactiva agregar: border-bottom:2px solid transparent; En .tab.active o .nav-tab.active agregar: border-bottom:2px solid var(--accent,#6c63ff); Solo CSS.
+- [~] **visual-cards-hover** — SOLO CSS: buscar .card, .lcard2 en bloque style. Agregar transition:box-shadow .2s ease; En el selector :hover agregar box-shadow:0 4px 20px rgba(0,0,0,.25); Solo CSS.
+- [~] **visual-btn-primary** — SOLO CSS: buscar .btn-primary o .btn.accent en bloque style. Agregar box-shadow:0 4px 14px rgba(108,99,255,.35); Solo esa propiedad. No tocar JS.
+- [~] **visual-scrollbar** — SOLO CSS: agregar al final del bloque style: ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px} Solo CSS, no tocar nada mas.
+
+#### ZONA CATALOGO — catalog.html — Gemini/Antigravity
+- [x] **catalog-filtros-visual** — Los botones de filtro de categoria: cuando estan activos (.active) agregar background:var(--primary) y color:white. Solo CSS.
+- [x] **catalog-precio** — El precio del producto: font-size:20px, font-weight:700, color:var(--primary). Solo CSS.
+- [x] **catalog-empty** — Si no hay productos en el filtro, mostrar mensaje centrado "No hay productos en esta categoria". Solo CSS/HTML del estado vacio.
+- [x] **catalog-footer** — Agregar footer simple con copyright y link a terminos al final de catalog.html. Solo HTML/CSS.
+- [x] **catalog-mobile-nav** — En mobile, el navbar fijo arriba no debe tapar el contenido: agregar padding-top al body igual a la altura del nav. Solo CSS media query.
+
+#### ZONA WORKER — archivos pequeños — Qwen7B/Groq
+- [x] **worker-calificaciones** — En calificaciones.js: todos los catch deben retornar json(data,status) con 2 argumentos. No cambiar logica.
+- [x] **worker-catalog-public** — En catalog-public.js: agregar try/catch global, retornar json({error:'Error interno'},500) si falla. No cambiar logica.
+- [x] **worker-notif-entrega** — En notif-entrega.js: verificar que todos los return usen json(data,status) con exactamente 2 argumentos.
+- [x] **worker-geocode** — En geocode.js: agregar validacion de parametros al inicio — si falta lat o lng, retornar json({error:'Parametros requeridos: lat, lng'},400).
+- [x] **worker-order-status-logs** — En order-status.js: agregar campo updated_at con timestamp en cada actualizacion de estado. No cambiar logica principal.
+
+#### ZONA PAGINAS PUBLICAS — otras paginas — Gemini
+- [x] **paginas-meta-tags** — En todas las paginas publicas (tracking.html, faq.html, contacto.html): verificar que tengan meta description y og:title correctos.
+- [x] **paginas-favicon** — Verificar que todas las paginas publicas tengan link rel=icon apuntando al favicon correcto.
+
+---
+
+#### ZONA FEATURES — index.html funcionalidades JS — Gemini 1M ctx
+
+- [~] **feature-auto-registro-ui** — Agregar pantalla de auto-registro para nuevos clientes: formulario con nombre, email, telefono, password, rol (cliente/vendedor/dropshipper). Al enviar, POST a /api/auth/registro. Mostrar mensaje de "pendiente aprobacion" al terminar. Solo mostrar esta pantalla si el usuario no esta logueado.
+
+- [~] **feature-whatsapp-config** — En la seccion de configuracion del perfil (visible para admin, vendedor, dropshipper), agregar subseccion "Configuracion WhatsApp Business" con campos: Token de API, Phone Number ID, Business Account ID. Boton "Guardar" que hace PUT a /api/config/whatsapp. Boton "Probar conexion" que hace POST a /api/config/whatsapp/test y muestra resultado. Mostrar estado actual: conectado (verde) o no configurado (amarillo).
+
+- [~] **feature-asistente-ia** — Reemplazar el boton flotante de IA actual por un chat funcional que llama a /api/ai/chat con el mensaje del usuario. El endpoint devuelve la respuesta. UI: burbuja flotante, al hacer click abre panel lateral con historial de mensajes, input y boton enviar. Usar el mismo estilo visual del sistema.
+
+- [~] **feature-analytics-admin** — En el dashboard del superadmin, agregar seccion "Analitica avanzada" con: grafica de ventas por semana (ultimas 4 semanas), top 5 vendedores por volumen, mapa de calor de horas con mas pedidos (24 franjas), tasa de entrega exitosa. Datos desde /api/analytics/admin. Usar Chart.js que ya esta incluido.
+
+- [~] **feature-boletas-pdf** — Agregar boton "Descargar boleta PDF" en el detalle de cada pedido. Al hacer click, llama a /api/boletas/{pedido_id} que devuelve HTML, luego usa window.print() con estilos de impresion para generar PDF desde el navegador. Mostrar numero de pedido, productos, total, fecha, datos del cliente.
+
+- [~] **feature-pwa** — Agregar soporte PWA: crear boton "Instalar app" que aparece solo cuando el navegador soporta instalacion (evento beforeinstallprompt). Al hacer click, llama a prompt.prompt(). El boton debe estar en el topbar, solo visible si la app no esta instalada. No tocar el manifest.json existente si ya existe.
+
+- [~] **feature-gps-tracking** — En el panel del delivery, agregar seccion "Mi ubicacion" con boton "Iniciar tracking". Al activar, llama a navigator.geolocation.watchPosition() y envia lat/lng a /api/delivery/ubicacion cada 30 segundos. Mostrar estado "Tracking activo" con punto verde parpadeante. Boton "Detener" para parar. En el panel del cliente, en el detalle del pedido activo, mostrar mapa Leaflet con la ubicacion del delivery en tiempo real (GET /api/pedidos/{id}/ubicacion-delivery).
+
+- [~] **feature-rol-empresa** — Agregar rol "empresa" al sistema: en el panel de superadmin, seccion "Empresas" que lista cuentas con rol empresa. Cada empresa puede ver sus propios pedidos y vendedores asignados. UI similar al panel dropshipper pero con nombre de empresa en el topbar. Endpoint GET /api/empresa/dashboard para sus metricas.
+
+---
+
+#### ZONA WORKER — nuevos endpoints — Groq/Gemini
+
+- [x] **worker-auto-registro** — Crear src/api/auto-registro.js: endpoint POST /api/auth/registro que recibe {nombre, email, telefono, password, rol_solicitado}, crea usuario en Supabase Auth, inserta en tabla usuarios con estado='pendiente', notifica al superadmin via tabla notificaciones. Retornar json({ok:true, mensaje:'Registro recibido, pendiente aprobacion'},201).
+
+- [x] **worker-whatsapp-config** — Crear src/api/whatsapp-config.js: GET /api/config/whatsapp devuelve config actual del usuario autenticado (sin mostrar el token completo, solo los ultimos 4 chars). PUT /api/config/whatsapp guarda {token, phone_number_id, business_account_id} encriptado en tabla config_integraciones. POST /api/config/whatsapp/test envia mensaje de prueba "Conexion exitosa con Iporave" al numero configurado usando la API de WhatsApp. Retornar resultado.
+
+- [x] **worker-ai-chat** — Crear src/api/ai-chat.js: endpoint POST /api/ai/chat que recibe {mensaje, historial:[]} y llama a Cloudflare AI (env.AI.run('@cf/meta/llama-3.1-8b-instruct', {messages})) con contexto del sistema Iporave. Si falla, usar fetch a api.groq.com con model llama-3.3-70b-versatile y GROQ_API_KEY del env. Retornar json({respuesta: texto}, 200).
+
+- [x] **worker-boletas** — Crear src/api/boletas.js: endpoint GET /api/boletas/{pedido_id} que obtiene el pedido con sus items, cliente y vendedor, genera HTML de boleta con estilos de impresion (tabla de productos, totales, logo Iporave, fecha, numero de pedido), retorna como text/html. Solo accesible para el dueno del pedido o admin.
+
+- [x] **worker-delivery-ubicacion** — Crear src/api/delivery-ubicacion.js: POST /api/delivery/ubicacion recibe {lat, lng} del delivery autenticado, guarda en tabla delivery_ubicaciones con timestamp. GET /api/pedidos/{id}/ubicacion-delivery devuelve la ultima ubicacion del delivery asignado a ese pedido (solo si el cliente es dueno del pedido). Retornar json({lat, lng, updated_at}).
+
+- [x] **worker-analytics-admin** — Crear src/api/analytics-admin.js: endpoint GET /api/analytics/admin (solo superadmin) que consulta: ventas por semana ultimas 4 semanas, top 5 vendedores por total de pedidos, distribucion de pedidos por hora del dia, tasa de entrega exitosa (entregados/total). Retornar todo en un solo JSON.
+
+---
+
+### Comandos remotos — leer desde pizarron
+El orquestador lee el pizarron cada ciclo. Si encuentra una entrada con agente="COMANDO" y estado="Pendiente", la ejecuta como tarea inmediata y marca como "Ejecutado".
+Ejemplo para enviar desde celular:
+POST https://iporave-api.iporaveparaguay.workers.dev/api/pizarron
+{"agente":"COMANDO","tarea":"tarea-urgente","archivos":"archivo.html","estado":"Pendiente","resumen":"instruccion exacta para aider"}
+
+---
+
+### NO DELEGAR (solo Claude Code o GPT-4o)
+- JWT + RLS Security Audit
+- Cambios en login.js, utils.js, verifyToken
+- Integracion Mercado Pago real
+- WhatsApp Business API
+- Configuracion Supabase RLS
 
 ---
 
