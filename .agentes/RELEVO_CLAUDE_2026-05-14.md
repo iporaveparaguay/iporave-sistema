@@ -18,7 +18,7 @@
 
 ### Versiones en producción al cierre
 - **Worker:** último commit del día (hardening ronda 2: config, pizarron, notif-entrega, catalog-public, orders, push-subscribe, order-status, mensajes genéricos + supabase-js ^2.105.4)
-- **Frontend:** commit `6b2ad15` — mapa profesional, menú ⋮ en usuarios, pines prioridad animados
+- **Frontend:** commit `67d97ec` — botón Navegar azul, GPS centrado, ⚡ prioridad en pedidos, push al delivery
 
 > Nota: correr `git log --oneline -5` en cada repo al inicio de la próxima sesión para confirmar hashes exactos.
 
@@ -230,8 +230,8 @@ python .agentes/tester-visual.py --user iporaveparaguay@gmail.com --pass ivan123
 ### ALTA PRIORIDAD
 
 - [x] ~~**Contraseña para acceder a Config/SQL**~~ — **RESUELTO en commit `5524c30`** (modal re-auth + 5 min de gracia)
-- [ ] **Agregar columna `prioridad` (boolean) a tabla `pedidos` en Supabase** — sin esto los pines de prioridad no funcionan en producción. SQL: `ALTER TABLE pedidos ADD COLUMN prioridad boolean DEFAULT false;`
-- [ ] **Notificación push al delivery cuando pedido marcado como prioridad** — implementar en worker (backend)
+- [ ] **Agregar columna `prioridad` (boolean) a tabla `pedidos` en Supabase** — ⚠️ MANUAL: ir a Supabase SQL Editor y ejecutar: `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS prioridad boolean DEFAULT false;`
+- [x] ~~**Notificación push al delivery cuando pedido marcado como prioridad**~~ — **RESUELTO commit `67d97ec`** (`_notifDeliveryPrioridad` implementada)
 - [ ] **Correr tester visual** para verificar pantallas reales post-login
   - `playwright_state.json` guardado, login funciona en tester (SPA navigation corregida)
   - Comando: `python .agentes/tester-visual.py --user iporaveparaguay@gmail.com --pass ivan12345`
@@ -250,15 +250,17 @@ python .agentes/tester-visual.py --user iporaveparaguay@gmail.com --pass ivan123
   - Pipeline: Escuchar → Entender → Extraer campos → Confirmar faltantes → Guardar
   - Botón flotante 🎙️ en la app post-login
 
-- [ ] **Legibilidad nombres en mapa** — texto negro oscuro con letras blancas poco visible cuando estado="En camino". Ver `TAREA_MAPA_MEJORAS.md`
+- [x] ~~**Legibilidad nombres en mapa**~~ — **RESUELTO commit `79d5e2b`** (fondo más opaco, text-shadow, borde verde en camino)
 
-- [ ] **Botón ℹ️ del mapa** — posicionamiento puede seguir descentrado (verificar en producción)
+- [x] ~~**Botón ℹ️ del mapa**~~ — **RESUELTO commit `67d97ec`** (padding corregido, centrado)
+
+- [x] ~~**Botón Navegar rojo**~~ — **RESUELTO commit `67d97ec`** (azul #2563eb en 4 lugares)
+
+- [ ] **Botón scroll-to-top negro** — borde blanco sutil o efecto 3D para que resalte. Ver `TAREA_SCROLL_BTN_VISUAL.md`
 
 - [ ] **Refinamiento visual botones pedidos** (ver `TAREA_PEDIDOS_BOTONES_OVERFLOW.md`)
-  - Colores, eliminar borde redondo pequeño en esquina
-  - Uniformar con el nuevo estilo de usuarios
 
-- [ ] **Uniformar botones en catálogo y otras secciones** — después de usuarios (ya hecho)
+- [x] ~~**Uniformar botones en catálogo**~~ — **RESUELTO commit `79d5e2b`** (menú ⋮ implementado)
 
 ### TESTING / QA
 
