@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iporãve Connect — All-in-One Commerce & Logistics Platform</title>
+<title>Iporãve Connect — Plataforma Integral de Comercio y Logística</title>
 
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
@@ -599,7 +599,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   <div class="lcard">
     <div class="llogo">
       <h1>IPORÃVE&nbsp;CONNECT <span class="bandera-py" title="Paraguay">🇵🇾</span></h1>
-      <p style="margin-bottom:3px">All-in-One Commerce &amp; Logistics Platform</p>
+      <p style="margin-bottom:3px">PLATAFORMA INTEGRAL DE COMERCIO Y LOGÍSTICA</p>
       <p style="margin-top:0;font-size:11px;color:var(--accent);letter-spacing:1.5px">Todo tu negocio, un solo lugar.</p>
     </div>
 
@@ -1684,10 +1684,19 @@ function initRealtime(){
       .subscribe();
   }catch(e){console.warn('Realtime:',e);}
 }
-async function _rtRefreshOrders(){
-  _ordersCache=await DL.getOrders();
-  const cur=document.querySelector('.ni.active');
-  if(cur){const pid=cur.id.replace('ni_','');if(['orders','entregas','mispedidos','dashboard','suministros'].includes(pid)&&PAGES[pid])PAGES[pid]();}
+let _rtRefreshTimer=null;
+function _rtRefreshOrders(){
+  clearTimeout(_rtRefreshTimer);
+  return new Promise((resolve)=>{
+    _rtRefreshTimer=setTimeout(async()=>{
+      try{
+        _ordersCache=await DL.getOrders();
+        const cur=document.querySelector('.ni.active');
+        if(cur){const pid=cur.id.replace('ni_','');if(['orders','entregas','mispedidos','dashboard','suministros'].includes(pid)&&PAGES[pid])PAGES[pid]();}
+        resolve();
+      }catch(e){resolve();}
+    },1500);
+  });
 }
 
 function _mostrarMensajeEntrante(msg){
@@ -2646,7 +2655,7 @@ async function doLogin(){
     _cargarMensajesPrevios();
     _notifSessionInit(); // Inicializar notificaciones después del login
     if(_pollInterval)clearInterval(_pollInterval);
-    _pollInterval=setInterval(_pollMensajes,5000);
+    _pollInterval=setInterval(()=>{if(!_realtimeSub)_pollMensajes();},10000);
     if(['admin','superadmin'].includes(CU.rol)&&_supaConnected){
       DL.syncCatalogoToSupa().then(n=>{if(n>0)console.log('Catálogo sincronizado: '+n+' productos');});
     }
@@ -3105,6 +3114,19 @@ function updateNavBadges(){
   if(bm){bm.textContent=_unreadMsgs>99?'99+':String(_unreadMsgs);bm.style.display=_unreadMsgs>0?'':'none';}
 }
 function nav(page){
+  // Limpiar modales stale al navegar (prevenir modales superpuestos)
+  try{
+    const mA=document.getElementById('mA');
+    if(mA&&mA.classList.contains('open'))mA.classList.remove('open');
+    const um=document.getElementById('_userAuthModal');
+    if(um)um.remove();
+    const sm=document.getElementById('_sensitiveAuthModal');
+    if(sm)sm.remove();
+  }catch(_){}
+  // Cliente no debe acceder a páginas administrativas
+  if(CU&&CU.rol==='cliente'&&['usuarios','orders','zonas','config','setup','recaudacion','liquidacion','balance','analitica_admin','analitica_vend','analitica_drop','analitica_prov','cierre','estadisticas','mapa','suministros','pagos_prov','clientes_recurrentes','facturas_b2b','entregas','cupo','recaudacion_dlv'].includes(page)){
+    return nav('dashboard');
+  }
   var bgWrap = document.getElementById('bgWrap');
   if (bgWrap && bgWrap.parentNode===document.body) {
     bgWrap.style.display = (page === 'orders' || page === 'mispedidos') ? 'block' : 'none';
@@ -3124,7 +3146,11 @@ function nav(page){
         window._perfilRedirAvisado=true;
         try{toast&&toast('Completá tu perfil para continuar: '+missing.join(', '),'warn');}catch(e){}
       }
-      setTimeout(()=>{ try{openPerfilUsuario();}catch(e){} },150);
+      // Solo abrir el modal automáticamente la primera vez en la sesión
+      if(!window._perfilAutoOpened){
+        window._perfilAutoOpened=true;
+        setTimeout(()=>{ try{openPerfilUsuario();}catch(e){} },150);
+      }
       $('ca').innerHTML=
         '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px 20px">'+
         '<div style="font-size:52px;margin-bottom:16px">⚠️</div>'+
@@ -5674,7 +5700,7 @@ PAGES.liquidacion=function(){
     var main=document.querySelector('.main')||document.querySelector('main');
     if(ca&&!ca._scrollTopBound){ca.addEventListener('scroll',_onScroll,{passive:true});ca._scrollTopBound=true;}
     if(main&&!main._scrollTopBound){main.addEventListener('scroll',_onScroll,{passive:true});main._scrollTopBound=true;}
-    window.addEventListener('scroll',_onScroll,{passive:true});
+    if(!window._winScrollTopBound){window._winScrollTopBound=true;window.addEventListener('scroll',_onScroll,{passive:true});}
   }
   _bindScroll();
   /* re-bindear cada vez que se navega (el #ca cambia de contenido) */
