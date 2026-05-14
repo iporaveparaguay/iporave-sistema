@@ -8682,47 +8682,63 @@ function imprimirTicket(id){
   var qrBase=o.gpsLat&&o.gpsLng
     ?('https://www.google.com/maps?q='+o.gpsLat+','+o.gpsLng)
     :('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((o.direccion||'')+' '+(z.nombre||'')+' Paraguay'));
-  var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=110x110&data='+encodeURIComponent(qrBase);
+  var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='+encodeURIComponent(qrBase);
   var cPrim=emp.colorPrimario||'#f5a623';
   var cSec=emp.colorSecundario||'#0f172a';
-  var logoH=emp.logo?('<img src="'+safeUrl(emp.logo)+'" style="height:38px;object-fit:contain">'):('<b style="font-size:17px;color:'+cPrim+';letter-spacing:2px">'+escHtml(emp.nombre||'IPORAVE')+'</b>');
+  var logoH=emp.logo?('<img src="'+safeUrl(emp.logo)+'" style="height:22px;object-fit:contain">'):('<span style="font-size:11px;font-weight:800;color:'+cSec+';letter-spacing:1.5px">'+escHtml(emp.nombre||'IPORAVE')+'</span>');
   var num=String(o.id).padStart(4,'0');
-  var css='*{margin:0;padding:0;box-sizing:border-box;}'
-    +'body{font-family:Arial,sans-serif;background:#fff;display:flex;justify-content:center;padding:6mm;}'
-    +'.tk{width:88mm;border:2px solid '+cSec+';border-radius:5px;overflow:hidden;font-size:12px;}'
-    +'.tkh{background:'+cSec+';padding:7px 11px;display:flex;align-items:center;justify-content:space-between;}'
-    +'.tkn{font-size:20px;font-weight:900;color:'+cPrim+';font-family:monospace;letter-spacing:2px;}'
-    +'.tkb{display:flex;border-bottom:1px dashed #ddd;}'
-    +'.tkq{padding:9px;border-right:1px dashed #ddd;display:flex;flex-direction:column;align-items:center;justify-content:center;}'
-    +'.tki{padding:9px;flex:1;}'
-    +'.lb{font-size:7px;color:#999;text-transform:uppercase;font-weight:700;margin-bottom:2px;letter-spacing:.5px;}'
-    +'.vl{font-size:11px;font-weight:700;color:'+cSec+';margin-bottom:4px;}'
-    +'.lg{font-size:13px;font-weight:900;}'
-    +'.tkp{padding:7px 11px;border-bottom:1px dashed #ddd;display:flex;justify-content:space-between;align-items:center;}'
-    +'.tkf{padding:6px 11px;background:#f9f9f9;display:flex;justify-content:space-between;align-items:center;}'
-    +'.tkft{padding:4px 11px;border-top:1px solid #eee;text-align:center;font-size:7px;color:#999;}'
-    +'@media print{body{padding:0;}@page{margin:2mm;size:100mm 150mm;}}';
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket #'+o.id+'</title><style>'+css+'</style></head><body>'
+  var css='*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
+    +'html,body{background:#fff;color:#0f172a;}'
+    +'body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:0;}'
+    +'.tk{width:100mm;padding:3mm;font-size:11px;line-height:1.3;}'
+    +'.tk-top{display:flex;justify-content:space-between;align-items:center;padding-bottom:2mm;border-bottom:1px solid #e5e7eb;margin-bottom:2mm;}'
+    +'.tk-top .lbl{font-size:8px;color:#64748b;text-transform:uppercase;letter-spacing:.8px;}'
+    +'.tk-num{font-size:40px;font-weight:900;color:'+cSec+';font-family:"Helvetica Neue",Arial,sans-serif;letter-spacing:1px;text-align:center;line-height:1;padding:3mm 0 2mm;}'
+    +'.tk-num small{display:block;font-size:9px;color:#64748b;font-weight:600;letter-spacing:2px;margin-bottom:2mm;text-transform:uppercase;}'
+    +'.tk-blk{border:1px solid #e5e7eb;border-radius:3mm;padding:2.5mm;margin-bottom:2mm;}'
+    +'.tk-lbl{font-size:8px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:1mm;}'
+    +'.tk-nom{font-size:14px;font-weight:800;color:'+cSec+';line-height:1.2;margin-bottom:1mm;}'
+    +'.tk-tel{font-size:12px;font-weight:700;color:'+cSec+';margin-bottom:1mm;}'
+    +'.tk-dir{font-size:12px;font-weight:500;color:#0f172a;line-height:1.3;}'
+    +'.tk-zona{font-size:10px;color:#64748b;margin-top:1mm;}'
+    +'.tk-qr{text-align:center;padding:2mm 0;}'
+    +'.tk-qr img{width:30mm;height:30mm;display:block;margin:0 auto;}'
+    +'.tk-qr .cap{font-size:8px;color:#64748b;margin-top:1mm;text-transform:uppercase;letter-spacing:.5px;}'
+    +'.tk-pro{background:'+cSec+';color:#fff;border-radius:3mm;padding:2.5mm 3mm;display:flex;justify-content:space-between;align-items:center;margin-bottom:2mm;}'
+    +'.tk-pro .pn{font-size:12px;font-weight:700;flex:1;padding-right:2mm;line-height:1.2;}'
+    +'.tk-pro .pq{font-size:9px;color:#cbd5e1;text-transform:uppercase;margin-top:1px;}'
+    +'.tk-pro .pm{font-size:18px;font-weight:900;color:'+cPrim+';white-space:nowrap;}'
+    +'.tk-pro .pml{font-size:8px;color:#cbd5e1;text-transform:uppercase;display:block;text-align:right;margin-bottom:-1px;letter-spacing:.5px;}'
+    +'.tk-meta{display:flex;justify-content:space-between;padding:2mm 0;border-top:1px solid #e5e7eb;font-size:10px;color:#475569;}'
+    +'.tk-meta div{flex:1;}'
+    +'.tk-meta b{display:block;color:'+cSec+';font-weight:700;font-size:11px;margin-top:1px;}'
+    +'@page{size:100mm 150mm;margin:5mm;}'
+    +'@media print{body{padding:0;}.tk{padding:0;}}';
+  var html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Ticket #'+num+'</title><style>'+css+'</style></head><body>'
     +'<div class="tk">'
-    +'<div class="tkh">'+logoH+'<div style="text-align:right"><div style="font-size:7px;color:#94a3b8;text-transform:uppercase">PEDIDO</div><div class="tkn">#'+num+'</div></div></div>'
-    +'<div class="tkb">'
-    +'<div class="tkq"><img src="'+qrUrl+'" style="width:88px;height:88px"><div style="font-size:7px;color:#999;text-align:center;margin-top:2px">'+(o.gpsLat?'GPS Cliente':'N. Pedido')+'</div></div>'
-    +'<div class="tki">'
-    +'<div class="lb">Destinatario</div><div class="vl lg">'+escHtml(o.cliente||'')+'</div>'
-    +'<div class="lb">Telefono</div><div class="vl" style="color:#3b82f6">'+escHtml(o.telefono||'')+'</div>'
-    +'<div class="lb">Direccion</div><div class="vl" style="font-size:10px;font-weight:600">'+escHtml(o.direccion||'')+'</div>'
-    +'<div class="lb">Zona</div><div class="vl" style="font-size:10px">'+escHtml(z.nombre||'')+'</div>'
-    +'</div></div>'
-    +'<div class="tkp">'
-    +'<div><div class="lb">Producto</div><div class="vl">'+escHtml(o.producto||'')+' x'+(o.qty||1)+'</div></div>'
-    +'<div style="text-align:right"><div class="lb">A cobrar</div><div class="vl" style="font-size:16px;color:#16a34a">'+fmt(o.precio*(o.qty||1))+'</div></div>'
-    +'</div>'
-    +'<div class="tkf">'
-    +'<div><div class="lb">Delivery</div><div class="vl">'+escHtml(dlv.nombre||'')+'</div></div>'
-    +'<div><div class="lb">Cobro</div><div class="vl">'+escHtml(o.metodoCobro||'Efectivo')+'</div></div>'
-    +'<div><div class="lb">Fecha</div><div class="vl">'+(o.fecha||today())+'</div></div>'
-    +'</div>'
-    +'<div class="tkft">'+escHtml(emp.tel||'')+((emp.tel&&emp.web)?' | ':'')+''+escHtml(emp.web||'iporaveparaguay.com')+'</div>'
+      +'<div class="tk-top">'+logoH+'<span class="lbl">'+(o.fecha||today())+'</span></div>'
+      +'<div class="tk-num"><small>Pedido N&deg;</small>#'+num+'</div>'
+      +'<div class="tk-blk">'
+        +'<div class="tk-lbl">Destinatario</div>'
+        +'<div class="tk-nom">'+escHtml(o.cliente||'—')+'</div>'
+        +'<div class="tk-tel">'+escHtml(o.telefono||'')+'</div>'
+        +'<div class="tk-dir">'+escHtml(o.direccion||'—')+'</div>'
+        +'<div class="tk-zona">Zona: '+escHtml(z.nombre||'—')+'</div>'
+      +'</div>'
+      +'<div class="tk-blk tk-qr">'
+        +'<div class="tk-lbl" style="text-align:center;margin-bottom:1.5mm">'+(o.gpsLat?'Ubicacion GPS':'Buscar direccion')+'</div>'
+        +'<img src="'+qrUrl+'" alt="QR">'
+        +'<div class="cap">Escanea para navegar</div>'
+      +'</div>'
+      +'<div class="tk-pro">'
+        +'<div><div class="pq">Producto</div><div class="pn">'+escHtml(o.producto||'')+' &times;'+(o.qty||1)+'</div></div>'
+        +'<div style="text-align:right"><span class="pml">A cobrar</span><span class="pm">'+fmt(o.precio*(o.qty||1))+'</span></div>'
+      +'</div>'
+      +'<div class="tk-meta">'
+        +'<div><span class="tk-lbl">Delivery</span><b>'+escHtml(dlv.nombre||'Sin asignar')+'</b></div>'
+        +'<div style="text-align:right"><span class="tk-lbl">Cobro</span><b>'+escHtml(o.metodoCobro||'Efectivo')+'</b></div>'
+      +'</div>'
+      +'<div style="text-align:center;font-size:8px;color:#94a3b8;margin-top:1mm">'+escHtml(emp.tel||'')+((emp.tel&&emp.web)?'  -  ':'')+escHtml(emp.web||'iporaveparaguay.com')+'</div>'
     +'</div>'
     +'</body></html>';
   var w=window.open('','_blank');
@@ -8751,66 +8767,125 @@ function imprimirGuia(id){
   const delivery=_usersCache.find(u=>u.id===o.deliveryId)||{nombre:'Sin asignar'};
   const cPrimG=emp.colorPrimario||'#f5a623';
   const cSecG=emp.colorSecundario||'#0f172a';
-  const logoHtml=emp.logo?'<img src="'+safeUrl(emp.logo)+'" style="height:56px;object-fit:contain">':'<div style="font-size:26px;font-weight:900;color:'+cPrimG+';letter-spacing:3px">'+escHtml(emp.nombre||'IPORAVE')+'</div>';
-  const css='*{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,Segoe UI,sans-serif;background:#fff;color:'+cSecG+';}'+
-    '.guia{width:100%;max-width:400px;margin:0 auto;border:2px solid '+cSecG+';border-radius:8px;overflow:hidden;}'+
-    '.g-head{background:'+cSecG+';color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}'+
-    '.g-num{font-size:28px;font-weight:900;color:'+cPrimG+';font-family:monospace;letter-spacing:2px;}'+
-    '.g-sub{font-size:10px;color:#94a3b8;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}'+
-    '.g-body{padding:14px 16px;}'+
-    '.g-sec{margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed #e2e8f0;}'+
-    '.g-lbl{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:3px;}'+
-    '.g-val{font-size:13px;font-weight:600;color:'+cSecG+';}'+
-    '.g-val.big{font-size:16px;font-weight:800;}'+
-    '.g-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}'+
-    '.g-cod{background:#f1f5f9;border-radius:6px;padding:10px;text-align:center;margin-bottom:10px;}'+
-    '.g-cod .num{font-size:32px;font-weight:900;font-family:monospace;letter-spacing:4px;color:'+cSecG+';}'+
-    '.g-cod .lbl{font-size:10px;color:#64748b;margin-top:2px;}'+
-    '.g-estado{display:inline-block;background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}'+
-    '.g-foot{background:#f8fafc;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;}'+
-    '.g-foot p{font-size:10px;color:#94a3b8;}'+
-    '@media print{body{margin:0;}@page{margin:8mm;size:A5;}}';
-  const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Guía #'+o.id+'</title><style>'+css+'</style></head><body>'+
-    '<div class="guia">'+
-    '<div class="g-head">'+
-      '<div>'+logoHtml+'<div class="g-sub">'+escHtml(emp.nombre||'Sistema Iporãve')+'</div></div>'+
-      '<div style="text-align:right"><div style="font-size:10px;color:#94a3b8">GUÍA DE ENTREGA</div><div class="g-num">#'+String(o.id).padStart(4,'0')+'</div></div>'+
-    '</div>'+
-    '<div class="g-body">'+
-      '<div class="g-cod"><div class="num">'+String(o.id).padStart(6,'0')+'</div><div class="lbl">Código de seguimiento</div></div>'+
-      '<div class="g-sec">'+
-        '<div class="g-lbl">Destinatario</div>'+
-        '<div class="g-val big">'+escHtml(o.cliente||'')+'</div>'+
-        '<div class="g-val" style="margin-top:3px;color:#3b82f6">📞 '+escHtml(o.telefono||'')+'</div>'+
-        '<div class="g-val" style="margin-top:3px;font-size:12px;color:#64748b">📍 '+escHtml(o.direccion||'—')+'</div>'+
-        '<div class="g-val" style="margin-top:2px;font-size:11px;color:#94a3b8">Zona: '+escHtml(z.nombre||'')+'</div>'+
-      '</div>'+
-      '<div class="g-sec">'+
-        '<div class="g-lbl">Producto</div>'+
-        '<div class="g-val">'+escHtml(o.producto||'')+'</div>'+
-        '<div class="g-row" style="margin-top:8px">'+
-          '<div><div class="g-lbl">Cantidad</div><div class="g-val">'+escHtml(String(o.qty||1))+' unid.</div></div>'+
-          '<div><div class="g-lbl">Método de cobro</div><div class="g-val">'+escHtml(o.metodoCobro||'—')+'</div></div>'+
+  const logoHtml=emp.logo?'<img src="'+safeUrl(emp.logo)+'" style="height:34px;object-fit:contain;display:block">':'<span style="font-size:18px;font-weight:900;color:'+cPrimG+';letter-spacing:2px">'+escHtml(emp.nombre||'IPORAVE')+'</span>';
+  const codSeg=String(o.id).padStart(6,'0');
+  const fotoDlv=delivery.foto?'<img src="'+safeUrl(delivery.foto)+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid '+cPrimG+';vertical-align:middle;margin-right:8px">':'';
+  const qrSegBase=o.gpsLat&&o.gpsLng
+    ?('https://www.google.com/maps?q='+o.gpsLat+','+o.gpsLng)
+    :('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((o.direccion||'')+' '+(z.nombre||'')+' Paraguay'));
+  const qrSegUrl='https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+encodeURIComponent(qrSegBase);
+  const estLow=String(o.estado||'').toLowerCase();
+  let estBg='#dcfce7',estFg='#16a34a',estBd='#bbf7d0';
+  if(/cancel|rech/.test(estLow)){estBg='#fee2e2';estFg='#dc2626';estBd='#fecaca';}
+  else if(/pend|prep/.test(estLow)){estBg='#fef3c7';estFg='#b45309';estBd='#fde68a';}
+  else if(/ruta|enviado|transit/.test(estLow)){estBg='#dbeafe';estFg='#1d4ed8';estBd='#bfdbfe';}
+  const css='*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
+    'html,body{background:#fff;color:'+cSecG+';}'+
+    'body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:11px;line-height:1.35;}'+
+    '.gp{padding:0;}'+
+    '.g-hd{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:2px solid '+cSecG+';margin-bottom:14px;}'+
+    '.g-hd-l{display:flex;align-items:center;gap:14px;}'+
+    '.g-hd-l .info{font-size:10px;color:#475569;line-height:1.4;}'+
+    '.g-hd-l .info b{color:'+cSecG+';display:block;font-size:12px;}'+
+    '.g-hd-r{text-align:right;}'+
+    '.g-hd-r .tit{font-size:9px;color:#64748b;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;}'+
+    '.g-hd-r .ped{font-size:20px;font-weight:900;color:'+cSecG+';font-family:Helvetica,Arial,sans-serif;}'+
+    '.g-hd-r .fch{font-size:10px;color:#64748b;margin-top:2px;}'+
+    '.g-cod{border:3px solid '+cPrimG+';border-radius:10px;padding:12px 14px;margin-bottom:14px;text-align:center;background:#fffbeb;}'+
+    '.g-cod .lbl{font-size:9px;color:#92400e;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:4px;}'+
+    '.g-cod .num{font-size:42px;font-weight:900;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:8px;color:'+cSecG+';line-height:1;}'+
+    '.g-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:14px;}'+
+    '.g-box{border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;}'+
+    '.g-box.dest{background:#f8fafc;}'+
+    '.g-lbl{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;}'+
+    '.g-nom{font-size:15px;font-weight:800;color:'+cSecG+';line-height:1.2;margin-bottom:4px;}'+
+    '.g-tel{font-size:13px;font-weight:700;color:'+cSecG+';margin-bottom:4px;}'+
+    '.g-dir{font-size:12px;color:#334155;line-height:1.4;}'+
+    '.g-zon{font-size:10px;color:#64748b;margin-top:4px;font-style:italic;}'+
+    '.g-qr{text-align:center;}'+
+    '.g-qr img{width:100px;height:100px;display:block;margin:0 auto 4px;}'+
+    '.g-qr .cap{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}'+
+    '.g-tbl{width:100%;border-collapse:collapse;margin-bottom:14px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;}'+
+    '.g-tbl thead{background:'+cSecG+';color:#fff;}'+
+    '.g-tbl th{padding:8px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:1px;font-weight:700;}'+
+    '.g-tbl th.r{text-align:right;}'+
+    '.g-tbl td{padding:10px;font-size:12px;border-top:1px solid #e5e7eb;}'+
+    '.g-tbl td.r{text-align:right;font-weight:700;}'+
+    '.g-tbl td.pro{font-weight:700;color:'+cSecG+';}'+
+    '.g-tbl tfoot td{background:#f1f5f9;font-weight:900;font-size:14px;}'+
+    '.g-tbl tfoot td.r{color:#16a34a;font-size:16px;}'+
+    '.g-mid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}'+
+    '.g-mid .g-box b{display:block;font-size:13px;font-weight:800;color:'+cSecG+';margin-top:2px;}'+
+    '.g-est{display:inline-block;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}'+
+    '.g-dlv{display:flex;align-items:center;gap:8px;}'+
+    '.g-dlv .nom{font-size:13px;font-weight:800;color:'+cSecG+';}'+
+    '.g-dlv .met{font-size:10px;color:#64748b;}'+
+    '.g-ft{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid #e5e7eb;font-size:10px;color:#64748b;}'+
+    '.g-ft b{color:'+cSecG+';}'+
+    '@page{size:A5;margin:10mm;}'+
+    '@media print{body{margin:0;}}';
+  const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Guia #'+codSeg+'</title><style>'+css+'</style></head><body>'+
+    '<div class="gp">'+
+      '<div class="g-hd">'+
+        '<div class="g-hd-l">'+logoHtml+'<div class="info"><b>'+escHtml(emp.nombre||'Iporave')+'</b>'+
+          (emp.tel?escHtml(emp.tel):'')+(emp.tel&&emp.web?' &middot; ':'')+escHtml(emp.web||'iporaveparaguay.com')+
+        '</div></div>'+
+        '<div class="g-hd-r">'+
+          '<div class="tit">Guia de entrega</div>'+
+          '<div class="ped">#'+String(o.id).padStart(4,'0')+'</div>'+
+          '<div class="fch">'+(o.fecha||today())+'</div>'+
         '</div>'+
-        '<div class="g-row">'+
-          '<div><div class="g-lbl">Monto a cobrar</div><div class="g-val" style="color:#16a34a;font-size:16px;font-weight:900">'+fmt(o.precio*o.qty)+'</div></div>'+
-          '<div><div class="g-lbl">Estado</div><span class="g-estado">'+escHtml(o.estado||'')+'</span></div>'+
+      '</div>'+
+      '<div class="g-cod">'+
+        '<div class="lbl">Codigo de seguimiento</div>'+
+        '<div class="num">'+codSeg+'</div>'+
+      '</div>'+
+      '<div class="g-grid">'+
+        '<div class="g-box dest">'+
+          '<div class="g-lbl">Destinatario</div>'+
+          '<div class="g-nom">'+escHtml(o.cliente||'—')+'</div>'+
+          '<div class="g-tel">'+escHtml(o.telefono||'')+'</div>'+
+          '<div class="g-dir">'+escHtml(o.direccion||'—')+'</div>'+
+          '<div class="g-zon">Zona: '+escHtml(z.nombre||'—')+'</div>'+
+        '</div>'+
+        '<div class="g-box g-qr">'+
+          '<div class="g-lbl">Ubicacion</div>'+
+          '<img src="'+qrSegUrl+'" alt="QR">'+
+          '<div class="cap">Escanea para navegar</div>'+
         '</div>'+
       '</div>'+
-      '<div class="g-row">'+
-        '<div><div class="g-lbl">Delivery asignado</div><div class="g-val">'+escHtml(delivery.nombre||'')+'</div></div>'+
-        '<div><div class="g-lbl">Fecha</div><div class="g-val">'+(o.fecha||today())+'</div></div>'+
+      '<table class="g-tbl">'+
+        '<thead><tr><th>Producto</th><th class="r">Cantidad</th><th class="r">Precio</th><th class="r">Monto</th></tr></thead>'+
+        '<tbody><tr>'+
+          '<td class="pro">'+escHtml(o.producto||'—')+'</td>'+
+          '<td class="r">'+escHtml(String(o.qty||1))+'</td>'+
+          '<td class="r">'+fmt(o.precio||0)+'</td>'+
+          '<td class="r">'+fmt((o.precio||0)*(o.qty||1))+'</td>'+
+        '</tr></tbody>'+
+        '<tfoot><tr><td colspan="3" class="r">Total a cobrar</td><td class="r">'+fmt((o.precio||0)*(o.qty||1))+'</td></tr></tfoot>'+
+      '</table>'+
+      '<div class="g-mid">'+
+        '<div class="g-box">'+
+          '<div class="g-lbl">Delivery asignado</div>'+
+          '<div class="g-dlv">'+fotoDlv+'<div><div class="nom">'+escHtml(delivery.nombre||'Sin asignar')+'</div>'+
+          (delivery.tel?'<div class="met">'+escHtml(delivery.tel)+'</div>':'')+
+          '</div></div>'+
+        '</div>'+
+        '<div class="g-box">'+
+          '<div class="g-lbl">Metodo de cobro</div>'+
+          '<b>'+escHtml(o.metodoCobro||'Efectivo')+'</b>'+
+        '</div>'+
+        '<div class="g-box">'+
+          '<div class="g-lbl">Estado</div>'+
+          '<span class="g-est" style="background:'+estBg+';color:'+estFg+';border:1px solid '+estBd+'">'+escHtml(o.estado||'—')+'</span>'+
+        '</div>'+
       '</div>'+
-      (emp.tel||emp.dir?'<div style="margin-top:6px;padding:8px;background:#fefce8;border-radius:6px;font-size:11px;color:#78350f">'+
-        (emp.tel?'📞 '+escHtml(emp.tel)+'  ':'')+
-        (emp.dir?'📍 '+escHtml(emp.dir):'')+'</div>':'')+
+      '<div class="g-ft">'+
+        '<div>'+(emp.dir?'<b>'+escHtml(emp.dir)+'</b>':'')+(emp.tel?' &middot; '+escHtml(emp.tel):'')+'</div>'+
+        '<div>'+escHtml(emp.web||'iporaveparaguay.com')+' &middot; '+nowStr()+'</div>'+
+      '</div>'+
     '</div>'+
-    '<div class="g-foot">'+
-      '<p>'+escHtml(emp.web||'iporaveparaguay.com')+'</p>'+
-      '<p>'+nowStr()+'</p>'+
-    '</div>'+
-    '</div>'+
-    '<script>window.onload=function(){setTimeout(function(){window.print();},300);}<\/script></body></html>';
+    '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},300);}</scr'+'ipt></body></html>';
   const w=window.open('','_blank');
   if(w){w.document.write(html);w.document.close();}
   else pushNotif('Permití popups para imprimir la guía','w');
