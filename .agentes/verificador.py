@@ -32,7 +32,7 @@ ENDPOINTS = [
 
 def verificar_endpoint(nombre, url, expected_status, requiere_auth=False):
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Verificador-Iporave/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "IporaveAgent/1.0"})
         with urllib.request.urlopen(req, timeout=10) as r:
             status = r.getcode()
             ok = (status == expected_status)

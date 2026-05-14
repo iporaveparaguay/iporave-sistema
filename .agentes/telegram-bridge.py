@@ -87,7 +87,7 @@ def leer_pizarron():
     try:
         req = urllib.request.Request(PIZARRON_URL, headers={
             "Accept": "application/json",
-            "User-Agent": "IporaveBot/1.0"
+            "User-Agent": "IporaveAgent/1.0"
         })
         with urllib.request.urlopen(req, timeout=10) as r:
             data = json.loads(r.read().decode())
