@@ -4334,42 +4334,65 @@ function filtrar(){
   const c=$('oContainer');
   if(c)c.innerHTML=renderTable(orders,'Pedidos ('+orders.length+')',true,true);
 }
-function _closeOrderMenus(){
-  document.querySelectorAll('.order-dropdown.open').forEach(function(d){d.classList.remove('open');});
+// ── Helper: posiciona el dropdown con position:fixed para evitar ser recortado
+// por overflow:auto/hidden en contenedores padre (ej: .tc tabla con scroll)
+function _posMenuDrop(e, drop){
+  const btn=e.target.closest('.order-menu-btn')||e.target.closest('button');
+  if(!btn)return;
+  const rect=btn.getBoundingClientRect();
+  const W=window.innerWidth, H=window.innerHeight;
+  const dropW=184; // min-width del dropdown
+  // Posicionar justo debajo del botón, alineado a la derecha del botón
+  let top=rect.bottom+4;
+  let left=rect.right-dropW;
+  if(left<6)left=6;
+  if(left+dropW>W-6)left=W-dropW-6;
+  // Si no entra abajo, abrir hacia arriba
+  const estH=Math.min(drop.childElementCount*42+12,280);
+  if(top+estH>H-8){top=rect.top-estH-4;}
+  drop.style.position='fixed';
+  drop.style.top=top+'px';
+  drop.style.left=left+'px';
+  drop.style.right='auto';
+  drop.style.zIndex='9990';
 }
+function _closeAllDropMenus(){
+  document.querySelectorAll('.order-dropdown.open').forEach(function(d){
+    d.classList.remove('open');
+    // Restaurar posición relativa al limpiar
+    d.style.position='';d.style.top='';d.style.left='';d.style.right='';d.style.zIndex='';
+  });
+}
+function _closeOrderMenus(){_closeAllDropMenus();}
 function _toggleOrderMenu(e,id){
   e.stopPropagation();
   const drop=document.getElementById('odrop-'+id);
   if(!drop)return;
   const wasOpen=drop.classList.contains('open');
-  _closeOrderMenus();
-  if(!wasOpen)drop.classList.add('open');
+  _closeAllDropMenus();
+  if(!wasOpen){_posMenuDrop(e,drop);drop.classList.add('open');}
 }
 /* _compactOrderActions — reemplazada por kebab menu, se mantiene vacía por compatibilidad */
 function _compactOrderActions(){}
 /* ─── KEBAB MENU usuarios ─── */
-function _closeUserMenus(){
-  document.querySelectorAll('[id^="udrop-"].open').forEach(function(d){d.classList.remove('open');});
-}
+function _closeUserMenus(){_closeAllDropMenus();}
 function _toggleUserMenu(e,id){
   e.stopPropagation();
   const drop=document.getElementById('udrop-'+id);
   if(!drop)return;
   const wasOpen=drop.classList.contains('open');
-  _closeUserMenus();
-  if(!wasOpen)drop.classList.add('open');
+  _closeAllDropMenus();
+  if(!wasOpen){_posMenuDrop(e,drop);drop.classList.add('open');}
 }
 /* ─── KEBAB MENU catálogo ─── */
-function _closeCatMenus(){
-  document.querySelectorAll('[id^="cdrop-"].open').forEach(function(d){d.classList.remove('open');});
-}
+function _closeCatMenus(){_closeAllDropMenus();}
 function _toggleCatMenu(e,id){
   e.stopPropagation();
   const drop=document.getElementById('cdrop-'+id);
   if(!drop)return;
   const wasOpen=drop.classList.contains('open');
-  _closeCatMenus();
-  if(!wasOpen)drop.classList.add('open');
+  _closeAllDropMenus();
+  if(!wasOpen){_posMenuDrop(e,drop);drop.classList.add('open');}
 }
 function renderTable(orders,title,showActs,highlightChanges){
   if(highlightChanges)_prepareOrderStateHighlights(orders);
