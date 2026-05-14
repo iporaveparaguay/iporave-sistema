@@ -4495,20 +4495,20 @@ function viewOrder(id){
   if(isMoving&&o.deliveryId){
     if(CU.rol==='vendedor'||CU.rol==='proveedor'){
       dlvCard='<div class="lcard2"><div class="stitle">Delivery asignado</div>'+
-        '<div class="lrow"><span class="llbl">Nombre</span><span>'+dlv.nombre+'</span></div>'+
-        '<div class="lrow"><span class="llbl">Vehículo</span><span>'+(dlv.vehiculo||'—')+'</span></div></div>';
+        '<div class="lrow"><span class="llbl">Nombre</span><span>'+escHtml(dlv.nombre||'')+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Vehículo</span><span>'+escHtml(dlv.vehiculo||'—')+'</span></div></div>';
     }else if(CU.rol==='cliente'){
       dlvCard='<div class="lcard2"><div class="stitle">Tu delivery</div>'+
-        '<div class="lrow"><span class="llbl">Nombre</span><span style="font-weight:700">'+dlv.nombre+'</span></div>'+
-        '<div class="lrow"><span class="llbl">Vehículo</span><span>'+(dlv.vehiculo||'—')+'</span></div>'+
-        '<div class="lrow"><span class="llbl">Patente</span><span>'+( dlv.patente||'—')+'</span></div>'+
-        '<div class="lrow"><span class="llbl">WhatsApp</span><span><a href="https://wa.me/'+(dlv.whatsapp||'').replace(/\D/g,'')+'" target="_blank" style="color:var(--green)">Abrir ↗</a></span></div></div>';
+        '<div class="lrow"><span class="llbl">Nombre</span><span style="font-weight:700">'+escHtml(dlv.nombre||'')+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Vehículo</span><span>'+escHtml(dlv.vehiculo||'—')+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Patente</span><span>'+escHtml(dlv.patente||'—')+'</span></div>'+
+        '<div class="lrow"><span class="llbl">WhatsApp</span><span><a href="https://wa.me/'+String(dlv.whatsapp||'').replace(/\D/g,'')+'" target="_blank" style="color:var(--green)">Abrir ↗</a></span></div></div>';
     }else if(CU.rol==='admin'){
       dlvCard='<div class="lcard2"><div class="stitle">Delivery asignado</div>'+
-        '<div class="lrow"><span class="llbl">Nombre</span><span>'+dlv.nombre+'</span></div>'+
-        '<div class="lrow"><span class="llbl">Vehículo</span><span>'+(dlv.vehiculo||'—')+'</span></div>'+
-        '<div class="lrow"><span class="llbl">Patente</span><span>'+(dlv.patente||'—')+'</span></div>'+
-        '<div class="lrow"><span class="llbl">WhatsApp</span><span>'+(dlv.whatsapp||'—')+'</span></div></div>';
+        '<div class="lrow"><span class="llbl">Nombre</span><span>'+escHtml(dlv.nombre||'')+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Vehículo</span><span>'+escHtml(dlv.vehiculo||'—')+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Patente</span><span>'+escHtml(dlv.patente||'—')+'</span></div>'+
+        '<div class="lrow"><span class="llbl">WhatsApp</span><span>'+escHtml(dlv.whatsapp||'—')+'</span></div></div>';
     }
   }
 
@@ -4572,14 +4572,14 @@ function viewOrder(id){
     '</div></div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+
       bE(o.estado)+
-      (o.metodoCobro?'<span class="badge be">'+MICON[o.metodoCobro]+' '+o.metodoCobro+'</span>':'')+
+      (o.metodoCobro?'<span class="badge be">'+MICON[o.metodoCobro]+' '+escHtml(o.metodoCobro)+'</span>':'')+
       (o.fotoEntrega&&canSeeFoto?'<span class="badge be">📷 Foto OK</span>':'')+
       (o.gpsLat?'<span class="badge br">📍 GPS OK</span>':'')+
     '</div>'+
     dlvCard+
     fotoSection+
     (isMoving?'<div class="stitle">Mapa de entrega</div><div class="mapbox"><div id="viewMap" style="height:220px"></div></div>':'')+
-    (o.razonSocial?'<div class="lcard2"><div class="stitle">Datos IVA</div><div class="lrow"><span class="llbl">Razón social</span><span>'+o.razonSocial+'</span></div><div class="lrow"><span class="llbl">RUC</span><span>'+o.ruc+'</span></div><div class="lrow"><span class="llbl">IVA</span><span>'+o.tipoIva+'</span></div></div>':'')+
+    (o.razonSocial?'<div class="lcard2"><div class="stitle">Datos IVA</div><div class="lrow"><span class="llbl">Razón social</span><span>'+escHtml(o.razonSocial)+'</span></div><div class="lrow"><span class="llbl">RUC</span><span>'+escHtml(o.ruc||'')+'</span></div><div class="lrow"><span class="llbl">IVA</span><span>'+escHtml(o.tipoIva||'')+'</span></div></div>':'')+
     (o.notas?'<div class="lcard2"><div class="stitle">Notas</div><div style="font-size:13px">'+escHtml(o.notas)+'</div></div>':'')+
     chatSection+
     '<div class="stitle">📋 Historial de cambios</div>'+histHtml,
