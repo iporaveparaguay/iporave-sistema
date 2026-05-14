@@ -215,6 +215,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .gpsd.on{background:var(--green);animation:gpp 2s infinite;}
 @keyframes gpp{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{box-shadow:0 0 0 5px rgba(34,197,94,0);}}
 @keyframes dlvPulse{0%,100%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 0 rgba(29,78,216,.7);}50%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 9px rgba(29,78,216,0);}}
+@keyframes dlvPulseStrong{0%,100%{box-shadow:0 4px 20px rgba(0,0,0,.6),0 0 0 0 rgba(14,165,233,.9),0 0 0 0 rgba(14,165,233,.35)}50%{box-shadow:0 4px 20px rgba(0,0,0,.6),0 0 0 16px rgba(14,165,233,0),0 0 0 30px rgba(14,165,233,0)}}
+@keyframes bell-ring{0%,100%{transform:rotate(0) scale(1)}10%{transform:rotate(-22deg) scale(1.14)}20%{transform:rotate(22deg) scale(1.14)}30%{transform:rotate(-16deg)}40%{transform:rotate(16deg)}50%{transform:rotate(-10deg)}60%{transform:rotate(10deg)}70%{transform:rotate(-5deg)}80%{transform:rotate(5deg)}90%{transform:rotate(-2deg)}}
+@keyframes bell-glow{0%,100%{box-shadow:0 8px 24px rgba(0,0,0,.22)}50%{box-shadow:0 8px 24px rgba(0,0,0,.22),0 0 0 10px rgba(251,191,36,.4),0 0 30px rgba(251,191,36,.25)}}
+#codexNotifBell.bell-ringing{animation:bell-ring .7s ease-in-out}
+#codexNotifBell.bell-has-unread{animation:bell-glow 2s ease-in-out infinite}
 @keyframes urgWarn{0%,100%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 0 rgba(234,179,8,.8);}50%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 8px rgba(234,179,8,0);}}
 @keyframes urgCrit{0%,100%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 0 rgba(220,38,38,.9);}50%{box-shadow:0 3px 14px rgba(0,0,0,.5),0 0 0 9px rgba(220,38,38,0);}}
 @keyframes pin-shake{0%,100%{transform:translateY(-50%) translateX(0) rotate(0deg)}20%{transform:translateY(-50%) translateX(-3px) rotate(-4deg)}40%{transform:translateY(-50%) translateX(3px) rotate(4deg)}60%{transform:translateY(-50%) translateX(-2px) rotate(-2deg)}80%{transform:translateY(-50%) translateX(2px) rotate(2deg)}}
@@ -870,6 +875,37 @@ function showAlert(id,type,msg,dur){
   const d=dur===undefined?(type==='e'?0:5000):dur;
   if(d)setTimeout(()=>{if(el)el.innerHTML='';},d);
 }
+// Sonido de notificación — Web Audio API (sin archivo externo)
+let _audioCtxReady=false;
+window.addEventListener('click',function(){_audioCtxReady=true;},{once:true,passive:true});
+window.addEventListener('touchstart',function(){_audioCtxReady=true;},{once:true,passive:true});
+function _playNotifSound(freq,dur){
+  if(!_audioCtxReady)return;
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type='sine';
+    osc.frequency.setValueAtTime(freq||880,ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime((freq||880)*0.7,ctx.currentTime+(dur||0.35));
+    gain.gain.setValueAtTime(0.22,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+(dur||0.35));
+    osc.start(ctx.currentTime);osc.stop(ctx.currentTime+(dur||0.35));
+    setTimeout(()=>ctx.close(),600);
+  }catch(e){}
+}
+// Doble-ding para notificaciones importantes
+function _playNotifDing(){_playNotifSound(880,.2);setTimeout(()=>_playNotifSound(1100,.25),180);}
+// Triggerear animación de campana
+function _bellRing(){
+  const b=$('codexNotifBell');if(!b)return;
+  b.classList.remove('bell-ringing');
+  void b.offsetWidth; // force reflow
+  b.classList.add('bell-ringing');
+  setTimeout(()=>b.classList.remove('bell-ringing'),900);
+}
+
 function pushNotif(msg,type,action){
   // Toast flotante
   const area=$('notifArea');
@@ -891,6 +927,9 @@ function pushNotif(msg,type,action){
   _updateBell();
   _renderNotifList();
   _notifSessionRender();
+  // Animar campanita + sonido
+  _bellRing();
+  _playNotifDing();
 }
 function _updateBell(){
   if(!window.CU || !window.CU.id) return;
@@ -899,6 +938,15 @@ function _updateBell(){
   else{c.style.display='none';}
   const lbl=$('ntUnreadLabel');
   if(lbl)lbl.textContent=_notifUnread>0?_notifUnread+' sin leer':'';
+  // Pulso continuo de la campanita mientras haya no leídas
+  const b=$('codexNotifBell');
+  if(b){
+    if(_notifUnread>0)b.classList.add('bell-has-unread');
+    else b.classList.remove('bell-has-unread','bell-ringing');
+  }
+  // También actualizar badge de la campana flotante
+  const badge=$('codexNotifBadge');
+  if(badge){badge.textContent=_notifUnread>99?'99+':_notifUnread||'';badge.style.display=_notifUnread?'inline-flex':'none';}
 }
 function _renderNotifList(){
   const list=$('ntList');if(!list)return;
@@ -1563,14 +1611,35 @@ function initRealtime(){
         await _rtRefreshOrders();
         const r=payload.new;
         const rol=CU?.rol;
+        const esEntregado=r.estado==='Entregado';
+        const esEnRuta=['En ruta','En Ruta','Despachado'].includes(r.estado);
         // Filtrar: cada rol solo ve los pedidos que le corresponden
-        const esRelevante=isAdminLike(rol)||
-          (rol==='delivery'&&r.delivery_id===CU?.id)||
-          (rol==='vendedor'&&r.vendedor_id===CU?.id)||
-          (rol==='dropshipper'&&r.drop_id===CU?.id)||
-          (rol==='proveedor'&&r.vendedor_id===CU?.id);
-        if(esRelevante)
-          pushNotif('🔄 Pedido #'+(r.id||'')+' → '+(r.estado||'actualizado'),'i',"nav('orders')");
+        const esAdm=isAdminLike(rol);
+        const esVend=rol==='vendedor'&&String(r.vendedor_id)===String(CU?.id);
+        const esDrop=rol==='dropshipper'&&String(r.drop_id)===String(CU?.id);
+        const esDlv=rol==='delivery'&&String(r.delivery_id)===String(CU?.id);
+        const esProv=rol==='proveedor'&&String(r.vendedor_id)===String(CU?.id);
+        const esRelevante=esAdm||esVend||esDrop||esDlv||esProv;
+        if(!esRelevante)return;
+        // Mensaje diferenciado por estado y por quién es el destinatario
+        let notifMsg,notifType;
+        if(esEntregado){
+          const cli=escHtml((r.cliente||'')+'').substring(0,28);
+          if(esAdm||esVend||esDrop)
+            notifMsg='✅ Pedido #'+(r.id||'')+' ENTREGADO'+(cli?' — '+cli:'');
+          else if(esDlv)
+            notifMsg='🏁 Entregaste el pedido #'+(r.id||'')+' correctamente';
+          else
+            notifMsg='✅ Pedido #'+(r.id||'')+' fue entregado';
+          notifType='s';
+        }else if(esEnRuta&&esDlv){
+          notifMsg='🛵 Pedido #'+(r.id||'')+' — ya estás en ruta';
+          notifType='i';
+        }else{
+          notifMsg='🔄 Pedido #'+(r.id||'')+' → '+(r.estado||'actualizado');
+          notifType='i';
+        }
+        pushNotif(notifMsg,notifType,"nav('orders')");
       })
       .on('postgres_changes',{event:'DELETE',schema:'public',table:'pedidos'},async payload=>{
         await _rtRefreshOrders();
@@ -3210,7 +3279,19 @@ function _notifSessionToggle(open){
     panel.dataset.open=visible?'1':'0';
     panel.style.transform=visible?'translateX(0)':'translateX(105%)';
   }
-  if(visible)_notifSessionRender();
+  if(visible){
+    _notifSessionRender();
+    // Detener animación de campana al abrir el panel
+    const b=$('codexNotifBell');
+    if(b){b.classList.remove('bell-ringing','bell-has-unread');}
+    // Marcar todas como leídas al abrir
+    _notificaciones.forEach(n=>n.leida=true);
+    _notifUnread=0;
+    _notifHistory.forEach(n=>n.read=true);
+    const badge=$('codexNotifBadge');
+    if(badge)badge.style.display='none';
+    const c=$('nbCount');if(c)c.style.display='none';
+  }
 }
 function _notifSessionEnsureUi(){
   // No crear la campana si no hay sesión iniciada (bug: aparecía en login)
@@ -9684,13 +9765,30 @@ function _mapaCargarDlvs(map){
     // Pedidos activos del delivery
     const activos=_ordersCache.filter(o=>o.deliveryId===dlv.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     const trackTime=dlv.tracking_at?new Date(dlv.tracking_at).toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'}):'—';
-    const bg=online?'#1d4ed8':'#475569';
+    const bg=online?'#0ea5e9':'#475569';
+    const borderCol=online?'rgba(255,255,255,.98)':'rgba(255,255,255,.6)';
     const el=document.createElement('div');
-    el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer';
-    const dlvAnim=online?'animation:dlvPulse 1.8s infinite;':'box-shadow:0 3px 14px rgba(0,0,0,.5);';
+    el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer;z-index:9999';
+    // Pin delivery: siempre más grande y visualmente distinto que los pins de pedidos
+    const dlvAnim=online?'animation:dlvPulseStrong 1.5s infinite;':'box-shadow:0 4px 18px rgba(0,0,0,.55);';
+    // Etiqueta superior con formato distintivo: triángulo + nombre
+    const labelBg=online?'rgba(14,165,233,.95)':'rgba(71,85,105,.92)';
+    const statusDot=online
+      ?'<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ade80;margin-right:4px;box-shadow:0 0 5px #4ade80"></span>'
+      :'<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#6b7280;margin-right:4px"></span>';
     el.innerHTML=
-      '<div style="font-size:10px;font-weight:800;color:#fff;background:'+(online?'rgba(29,78,216,.92)':'rgba(71,85,105,.92)')+';padding:2px 7px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px)">'+dlv.nombre+(online?' 🟢':' ⚫')+'</div>'+
-      '<div style="background:'+bg+';color:#fff;width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.95);'+dlvAnim+'display:flex;align-items:center;justify-content:center;font-size:20px">🛵</div>';
+      '<div style="font-size:11px;font-weight:900;color:#fff;background:'+labelBg+';padding:3px 9px;border-radius:6px;margin-bottom:4px;white-space:nowrap;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.25);letter-spacing:.3px">'+
+        statusDot+escHtml(dlv.nombre)+(online?' 🟢':' ⚫')+
+      '</div>'+
+      // Pin exterior: aro pulsante distintivo (cyan brillante)
+      '<div style="position:relative;display:flex;align-items:center;justify-content:center">'+
+        '<div style="position:absolute;width:62px;height:62px;border-radius:50%;border:2px dashed '+(online?'rgba(14,165,233,.6)':'rgba(100,116,139,.4)')+';pointer-events:none"></div>'+
+        '<div style="background:'+bg+';color:#fff;width:52px;height:52px;border-radius:50%;border:3px solid '+borderCol+';'+dlvAnim+
+          'display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;position:relative;z-index:1">'+
+          '🛵'+
+          '<span style="font-size:7.5px;font-weight:900;letter-spacing:.4px;color:rgba(255,255,255,.9);margin-top:-2px">DLV</span>'+
+        '</div>'+
+      '</div>';
     const pedidosHtml=activos.map(p=>{
       const c=_MAPA_COLORS[p.estado]||'#6b7280';
       return'<div style="border-top:1px solid #2d3748;padding:5px 0;font-size:11px"><b style="color:#f1f5f9">#'+p.id+'</b> '+p.cliente+' <span style="background:'+c+';color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">'+p.estado+'</span><br><span style="color:#64748b">'+p.direccion+'</span></div>';
