@@ -909,9 +909,10 @@ function markAllNotifRead(){
 document.addEventListener('click',function(e){
   const p=$('ntPanel'),b=$('ntBell');
   if(p&&b&&p.classList.contains('open')&&!p.contains(e.target)&&!b.contains(e.target))p.classList.remove('open');
-  // Cerrar kebab menus de pedidos y usuarios al hacer clic fuera
+  // Cerrar kebab menus de pedidos, usuarios y catálogo al hacer clic fuera
   if(!e.target.closest('.order-menu-wrap'))_closeOrderMenus();
   if(!e.target.closest('.order-menu-wrap'))_closeUserMenus();
+  if(!e.target.closest('.order-menu-wrap'))_closeCatMenus();
 });
 
 // Funcion segura para ejecutar acciones de notificacion
@@ -4138,6 +4139,18 @@ function _toggleUserMenu(e,id){
   _closeUserMenus();
   if(!wasOpen)drop.classList.add('open');
 }
+/* ─── KEBAB MENU catálogo ─── */
+function _closeCatMenus(){
+  document.querySelectorAll('[id^="cdrop-"].open').forEach(function(d){d.classList.remove('open');});
+}
+function _toggleCatMenu(e,id){
+  e.stopPropagation();
+  const drop=document.getElementById('cdrop-'+id);
+  if(!drop)return;
+  const wasOpen=drop.classList.contains('open');
+  _closeCatMenus();
+  if(!wasOpen)drop.classList.add('open');
+}
 function renderTable(orders,title,showActs,highlightChanges){
   if(highlightChanges)_prepareOrderStateHighlights(orders);
   if(!orders.length){if(highlightChanges)_commitOrderStateSnapshot(orders);return '<div style="text-align:center;padding:48px;color:var(--text3)">No hay pedidos</div>';}
@@ -6929,12 +6942,16 @@ function _renderProductoCard(p,canEdit,canOrder=false){
       ((p.stock||0)>0?'<div class="prod-stock">📦 Stock: '+p.stock+'</div>':'')+
       presHtml+
       '<div class="prod-actions">'+
-        (canEdit?'<button class="btn btn-secondary btn-sm btn-full" style="font-size:11px" onclick="openNuevaPresentacion('+p.id+')">+ Presentación</button>':'')+
-        (canEdit?'<div style="display:flex;gap:5px">'+
-          '<button class="btn btn-secondary btn-sm" style="flex:1;font-size:11px" onclick="editProducto('+p.id+')">✎ Editar</button>'+
-          '<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="delProducto('+p.id+')">✕</button>'+
-        '</div>':'')+
         (canOrder&&p.presentaciones&&p.presentaciones.length?'<button class="btn btn-primary btn-sm btn-full" style="font-size:12px" onclick="crearPedidoDesdeProducto('+p.id+')">🛒 Crear pedido</button>':'')+
+        (canEdit?'<div class="order-menu-wrap" style="width:100%">'+
+          '<button class="btn btn-secondary btn-sm btn-full" style="font-size:13px;letter-spacing:.05em" onclick="_toggleCatMenu(event,'+p.id+')">⋮ Acciones</button>'+
+          '<div class="order-dropdown" id="cdrop-'+p.id+'">'+
+            '<button onclick="_closeCatMenus();openNuevaPresentacion('+p.id+')">+ Presentación</button>'+
+            '<button onclick="_closeCatMenus();editProducto('+p.id+')">✎ Editar</button>'+
+            '<div class="od-sep"></div>'+
+            '<button onclick="_closeCatMenus();delProducto('+p.id+')" style="color:var(--red)">✕ Eliminar</button>'+
+          '</div>'+
+        '</div>':'')+
       '</div>'+
     '</div>'+
   '</div>';
@@ -9262,10 +9279,12 @@ function _mapaAddMarker(map,o,lat,lng,exact){
   const isPriority=o.prioridad===true||o.prioridad==='alta'||o.prioridad==='high';
   const priorityLabel=isPriority?'<span style="font-size:9px;background:#ef4444;color:#fff;padding:1px 4px;border-radius:4px;margin-left:3px">PRIO</span>':'';
   const pinClass='pin-priority-wrap'+(isPriority?' pin-priority':'');
+  const isEnCamino=['En camino','En Ruta','Despachado'].includes(o.estado);
+  const labelBorder=isEnCamino?'border:1px solid #22c55e;':'border:1px solid rgba(255,255,255,.18);';
   const el=document.createElement('div');
   el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer;opacity:'+opacity;
   el.innerHTML=
-    '<div style="font-size:10px;font-weight:800;color:#fff;background:rgba(0,0,0,.65);padding:2px 6px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px);letter-spacing:.2px">'+shortName+urgLabel+priorityLabel+'</div>'+
+    '<div style="font-size:10px;font-weight:600;color:#f1f5f9;background:rgba(15,17,23,.88);padding:3px 7px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px);letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.8);'+labelBorder+'">'+shortName+urgLabel+priorityLabel+'</div>'+
     '<div class="'+pinClass+'" style="background:'+color+';color:#fff;width:44px;height:44px;border-radius:50%;'+
     'border:3px solid rgba(255,255,255,.95);'+(isPriority?'':urgAnim)+
     'display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;line-height:1.15;text-align:center">'+
