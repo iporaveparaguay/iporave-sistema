@@ -855,7 +855,9 @@ function togglePwd(inputId,btn){
 function eyeSVG(){return'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';}
 function eyeOffSVG(){return'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';}
 function pwdField(inputId,placeholder,extra){
-  return'<div class="pwd-wrap"><input type="password" id="'+inputId+'" placeholder="'+(placeholder||'••••••••')+'"'+(extra?' '+extra:'')+'>'+
+  // autocomplete="new-password" evita que el browser auto-rellene con credenciales guardadas
+  // del admin en formularios de creación/edición de otros usuarios
+  return'<div class="pwd-wrap"><input type="password" id="'+inputId+'" placeholder="'+(placeholder||'••••••••')+'" autocomplete="new-password"'+(extra?' '+extra:'')+'>'+
     '<button type="button" class="pwd-eye" onclick="togglePwd(\''+inputId+'\',this)" tabindex="-1">'+eyeSVG()+'</button></div>';
 }
 
@@ -2709,7 +2711,7 @@ function _requireSensitiveAuth(callback) {
     '<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px 24px;width:min(360px,90vw);box-shadow:var(--shadow)">' +
       '<div style="font-size:16px;font-weight:700;margin-bottom:6px">🔒 Zona restringida</div>' +
       '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">Esta sección requiere tu contraseña para continuar.</div>' +
-      '<input id="_sensitiveAuthPwd" type="password" placeholder="Contraseña" autocomplete="current-password"' +
+      '<input id="_sensitiveAuthPwd" type="password" placeholder="Contraseña" autocomplete="off"' +
         ' style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;margin-bottom:12px">' +
       '<div id="_sensitiveAuthErr" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none">Contraseña incorrecta.</div>' +
       '<div style="display:flex;gap:8px;justify-content:flex-end">' +
@@ -6688,8 +6690,10 @@ PAGES.usuarios=async function(){
 };
 function openNewUser(){
   openA('Nuevo usuario',
-    '<div class="fg"><label>Nombre</label><input type="text" id="nuNom"></div>'+
-    '<div class="frow"><div class="fg"><label>Email</label><input type="email" id="nuEmail"></div>'+
+    // autocomplete="off" en el form contenedor + inputs críticos con autocomplete propio
+    // Evita que el browser rellene con credenciales del admin actual
+    '<div class="fg"><label>Nombre</label><input type="text" id="nuNom" autocomplete="off"></div>'+
+    '<div class="frow"><div class="fg"><label>Email</label><input type="email" id="nuEmail" autocomplete="off"></div>'+
     '<div class="fg"><label>Contraseña</label>'+pwdField('nuPass','••••••••')+'</div></div>'+
     '<div class="fg"><label>Rol</label><select id="nuRol" onchange="toggleDlvF2()">'+
     '<option value="vendedor">Vendedor</option><option value="dropshipper">Dropshipper</option>'+
@@ -6731,8 +6735,8 @@ async function saveNewUser(){
 function editUser(id){
   const u=_usersCache.find(x=>x.id===id);if(!u)return;
   openA('Editar — '+escHtml(u.nombre||''),
-    '<div class="fg"><label>Nombre</label><input type="text" id="euNom" value="'+escAttr(u.nombre)+'"></div>'+
-    '<div class="frow"><div class="fg"><label>Email</label><input type="email" id="euEmail" value="'+escAttr(u.email)+'"></div>'+
+    '<div class="fg"><label>Nombre</label><input type="text" id="euNom" value="'+escAttr(u.nombre)+'" autocomplete="off"></div>'+
+    '<div class="frow"><div class="fg"><label>Email</label><input type="email" id="euEmail" value="'+escAttr(u.email)+'" autocomplete="off"></div>'+
     '<div class="fg"><label>Nueva contraseña</label>'+pwdField('euPass','(sin cambios)')+'</div></div>'+
     (u.rol==='superadmin'
       ?'<div class="fg"><label>Rol</label><div style="padding:8px 0;font-size:13px;color:var(--text2)">Superadministrador <span style="font-size:11px;color:var(--text3)">(rol fijo — no modificable)</span></div></div>'
@@ -8668,9 +8672,9 @@ PAGES.config=function(){
     '<div class="lcard2">'+
       '<div class="stitle" style="margin-top:0">🔑 APIs — Claves de servicio</div>'+
       '<div class="alert alrt-i" style="margin-bottom:14px">Todas las claves se guardan localmente. Si no configurás una API, esa función simplemente no estará activa.</div>'+
-      '<div class="fg"><label>Supabase URL</label><div class="pwd-wrap"><input type="password" id="cfgSuU" value="'+escAttr(cfg.supabaseUrl)+'" placeholder="https://xxxx.supabase.co"><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuU\',this)">👁</button></div></div>'+
-      '<div class="fg"><label>Supabase Anon Key</label><div class="pwd-wrap"><input type="password" id="cfgSuK" value="'+escAttr(cfg.supabaseKey)+'" placeholder="eyJ..."><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuK\',this)">👁</button></div></div>'+
-      '<div class="fg"><label>Google Maps API Key</label><div class="pwd-wrap"><input type="password" id="cfgGm" value="'+escAttr(cfg.googleMapsKey)+'" placeholder="AIzaSy..."><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgGm\',this)">👁</button></div></div>'+
+      '<div class="fg"><label>Supabase URL</label><div class="pwd-wrap"><input type="password" id="cfgSuU" value="'+escAttr(cfg.supabaseUrl)+'" placeholder="https://xxxx.supabase.co" autocomplete="off"><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuU\',this)">👁</button></div></div>'+
+      '<div class="fg"><label>Supabase Anon Key</label><div class="pwd-wrap"><input type="password" id="cfgSuK" value="'+escAttr(cfg.supabaseKey)+'" placeholder="eyJ..." autocomplete="off"><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuK\',this)">👁</button></div></div>'+
+      '<div class="fg"><label>Google Maps API Key</label><div class="pwd-wrap"><input type="password" id="cfgGm" value="'+escAttr(cfg.googleMapsKey)+'" placeholder="AIzaSy..." autocomplete="off"><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgGm\',this)">👁</button></div></div>'+
       '<button class="btn btn-primary" onclick="saveCfgAPIs()">Guardar y reconectar Supabase</button>'+
     '</div>'+
     '<div class="lcard2">'+
