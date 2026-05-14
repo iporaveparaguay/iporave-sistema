@@ -4608,18 +4608,18 @@ function editOrder(id){
   const vendOpts='<option value="">Sin asignar</option>'+allSales.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+d.nombre+' ('+capRole(d.rol)+')</option>').join('');
   openA('✏️ Editar pedido #'+id,
     '<div class="stitle">Datos del cliente</div>'+
-    '<div class="frow"><div class="fg"><label>Nombre cliente *</label><input type="text" id="eCli" value="'+escHtml(o.cliente||'')+'"></div>'+
-    '<div class="fg"><label>Cédula</label><input type="text" id="eCed" value="'+(o.cedula||'')+'"></div></div>'+
-    '<div class="frow"><div class="fg"><label>Teléfono</label><input type="text" id="eTel" value="'+(o.telefono||'')+'"></div>'+
-    '<div class="fg"><label>Fecha</label><input type="date" id="eFecha" value="'+(o.fecha||today())+'"></div></div>'+
+    '<div class="frow"><div class="fg"><label>Nombre cliente *</label><input type="text" id="eCli" value="'+escAttr(o.cliente)+'"></div>'+
+    '<div class="fg"><label>Cédula</label><input type="text" id="eCed" value="'+escAttr(o.cedula)+'"></div></div>'+
+    '<div class="frow"><div class="fg"><label>Teléfono</label><input type="text" id="eTel" value="'+escAttr(o.telefono)+'"></div>'+
+    '<div class="fg"><label>Fecha</label><input type="date" id="eFecha" value="'+escAttr(o.fecha||today())+'"></div></div>'+
     '<div class="fg">'+
     '<label style="display:flex;justify-content:space-between;align-items:center"><span>Dirección</span>'+
     '<button type="button" id="nGpsBtn" onclick="captureGpsForOrder()" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:'+(o.gpsLat?'var(--green)':'var(--text2)')+';cursor:pointer">'+(o.gpsLat?'✅ GPS OK':'📍 GPS actual')+'</button>'+
     '</label>'+
-    '<input type="text" id="eDir" value="'+escHtml(o.direccion||'')+'">'+
+    '<input type="text" id="eDir" value="'+escAttr(o.direccion)+'">'+
     '</div>'+
     '<div class="fg"><label>📍 Nombre del sitio de entrega <span style="font-weight:400;color:var(--text3);font-size:11px">(ej: Shopping Salema, Hospital Regional...)</span></label>'+
-    '<input type="text" id="eSitio" value="'+escHtml(o.sitio||'')+'" placeholder="Referencia del lugar"></div>'+
+    '<input type="text" id="eSitio" value="'+escAttr(o.sitio)+'" placeholder="Referencia del lugar"></div>'+
     '<div class="fg">'+
     '<label>🔗 Pegar enlace o coordenadas <span style="font-weight:400;color:var(--text3);font-size:11px">(Google Maps, WhatsApp, lat,lng)</span></label>'+
     '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="procesarUbicacion(this.value)">'+
@@ -4630,13 +4630,13 @@ function editOrder(id){
     '<div id="eZonaManualDiv" style="display:'+(esManualEdit?'':'none')+';padding:10px;background:var(--bg3);border-radius:8px;border:1px dashed var(--accent);margin-bottom:8px">'+
       '<div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">✏️ Zona personalizada</div>'+
       '<div class="frow">'+
-        '<div class="fg"><label>Nombre del lugar</label><input type="text" id="eZonaCustomNombre" value="'+escHtml(o.zonaCustomNombre||'')+'" placeholder="Ej: Luque Centro..."></div>'+
+        '<div class="fg"><label>Nombre del lugar</label><input type="text" id="eZonaCustomNombre" value="'+escAttr(o.zonaCustomNombre)+'" placeholder="Ej: Luque Centro..."></div>'+
         '<div class="fg"><label>Costo envío (Gs.)</label><input type="number" id="eZonaCustomPrecio" value="'+(o.zonaCustomPrecio||0)+'"></div>'+
       '</div>'+
     '</div>'+
     '<div class="stitle">Producto</div>'+
     '<div class="frow"><div class="fg"><label>Proveedor</label><select id="eProv">'+provOpts+'</select></div>'+
-    '<div class="fg"><label>Producto *</label><input type="text" id="eProd" value="'+escHtml(o.producto||'')+'"></div></div>'+
+    '<div class="fg"><label>Producto *</label><input type="text" id="eProd" value="'+escAttr(o.producto)+'"></div></div>'+
     '<div class="frow3"><div class="fg"><label>Cantidad</label><input type="number" id="eQty" value="'+(o.qty||1)+'" min="1"></div>'+
     '<div class="fg"><label>Precio venta (Gs.)</label><input type="number" id="ePrec" value="'+(o.precio||0)+'"></div>'+
     '<div class="fg"><label>Costo (Gs.)</label><input type="number" id="eCost" value="'+(o.costo||0)+'"></div></div>'+
@@ -4648,10 +4648,10 @@ function editOrder(id){
     '<div class="fg"><label>Dropshipper</label><select id="eDrop">'+dropOpts+'</select></div></div>'+
     '<div class="fg"><label>Vendedor</label><select id="eVend">'+vendOpts+'</select></div>'+
     '<div class="stitle">Datos IVA <span style="font-weight:400;color:var(--text3)">(opcional)</span></div>'+
-    '<div class="frow"><div class="fg"><label>Razón social</label><input type="text" id="eRazon" value="'+escHtml(o.razonSocial||'')+'"></div>'+
-    '<div class="fg"><label>RUC</label><input type="text" id="eRuc" value="'+(o.ruc||'')+'"></div></div>'+
+    '<div class="frow"><div class="fg"><label>Razón social</label><input type="text" id="eRazon" value="'+escAttr(o.razonSocial)+'"></div>'+
+    '<div class="fg"><label>RUC</label><input type="text" id="eRuc" value="'+escAttr(o.ruc)+'"></div></div>'+
     '<div class="fg"><label>Tipo IVA</label><select id="eIva"><option '+(o.tipoIva==='10%'?'selected':'')+'>10%</option><option '+(o.tipoIva==='5%'?'selected':'')+'>5%</option><option '+(o.tipoIva==='Exento'?'selected':'')+'>Exento</option></select></div>'+
-    '<div class="fg"><label>Notas / Observación</label><textarea id="eNotas">'+(o.notas||'')+'</textarea></div>'+
+    '<div class="fg"><label>Notas / Observación</label><textarea id="eNotas">'+escHtml(o.notas||'')+'</textarea></div>'+
     '<div id="eAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveEditOrder('+id+')">Guardar cambios</button>'
@@ -6626,9 +6626,9 @@ async function saveNewUser(){
 }
 function editUser(id){
   const u=_usersCache.find(x=>x.id===id);if(!u)return;
-  openA('Editar — '+u.nombre,
-    '<div class="fg"><label>Nombre</label><input type="text" id="euNom" value="'+u.nombre+'"></div>'+
-    '<div class="frow"><div class="fg"><label>Email</label><input type="email" id="euEmail" value="'+(u.email||'')+'"></div>'+
+  openA('Editar — '+escHtml(u.nombre||''),
+    '<div class="fg"><label>Nombre</label><input type="text" id="euNom" value="'+escAttr(u.nombre)+'"></div>'+
+    '<div class="frow"><div class="fg"><label>Email</label><input type="email" id="euEmail" value="'+escAttr(u.email)+'"></div>'+
     '<div class="fg"><label>Nueva contraseña</label>'+pwdField('euPass','(sin cambios)')+'</div></div>'+
     (u.rol==='superadmin'
       ?'<div class="fg"><label>Rol</label><div style="padding:8px 0;font-size:13px;color:var(--text2)">Superadministrador <span style="font-size:11px;color:var(--text3)">(rol fijo — no modificable)</span></div></div>'
@@ -6640,8 +6640,8 @@ function editUser(id){
     '<option value="auto" '+(u.vehiculo==='auto'?'selected':'')+'>Auto</option>'+
     '<option value="" '+((!u.vehiculo)?'selected':'')+'>N/A</option>'+
     '</select></div>'+
-    '<div class="fg"><label>Patente</label><input type="text" id="euPat" value="'+(u.patente||'')+'"></div></div>'+
-    '<div class="fg"><label>WhatsApp</label><input type="text" id="euWa" value="'+(u.whatsapp||'')+'"></div>'+
+    '<div class="fg"><label>Patente</label><input type="text" id="euPat" value="'+escAttr(u.patente)+'"></div></div>'+
+    '<div class="fg"><label>WhatsApp</label><input type="text" id="euWa" value="'+escAttr(u.whatsapp)+'"></div>'+
     '<div id="euAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveEditUser('+id+')">Guardar</button>'
@@ -6796,13 +6796,13 @@ async function saveNewZona(){
 }
 function editZona(id){
   const z=_zonasCache.find(x=>x.id===id);if(!z)return;
-  openA('Editar zona — '+z.nombre,
-    '<div class="fg"><label>Nombre</label><input type="text" id="ezN" value="'+z.nombre+'"></div>'+
-    '<div class="fg"><label>Ciudades</label><textarea id="ezD">'+(z.desc||'')+'</textarea></div>'+
+  openA('Editar zona — '+escHtml(z.nombre||''),
+    '<div class="fg"><label>Nombre</label><input type="text" id="ezN" value="'+escAttr(z.nombre)+'"></div>'+
+    '<div class="fg"><label>Ciudades</label><textarea id="ezD">'+escHtml(z.desc||'')+'</textarea></div>'+
     '<div class="frow">'+
-    '<div class="fg"><label>Tarifa (Gs.)</label><input type="number" id="ezP" value="'+z.precio+'"></div>'+
+    '<div class="fg"><label>Tarifa (Gs.)</label><input type="number" id="ezP" value="'+(z.precio||0)+'"></div>'+
     '<div class="fg"><label>Extra delivery (Gs.)</label><input type="number" id="ezE" value="'+(z.extraDelivery||0)+'"></div></div>'+
-    '<div class="fg"><label>Tiempo de entrega</label><input type="text" id="ezT" value="'+(z.tiempoEntrega||'')+'"></div>',
+    '<div class="fg"><label>Tiempo de entrega</label><input type="text" id="ezT" value="'+escAttr(z.tiempoEntrega)+'"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveEditZona('+id+')">Guardar</button>'
   );
@@ -7447,14 +7447,14 @@ async function editProducto(id){
       '<div class="fg"><label>🎬 Agregar video</label>'+
         '<input type="file" id="epVideoFile" accept="video/mp4,video/webm" onchange="previewVid(\'epVideoFile\',\'epVideoPreview\')" style="display:none">'+
         '<div onclick="$(\'epVideoFile\').click()" style="border:2px dashed var(--border2);border-radius:8px;height:72px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden" id="epVideoPreview">'+
-          (videoActual?'<video src="'+videoActual+'" style="width:100%;height:100%;object-fit:cover" muted playsinline></video>':'<span style="font-size:11px;color:var(--text3)">🎬 Subir video</span>')+
+          (videoActual?'<video src="'+safeUrl(videoActual)+'" style="width:100%;height:100%;object-fit:cover" muted playsinline></video>':'<span style="font-size:11px;color:var(--text3)">🎬 Subir video</span>')+
         '</div>'+
       '</div>'+
     '</div>'+
-    '<div class="fg"><label>Nombre</label><input type="text" id="epNom" value="'+p.nombre+'"></div>'+
+    '<div class="fg"><label>Nombre</label><input type="text" id="epNom" value="'+escAttr(p.nombre)+'"></div>'+
     '<div class="frow">'+
       '<div class="fg"><label>Categoría</label><select id="epCat"><option value="">Sin categoría</option>'+cats+'</select></div>'+
-      '<div class="fg"><label>Código de barras</label><input type="text" id="epCodigo" value="'+(p.codigo_barras||'')+'"></div>'+
+      '<div class="fg"><label>Código de barras</label><input type="text" id="epCodigo" value="'+escAttr(p.codigo_barras)+'"></div>'+
     '</div>'+
     '<div class="fg"><label>Descripción del producto</label>'+_richEditorHTML('epDesc')+'</div>'+
     '<div class="frow">'+
@@ -8556,9 +8556,9 @@ PAGES.config=function(){
     '<div class="lcard2">'+
       '<div class="stitle" style="margin-top:0">🔑 APIs — Claves de servicio</div>'+
       '<div class="alert alrt-i" style="margin-bottom:14px">Todas las claves se guardan localmente. Si no configurás una API, esa función simplemente no estará activa.</div>'+
-      '<div class="fg"><label>Supabase URL</label><div class="pwd-wrap"><input type="password" id="cfgSuU" value="'+(cfg.supabaseUrl||'')+'" placeholder="https://xxxx.supabase.co"><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuU\',this)">👁</button></div></div>'+
-      '<div class="fg"><label>Supabase Anon Key</label><div class="pwd-wrap"><input type="password" id="cfgSuK" value="'+(cfg.supabaseKey||'')+'" placeholder="eyJ..."><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuK\',this)">👁</button></div></div>'+
-      '<div class="fg"><label>Google Maps API Key</label><div class="pwd-wrap"><input type="password" id="cfgGm" value="'+(cfg.googleMapsKey||'')+'" placeholder="AIzaSy..."><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgGm\',this)">👁</button></div></div>'+
+      '<div class="fg"><label>Supabase URL</label><div class="pwd-wrap"><input type="password" id="cfgSuU" value="'+escAttr(cfg.supabaseUrl)+'" placeholder="https://xxxx.supabase.co"><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuU\',this)">👁</button></div></div>'+
+      '<div class="fg"><label>Supabase Anon Key</label><div class="pwd-wrap"><input type="password" id="cfgSuK" value="'+escAttr(cfg.supabaseKey)+'" placeholder="eyJ..."><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuK\',this)">👁</button></div></div>'+
+      '<div class="fg"><label>Google Maps API Key</label><div class="pwd-wrap"><input type="password" id="cfgGm" value="'+escAttr(cfg.googleMapsKey)+'" placeholder="AIzaSy..."><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgGm\',this)">👁</button></div></div>'+
       '<button class="btn btn-primary" onclick="saveCfgAPIs()">Guardar y reconectar Supabase</button>'+
     '</div>'+
     '<div class="lcard2">'+
