@@ -4008,19 +4008,29 @@ function _deliveryCardPedido(o){
   const telRaw=(o.telefono||'').toString();
   const tel=telRaw.replace(/[^\d+]/g,'');
   const mapUrl='https://maps.google.com/?q='+encodeURIComponent(dir);
-  return '<div style="background:var(--card);border:1px solid var(--border);border-left:5px solid '+_orderStateColor(o.estado)+';border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.14)">'+
+  const prioridad=o.prioridad||o.priority;
+  const prod=o.producto||(o.producto_nombre||'');
+  const qty=o.qty||o.cantidad||1;
+  const precio=o.precio||o.precio_total||0;
+  const notas=o.notas||o.nota||o.observacion||'';
+  const borderColor=prioridad?'#ef4444':_orderStateColor(o.estado);
+  const prioTag=prioridad?'<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:20px;letter-spacing:.04em;animation:shake .5s infinite">🔴 PRIORIDAD</span> ':'';
+  return '<div style="background:var(--card);border:1px solid var(--border);border-left:6px solid '+borderColor+';border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,.16)">'+
     '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px">'+
       '<div style="min-width:0">'+
-        '<div style="font-size:17px;font-weight:900;line-height:1.2;margin:0 0 4px">'+escHtml(o.cliente||'Cliente')+'</div>'+
-        '<div style="font-size:12px;color:var(--text2)">#'+o.id+(o.fecha?' · '+fmtDate(o.fecha):'')+'</div>'+
+        '<div style="font-size:17px;font-weight:900;line-height:1.2;margin:0 0 3px">'+prioTag+escHtml(o.cliente||'Cliente')+'</div>'+
+        '<div style="font-size:11px;color:var(--text2)">#'+o.id+(o.fecha?' · '+fmtDate(o.fecha):'')+'</div>'+
       '</div>'+
-      '<span class="badge '+_orderStateBadgeClass(o.estado)+'" style="white-space:nowrap">'+_deliveryEstadoEmoji(o.estado)+' '+(o.estado||'Pendiente')+'</span>'+
+      '<span class="badge '+_orderStateBadgeClass(o.estado)+'" style="white-space:nowrap;font-size:11px">'+_deliveryEstadoEmoji(o.estado)+' '+(o.estado||'Pendiente')+'</span>'+
     '</div>'+
-    '<div style="font-size:14px;line-height:1.35;color:var(--text);font-weight:700;margin-bottom:6px">📍 '+escHtml(dir)+'</div>'+
-    '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">📞 '+escHtml(telRaw||'Sin teléfono')+'</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-      (tel?'<a class="btn btn-success" href="tel:'+tel+'" style="padding:12px 10px;text-align:center;text-decoration:none;font-size:14px;font-weight:900">Llamar</a>':'<button class="btn btn-secondary" disabled style="padding:12px 10px;font-size:14px;opacity:.55">Sin teléfono</button>')+
-      '<a class="btn btn-primary" href="'+mapUrl+'" target="_blank" style="padding:12px 10px;text-align:center;text-decoration:none;font-size:14px;font-weight:900">Ver mapa</a>'+
+    (prod?'<div style="font-size:13px;color:var(--text);margin-bottom:4px;font-weight:700">📦 '+escHtml(prod)+(qty>1?' × '+qty:'')+(precio?' · <span style="color:var(--accent)">₲ '+fmt(precio)+'</span>':'')+'</div>':'')+
+    '<div style="font-size:13px;line-height:1.35;color:var(--text);font-weight:700;margin-bottom:4px">📍 '+escHtml(dir)+'</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:'+(notas?'4':'12')+'px">📞 '+escHtml(telRaw||'Sin teléfono')+'</div>'+
+    (notas?'<div style="font-size:12px;color:var(--text3);background:var(--bg2);border-radius:8px;padding:7px 10px;margin-bottom:12px;font-style:italic">💬 '+escHtml(notas)+'</div>':'')+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
+      (tel?'<a class="btn btn-success" href="tel:'+tel+'" style="padding:10px 6px;text-align:center;text-decoration:none;font-size:13px;font-weight:900;min-height:42px;display:flex;align-items:center;justify-content:center;touch-action:manipulation">📞 Llamar</a>':'<button class="btn btn-secondary" disabled style="padding:10px 6px;font-size:13px;opacity:.45;min-height:42px">Sin tel</button>')+
+      '<a class="btn btn-primary" href="'+mapUrl+'" target="_blank" style="padding:10px 6px;text-align:center;text-decoration:none;font-size:13px;font-weight:900;min-height:42px;display:flex;align-items:center;justify-content:center;touch-action:manipulation">🗺 Mapa</a>'+
+      '<button class="btn btn-warning" onclick="dlvModal('+o.id+')" style="padding:10px 6px;font-size:13px;font-weight:900;min-height:42px;touch-action:manipulation;cursor:pointer">⬆ Estado</button>'+
     '</div>'+
   '</div>';
 }
