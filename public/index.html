@@ -506,7 +506,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-block !important;}
 .act-btns{display:flex;gap:8px;flex-wrap:wrap;}
 /* ─── KEBAB MENU pedidos ─── */
 .order-menu-wrap{position:relative;display:inline-block;}
-.order-menu-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--text);font-size:16px;line-height:1;}
+.order-menu-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:10px 14px;min-height:44px;min-width:44px;cursor:pointer;color:var(--text);font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;}
 .order-menu-btn:hover{background:var(--bg3);}
 .order-dropdown{position:absolute;right:0;top:100%;background:var(--bg2);border:1px solid var(--border2,var(--border));border-radius:8px;box-shadow:var(--shadow,0 4px 16px rgba(0,0,0,.3));z-index:200;min-width:160px;padding:4px 0;display:none;}
 .order-dropdown.open{display:block;}
@@ -4567,9 +4567,9 @@ async function confirmDlv(id){
   if(ESTADOS_REQ_OBS.has(estado)&&!notas){showAlert('dlvAlert','e','La observación es obligatoria para este estado');return;}
   if(estado==='Entregado'&&!metodo){showAlert('dlvAlert','e','Seleccioná el método de cobro');return;}
   if(estado==='Entregado'&&!fotoOk){showAlert('dlvAlert','e','La foto de entrega es obligatoria');return;}
-  if(!confirm('¿Confirmar cambio de estado a "'+estado+'"?\n\nEsta acción quedará registrada en el historial del pedido.')){return;}
   const orders=_ordersCache;
   const o=orders.find(x=>x.id===id);if(!o)return;
+  if(!confirm('¿Confirmar cambio de estado a "'+estado+'" para el pedido #'+id+' — '+(o.cliente||'sin nombre')+'?\n\nEsta acción quedará registrada en el historial del pedido.')){return;}
   o.historial=o.historial||[];
   o.historial.push({estado,usuario:CU.nombre,fecha:nowStr(),obs:notas});
   o.estado=estado;o.notas=notas;
@@ -7560,24 +7560,24 @@ function exportOrdersPDF(){
     return'<tr style="background:'+(i%2?'#f8fafc':'#fff')+'">'
       +'<td style="color:#94a3b8;font-size:11px">'+o.id+'</td>'
       +'<td style="white-space:nowrap">'+(o.fecha||'—')+'</td>'
-      +'<td><b>'+(o.cliente||'—')+'</b><br><span style="font-size:11px;color:#64748b">'+(o.telefono||'')+'</span></td>'
-      +'<td style="font-size:12px">'+(o.producto||'—')+'</td>'
+      +'<td><b>'+escHtml(o.cliente||'—')+'</b><br><span style="font-size:11px;color:#64748b">'+escHtml(o.telefono||'')+'</span></td>'
+      +'<td style="font-size:12px">'+escHtml(o.producto||'—')+'</td>'
       +'<td style="text-align:center;font-weight:700">'+(o.qty||1)+'</td>'
       +'<td style="text-align:right">Gs.'+fmtN(o.precio)+'</td>'
       +'<td style="text-align:right;font-weight:800">Gs.'+fmtN(tv)+'</td>'
       +'<td style="text-align:right;color:#64748b;font-size:11px">Gs.'+fmtN(cp)+'</td>'
       +'<td style="text-align:right;color:#64748b;font-size:11px">Gs.'+fmtN(z.precio)+'</td>'
       +'<td style="text-align:right;font-weight:700;color:'+(g>=0?'#16a34a':'#dc2626')+'">Gs.'+fmtN(g)+'</td>'
-      +'<td style="font-size:11px">'+(z.nombre||'—')+'</td>'
-      +'<td><span style="background:'+ec+'18;color:'+ec+';border:1px solid '+ec+'40;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+o.estado+'</span></td>'
-      +'<td style="font-size:11px">'+(o.metodoCobro||'—')+'</td>'
-      +'<td style="font-size:11px;color:#64748b">'+(o.proveedor||'—')+'</td>'
+      +'<td style="font-size:11px">'+escHtml(z.nombre||'—')+'</td>'
+      +'<td><span style="background:'+ec+'18;color:'+ec+';border:1px solid '+ec+'40;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">'+escHtml(o.estado)+'</span></td>'
+      +'<td style="font-size:11px">'+escHtml(o.metodoCobro||'—')+'</td>'
+      +'<td style="font-size:11px;color:#64748b">'+escHtml(o.proveedor||'—')+'</td>'
       +'</tr>';
   }).join('');
   const css='*{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,Segoe UI,sans-serif;background:#f1f5f9;color:#0f172a;font-size:13px;}.page{max-width:1260px;margin:0 auto;padding:28px;}.card{background:#fff;border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);}.hdr{display:flex;justify-content:space-between;align-items:flex-start;}.brand h1{font-size:34px;font-weight:900;color:#f5a623;letter-spacing:4px;}.brand p{font-size:11px;color:#94a3b8;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}.ri h2{font-size:20px;font-weight:800;text-align:right;}.ri p{font-size:11px;color:#64748b;margin-top:3px;text-align:right;}.divl{height:3px;background:linear-gradient(90deg,#f5a623,#e8891a,#f5a623);border-radius:2px;margin:20px 0;}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}.stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 10px;text-align:center;}.stat .n{font-size:16px;font-weight:900;}.stat .l{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-top:4px;}.gold .n{color:#f5a623;}.green .n{color:#16a34a;}.blue .n{color:#3b82f6;}table{width:100%;border-collapse:collapse;}th{background:#0f172a;color:#f1f5f9;padding:11px 8px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}td{padding:9px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}.ft{display:flex;justify-content:space-between;align-items:center;}.ft p{font-size:11px;color:#94a3b8;}.seal{font-size:12px;font-weight:700;color:#f5a623;letter-spacing:2px;}@media print{body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.page{padding:0;max-width:100%;}.card{box-shadow:none;border-radius:0;}}';
   const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Iporave Reporte '+today()+'</title><style>'+css+'</style></head><body><div class="page">'
     +'<div class="card"><div class="hdr"><div class="brand"><h1>IPORAVE</h1><p>Distribuidora Iporave E.A.S. Paraguay</p></div>'
-    +'<div class="ri"><h2>Reporte de Pedidos</h2><p>'+nowStr()+'</p><p>'+CU.nombre+' - '+capRole(CU.rol)+'</p><p>'+orders.length+' pedidos</p></div></div>'
+    +'<div class="ri"><h2>Reporte de Pedidos</h2><p>'+nowStr()+'</p><p>'+escHtml(CU.nombre)+' - '+escHtml(capRole(CU.rol))+'</p><p>'+orders.length+' pedidos</p></div></div>'
     +'<div class="divl"></div>'
     +'<div class="stats">'
     +'<div class="stat blue"><div class="n">'+orders.length+'</div><div class="l">Total pedidos</div></div>'
@@ -7823,7 +7823,7 @@ function _ptab(n){
 function openPerfilUsuario(){
   const u=CU;
   const av=u.foto_perfil
-    ?'<img src="'+u.foto_perfil+'" class="perfil-avatar">'
+    ?'<img src="'+safeUrl(u.foto_perfil)+'" class="perfil-avatar">'
     :'<div class="perfil-avatar-placeholder">'+u.nombre[0].toUpperCase()+'</div>';
   const calStr=u.calificacion_prom>0
     ?_renderStars(u.calificacion_prom)+' <span style="color:var(--text2);font-size:12px">('+u.calificaciones_total+' reseñas)</span>'
@@ -7857,11 +7857,11 @@ function openPerfilUsuario(){
       '<div class="frow">'+
       '<div class="fg"><label>Cédula — Frente *</label>'+
       '<div id="pfCedFrentePreview" onclick="$(\'pfCedFrenteFile\').click()" style="height:90px;border-radius:8px;background:var(--bg3);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden">'+
-      (u.foto_cedula_frente?'<img src="'+u.foto_cedula_frente+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:11px;color:var(--text3);text-align:center">📷 Subir frente</span>')+
+      (u.foto_cedula_frente?'<img src="'+safeUrl(u.foto_cedula_frente)+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:11px;color:var(--text3);text-align:center">📷 Subir frente</span>')+
       '</div><input type="file" id="pfCedFrenteFile" accept="image/*" style="display:none" onchange="subirCedulaFrente(this)"></div>'+
       '<div class="fg"><label>Cédula — Dorso *</label>'+
       '<div id="pfCedDorsoPreview" onclick="$(\'pfCedDorsoFile\').click()" style="height:90px;border-radius:8px;background:var(--bg3);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden">'+
-      (u.foto_cedula_dorso?'<img src="'+u.foto_cedula_dorso+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:11px;color:var(--text3);text-align:center">📷 Subir dorso</span>')+
+      (u.foto_cedula_dorso?'<img src="'+safeUrl(u.foto_cedula_dorso)+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:11px;color:var(--text3);text-align:center">📷 Subir dorso</span>')+
       '</div><input type="file" id="pfCedDorsoFile" accept="image/*" style="display:none" onchange="subirCedulaDorso(this)"></div>'+
       '</div>'+
       '<div class="frow" style="margin-top:10px"><div class="fg"><label>Tipo de documento</label><select id="pfTipoDoc">'+
@@ -8078,7 +8078,7 @@ async function _califAddFotos(input){
     const url=await subirArchivo(f,'resenas');
     if(url){
       _califFotos.push(url);
-      prev.innerHTML+='<img src="'+url+'" class="resena-foto">';
+      prev.innerHTML+='<img src="'+safeUrl(url)+'" class="resena-foto">';
     }
   }
   pushNotif('Foto(s) cargada(s)','s');
@@ -8116,7 +8116,7 @@ function imprimirTicket(id){
     ?('https://www.google.com/maps?q='+o.gpsLat+','+o.gpsLng)
     :('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((o.direccion||'')+' '+(z.nombre||'')+' Paraguay'));
   var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=110x110&data='+encodeURIComponent(qrBase);
-  var logoH=emp.logo?('<img src="'+emp.logo+'" style="height:38px;object-fit:contain">'):('<b style="font-size:17px;color:#f5a623;letter-spacing:2px">'+(emp.nombre||'IPORAVE')+'</b>');
+  var logoH=emp.logo?('<img src="'+safeUrl(emp.logo)+'" style="height:38px;object-fit:contain">'):('<b style="font-size:17px;color:#f5a623;letter-spacing:2px">'+(emp.nombre||'IPORAVE')+'</b>');
   var num=String(o.id).padStart(4,'0');
   var css='*{margin:0;padding:0;box-sizing:border-box;}'
     +'body{font-family:Arial,sans-serif;background:#fff;display:flex;justify-content:center;padding:6mm;}'
@@ -8180,7 +8180,7 @@ function imprimirGuia(id){
   const emp=_getEmpresa();
   const z=_getZonaO(o);
   const delivery=_usersCache.find(u=>u.id===o.deliveryId)||{nombre:'Sin asignar'};
-  const logoHtml=emp.logo?'<img src="'+emp.logo+'" style="height:56px;object-fit:contain">':'<div style="font-size:26px;font-weight:900;color:#f5a623;letter-spacing:3px">IPORÃVE</div>';
+  const logoHtml=emp.logo?'<img src="'+safeUrl(emp.logo)+'" style="height:56px;object-fit:contain">':'<div style="font-size:26px;font-weight:900;color:#f5a623;letter-spacing:3px">IPORÃVE</div>';
   const css='*{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,Segoe UI,sans-serif;background:#fff;color:#0f172a;}'+
     '.guia{width:100%;max-width:400px;margin:0 auto;border:2px solid #0f172a;border-radius:8px;overflow:hidden;}'+
     '.g-head{background:#0f172a;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}'+
@@ -8209,25 +8209,25 @@ function imprimirGuia(id){
       '<div class="g-cod"><div class="num">'+String(o.id).padStart(6,'0')+'</div><div class="lbl">Código de seguimiento</div></div>'+
       '<div class="g-sec">'+
         '<div class="g-lbl">Destinatario</div>'+
-        '<div class="g-val big">'+o.cliente+'</div>'+
-        '<div class="g-val" style="margin-top:3px;color:#3b82f6">📞 '+o.telefono+'</div>'+
-        '<div class="g-val" style="margin-top:3px;font-size:12px;color:#64748b">📍 '+(o.direccion||'—')+'</div>'+
-        '<div class="g-val" style="margin-top:2px;font-size:11px;color:#94a3b8">Zona: '+z.nombre+'</div>'+
+        '<div class="g-val big">'+escHtml(o.cliente||'')+'</div>'+
+        '<div class="g-val" style="margin-top:3px;color:#3b82f6">📞 '+escHtml(o.telefono||'')+'</div>'+
+        '<div class="g-val" style="margin-top:3px;font-size:12px;color:#64748b">📍 '+escHtml(o.direccion||'—')+'</div>'+
+        '<div class="g-val" style="margin-top:2px;font-size:11px;color:#94a3b8">Zona: '+escHtml(z.nombre||'')+'</div>'+
       '</div>'+
       '<div class="g-sec">'+
         '<div class="g-lbl">Producto</div>'+
-        '<div class="g-val">'+o.producto+'</div>'+
+        '<div class="g-val">'+escHtml(o.producto||'')+'</div>'+
         '<div class="g-row" style="margin-top:8px">'+
-          '<div><div class="g-lbl">Cantidad</div><div class="g-val">'+o.qty+' unid.</div></div>'+
-          '<div><div class="g-lbl">Método de cobro</div><div class="g-val">'+(o.metodoCobro||'—')+'</div></div>'+
+          '<div><div class="g-lbl">Cantidad</div><div class="g-val">'+escHtml(String(o.qty||1))+' unid.</div></div>'+
+          '<div><div class="g-lbl">Método de cobro</div><div class="g-val">'+escHtml(o.metodoCobro||'—')+'</div></div>'+
         '</div>'+
         '<div class="g-row">'+
           '<div><div class="g-lbl">Monto a cobrar</div><div class="g-val" style="color:#16a34a;font-size:16px;font-weight:900">'+fmt(o.precio*o.qty)+'</div></div>'+
-          '<div><div class="g-lbl">Estado</div><span class="g-estado">'+o.estado+'</span></div>'+
+          '<div><div class="g-lbl">Estado</div><span class="g-estado">'+escHtml(o.estado||'')+'</span></div>'+
         '</div>'+
       '</div>'+
       '<div class="g-row">'+
-        '<div><div class="g-lbl">Delivery asignado</div><div class="g-val">'+delivery.nombre+'</div></div>'+
+        '<div><div class="g-lbl">Delivery asignado</div><div class="g-val">'+escHtml(delivery.nombre||'')+'</div></div>'+
         '<div><div class="g-lbl">Fecha</div><div class="g-val">'+(o.fecha||today())+'</div></div>'+
       '</div>'+
       (emp.tel||emp.dir?'<div style="margin-top:6px;padding:8px;background:#fefce8;border-radius:6px;font-size:11px;color:#78350f">'+
