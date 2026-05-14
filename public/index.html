@@ -3649,7 +3649,7 @@ PAGES.dashboard=async function(){
           msgs.forEach(m=>{
             const fecha=m.created_at?new Date(m.created_at).toLocaleString('es-PY',{timeZone:'America/Asuncion',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
             html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between">';
-            html+='<span>👤 <b>'+m.de_nombre+'</b> — '+fecha+'</span>';
+            html+='<span>👤 <b>'+escHtml(m.de_nombre||'')+'</b> — '+fecha+'</span>';
             html+='<button class="btn btn-secondary btn-sm" onclick="marcarPassReset('+m.id+')">✓ Atendido</button>';
             html+='</div>';
           });
@@ -3668,7 +3668,7 @@ PAGES.dashboard=async function(){
             const fecha=m.created_at?new Date(m.created_at).toLocaleString('es-PY',{timeZone:'America/Asuncion',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
             const detalle=m.mensaje.replace('🚚 ENTREGADO: ','');
             html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:8px">';
-            html+='<span>'+detalle+'<br><span style="color:var(--text2);font-size:11px">'+fecha+'</span></span>';
+            html+='<span>'+escHtml(detalle)+'<br><span style="color:var(--text2);font-size:11px">'+fecha+'</span></span>';
             html+='<button class="btn btn-secondary btn-sm" onclick="marcarEntregaNotif('+m.id+')">✓ Visto</button>';
             html+='</div>';
           });
@@ -8672,7 +8672,7 @@ PAGES.mensajes=async function(){
       '<div class="mc-avatar" style="flex-shrink:0">'+escHtml((c.pnom||'?')[0].toUpperCase())+'</div>'+
       '<div class="mc-info" style="min-width:0;flex:1;overflow:hidden">'+
         '<div class="mc-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(c.pnom||'')+'</div>'+
-        '<div class="mc-preview">'+(c.last.de_id==CU.id?'Vos: ':'')+c.last.mensaje+'</div>'+
+        '<div class="mc-preview">'+(c.last.de_id==CU.id?'Vos: ':'')+escHtml(c.last.mensaje||'')+'</div>'+
       '</div>'+
       '<div class="mc-meta" style="flex-shrink:0">'+
         '<div class="mc-time">'+fmtAgo(c.last.created_at)+'</div>'+
@@ -8711,8 +8711,8 @@ async function _renderConvThread(pid,pnom,prol){
     }
     bubblesHtml+=
       '<div class="mc-bubble '+(sent?'sent':'recv')+'">'+
-      (!sent?'<div class="mc-recv-name">'+m.de_nombre+'</div>':'')+
-      m.mensaje+
+      (!sent?'<div class="mc-recv-name">'+escHtml(m.de_nombre||'')+'</div>':'')+
+      escHtml(m.mensaje||'')+
       '<div class="mc-btime">'+fmtTime(m.created_at)+(sent?'':'')+' '+(m.leido&&sent?'✓✓':'')+'</div>'+
       '</div>';
   });
