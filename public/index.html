@@ -993,6 +993,8 @@ document.addEventListener('click',function(e){
   if(!e.target.closest('.order-menu-wrap'))_closeUserMenus();
   if(!e.target.closest('.order-menu-wrap'))_closeCatMenus();
 });
+// Cerrar dropdowns al scrollear — evita que queden flotando con position:fixed
+document.addEventListener('scroll',function(){_closeAllDropMenus();},{passive:true,capture:true});
 
 // Funcion segura para ejecutar acciones de notificacion
 function ejecutarAccionNotif(actionStr){
@@ -2383,7 +2385,7 @@ async function sendAI(){
   const input=$('aiInput');if(!input)return;
   const msg=input.value.trim();if(!msg)return;
   input.value='';input.style.height='38px';input.classList.remove('at-max');
-  addAIMsg(msg,'user');
+  addAIMsg(escHtml(msg),'user');
   addAIMsg('⏳ Pensando…','bot','ai-typing');
 
   const isAdmin=CU&&['admin','superadmin'].includes(CU.rol);
@@ -9818,11 +9820,11 @@ function _mapaCargarDlvs(map){
       '</div>';
     const pedidosHtml=activos.map(p=>{
       const c=_MAPA_COLORS[p.estado]||'#6b7280';
-      return'<div style="border-top:1px solid #2d3748;padding:5px 0;font-size:11px"><b style="color:#f1f5f9">#'+p.id+'</b> '+p.cliente+' <span style="background:'+c+';color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">'+p.estado+'</span><br><span style="color:#64748b">'+p.direccion+'</span></div>';
+      return'<div style="border-top:1px solid #2d3748;padding:5px 0;font-size:11px"><b style="color:#f1f5f9">#'+p.id+'</b> '+escHtml(p.cliente||'—')+' <span style="background:'+c+';color:#fff;padding:1px 6px;border-radius:8px;font-size:10px">'+escHtml(p.estado||'')+'</span><br><span style="color:#64748b">'+escHtml(p.direccion||'—')+'</span></div>';
     }).join('')||'<div style="color:#64748b;font-size:11px;padding:4px 0">Sin pedidos activos</div>';
     const popupHtml=
       '<div style="min-width:230px;font-family:Arial;font-size:13px;color:#e2e8f0">'+
-      '<b style="color:#f1f5f9;font-size:14px">🛵 '+dlv.nombre+'</b><br>'+
+      '<b style="color:#f1f5f9;font-size:14px">🛵 '+escHtml(dlv.nombre||'')+'</b><br>'+
       '<span style="color:'+(online?'#4ade80':'#64748b')+';font-size:11px">'+posLabel+(online?' · últ: '+trackTime:'')+'</span>'+
       '<div style="margin-top:6px">'+pedidosHtml+'</div>'+
       '</div>';
