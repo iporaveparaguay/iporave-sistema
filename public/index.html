@@ -773,6 +773,8 @@ let _sessionToken = null;
 let _refreshToken = null;
 let _supa = null;
 let _supaConnected = false;
+let _sensitiveUnlocked = false;
+let _sensitiveUnlockTimer = null;
 let _gpsLoopTimer=null,_gpsLoopOrder=null,_gpsLoopStartTime=0,_gpsLoopFast=true;
 let _realtimeSub = null;
 let _notifHistory = [];
@@ -2563,6 +2565,60 @@ async function doForgotPassword(){
     if(btn)btn.textContent='Enviar solicitud';
   }
 }
+/* ── RE-AUTH para zonas sensibles (config / setup) ── */
+function _requireSensitiveAuth(callback) {
+  if (_sensitiveUnlocked) { callback(); return; }
+  const modal = document.createElement('div');
+  modal.id = '_sensitiveAuthModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML =
+    '<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px 24px;width:min(360px,90vw);box-shadow:var(--shadow)">' +
+      '<div style="font-size:16px;font-weight:700;margin-bottom:6px">🔒 Zona restringida</div>' +
+      '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">Esta sección requiere tu contraseña para continuar.</div>' +
+      '<input id="_sensitiveAuthPwd" type="password" placeholder="Contraseña" autocomplete="current-password"' +
+        ' style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;margin-bottom:12px">' +
+      '<div id="_sensitiveAuthErr" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none">Contraseña incorrecta.</div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+        '<button class="btn btn-secondary" onclick="document.getElementById(\'_sensitiveAuthModal\').remove()">Cancelar</button>' +
+        '<button class="btn btn-primary" id="_sensitiveAuthBtn" onclick="_doSensitiveAuth()">Verificar</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+  modal.querySelector('#_sensitiveAuthPwd').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') _doSensitiveAuth();
+  });
+  setTimeout(function() {
+    var f = modal.querySelector('#_sensitiveAuthPwd');
+    if (f) f.focus();
+  }, 50);
+  window._sensitiveAuthCallback = callback;
+}
+async function _doSensitiveAuth() {
+  var pwd = (document.getElementById('_sensitiveAuthPwd') || {}).value || '';
+  var btn = document.getElementById('_sensitiveAuthBtn');
+  var err = document.getElementById('_sensitiveAuthErr');
+  if (!pwd) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+  try {
+    var email = (CU && CU.email) ? CU.email : '';
+    var res = await _supa.auth.signInWithPassword({ email: email, password: pwd });
+    if (res.error) {
+      if (err) { err.style.display = 'block'; err.textContent = 'Contraseña incorrecta.'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Verificar'; }
+      return;
+    }
+    _sensitiveUnlocked = true;
+    clearTimeout(_sensitiveUnlockTimer);
+    _sensitiveUnlockTimer = setTimeout(function() { _sensitiveUnlocked = false; }, 5 * 60 * 1000);
+    var m = document.getElementById('_sensitiveAuthModal');
+    if (m) m.remove();
+    if (window._sensitiveAuthCallback) window._sensitiveAuthCallback();
+  } catch(e) {
+    if (err) { err.style.display = 'block'; err.textContent = 'Error al verificar. Intentá de nuevo.'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Verificar'; }
+  }
+}
+
 function doLogout(){
   ['users','usersVer','orders','zonas','cupos','jornadas','catalogo'].forEach(k => localStorage.removeItem('ipv5_' + k));
   _clearSensitiveCfg();
@@ -2801,6 +2857,14 @@ function nav(page){
         '</div>';
       return;
     }
+  }
+  if(page==='config'||page==='setup'){
+    _requireSensitiveAuth(function(){
+      const fn=PAGES[page];
+      if(fn)fn();
+      else $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Página en construcción</div>';
+    });
+    return;
   }
   const fn=PAGES[page];
   if(fn)fn();
