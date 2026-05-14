@@ -2436,8 +2436,8 @@ async function doLogin(){
     if(!res.ok){
       if(data.device_pending){
         showAlert('loginAlert','w',
-          '🔒 <b>Dispositivo no reconocido</b><br>'+data.error+
-          '<br><small style="color:var(--text3)">El administrador recibirá un email. Una vez aprobado podrás ingresar.</small>'
+          '🔒 Dispositivo no reconocido. '+data.error+
+          ' El administrador recibirá un email. Una vez aprobado podrás ingresar.'
         );
       }else{
         showAlert('loginAlert','e',data.error||'Email o contraseña incorrectos');
@@ -6255,7 +6255,7 @@ async function saveNewUser(){
   const r=await DL.saveUser(u);
   if(!r.ok){
     _usersCache=_usersCache.filter(x=>x.id!==u.id);
-    showAlert('nuAlert','e','❌ Error al guardar en Supabase: '+r.error+'<br><small>El usuario NO fue creado. Mostrá este error al soporte.</small>');
+    showAlert('nuAlert','e','❌ Error al guardar en Supabase: '+r.error+'. El usuario NO fue creado. Mostrá este error al soporte.');
     return;
   }
   closeA();PAGES.usuarios();
@@ -6300,7 +6300,7 @@ async function saveEditUser(id){
   if(!r.ok){
     // Revertir
     if(idx>=0)_usersCache[idx]=prev;
-    showAlert('euAlert','e','❌ Error Supabase: '+r.error+'<br><small>Mostrá este mensaje al soporte.</small>');
+    showAlert('euAlert','e','❌ Error Supabase: '+r.error+'. Mostrá este mensaje al soporte.');
     return;
   }
   closeA();PAGES.usuarios();
