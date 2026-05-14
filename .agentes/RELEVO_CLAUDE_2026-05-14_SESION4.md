@@ -903,7 +903,89 @@ Si los usuarios fueron creados parcialmente en intentos anteriores (signup OK pe
 ### Estado al final de esta etapa
 
 Sistema **estable, en producción, sin bugs conocidos críticos**.
-Frontend con ~556KB de JS bundle, validado.
-Performance mejorado (throttle pointermove, timers limpiados).
+Frontend con ~557KB de JS bundle, validado.
+Performance mejorado (throttle pointermove, timers limpiados, debounce 5 search inputs).
 A11y mejorado (aria-labels, touch targets 44px).
 UX mejorado (empty states, login mobile, mensajes claros).
+Seguridad XSS reforzada (escAttr helper, escapes en boletas/guias/tickets/tablas).
+
+---
+
+## ETAPA 3 — Auditoría XSS + Performance (Opus 4.7 autónomo)
+
+### Commits adicionales
+
+| Commit | Descripción |
+|--------|-------------|
+| `d303f4a` | security: escAttr helper + escape XSS en inputs perfil + safeUrl logo |
+| `b09e390` | security: escAttr en editor pedidos/usuarios/zonas/productos/config + safeUrl video |
+| `5ed7a3a` | security: escape XSS en tablas pedidos/usuarios + selects + delivery card + alt imgs |
+| `181b84a` | security: escape XSS en boleta, guia, ticket de impresión + datos empresa |
+| `4c616a8` | perf: helper _dbSearch + debounce en 5 inputs de búsqueda |
+
+### Nuevos helpers de seguridad
+
+1. **`escAttr(s)`** — escapa para atributos HTML (incluye `"` y `'`). Usar en `value="..."`, `title="..."`, `alt="..."`, `placeholder="..."`.
+2. **`escHtml(s)`** — escapa para body HTML. Ya existía.
+3. **`safeUrl(u)`** — valida prefijo `https?://`. Ya existía.
+4. **`_dbSearch(key, value, fn, ms)`** — debounce global con key. Default 220ms.
+
+### XSS fixes aplicados (más de 50 lugares)
+
+**Inputs de formularios (escAttr):**
+- Perfil completo (28 inputs en 5 tabs)
+- Editor de pedido (~13 inputs)
+- Editor de usuario (5 inputs)
+- Editor de zona (5 inputs)
+- Editor de producto (3 inputs)
+- Config APIs (3 inputs)
+
+**Renderizado HTML (escHtml):**
+- Tabla de usuarios completa (nombre, username, vehiculo, patente, whatsapp)
+- Tablas de analítica vendedor/proveedor/admin
+- Delivery cards (cliente, estado)
+- Catálogo (categoría, nombre, proveedorNombre)
+- Selects con datos de usuario (vendOpts, dlvOpts, dropOpts, provOpts, zonaOpts)
+- Boletas IVA (razon social, dirección, zona, EMPRESA data)
+- Guías de entrega (cliente, telefono, dirección, zona, producto, estado, delivery, emp.web/tel/dir)
+- Tickets (datos completos)
+
+### Performance
+
+- 5 inputs de búsqueda ahora con debounce 200-220ms:
+  - PAGES.catalogo (admin/vendedor)
+  - PAGES.catalogo_todos
+  - filtrarContactos
+  - _renderModalContactos
+  - _cpBuscar (catálogo público)
+
+Antes: cada tecla re-renderizaba todo el catálogo (cientos de productos = layout thrashing).
+Ahora: espera 220ms después de que el usuario pare de tipear.
+
+### Bugs descartados después de revisión
+
+- "Realtime sin .subscribe()" — la auditoría era falsa positiva; la línea 1591 SÍ tiene `.subscribe()` al final del chain `.on(...)`
+- "Track map sin cleanup" — la página de tracking es URL aislada, browser limpia al cerrar pestaña
+- "Loose equality bugs" — son `==` intencionales en lugares donde se compara number vs string ID
+
+### Lo que NO se tocó (por reglas del proyecto)
+
+- ❌ `verifyToken` / `login.js` / auth flows
+- ❌ RLS de Supabase
+- ❌ Worker endpoints
+- ❌ Service worker
+
+### Próximas posibles tareas
+
+1. Aplicar debounce también en `procesarUbicacion` (oninput línea 4625, 4848) — actualiza GPS en cada tecla
+2. Crear los 7 usuarios de prueba manualmente desde el panel "+ Nuevo usuario" del sistema
+3. Pancake features — esperar detalles del usuario
+4. Notif push prioridad — requiere deploy worker
+
+### Total trabajo Sesión 4 (todas las etapas)
+
+**19 commits** desde el inicio de la sesión:
+- 13 commits primera etapa (delivery, charts, datos prueba)
+- 6 commits etapa autónoma Opus 4.7 (XSS, perf, UX)
+
+Frontend en producción: https://iporave-sistema.vercel.app
