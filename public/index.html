@@ -656,9 +656,9 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
       <button class="btn btn-secondary btn-full" style="margin-bottom:6px;position:relative" onclick="openPerfilUsuario()">
         👤 Mi Perfil <span id="perfilIncompletoBadge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;vertical-align:middle">!</span>
       </button>
-      <button class="btn btn-secondary btn-full" onclick="doLogout()">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-        Cerrar sesión
+      <button class="btn btn-secondary btn-full" style="display:flex;align-items:center;justify-content:center;gap:6px" onclick="confirmLogout()" title="Cerrar sesión">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        <span>Cerrar sesión</span>
       </button>
     </div>
   </nav>
@@ -2833,6 +2833,16 @@ async function _doUserAuth() {
   }
 }
 
+function confirmLogout(){
+  if(typeof openA==='function'){
+    openA('Cerrar sesión',
+      '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Seguro que querés cerrar tu sesión?</div>'+
+      '<div style="font-size:12px;color:var(--text3);margin-top:6px">Vas a tener que iniciar sesión otra vez para volver al sistema.</div>',
+      '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary" style="background:var(--red,#ef4444);border-color:var(--red,#ef4444)" onclick="closeA();doLogout()">Sí, cerrar sesión</button>'
+    );
+  }else if(confirm('¿Cerrar sesión?')){doLogout();}
+}
 function doLogout(){
   if(_trackRefreshTimer){clearInterval(_trackRefreshTimer);_trackRefreshTimer=null;}
   ['users','usersVer','orders','zonas','cupos','jornadas','catalogo'].forEach(k => localStorage.removeItem('ipv5_' + k));
@@ -3034,11 +3044,17 @@ function buildNav(){
 function updateNavBadges(){
   // Defensa: si CU no está cargado (race condition durante login), abortar.
   if(!CU||!CU.rol)return;
-  // Pedidos pendientes — admin/superadmin
+  // Pedidos pendientes — admin/superadmin (badge sobre item id="orders")
   if(['admin','superadmin'].includes(CU.rol)){
     const pend=_ordersCache.filter(o=>o.estado==='Pendiente').length;
-    const b=$('nbadge_pedidos');
+    const b=$('nbadge_orders')||$('nbadge_pedidos');
     if(b){b.textContent=pend>99?'99+':String(pend);b.style.display=pend>0?'':'none';}
+  }
+  // Pedidos activos del vendedor (no Entregado/Cancelado/Devuelto)
+  if(CU.rol==='vendedor'){
+    const act=_ordersCache.filter(o=>o.vendedorId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)).length;
+    const b=$('nbadge_orders');
+    if(b){b.textContent=act>99?'99+':String(act);b.style.display=act>0?'':'none';}
   }
   // Entregas activas — delivery
   if(CU.rol==='delivery'){
@@ -4416,6 +4432,7 @@ function _renderDlvCard(o,dist){
   '</div>';
 }
 PAGES.orders=PAGES.mispedidos=function(){
+  _pedidosShown=_pedidosPageSize;
   const canCreate=['admin','superadmin','vendedor','proveedor','dropshipper'].includes(CU.rol);
   $('tbActions').innerHTML=
     (canCreate?'<button class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
@@ -4427,12 +4444,12 @@ PAGES.orders=PAGES.mispedidos=function(){
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">🖨️ PDF</button>';
   $('ca').innerHTML=
     '<div class="fbar">'+
-    '<select id="fEst" onchange="filtrar()"><option value="">Todos los estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
-    '<select id="fZona" onchange="filtrar()"><option value="">Todas las zonas</option>'+_zonasCache.map(z=>'<option value="'+z.id+'">'+escHtml(z.nombre||'')+'</option>').join('')+'</select>'+
-    '<select id="fProv" onchange="filtrar()"><option value="">Todos los proveedores</option>'+[...new Set(getVisibleOrders().map(o=>o.proveedor).filter(Boolean))].map(p=>'<option value="'+escAttr(p)+'">'+escHtml(p)+'</option>').join('')+'</select>'+
-    '<input type="date" id="fFecha" onchange="filtrar()" title="Fecha exacta">'+
-    '<input type="date" id="fDesde" onchange="filtrar()" title="Desde">'+
-    '<input type="date" id="fHasta" onchange="filtrar()" title="Hasta">'+
+    '<select id="fEst" onchange="filtrarReset()"><option value="">Todos los estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
+    '<select id="fZona" onchange="filtrarReset()"><option value="">Todas las zonas</option>'+_zonasCache.map(z=>'<option value="'+z.id+'">'+escHtml(z.nombre||'')+'</option>').join('')+'</select>'+
+    '<select id="fProv" onchange="filtrarReset()"><option value="">Todos los proveedores</option>'+[...new Set(getVisibleOrders().map(o=>o.proveedor).filter(Boolean))].map(p=>'<option value="'+escAttr(p)+'">'+escHtml(p)+'</option>').join('')+'</select>'+
+    '<input type="date" id="fFecha" onchange="filtrarReset()" title="Fecha exacta">'+
+    '<input type="date" id="fDesde" onchange="filtrarReset()" title="Desde">'+
+    '<input type="date" id="fHasta" onchange="filtrarReset()" title="Hasta">'+
     '<button class="btn btn-secondary" onclick="clearF()">Limpiar</button>'+
     '</div>'+
     '<div id="oContainer"></div>';
@@ -4442,7 +4459,7 @@ PAGES.orders=PAGES.mispedidos=function(){
   else if(!wrap){_bgEnsureUI&&_bgEnsureUI();}
   filtrar();
 };
-function clearF(){['fEst','fZona','fProv','fFecha','fDesde','fHasta'].forEach(id=>{const e=$(id);if(e)e.value='';});const bg=document.getElementById('busquedaGlobal');if(bg)bg.value='';filtrar();}
+function clearF(){['fEst','fZona','fProv','fFecha','fDesde','fHasta'].forEach(id=>{const e=$(id);if(e)e.value='';});const bg=document.getElementById('busquedaGlobal');if(bg)bg.value='';_pedidosShown=_pedidosPageSize;filtrar();}
 function _ordersFilteredFromUI(){
   let orders=getVisibleOrders();
   const s=(gv('fSrch')||'').toLowerCase();
@@ -4459,10 +4476,35 @@ function _ordersFilteredFromUI(){
 function _ordersForExport(){
   return $('oContainer')?_ordersFilteredFromUI():getVisibleOrders();
 }
+var _pedidosPageSize=25;
+var _pedidosShown=25;
+function _verMasPedidos(){
+  _pedidosShown+=_pedidosPageSize;
+  filtrar();
+}
+function filtrarReset(){
+  _pedidosShown=_pedidosPageSize;
+  filtrar();
+}
 function filtrar(){
   const orders=_ordersFilteredFromUI();
   const c=$('oContainer');
-  if(c)c.innerHTML=renderTable(orders,'Pedidos ('+orders.length+')',true,true);
+  if(!c)return;
+  const total=orders.length;
+  if(_pedidosShown<_pedidosPageSize)_pedidosShown=_pedidosPageSize;
+  const visibles=orders.slice(0,_pedidosShown);
+  var titulo='Pedidos ('+total+')';
+  if(total>_pedidosShown)titulo='Pedidos ('+_pedidosShown+' de '+total+')';
+  var html=renderTable(visibles,titulo,true,true);
+  if(total>_pedidosShown){
+    var restantes=total-_pedidosShown;
+    var nextBatch=Math.min(_pedidosPageSize,restantes);
+    html+='<div style="text-align:center;padding:14px 8px">'+
+      '<button class="btn btn-secondary" onclick="_verMasPedidos()" style="min-width:200px">'+
+      'Ver '+nextBatch+' pedidos más ('+restantes+' restantes)'+
+      '</button></div>';
+  }
+  c.innerHTML=html;
 }
 // ── Helper: posiciona el dropdown con position:fixed para evitar ser recortado
 // por overflow:auto/hidden en contenedores padre (ej: .tc tabla con scroll)
@@ -9068,7 +9110,8 @@ PAGES.mensajes=async function(){
     ?'<div style="padding:8px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-secondary btn-full" onclick="openGestionContactos()">👥 Gestionar mis contactos</button></div>'
     :'';
   if(!msgs.length){
-    $('ca').innerHTML='<div class="mc-wrap"><div class="mc-conv-list">'+nuevoMsgBtn+contactosBtn+'<div class="mc-empty" style="padding:40px 20px">💬<br><br>No tenés mensajes aún.<br><span style="font-size:12px">Los mensajes se eliminan automáticamente después de 24 horas.</span></div></div></div>';
+    const iniciarBtn='<div style="padding:18px 14px;text-align:center"><button class="btn btn-primary btn-full" style="font-size:15px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="openNuevoMensaje()"><span style="font-size:18px">💬</span> Iniciar conversación</button><div style="font-size:11px;color:var(--text3);margin-top:8px">Elegí con quién querés chatear</div></div>';
+    $('ca').innerHTML='<div class="mc-wrap"><div class="mc-conv-list">'+iniciarBtn+contactosBtn+'<div class="mc-empty" style="padding:30px 20px">💬<br><br>No tenés mensajes aún.<br><span style="font-size:12px">Los mensajes se eliminan automáticamente después de 24 horas.</span></div></div></div>';
     return;
   }
   // Agrupar por conversación (partner ID)
