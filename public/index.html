@@ -5772,44 +5772,95 @@ function _boletaHTML(o){
   const iva=o.tipoIva==='Exento'?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
   const base=totalFact-iva;
   const _empColor=emp.colorPrimario||'#f5a623';
-  const _empLogo=emp.logo?'<img src="'+safeUrl(emp.logo)+'" style="height:44px;object-fit:contain">':'<div style="font-size:26px;font-weight:900;color:'+_empColor+'">'+escHtml(emp.nombre||'IPORÃVE')+'</div>';
+  const _empSec=emp.colorSecundario||'#1f2937';
+  const _empNom=escHtml(emp.nombre||'IPORÃVE');
+  const _empLogo=emp.logo
+    ?'<img src="'+safeUrl(emp.logo)+'" style="height:48px;object-fit:contain;display:block;margin-bottom:6px">'
+    :'<div style="font-size:24px;font-weight:800;color:'+_empColor+';letter-spacing:-0.5px;margin-bottom:4px">'+_empNom+'</div>';
+  const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'');
   return {zona,total,flete,totalFact,iva,base,
-    html:'<div class="boleta" id="boletaDiv">'+
-    '<div style="display:flex;justify-content:space-between;border-bottom:3px double #000;padding-bottom:12px;margin-bottom:12px">'+
-    '<div>'+_empLogo+'<div style="font-size:11px;font-weight:600">'+escHtml(emp.nombre||'IPORÃVE')+'</div>'+
-    '<div style="font-size:10px">'+escHtml(emp.dir||'')+'</div><div style="font-size:10px">Tel: '+escHtml(emp.tel||'')+'</div>'+
-    '<div style="font-size:10px">RUC: '+escHtml(emp.ruc||'')+'</div><div style="font-size:10px">'+escHtml(emp.web||'')+'</div></div>'+
-    '<div style="text-align:right">'+
-    '<div style="font-size:17px;font-weight:900;border:3px solid '+_empColor+';padding:7px 13px;border-radius:6px;color:'+_empColor+';margin-bottom:5px">BOLETA DE VENTA</div>'+
-    '<div style="font-size:12px"><b>Timbrado:</b> <span style="font-family:monospace">'+escHtml(emp.timbrado||EMPRESA.timbrado||'')+'</span></div>'+
-    '<div style="font-size:12px"><b>N° documento:</b> <span style="font-family:monospace">'+escHtml(o.numDoc||o.boletaNum||'')+'</span></div>'+
-    '<div style="font-size:12px"><b>Fecha:</b> '+fmtDate(o.fecha)+'</div>'+
-    '<div style="margin-top:5px;font-size:10px;padding:3px 8px;border:1px solid '+_empColor+';border-radius:4px;color:'+_empColor+';display:inline-block">COMPROBANTE IVA VÁLIDO</div>'+
-    '</div></div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;font-size:11px;border-bottom:1px solid #eee;padding-bottom:10px">'+
-    '<div><div style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:2px;font-weight:700">Cliente / Comprador</div>'+
-    '<div style="font-weight:700;font-size:13px">'+escHtml(o.cliente||'')+'</div>'+
-    (o.razonSocial?'<div>'+escHtml(o.razonSocial||'')+'</div>':'')+
-    '<div>CI: '+(escHtml(o.cedula||'')||'—')+(o.ruc?' · RUC: '+escHtml(o.ruc||''):'')+'</div><div>'+(escHtml(o.telefono||'')||'—')+'</div></div>'+
-    '<div><div style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:2px;font-weight:700">Entrega</div>'+
-    '<div>'+escHtml(o.direccion||'—')+'</div><div style="color:#888">'+escHtml(zona.nombre||'')+' · '+escHtml(zona.tiempoEntrega||'')+'</div>'+
-    '<div style="margin-top:5px"><b>Condición:</b> Contado &nbsp;|&nbsp; <b>IVA:</b> '+escHtml(o.tipoIva||'10%')+'</div></div></div>'+
-    '<div class="bt-wrap"><table class="bt"><thead><tr><th>Cant.</th><th>Descripción</th><th>Precio unit.</th><th>Total</th></tr></thead><tbody>'+
-    '<tr><td>'+o.qty+'</td><td>'+escHtml(o.producto||'')+'<br><span style="font-size:10px;color:#888">Prov: '+(escHtml(o.proveedor||'')||'—')+'</span></td>'+
-    '<td>Gs. '+fmtN(o.precio)+'</td><td>Gs. '+fmtN(o.precio*o.qty)+'</td></tr>'+
-    '<tr><td>1</td><td>Flete — Zona '+escHtml(zona.nombre||'')+'</td><td>Gs. '+fmtN(flete)+'</td><td>Gs. '+fmtN(flete)+'</td></tr>'+
-    '</tbody></table></div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;margin-top:10px;font-size:11px">'+
-    '<div><div style="color:#888">Vendedor: '+escHtml(getUser(o.vendedorId)?.nombre||'')+'</div>'+
-    (o.metodoCobro?'<div style="color:#888">Cobrado: '+MICON[o.metodoCobro]+' '+escHtml(o.metodoCobro||'')+'</div>':'')+
-    (o.estado==='Entregado'?'<div style="color:green;font-weight:700;margin-top:5px">✓ ENTREGADO Y COBRADO</div>':'')+'</div>'+
-    '<div style="text-align:right">'+
-    '<div style="display:flex;justify-content:space-between"><span>Base imponible:</span><span>Gs. '+fmtN(base)+'</span></div>'+
-    '<div style="display:flex;justify-content:space-between"><span>IVA '+(o.tipoIva||'10%')+' incluido:</span><span>Gs. '+fmtN(iva)+'</span></div>'+
-    '<div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;border-top:2px solid #000;padding-top:5px;margin-top:5px">'+
-    '<span>TOTAL:</span><span>Gs. '+fmtN(totalFact)+'</span></div></div></div>'+
-    '<div style="margin-top:12px;font-size:9px;color:#aaa;text-align:center;border-top:1px dashed #ddd;padding-top:7px">'+
-    escHtml(emp.nombre||'IPORÃVE')+' · '+escHtml(emp.dir||'')+' · Timbrado: '+escHtml(emp.timbrado||EMPRESA.timbrado||'')+' · Válido según Ley N° 125/91</div>'+
+    html:'<div class="boleta" id="boletaDiv" style="font-family:\'Helvetica Neue\',\'Arial\',sans-serif;color:#111827;background:#fff;line-height:1.45">'+
+    /* === HEADER === */
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:16px;margin-bottom:18px;border-bottom:2px solid '+_empSec+'">'+
+      '<div style="flex:1;min-width:0">'+
+        _empLogo+
+        '<div style="font-size:13px;font-weight:700;color:'+_empSec+'">'+_empNom+'</div>'+
+        (emp.ruc?'<div style="font-size:10px;color:#6b7280;margin-top:3px">RUC: '+escHtml(emp.ruc)+'</div>':'')+
+        (emp.dir?'<div style="font-size:10px;color:#6b7280">'+escHtml(emp.dir)+'</div>':'')+
+        (emp.tel?'<div style="font-size:10px;color:#6b7280">Tel: '+escHtml(emp.tel)+'</div>':'')+
+      '</div>'+
+      '<div style="text-align:right;flex-shrink:0">'+
+        '<div style="display:inline-block;border:2px solid '+_empColor+';padding:8px 14px;border-radius:6px;color:'+_empColor+';font-size:14px;font-weight:700;letter-spacing:0.5px;margin-bottom:8px">BOLETA DE VENTA</div>'+
+        '<div style="font-size:11px;color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">N° doc:</span> <span style="font-family:\'JetBrains Mono\',monospace;color:#111827">'+escHtml(o.numDoc||o.boletaNum||'')+'</span></div>'+
+        '<div style="font-size:11px;color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">Fecha:</span> <span style="color:#111827">'+fmtDate(o.fecha)+'</span></div>'+
+        '<div style="font-size:11px;color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">Timbrado:</span> <span style="font-family:\'JetBrains Mono\',monospace;color:#111827">'+_timb+'</span></div>'+
+        '<div style="margin-top:6px;display:inline-block;font-size:9px;padding:3px 8px;border:1px solid '+_empColor+';border-radius:4px;color:'+_empColor+';font-weight:600;letter-spacing:0.5px">COMPROBANTE IVA VÁLIDO</div>'+
+      '</div>'+
+    '</div>'+
+    /* === CLIENTE / ENTREGA === */
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:18px;font-size:11px">'+
+      '<div>'+
+        '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Cliente / Comprador</div>'+
+        '<div style="font-weight:700;font-size:13px;color:'+_empSec+'">'+escHtml(o.cliente||'')+'</div>'+
+        (o.razonSocial?'<div style="color:#374151">'+escHtml(o.razonSocial)+'</div>':'')+
+        '<div style="color:#6b7280;margin-top:2px">CI: '+(escHtml(o.cedula||'')||'—')+(o.ruc?' · RUC: '+escHtml(o.ruc||''):'')+'</div>'+
+        '<div style="color:#6b7280">'+(escHtml(o.telefono||'')||'—')+'</div>'+
+      '</div>'+
+      '<div>'+
+        '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Entrega</div>'+
+        '<div style="color:#111827">'+escHtml(o.direccion||'—')+'</div>'+
+        '<div style="color:#6b7280;margin-top:2px">'+escHtml(zona.nombre||'')+(zona.tiempoEntrega?' · '+escHtml(zona.tiempoEntrega):'')+'</div>'+
+        '<div style="margin-top:6px;color:#374151"><span style="font-weight:600">Condición:</span> Contado &nbsp;·&nbsp; <span style="font-weight:600">IVA:</span> '+escHtml(o.tipoIva||'10%')+'</div>'+
+      '</div>'+
+    '</div>'+
+    /* === TABLA ITEMS === */
+    '<div class="bt-wrap" style="margin-bottom:14px"><table class="bt" style="width:100%;border-collapse:collapse;border-top:3px solid '+_empSec+';border-bottom:3px solid '+_empSec+'">'+
+      '<thead><tr style="background:#f9fafb">'+
+        '<th style="padding:8px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:60px">Cant.</th>'+
+        '<th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb">Descripción</th>'+
+        '<th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:110px">Precio unit.</th>'+
+        '<th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:120px">Total</th>'+
+      '</tr></thead>'+
+      '<tbody>'+
+        '<tr>'+
+          '<td style="padding:8px;text-align:center;font-size:12px;color:#111827;border-bottom:1px solid #f3f4f6">'+o.qty+'</td>'+
+          '<td style="padding:8px;font-size:12px;color:#111827;border-bottom:1px solid #f3f4f6">'+escHtml(o.producto||'')+(o.proveedor?'<br><span style="font-size:10px;color:#9ca3af">Prov: '+escHtml(o.proveedor)+'</span>':'')+'</td>'+
+          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-variant-numeric:tabular-nums;font-family:\'Helvetica Neue\',Arial,sans-serif;border-bottom:1px solid #f3f4f6">Gs. '+fmtN(o.precio)+'</td>'+
+          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-weight:600;font-variant-numeric:tabular-nums;border-bottom:1px solid #f3f4f6">Gs. '+fmtN(o.precio*o.qty)+'</td>'+
+        '</tr>'+
+        '<tr>'+
+          '<td style="padding:8px;text-align:center;font-size:12px;color:#111827">1</td>'+
+          '<td style="padding:8px;font-size:12px;color:#111827">Flete — Zona '+escHtml(zona.nombre||'')+'</td>'+
+          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
+          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-weight:600;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
+        '</tr>'+
+      '</tbody></table></div>'+
+    /* === META + TOTALES === */
+    '<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;margin-top:14px;font-size:11px;align-items:start">'+
+      '<div>'+
+        (getUser(o.vendedorId)?.nombre?'<div style="color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">Vendedor:</span> '+escHtml(getUser(o.vendedorId).nombre)+'</div>':'')+
+        (o.metodoCobro?'<div style="color:#6b7280;margin-top:2px"><span style="font-weight:600;color:'+_empSec+'">Cobrado:</span> '+MICON[o.metodoCobro]+' '+escHtml(o.metodoCobro||'')+'</div>':'')+
+        (o.estado==='Entregado'?'<div style="margin-top:8px;display:inline-block;background:#dcfce7;color:#15803d;font-weight:700;padding:4px 10px;border-radius:4px;font-size:10px;letter-spacing:0.5px">✓ ENTREGADO Y COBRADO</div>':'')+
+      '</div>'+
+      '<div style="background:#f9fafb;border-radius:6px;padding:12px 14px">'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:4px"><span>Base imponible:</span><span style="font-variant-numeric:tabular-nums;color:#111827">Gs. '+fmtN(base)+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:8px"><span>IVA '+(o.tipoIva||'10%')+' incluido:</span><span style="font-variant-numeric:tabular-nums;color:#111827">Gs. '+fmtN(iva)+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid '+_empSec+';padding-top:8px;margin-top:4px">'+
+          '<span style="font-weight:700;color:'+_empSec+';font-size:13px;letter-spacing:0.5px">TOTAL</span>'+
+          '<span style="font-weight:700;font-size:18px;color:'+_empColor+';font-variant-numeric:tabular-nums">Gs. '+fmtN(totalFact)+'</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    /* === FOOTER === */
+    '<div style="margin-top:24px;padding-top:14px;border-top:1px solid #e5e7eb;text-align:center">'+
+      '<div style="font-style:italic;color:#94a3b8;font-size:12px;margin-bottom:8px">Gracias por su compra</div>'+
+      '<div style="font-size:10px;color:#6b7280;display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-bottom:6px">'+
+        (emp.tel?'<span>📞 '+escHtml(emp.tel)+'</span>':'')+
+        (emp.email?'<span>📧 '+escHtml(emp.email)+'</span>':'')+
+        (emp.web?'<span>🌐 '+escHtml(emp.web)+'</span>':'')+
+      '</div>'+
+      '<div style="font-size:9px;color:#9ca3af">'+_empNom+' · Timbrado: '+_timb+' · Válido según Ley N° 125/91</div>'+
+    '</div>'+
     '</div>'};
 }
 
@@ -5828,15 +5879,22 @@ function printBoleta(id){
   const b=_boletaHTML(o);
   const page='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Boleta '+escHtml(o.boletaNum||'')+'</title>'+
   '<style>'+
-  'body{margin:0;padding:20px;font-family:"DM Sans",Arial,sans-serif;font-size:12px;color:#000;background:#fff}'+
-  '.boleta-logo{font-size:28px;color:#f5a623;font-weight:900}'+
-  '.boleta{background:#fff;color:#000;padding:24px}'+
-  '.bt-wrap{overflow-x:auto}.bt{width:100%;border-collapse:collapse}'+
-  '.bt th,.bt td{padding:6px 8px;border:1px solid #ddd;text-align:left}'+
-  '.bt th{background:#f5f5f5}'+
-  '@media print{@page{margin:12mm;size:A4}body{padding:0}}'+
+  '*{box-sizing:border-box}'+
+  'body{margin:0;padding:24px;font-family:"Helvetica Neue","Arial",sans-serif;font-size:12px;color:#111827;background:#fff;line-height:1.45;-webkit-font-smoothing:antialiased}'+
+  'h1,h2,h3,h4{font-weight:700}'+
+  '.boleta{background:#fff;color:#111827;padding:24px;max-width:800px;margin:0 auto}'+
+  '.bt-wrap{overflow-x:auto}'+
+  '.bt{width:100%;border-collapse:collapse}'+
+  '.bt th,.bt td{text-align:left}'+
+  'img{max-width:100%}'+
+  '@page{size:A4;margin:12mm}'+
+  '@media print{'+
+    'html,body{margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}'+
+    '.boleta{padding:0;max-width:100%}'+
+    '.no-print,button{display:none !important}'+
+  '}'+
   '</style></head><body>'+b.html+
-  '<scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt>'+
+  '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},150);}<\/scr'+'ipt>'+
   '</body></html>';
   const w=window.open('','_blank','width=860,height=700');
   if(!w){alert('Permitir ventanas emergentes para guardar PDF');return;}
