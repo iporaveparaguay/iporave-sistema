@@ -4115,7 +4115,7 @@ function _deliveryCardPedido(o){
         '<div style="font-size:17px;font-weight:900;line-height:1.2;margin:0 0 3px">'+prioTag+escHtml(o.cliente||'Cliente')+'</div>'+
         '<div style="font-size:11px;color:var(--text2)">#'+o.id+(o.fecha?' · '+fmtDate(o.fecha):'')+'</div>'+
       '</div>'+
-      '<span class="badge '+_orderStateBadgeClass(o.estado)+'" style="white-space:nowrap;font-size:11px">'+_deliveryEstadoEmoji(o.estado)+' '+(o.estado||'Pendiente')+'</span>'+
+      '<span class="badge '+_orderStateBadgeClass(o.estado)+'" style="white-space:nowrap;font-size:11px">'+_deliveryEstadoEmoji(o.estado)+' '+escHtml(o.estado||'Pendiente')+'</span>'+
     '</div>'+
     (prod?'<div style="font-size:13px;color:var(--text);margin-bottom:4px;font-weight:700">📦 '+escHtml(prod)+(qty>1?' × '+qty:'')+(precio?' · <span style="color:var(--accent)">₲ '+fmt(precio)+'</span>':'')+'</div>':'')+
     '<div style="font-size:13px;line-height:1.35;color:var(--text);font-weight:700;margin-bottom:4px">📍 '+escHtml(dir)+'</div>'+
@@ -4295,7 +4295,7 @@ function renderTable(orders,title,showActs,highlightChanges){
   if(!orders.length){if(highlightChanges)_commitOrderStateSnapshot(orders);return '<div style="text-align:center;padding:48px;color:var(--text3)">No hay pedidos</div>';}
   const canEdit=['admin','superadmin','vendedor'].includes(CU.rol);
   const isDel=CU.rol==='delivery';
-  const html='<div class="tc"><div class="th2"><span class="tt">'+title+'</span></div>'+
+  const html='<div class="tc"><div class="th2"><span class="tt">'+escHtml(title||'')+'</span></div>'+
   '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
   '<th class="col-hide">#</th><th class="col-hide">Fecha</th><th>Cliente</th>'+
   '<th class="col-hide">Producto</th>'+
@@ -4314,7 +4314,7 @@ function renderTable(orders,title,showActs,highlightChanges){
     '</td>'+
     '<td class="col-hide"><div>'+escHtml(o.producto||'')+'</div><div style="font-size:11px;color:var(--text2)">x'+o.qty+'</div></td>'+
     '<td class="col-hide" style="font-size:12px;color:var(--text2)">'+escHtml(o.proveedor||'—')+'</td>'+
-    '<td class="col-hide" style="font-size:12px">'+_getZonaO(o).nombre+'</td>'+
+    '<td class="col-hide" style="font-size:12px">'+escHtml(_getZonaO(o).nombre||'')+'</td>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--green)">'+fmt(o.precio*o.qty)+'</td>'+
     '<td class="col-hide">'+bE(o.estado)+'</td>'+
     (showActs?'<td style="white-space:nowrap"><div class="order-menu-wrap">'+
