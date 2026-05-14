@@ -600,7 +600,13 @@
 </header>
 
 <div class="search-bar">
-  <input type="text" id="inputBuscar" placeholder="🔍 Buscar producto..." oninput="filtrar()">
+  <input type="text" id="catalogSearch" placeholder="Buscar producto..." oninput="filtrar()" style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid #252a38; background:#111318; color:#e8eaf2; font-size:13px;">
+  <select id="catalogSort" onchange="filtrar()" style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid #252a38; background:#111318; color:#e8eaf2; font-size:13px;">
+    <option value="relevancia">Ordenar</option>
+    <option value="precio_mayor">Mayor precio</option>
+    <option value="precio_menor">Menor precio</option>
+    <option value="nombre_az">Nombre A-Z</option>
+  </select>
   <select id="selectCat" onchange="filtrar()">
     <option value="">Todas las categorías</option>
   </select>
@@ -608,12 +614,6 @@
     <input type="number" id="inputMin" placeholder="Precio mín." oninput="filtrar()" min="0">
     <input type="number" id="inputMax" placeholder="Precio máx." oninput="filtrar()" min="0">
   </div>
-  <select id="selectOrden" onchange="filtrar()">
-    <option value="relevancia">Relevancia</option>
-    <option value="precio_menor">Precio menor</option>
-    <option value="precio_mayor">Precio mayor</option>
-    <option value="nombre_az">Nombre A-Z</option>
-  </select>
 </div>
 
 <div class="contador" id="contador"></div>
@@ -741,11 +741,11 @@ function poblarCategorias() {
 }
 
 function filtrar() {
-  const q = document.getElementById('inputBuscar').value.toLowerCase().trim();
+  const q = document.getElementById('catalogSearch').value.toLowerCase().trim();
   const cat = document.getElementById('selectCat').value;
   const min = parseInt(document.getElementById('inputMin').value);
   const max = parseInt(document.getElementById('inputMax').value);
-  const orden = document.getElementById('selectOrden').value;
+  const orden = document.getElementById('catalogSort').value;
 
   let lista = [...todosLosProductos];
   if (cat) lista = lista.filter(p => p.categoria === cat);
