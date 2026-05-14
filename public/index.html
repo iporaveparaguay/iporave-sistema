@@ -1900,14 +1900,15 @@ window.addEventListener('pointerup',function(e){
   }
   if(wasMoved){
     _aiDragSuppressClick=true;
-    setTimeout(()=>{_aiDragSuppressClick=false;},220);
-  }else{
-    // fue click (sin movimiento): abrir/cerrar panel directamente
-    // el setPointerCapture puede bloquar el evento onclick, así que lo llamamos aquí
-    setTimeout(()=>toggleAI(),0);
+    setTimeout(()=>{_aiDragSuppressClick=false;},300);
   }
+  // Si NO fue drag, el evento 'click' nativo llega después del pointerup
+  // y el listener de click del botón llama toggleAI() sin doble-disparo
   _aiDragState=null;
 });
+// Listener de click en el botón — único punto de entrada a toggleAI
+// Protegido contra el flag de drag para no disparar después de arrastre
+(function(){const b=$('aiBtn');if(b)b.addEventListener('click',function(){if(!_aiDragSuppressClick)toggleAI();});})();
 window.addEventListener('resize',function(){
   try{const saved=JSON.parse(localStorage.getItem(AI_BTN_POS_KEY)||'null');if(saved)_applyAIBtnPosition(saved);}catch(e){}
   _positionAIPanel();
