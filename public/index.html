@@ -830,6 +830,7 @@ let _sensitiveUnlocked = false;
 let _sensitiveUnlockTimer = null;
 let _gpsLoopTimer=null,_gpsLoopOrder=null,_gpsLoopStartTime=0,_gpsLoopFast=true;
 let _realtimeSub = null;
+let _rtNotifTimer=null;
 let _notifHistory = [];
 let _notifUnread = 0;
 let _pendingQueue = [];
@@ -1644,7 +1645,9 @@ function initRealtime(){
           notifMsg='🔄 Pedido #'+(r.id||'')+' → '+(r.estado||'actualizado');
           notifType='i';
         }
-        pushNotif(notifMsg,notifType,"nav('orders')");
+        // Debounce: evita spam si llegan múltiples UPDATEs seguidos
+        clearTimeout(_rtNotifTimer);
+        (function(msg,type){_rtNotifTimer=setTimeout(function(){pushNotif(msg,type,"nav('orders')");},2000);})(notifMsg,notifType);
       })
       .on('postgres_changes',{event:'DELETE',schema:'public',table:'pedidos'},async payload=>{
         await _rtRefreshOrders();
@@ -5703,6 +5706,7 @@ function filtrarBoletas(){
 }
 
 function _boletaHTML(o){
+  const emp=_getEmpresa();
   const zona=_getZonaO(o);
   const total=o.precio*o.qty;
   const flete=zona.precio;
@@ -5710,18 +5714,20 @@ function _boletaHTML(o){
   const tasaNum=parseInt(o.tipoIva)||10;
   const iva=o.tipoIva==='Exento'?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
   const base=totalFact-iva;
+  const _empColor=emp.colorPrimario||'#f5a623';
+  const _empLogo=emp.logo?'<img src="'+safeUrl(emp.logo)+'" style="height:44px;object-fit:contain">':'<div style="font-size:26px;font-weight:900;color:'+_empColor+'">'+escHtml(emp.nombre||'IPORÃVE')+'</div>';
   return {zona,total,flete,totalFact,iva,base,
     html:'<div class="boleta" id="boletaDiv">'+
     '<div style="display:flex;justify-content:space-between;border-bottom:3px double #000;padding-bottom:12px;margin-bottom:12px">'+
-    '<div><div class="boleta-logo">IPORÃVE</div><div style="font-size:11px;font-weight:600">'+escHtml(EMPRESA.nombre)+'</div>'+
-    '<div style="font-size:10px">'+escHtml(EMPRESA.dir)+'</div><div style="font-size:10px">Tel: '+escHtml(EMPRESA.tel)+'</div>'+
-    '<div style="font-size:10px">RUC: '+escHtml(EMPRESA.ruc)+'</div><div style="font-size:10px">'+escHtml(EMPRESA.web)+' · '+escHtml(EMPRESA.ig)+'</div></div>'+
+    '<div>'+_empLogo+'<div style="font-size:11px;font-weight:600">'+escHtml(emp.nombre||'IPORÃVE')+'</div>'+
+    '<div style="font-size:10px">'+escHtml(emp.dir||'')+'</div><div style="font-size:10px">Tel: '+escHtml(emp.tel||'')+'</div>'+
+    '<div style="font-size:10px">RUC: '+escHtml(emp.ruc||'')+'</div><div style="font-size:10px">'+escHtml(emp.web||'')+'</div></div>'+
     '<div style="text-align:right">'+
-    '<div style="font-size:17px;font-weight:900;border:3px solid #f5a623;padding:7px 13px;border-radius:6px;color:#f5a623;margin-bottom:5px">BOLETA DE VENTA</div>'+
-    '<div style="font-size:12px"><b>Timbrado:</b> <span style="font-family:monospace">'+escHtml(EMPRESA.timbrado)+'</span></div>'+
+    '<div style="font-size:17px;font-weight:900;border:3px solid '+_empColor+';padding:7px 13px;border-radius:6px;color:'+_empColor+';margin-bottom:5px">BOLETA DE VENTA</div>'+
+    '<div style="font-size:12px"><b>Timbrado:</b> <span style="font-family:monospace">'+escHtml(emp.timbrado||EMPRESA.timbrado||'')+'</span></div>'+
     '<div style="font-size:12px"><b>N° documento:</b> <span style="font-family:monospace">'+escHtml(o.numDoc||o.boletaNum||'')+'</span></div>'+
     '<div style="font-size:12px"><b>Fecha:</b> '+fmtDate(o.fecha)+'</div>'+
-    '<div style="margin-top:5px;font-size:10px;padding:3px 8px;border:1px solid #f5a623;border-radius:4px;color:#f5a623;display:inline-block">COMPROBANTE IVA VÁLIDO</div>'+
+    '<div style="margin-top:5px;font-size:10px;padding:3px 8px;border:1px solid '+_empColor+';border-radius:4px;color:'+_empColor+';display:inline-block">COMPROBANTE IVA VÁLIDO</div>'+
     '</div></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;font-size:11px;border-bottom:1px solid #eee;padding-bottom:10px">'+
     '<div><div style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:2px;font-weight:700">Cliente / Comprador</div>'+
@@ -5746,7 +5752,7 @@ function _boletaHTML(o){
     '<div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;border-top:2px solid #000;padding-top:5px;margin-top:5px">'+
     '<span>TOTAL:</span><span>Gs. '+fmtN(totalFact)+'</span></div></div></div>'+
     '<div style="margin-top:12px;font-size:9px;color:#aaa;text-align:center;border-top:1px dashed #ddd;padding-top:7px">'+
-    escHtml(EMPRESA.nombre)+' · '+escHtml(EMPRESA.dir)+' · Timbrado: '+escHtml(EMPRESA.timbrado)+' · Válido según Ley N° 125/91</div>'+
+    escHtml(emp.nombre||'IPORÃVE')+' · '+escHtml(emp.dir||'')+' · Timbrado: '+escHtml(emp.timbrado||EMPRESA.timbrado||'')+' · Válido según Ley N° 125/91</div>'+
     '</div>'};
 }
 
