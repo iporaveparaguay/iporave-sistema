@@ -98,7 +98,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mapa-estilo-btn{width:34px;height:34px;border:none;border-radius:7px;font-size:16px;cursor:pointer;background:transparent;color:var(--text2);display:inline-flex;align-items:center;justify-content:center;transition:background .15s,color .15s;}
 .mapa-estilo-btn:hover{background:var(--bg4);color:var(--text);}
 .mapa-estilo-btn.active{background:var(--blue);color:#fff;}
-.mapa-locate-btn{position:absolute;bottom:36px;right:10px;z-index:999;width:38px;height:38px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;}
+.mapa-locate-btn{position:absolute;bottom:36px;right:10px;z-index:999;width:38px;height:38px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box;}
 /* APP LAYOUT */
 #appScreen{display:none;min-height:100vh;}
 #appScreen.show{display:flex;}
@@ -1492,6 +1492,7 @@ const DL = {
       zona_custom_precio:o.zonaCustomPrecio||null,
       historial:JSON.stringify(o.historial||[]),
       created_by:o.created_by||null,
+      prioridad:o.prioridad===true,
     };
   },
   _mapFromSupa(r){
@@ -1509,6 +1510,7 @@ const DL = {
       zonaCustomPrecio:r.zona_custom_precio||0,
       historial:typeof r.historial==='string'?JSON.parse(r.historial||'[]'):(r.historial||[]),
       created_by:r.created_by||null,
+      prioridad:r.prioridad===true,
     };
   },
 };
@@ -4060,7 +4062,7 @@ function _renderDlvCard(o,dist){
       ?'<div style="text-align:center;padding:8px 0;font-size:13px;font-weight:700;color:var(--text2)">✅ Entregado</div>'
       :'<div style="display:flex;gap:8px;flex-wrap:wrap">'+
         '<button onclick="dlvModal('+o.id+')" style="flex:1;min-width:110px;padding:12px;border:none;border-radius:10px;background:'+btnColor+';color:#fff;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px">'+btnLabel+'</button>'+
-        '<button onclick="navegarPedido('+o.id+')" style="padding:12px 16px;border:none;border-radius:10px;background:#ea4335;color:#fff;font-size:14px;font-weight:800;cursor:pointer">🗺️</button>'+
+        '<button onclick="navegarPedido('+o.id+')" style="padding:12px 16px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:14px;font-weight:800;cursor:pointer">🗺️</button>'+
         (tel?'<a href="https://wa.me/'+waNum+'" target="_blank" style="padding:12px 16px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:14px;font-weight:800;cursor:pointer;text-decoration:none;display:flex;align-items:center">💬</a>':'')+
       '</div>')+
   '</div>';
@@ -4183,11 +4185,15 @@ function renderTable(orders,title,showActs,highlightChanges){
         (canEdit?'<button onclick="_closeOrderMenus();editOrder('+o.id+')">✏️ Editar</button>':'')+
         (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button onclick="_closeOrderMenus();dlvModal('+o.id+')">📦 Actualizar estado</button>':'')+
         '<button onclick="_closeOrderMenus();waMenu('+o.id+')">💬 WhatsApp</button>'+
-        '<button onclick="_closeOrderMenus();navegarPedido('+o.id+')" style="color:#ea4335">📍 Navegar</button>'+
+        '<button onclick="_closeOrderMenus();navegarPedido('+o.id+')" style="color:#2563eb">📍 Navegar</button>'+
         '<div class="od-sep"></div>'+
         '<button onclick="_closeOrderMenus();openBoleta('+o.id+')">🧾 Boleta IVA</button>'+
         '<button onclick="_closeOrderMenus();imprimirGuia('+o.id+')">🖨️ Guía</button>'+
         '<button onclick="_closeOrderMenus();imprimirTicket('+o.id+')">🏷 Ticket</button>'+
+        (canEdit?'<div class="od-sep"></div>'+
+          '<button onclick="_closeOrderMenus();_setPrioridad('+o.id+','+(!!(o.prioridad))+')\"'+(o.prioridad?' style="color:var(--red)"':'')+'>'+
+            (o.prioridad?'⚡ Quitar prioridad':'⚡ Marcar prioridad')+
+          '</button>':'')+
         (canEdit?'<div class="od-sep"></div><button onclick="_closeOrderMenus();confirmDeleteOrder('+o.id+')" style="color:var(--red)">✕ Eliminar</button>':'')+
       '</div>'+
     '</div></td>':'')+'</tr>'
@@ -4290,6 +4296,41 @@ async function deleteOrder(id){
   pushNotif('Pedido #'+id+' eliminado','w');
   // Persistir eliminación en segundo plano
   DL.deleteOrder(id);
+}
+
+/* ─── PRIORIDAD ─── */
+async function _setPrioridad(id,esPrioridad){
+  const nueva=!esPrioridad;
+  // Actualizar Supabase directo (PATCH parcial sin tocar el objeto completo)
+  if(_supaConnected){
+    const{error}=await _supa.from('pedidos').update({prioridad:nueva}).eq('id',id);
+    if(error){pushNotif('Error al cambiar prioridad: '+(error.message||''),'e');return;}
+  }
+  // Actualizar cache local
+  const o=_ordersCache.find(x=>x.id===id);
+  if(o)o.prioridad=nueva;
+  // También en localStorage
+  const stored=DL._lg('orders')||[];
+  const so=stored.find(x=>x.id===id);
+  if(so){so.prioridad=nueva;DL._ls('orders',stored);}
+  pushNotif(nueva?'⚡ Pedido marcado como prioridad':'Prioridad removida',nueva?'s':'w');
+  if(nueva)_notifDeliveryPrioridad(id);
+  filtrar();
+}
+function _notifDeliveryPrioridad(pedidoId){
+  const o=_ordersCache.find(x=>x.id===pedidoId);
+  if(!o||!o.deliveryId)return;
+  if(!_sessionToken)return;
+  fetch(WORKER_URL+'/api/push-send',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
+    body:JSON.stringify({
+      user_id:o.deliveryId,
+      title:'⚡ Pedido prioritario',
+      body:'Pedido #'+pedidoId+(o.cliente?' — '+o.cliente:'')+' marcado como PRIORIDAD',
+      url:'/pedidos'
+    })
+  }).catch(function(e){console.warn('[PUSH PRIORIDAD]',e.message);});
 }
 
 /* ─── VIEW ORDER ─── */
@@ -9286,7 +9327,7 @@ function _mapaAddMarker(map,o,lat,lng,exact){
   el.innerHTML=
     '<div style="font-size:10px;font-weight:600;color:#f1f5f9;background:rgba(15,17,23,.88);padding:3px 7px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px);letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.8);'+labelBorder+'">'+shortName+urgLabel+priorityLabel+'</div>'+
     '<div class="'+pinClass+'" style="background:'+color+';color:#fff;width:44px;height:44px;border-radius:50%;'+
-    'border:3px solid rgba(255,255,255,.95);'+(isPriority?'':urgAnim)+
+    'border:3px solid rgba(255,255,255,.95);box-shadow:0 2px 6px rgba(0,0,0,.5);'+(isPriority?'':urgAnim)+
     'display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;line-height:1.15;text-align:center">'+
     '<span style="font-size:9px">'+num+'</span><span style="font-size:8.5px">'+abbr+'</span>'+
     '</div>';
@@ -9294,7 +9335,7 @@ function _mapaAddMarker(map,o,lat,lng,exact){
   const dlvNombre=(_usersCache.find(u=>u.id===o.deliveryId)||{}).nombre||'Sin asignar';
   const vendNombre=(_usersCache.find(u=>u.id===o.vendedorId)||{}).nombre||'—';
   const gMapsUrl='https://www.google.com/maps/dir/?api=1&destination='+lat+','+lng;
-  const navBtn='<a href="'+gMapsUrl+'" target="_blank" style="background:#ea4335;color:#fff;border-radius:6px;padding:3px 9px;font-size:11px;text-decoration:none;font-weight:700">📍 Navegar</a>';
+  const navBtn='<a href="'+gMapsUrl+'" target="_blank" style="background:#2563eb;color:#fff;border-radius:6px;padding:3px 9px;font-size:11px;text-decoration:none;font-weight:700">📍 Navegar</a>';
   const popupHtml=
     '<div style="min-width:210px;font-family:Arial,sans-serif;font-size:13px;color:#e2e8f0">'+
     '<div style="font-weight:800;font-size:14px;color:#f1f5f9;margin-bottom:4px">'+o.cliente+'</div>'+
@@ -9307,7 +9348,7 @@ function _mapaAddMarker(map,o,lat,lng,exact){
     '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
     '<span style="background:'+color+';color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px">'+o.estado+'</span>'+
     (CU.rol==='delivery'
-      ?'<button onclick="navegarPedido('+o.id+')" style="background:#ea4335;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">📍 Navegar</button>'+
+      ?'<button onclick="navegarPedido('+o.id+')" style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">📍 Navegar</button>'+
        (['Pendiente','Despachado'].includes(o.estado)?'<button onclick="_mapaCambiarEstado('+o.id+',\'En Ruta\')" style="background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">🚀 En Ruta</button>':'')+
        '<button onclick="dlvModal('+o.id+')" style="background:#374151;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">⬆ Ampliar</button>'
       :navBtn+(o.deliveryId?'<button onclick="verDeliveryEnMapa('+o.deliveryId+')" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-weight:700">🛵 Seguir delivery</button>':'')
