@@ -24,3 +24,6 @@ secrets.json
 .aider.chat.history.md
 .aider.input.history
 .aider*
+.agentes/playwright_state.json
+.agentes/test-screenshots/
+.agentes/pyoverrides/

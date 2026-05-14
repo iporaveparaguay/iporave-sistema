@@ -215,6 +215,9 @@ REGLA CRÍTICA para TODAS las tareas de esta zona:
 - [x] **visual-cards-hover** — transition:box-shadow .2s ease y .lcard2:hover agregados. OK.
 - [x] **visual-btn-primary** — box-shadow:0 4px 14px rgba(245,166,35,.35) agregado a .btn-primary. OK.
 - [x] **visual-scrollbar** — ya existia en L53. OK.
+- [~] **visual-campanita-scroll** — En el bloque style de index.html agregar: #codexNotifBell.scroll-faded{opacity:0.3;} y en el bloque script existente (al final, antes del cierre) agregar listener: window.addEventListener('scroll',function(){var b=document.getElementById('codexNotifBell');if(!b)return;b.classList.toggle('scroll-faded',window.scrollY>80);},{passive:true}); NUNCA escribir sin escapar las etiquetas script.
+- [x] **visual-order-menu-right** — .lcard2 .order-menu-wrap{margin-left:auto;flex-shrink:0;} aplicado. OK.
+- [x] **visual-mobile-btn-spacing** — .act-btns spacing y .order-menu-btn min-size aplicados en mobile. OK.
 
 #### ZONA CATALOGO — catalog.html — Gemini/Antigravity
 - [x] **catalog-filtros-visual** — Los botones de filtro de categoria: cuando estan activos (.active) agregar background:var(--primary) y color:white. Solo CSS.
@@ -222,6 +225,8 @@ REGLA CRÍTICA para TODAS las tareas de esta zona:
 - [x] **catalog-empty** — Si no hay productos en el filtro, mostrar mensaje centrado "No hay productos en esta categoria". Solo CSS/HTML del estado vacio.
 - [x] **catalog-footer** — Agregar footer simple con copyright y link a terminos al final de catalog.html. Solo HTML/CSS.
 - [x] **catalog-mobile-nav** — En mobile, el navbar fijo arriba no debe tapar el contenido: agregar padding-top al body igual a la altura del nav. Solo CSS media query.
+- [~] **catalog-mobile-ux** — En catalog.html, revisar en mobile (max-width:768px): (1) botones touch-friendly min-height:44px, (2) grid de productos no desborde a 375px, (3) buscador con padding adecuado, (4) boton de carrito siempre visible. Solo CSS en el bloque style existente.
+- [~] **catalog-card-img** — En catalog.html, las imagenes de producto: agregar object-fit:cover, aspect-ratio:4/3, border-radius heredado. En mobile reducir altura de imagen. Solo CSS.
 
 #### ZONA WORKER — archivos pequeños — Qwen7B/Groq
 - [x] **worker-calificaciones** — En calificaciones.js: todos los catch deben retornar json(data,status) con 2 argumentos. No cambiar logica.
@@ -229,30 +234,35 @@ REGLA CRÍTICA para TODAS las tareas de esta zona:
 - [x] **worker-notif-entrega** — En notif-entrega.js: verificar que todos los return usen json(data,status) con exactamente 2 argumentos.
 - [x] **worker-geocode** — En geocode.js: agregar validacion de parametros al inicio — si falta lat o lng, retornar json({error:'Parametros requeridos: lat, lng'},400).
 - [x] **worker-order-status-logs** — En order-status.js: agregar campo updated_at con timestamp en cada actualizacion de estado. No cambiar logica principal.
+- [x] **worker-audit-validaciones** — Revisar TODOS los archivos en src/api/: cualquier endpoint que reciba body JSON debe validar campos obligatorios al inicio y retornar json({error:'Campo X requerido'},400) si faltan. No cambiar logica existente, solo agregar validaciones faltantes al inicio de cada handler.
+- [ ] **worker-headers-seguridad** — En src/index.js, verificar que corsHeaders() incluya: X-Content-Type-Options:nosniff, X-Frame-Options:DENY, Referrer-Policy:strict-origin-when-cross-origin. Agregarlos si faltan. No tocar verifyToken ni login.js.
 
 #### ZONA PAGINAS PUBLICAS — otras paginas — Gemini
 - [x] **paginas-meta-tags** — En todas las paginas publicas (tracking.html, faq.html, contacto.html): verificar que tengan meta description y og:title correctos.
 - [x] **paginas-favicon** — Verificar que todas las paginas publicas tengan link rel=icon apuntando al favicon correcto.
+- [x] **paginas-track-mobile** — En public/track.html: revisar en 375px que el formulario de tracking sea usable: input de numero de pedido con width:100%, boton buscar min-height:44px, resultado del pedido con padding suficiente, texto legible (font-size>=14px). Solo CSS/HTML minimo.
+- [x] **paginas-nosotros-mobile** — En public/nosotros.html: revisar que el contenido no desborde en 375px, texto con max-width y padding lateral, imagenes responsive. Solo CSS.
+- [x] **paginas-faq-mobile** — En public/faq.html: verificar que las preguntas/respuestas sean legibles en mobile, acordeon funcional con touch, padding lateral adecuado. Solo CSS si se puede.
 
 ---
 
 #### ZONA FEATURES — index.html funcionalidades JS — Gemini 1M ctx
 
-- [~] **feature-auto-registro-ui** — Agregar pantalla de auto-registro para nuevos clientes: formulario con nombre, email, telefono, password, rol (cliente/vendedor/dropshipper). Al enviar, POST a /api/auth/registro. Mostrar mensaje de "pendiente aprobacion" al terminar. Solo mostrar esta pantalla si el usuario no esta logueado.
+- [!] **feature-auto-registro-ui** — BLOQUEADO hasta post-lanzamiento. No tocar hoy.: formulario con nombre, email, telefono, password, rol (cliente/vendedor/dropshipper). Al enviar, POST a /api/auth/registro. Mostrar mensaje de "pendiente aprobacion" al terminar. Solo mostrar esta pantalla si el usuario no esta logueado.
 
-- [~] **feature-whatsapp-config** — En la seccion de configuracion del perfil (visible para admin, vendedor, dropshipper), agregar subseccion "Configuracion WhatsApp Business" con campos: Token de API, Phone Number ID, Business Account ID. Boton "Guardar" que hace PUT a /api/config/whatsapp. Boton "Probar conexion" que hace POST a /api/config/whatsapp/test y muestra resultado. Mostrar estado actual: conectado (verde) o no configurado (amarillo).
+- [!] **feature-whatsapp-config** — BLOQUEADO hasta post-lanzamiento. No tocar hoy. (visible para admin, vendedor, dropshipper), agregar subseccion "Configuracion WhatsApp Business" con campos: Token de API, Phone Number ID, Business Account ID. Boton "Guardar" que hace PUT a /api/config/whatsapp. Boton "Probar conexion" que hace POST a /api/config/whatsapp/test y muestra resultado. Mostrar estado actual: conectado (verde) o no configurado (amarillo).
 
-- [~] **feature-asistente-ia** — Reemplazar el boton flotante de IA actual por un chat funcional que llama a /api/ai/chat con el mensaje del usuario. El endpoint devuelve la respuesta. UI: burbuja flotante, al hacer click abre panel lateral con historial de mensajes, input y boton enviar. Usar el mismo estilo visual del sistema.
+- [!] **feature-asistente-ia** — BLOQUEADO hasta post-lanzamiento. No tocar hoy. por un chat funcional que llama a /api/ai/chat con el mensaje del usuario. El endpoint devuelve la respuesta. UI: burbuja flotante, al hacer click abre panel lateral con historial de mensajes, input y boton enviar. Usar el mismo estilo visual del sistema.
 
-- [~] **feature-analytics-admin** — En el dashboard del superadmin, agregar seccion "Analitica avanzada" con: grafica de ventas por semana (ultimas 4 semanas), top 5 vendedores por volumen, mapa de calor de horas con mas pedidos (24 franjas), tasa de entrega exitosa. Datos desde /api/analytics/admin. Usar Chart.js que ya esta incluido.
+- [!] **feature-analytics-admin** — BLOQUEADO hasta post-lanzamiento. No tocar hoy., agregar seccion "Analitica avanzada" con: grafica de ventas por semana (ultimas 4 semanas), top 5 vendedores por volumen, mapa de calor de horas con mas pedidos (24 franjas), tasa de entrega exitosa. Datos desde /api/analytics/admin. Usar Chart.js que ya esta incluido.
 
-- [~] **feature-boletas-pdf** — Agregar boton "Descargar boleta PDF" en el detalle de cada pedido. Al hacer click, llama a /api/boletas/{pedido_id} que devuelve HTML, luego usa window.print() con estilos de impresion para generar PDF desde el navegador. Mostrar numero de pedido, productos, total, fecha, datos del cliente.
+- [!] **feature-boletas-pdf** — BLOQUEADO hasta post-lanzamiento. No tocar hoy. en el detalle de cada pedido. Al hacer click, llama a /api/boletas/{pedido_id} que devuelve HTML, luego usa window.print() con estilos de impresion para generar PDF desde el navegador. Mostrar numero de pedido, productos, total, fecha, datos del cliente.
 
-- [~] **feature-pwa** — Agregar soporte PWA: crear boton "Instalar app" que aparece solo cuando el navegador soporta instalacion (evento beforeinstallprompt). Al hacer click, llama a prompt.prompt(). El boton debe estar en el topbar, solo visible si la app no esta instalada. No tocar el manifest.json existente si ya existe.
+- [!] **feature-pwa** — BLOQUEADO hasta post-lanzamiento. No tocar hoy.: crear boton "Instalar app" que aparece solo cuando el navegador soporta instalacion (evento beforeinstallprompt). Al hacer click, llama a prompt.prompt(). El boton debe estar en el topbar, solo visible si la app no esta instalada. No tocar el manifest.json existente si ya existe.
 
-- [~] **feature-gps-tracking** — En el panel del delivery, agregar seccion "Mi ubicacion" con boton "Iniciar tracking". Al activar, llama a navigator.geolocation.watchPosition() y envia lat/lng a /api/delivery/ubicacion cada 30 segundos. Mostrar estado "Tracking activo" con punto verde parpadeante. Boton "Detener" para parar. En el panel del cliente, en el detalle del pedido activo, mostrar mapa Leaflet con la ubicacion del delivery en tiempo real (GET /api/pedidos/{id}/ubicacion-delivery).
+- [!] **feature-gps-tracking** — BLOQUEADO hasta post-lanzamiento. No tocar hoy., agregar seccion "Mi ubicacion" con boton "Iniciar tracking". Al activar, llama a navigator.geolocation.watchPosition() y envia lat/lng a /api/delivery/ubicacion cada 30 segundos. Mostrar estado "Tracking activo" con punto verde parpadeante. Boton "Detener" para parar. En el panel del cliente, en el detalle del pedido activo, mostrar mapa Leaflet con la ubicacion del delivery en tiempo real (GET /api/pedidos/{id}/ubicacion-delivery).
 
-- [~] **feature-rol-empresa** — Agregar rol "empresa" al sistema: en el panel de superadmin, seccion "Empresas" que lista cuentas con rol empresa. Cada empresa puede ver sus propios pedidos y vendedores asignados. UI similar al panel dropshipper pero con nombre de empresa en el topbar. Endpoint GET /api/empresa/dashboard para sus metricas.
+- [!] **feature-rol-empresa** — BLOQUEADO hasta post-lanzamiento. No tocar hoy.: en el panel de superadmin, seccion "Empresas" que lista cuentas con rol empresa. Cada empresa puede ver sus propios pedidos y vendedores asignados. UI similar al panel dropshipper pero con nombre de empresa en el topbar. Endpoint GET /api/empresa/dashboard para sus metricas.
 
 ---
 
@@ -279,6 +289,20 @@ POST https://iporave-api.iporaveparaguay.workers.dev/api/pizarron
 {"agente":"COMANDO","tarea":"tarea-urgente","archivos":"archivo.html","estado":"Pendiente","resumen":"instruccion exacta para aider"}
 
 ---
+
+#### ZONA AUDITORÍA CONTINUA — rotar cada 10 min — agente libre que encuentre [ ]
+
+REGLA: Cuando un agente termina su tarea y no hay [ ] en su zona, toma la primera [ ] de aquí.
+Cada auditoría es READ-ONLY: NO modifica código, solo reporta al pizarrón con estado=ALERTA si encuentra algo.
+
+- [ ] **audit-xss-index** — Leer public/index.html, buscar innerHTML= o insertAdjacentHTML( sin escHtml() envolviéndolos. Listar líneas exactas con el problema. Reportar al pizarrón: si hay vulnerabilidades → estado=ALERTA-CRITICA, si todo OK → estado=Finalizado.
+- [ ] **audit-worker-auth** — Leer todos los archivos en iporave-worker/src/api/. Verificar que cada endpoint que no sea público llame a verifyToken() al inicio. Listar los que NO lo hacen. Reportar al pizarrón.
+- [ ] **audit-mobile-index** — Leer el bloque @media de public/index.html. Buscar: elementos con width fijo >300px sin max-width:100%, font-size <12px en mobile, inputs sin padding en mobile. Listar problemas. Reportar al pizarrón.
+- [ ] **audit-rls-supabase** — Leer iporave-worker/src/api/save-user.js y order-status.js. Verificar que ningún UPDATE/INSERT omita filtros de usuario_id o rol. Reportar al pizarrón.
+- [ ] **audit-errores-js** — Leer public/index.html, buscar funciones async sin try/catch, fetch() sin .catch(), y console.log() que expongan datos sensibles (token, password, auth_id). Reportar líneas exactas al pizarrón.
+- [~] **audit-catalog-seguridad** — Leer public/catalog.html, buscar innerHTML= sin sanitizar, fetch() sin manejo de error, inputs sin validación client-side. Reportar al pizarrón.
+- [ ] **audit-worker-rate-limits** — Leer iporave-worker/src/index.js y los api/*.js. Verificar que los endpoints de login, registro y cambio de contraseña tengan rate limiting activo. Reportar cuáles no tienen.
+- [ ] **audit-performance-index** — Leer public/index.html: buscar setTimeout con delay >2000ms, setInterval sin clearInterval, EventListeners duplicados (misma función en mismo elemento). Reportar al pizarrón.
 
 ### NO DELEGAR (solo Claude Code o GPT-4o)
 - JWT + RLS Security Audit
