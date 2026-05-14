@@ -9049,7 +9049,8 @@ async function _initTrackingPublico(){
       const c=$('trackCard');
       if(c)c.innerHTML='<div style="text-align:center;padding:20px;color:#ef4444"><div style="font-size:28px">❌</div><div style="margin-top:8px;font-weight:700">Pedido no encontrado</div><div style="font-size:13px;color:#64748b;margin-top:4px">Revisá el enlace o contactá a Iporãve</div></div>';
     }
-    // Refresco automático cada 15s
+    // Refresco automático cada 15s (limpiar timer anterior si existe)
+    if(_trackRefreshTimer){clearInterval(_trackRefreshTimer);_trackRefreshTimer=null;}
     _trackRefreshTimer=setInterval(async()=>{
       const d=await _fetchTrackData(trackId);
       if(d&&!d.error)_trackUpdateUI(d);

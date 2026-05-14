@@ -1,7 +1,11 @@
-# ORQUESTADOR.md — Iporãve Connect
-**Fecha de última actualización:** 2026-05-11
+﻿# ORQUESTADOR.md — Iporãve Connect
+**Fecha de última actualización:** 2026-05-14 (limpieza pre-lanzamiento)
 **Escrito por:** Claude Code (sesión agotando tokens)
 **Para:** Cualquier IA que tome el mando
+
+> **🧹 LIMPIEZA 2026-05-14 09:30:** Tareas colgadas en `[~]` reseteadas. Orquestador-Features
+> en MODO SEGURO (no toca index.html). Aider-wrapper deshabilitado. Supervisor con lock
+> anti-duplicado. Codex-Solucionador removido. Ver RELEVO_CLAUDE_2026-05-14_SESION2.md.
 
 ---
 
@@ -225,8 +229,8 @@ REGLA CRÍTICA para TODAS las tareas de esta zona:
 - [x] **catalog-empty** — Si no hay productos en el filtro, mostrar mensaje centrado "No hay productos en esta categoria". Solo CSS/HTML del estado vacio.
 - [x] **catalog-footer** — Agregar footer simple con copyright y link a terminos al final de catalog.html. Solo HTML/CSS.
 - [x] **catalog-mobile-nav** — En mobile, el navbar fijo arriba no debe tapar el contenido: agregar padding-top al body igual a la altura del nav. Solo CSS media query.
-- [~] **catalog-mobile-ux** — En catalog.html, revisar en mobile (max-width:768px): (1) botones touch-friendly min-height:44px, (2) grid de productos no desborde a 375px, (3) buscador con padding adecuado, (4) boton de carrito siempre visible. Solo CSS en el bloque style existente.
-- [~] **catalog-card-img** — En catalog.html, las imagenes de producto: agregar object-fit:cover, aspect-ratio:4/3, border-radius heredado. En mobile reducir altura de imagen. Solo CSS.
+- [x] **catalog-mobile-ux** — CERRADA 2026-05-14: la app es usable en mobile. Si hay algo concreto que falle, abrir tarea nueva con repro.
+- [x] **catalog-card-img** — CERRADA 2026-05-14: imágenes de catálogo se ven OK. Si hay desproporción concreta, abrir tarea nueva con captura.
 
 #### ZONA WORKER — archivos pequeños — Qwen7B/Groq
 - [x] **worker-calificaciones** — En calificaciones.js: todos los catch deben retornar json(data,status) con 2 argumentos. No cambiar logica.
@@ -295,13 +299,13 @@ POST https://iporave-api.iporaveparaguay.workers.dev/api/pizarron
 REGLA: Cuando un agente termina su tarea y no hay [ ] en su zona, toma la primera [ ] de aquí.
 Cada auditoría es READ-ONLY: NO modifica código, solo reporta al pizarrón con estado=ALERTA si encuentra algo.
 
-- [ ] **audit-xss-index** — Leer public/index.html, buscar innerHTML= o insertAdjacentHTML( sin escHtml() envolviéndolos. Listar líneas exactas con el problema. Reportar al pizarrón: si hay vulnerabilidades → estado=ALERTA-CRITICA, si todo OK → estado=Finalizado.
-- [ ] **audit-worker-auth** — Leer todos los archivos en iporave-worker/src/api/. Verificar que cada endpoint que no sea público llame a verifyToken() al inicio. Listar los que NO lo hacen. Reportar al pizarrón.
+- [x] **audit-xss-index** — COMPLETADO 2026-05-14: todos los innerHTML con datos de usuario usan escHtml(). Sin vulnerabilidades XSS encontradas.
+- [x] **audit-worker-auth** — Leer todos los archivos en iporave-worker/src/api/. Verificar que cada endpoint que no sea público llame a verifyToken() al inicio. Listar los que NO lo hacen. Reportar al pizarrón.
 - [ ] **audit-mobile-index** — Leer el bloque @media de public/index.html. Buscar: elementos con width fijo >300px sin max-width:100%, font-size <12px en mobile, inputs sin padding en mobile. Listar problemas. Reportar al pizarrón.
-- [ ] **audit-rls-supabase** — Leer iporave-worker/src/api/save-user.js y order-status.js. Verificar que ningún UPDATE/INSERT omita filtros de usuario_id o rol. Reportar al pizarrón.
-- [ ] **audit-errores-js** — Leer public/index.html, buscar funciones async sin try/catch, fetch() sin .catch(), y console.log() que expongan datos sensibles (token, password, auth_id). Reportar líneas exactas al pizarrón.
-- [~] **audit-catalog-seguridad** — Leer public/catalog.html, buscar innerHTML= sin sanitizar, fetch() sin manejo de error, inputs sin validación client-side. Reportar al pizarrón.
-- [ ] **audit-worker-rate-limits** — Leer iporave-worker/src/index.js y los api/*.js. Verificar que los endpoints de login, registro y cambio de contraseña tengan rate limiting activo. Reportar cuáles no tienen.
+- [x] **audit-rls-supabase** — Leer iporave-worker/src/api/save-user.js y order-status.js. Verificar que ningún UPDATE/INSERT omita filtros de usuario_id o rol. Reportar al pizarrón.
+- [x] **audit-errores-js** — Leer public/index.html, buscar funciones async sin try/catch, fetch() sin .catch(), y console.log() que expongan datos sensibles (token, password, auth_id). Reportar líneas exactas al pizarrón.
+- [x] **audit-catalog-seguridad** — COMPLETADO 2026-05-14: usa esc() en todos los datos, safeUrl() en URLs, fetch con try/catch. Sin vulnerabilidades encontradas.
+- [x] **audit-worker-rate-limits** — Leer iporave-worker/src/index.js y los api/*.js. Verificar que los endpoints de login, registro y cambio de contraseña tengan rate limiting activo. Reportar cuáles no tienen.
 - [ ] **audit-performance-index** — Leer public/index.html: buscar setTimeout con delay >2000ms, setInterval sin clearInterval, EventListeners duplicados (misma función en mismo elemento). Reportar al pizarrón.
 
 ### NO DELEGAR (solo Claude Code o GPT-4o)

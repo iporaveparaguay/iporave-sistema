@@ -41,8 +41,59 @@ ORQUESTADORES = [
     {"nombre": "Orquestador-Worker",    "script": ".agentes/orquestador-worker.py"},
     {"nombre": "Orquestador-Paginas",   "script": ".agentes/orquestador-paginas.py"},
     {"nombre": "Orquestador-Principal", "script": ".agentes/orquestador.py"},
-    {"nombre": "Codex-Solucionador",    "script": ".agentes/codex-solucionador.py"},
+    # Codex-Solucionador REMOVIDO (2026-05-14): script roto que el supervisor reanimaba sin parar.
+    # Si se arregla codex-solucionador.py, volver a agregarlo aquí.
 ]
+
+# ─── LOCK FILE (evitar 2 supervisores corriendo en paralelo) ──────────────────
+LOCK_FILE = Path(__file__).parent / ".supervisor.lock"
+
+def _pid_vivo(pid):
+    """True si el PID está vivo en Windows. False si no existe o no se puede verificar."""
+    try:
+        out = subprocess.check_output(
+            ["tasklist", "/FI", f"PID eq {pid}", "/NH", "/FO", "CSV"],
+            stderr=subprocess.DEVNULL, timeout=5
+        ).decode(errors="replace")
+        return str(pid) in out
+    except Exception:
+        return False
+
+def adquirir_lock():
+    """Crea .supervisor.lock con el PID actual. Aborta si ya hay otro supervisor vivo."""
+    if LOCK_FILE.exists():
+        try:
+            otro_pid = int(LOCK_FILE.read_text(encoding="utf-8").strip())
+            if _pid_vivo(otro_pid) and otro_pid != os.getpid():
+                print(f"  ⛔ Ya hay un supervisor corriendo (PID {otro_pid}). Abortando.")
+                escribir_alerta(
+                    f"Intento de lanzar segundo supervisor — ya corre PID {otro_pid}. "
+                    f"Abortado para evitar procesos duplicados.",
+                    nivel="warning"
+                )
+                return False
+            else:
+                print(f"  [Supervisor] Lock huérfano (PID {otro_pid} muerto). Liberando.")
+        except Exception:
+            print(f"  [Supervisor] Lock corrupto. Sobrescribiendo.")
+    try:
+        LOCK_FILE.write_text(str(os.getpid()), encoding="utf-8")
+        print(f"  [Supervisor] Lock adquirido (PID {os.getpid()})")
+        return True
+    except Exception as e:
+        print(f"  [Supervisor] No se pudo escribir lock: {e}")
+        return True  # no bloquear por error de escritura
+
+def liberar_lock():
+    try:
+        if LOCK_FILE.exists():
+            LOCK_FILE.unlink()
+            print(f"  [Supervisor] Lock liberado")
+    except Exception:
+        pass
+
+import atexit
+atexit.register(liberar_lock)
 
 estado_agentes = {
     orq["nombre"]: {"proc": None, "reinicios": 0, "abandonado": False}
@@ -342,6 +393,10 @@ def main():
     print(f"  Timeout: {MAX_INACTIVO_MIN}min | Max reinicios: {MAX_REINICIOS}")
     print(f"  Notificaciones: alerts.json (sin Telegram)")
     print("=" * 55)
+
+    # Lock anti-duplicado: abortar si ya hay otro supervisor corriendo
+    if not adquirir_lock():
+        return
 
     if verificar_parada_critica():
         print("  PARADA_CRITICA activa: no se lanza ningún orquestador.")
