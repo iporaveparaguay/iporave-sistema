@@ -330,10 +330,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .offline-badge.show{display:inline-flex;align-items:center;gap:4px;}
 /* Ocultar elementos flotantes en pantalla de login */
 /* Ocultar elementos flotantes en pantalla de login (forzar !important para vencer cache) */
-#ntBell,#aiBtn,#aiPanel,#notifArea{display:none !important;}
+#ntBell,#aiBtn,#aiPanel,#notifArea,#codexNotifBell{display:none !important;}
 #appScreen.show #ntBell,
 #appScreen.show #aiBtn,
-body:has(#appScreen.show) #notifArea{display:flex !important;}
+body:has(#appScreen.show) #notifArea,
+body:has(#appScreen.show) #codexNotifBell{display:flex !important;}
 /* CATÁLOGO GRID */
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
 .prod-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);overflow:hidden;display:flex;flex-direction:column;transition:border-color .18s,box-shadow .18s;}
@@ -502,6 +503,15 @@ body:has(#appScreen.show) #notifArea{display:flex !important;}
 /* En desktop: ocultar elementos que solo deben verse en mobile */
 .col-show-mobile{display:none;}
 .act-btns{display:flex;gap:8px;flex-wrap:wrap;}
+/* ─── KEBAB MENU pedidos ─── */
+.order-menu-wrap{position:relative;display:inline-block;}
+.order-menu-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--text);font-size:16px;line-height:1;}
+.order-menu-btn:hover{background:var(--bg3);}
+.order-dropdown{position:absolute;right:0;top:100%;background:var(--bg2);border:1px solid var(--border2,var(--border));border-radius:8px;box-shadow:var(--shadow,0 4px 16px rgba(0,0,0,.3));z-index:200;min-width:160px;padding:4px 0;display:none;}
+.order-dropdown.open{display:block;}
+.order-dropdown button{display:block;width:100%;text-align:left;padding:8px 12px;background:none;border:none;cursor:pointer;color:var(--text);font-size:13px;}
+.order-dropdown button:hover{background:var(--bg3,rgba(255,255,255,.07));}
+.order-dropdown .od-sep{height:1px;background:var(--border);margin:3px 0;}
 </style>
 </head>
 <body>
@@ -631,10 +641,6 @@ body:has(#appScreen.show) #notifArea{display:flex !important;}
       <span class="tbtitle" id="tbTitle">Dashboard</span>
       <div class="tbactions" id="tbActions"></div>
       <span class="offline-badge" id="offlineBadge">⚡ Sin conexión</span>
-      <div class="ntbell" id="ntBell" onclick="toggleNotifPanel()" title="Notificaciones">
-        <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
-        <span class="nbcount" id="nbCount" style="display:none">0</span>
-      </div>
     </div>
     <div class="ca" id="ca"></div>
   </div>
@@ -831,8 +837,11 @@ function pushNotif(msg,type,action){
   _notifHistory.unshift({id:Date.now(),msg,type:type||'i',color:colors[type||'i']||'var(--blue)',time:nowStr(),read:false,action:action||null});
   if(_notifHistory.length>60)_notifHistory=_notifHistory.slice(0,60);
   _notifUnread++;
+  _notificaciones.unshift({titulo:msg,cuerpo:'',timestamp:Date.now(),leida:false});
+  if(_notificaciones.length>60)_notificaciones=_notificaciones.slice(0,60);
   _updateBell();
   _renderNotifList();
+  _notifSessionRender();
 }
 function _updateBell(){
   if(!window.CU || !window.CU.id) return;
@@ -880,6 +889,8 @@ function markAllNotifRead(){
 document.addEventListener('click',function(e){
   const p=$('ntPanel'),b=$('ntBell');
   if(p&&b&&p.classList.contains('open')&&!p.contains(e.target)&&!b.contains(e.target))p.classList.remove('open');
+  // Cerrar kebab menus de pedidos al hacer clic fuera
+  if(!e.target.closest('.order-menu-wrap'))_closeOrderMenus();
 });
 
 // Funcion segura para ejecutar acciones de notificacion
@@ -3054,6 +3065,8 @@ function _notifSessionRender(){
 }
 function _notifSessionMarkAllRead(){
   _notificaciones.forEach(n=>n.leida=true);
+  _notifHistory.forEach(n=>n.read=true);
+  _notifUnread=0;
   _notifSessionRender();
 }
 function _notifSessionToggle(open){
@@ -4012,33 +4025,19 @@ function filtrar(){
   const c=$('oContainer');
   if(c)c.innerHTML=renderTable(orders,'Pedidos ('+orders.length+')',true,true);
 }
-function _compactOrderActions(){
-  document.querySelectorAll('.act-btns').forEach(box=>{
-    if(box.dataset.compact==='1')return;
-    const btns=Array.from(box.querySelectorAll('button'));
-    if(!btns.length)return;
-    const main=document.createElement('div');
-    const sec=document.createElement('div');
-    box.innerHTML='';
-    box.dataset.compact='1';
-    box.setAttribute('style','display:flex;flex-direction:column;gap:8px;min-width:0;align-items:flex-start');
-    main.setAttribute('style','display:flex;gap:8px;flex-wrap:wrap');
-    sec.setAttribute('style','display:flex;gap:8px;flex-wrap:wrap;margin-top:2px');
-    const mainNames=['Ver','Editar','WA','Actualizar'];
-    mainNames.forEach(name=>{
-      const b=btns.find(x=>(x.textContent||'').trim()===name);
-      if(b){b.setAttribute('style',(b.getAttribute('style')||'').replace(/padding:[^;]+;/g,'')+';padding:6px 12px;font-size:12px;border-radius:6px;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.15)');main.appendChild(b);}
-    });
-    btns.forEach(b=>{
-      if(main.contains(b))return;
-      if((b.textContent||'').trim()==='')return;
-      b.setAttribute('style',(b.getAttribute('style')||'').replace(/padding:[^;]+;/g,'')+';padding:5px 10px;font-size:11px;border-radius:6px;opacity:0.9');
-      sec.appendChild(b);
-    });
-    box.appendChild(main);
-    box.appendChild(sec);
-  });
+function _closeOrderMenus(){
+  document.querySelectorAll('.order-dropdown.open').forEach(function(d){d.classList.remove('open');});
 }
+function _toggleOrderMenu(e,id){
+  e.stopPropagation();
+  const drop=document.getElementById('odrop-'+id);
+  if(!drop)return;
+  const wasOpen=drop.classList.contains('open');
+  _closeOrderMenus();
+  if(!wasOpen)drop.classList.add('open');
+}
+/* _compactOrderActions — reemplazada por kebab menu, se mantiene vacía por compatibilidad */
+function _compactOrderActions(){}
 function renderTable(orders,title,showActs,highlightChanges){
   if(highlightChanges)_prepareOrderStateHighlights(orders);
   if(!orders.length){if(highlightChanges)_commitOrderStateSnapshot(orders);return '<div style="text-align:center;padding:48px;color:var(--text3)">No hay pedidos</div>';}
@@ -4064,16 +4063,20 @@ function renderTable(orders,title,showActs,highlightChanges){
     '<td class="col-hide" style="font-size:12px">'+_getZonaO(o).nombre+'</td>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--green)">'+fmt(o.precio*o.qty)+'</td>'+
     '<td class="col-hide">'+bE(o.estado)+'</td>'+
-    (showActs?'<td><div class="act-btns">'+
-      '<button class="btn btn-secondary btn-sm" onclick="viewOrder('+o.id+')">Ver</button>'+
-      (canEdit?'<button class="btn btn-primary btn-sm" onclick="editOrder('+o.id+')">Editar</button>':'')+
-      (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button class="btn btn-success btn-sm" onclick="dlvModal('+o.id+')">Actualizar</button>':'')+
-      '<button class="btn btn-sm" onclick="navegarPedido('+o.id+')" title="Abrir navegación en Google Maps" style="background:#ea4335;color:#fff;border:none;border-radius:4px;padding:3px 7px;cursor:pointer;font-size:12px">📍</button>'+
-      '<button class="btn btn-secondary btn-sm" onclick="openBoleta('+o.id+')">IVA</button>'+
-      '<button class="btn btn-secondary btn-sm" onclick="imprimirGuia('+o.id+')" title="Guia">🖨️</button>'+
-      '<button class="btn btn-secondary btn-sm" onclick="imprimirTicket('+o.id+')" title="Ticket">🏷</button>'+
-      '<button class="btn btn-blue btn-sm" onclick="waMenu('+o.id+')">WA</button>'+
-      (canEdit?'<span style="display:inline-block;width:10px"></span><button class="btn btn-danger btn-sm" onclick="confirmDeleteOrder('+o.id+')" title="Eliminar pedido">✕</button>':'')+
+    (showActs?'<td style="white-space:nowrap"><div class="order-menu-wrap">'+
+      '<button class="order-menu-btn" onclick="_toggleOrderMenu(event,'+o.id+')" title="Acciones">⋮</button>'+
+      '<div class="order-dropdown" id="odrop-'+o.id+'">'+
+        '<button onclick="_closeOrderMenus();viewOrder('+o.id+')">👁 Ver</button>'+
+        (canEdit?'<button onclick="_closeOrderMenus();editOrder('+o.id+')">✏️ Editar</button>':'')+
+        (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button onclick="_closeOrderMenus();dlvModal('+o.id+')">📦 Actualizar estado</button>':'')+
+        '<button onclick="_closeOrderMenus();waMenu('+o.id+')">💬 WhatsApp</button>'+
+        '<button onclick="_closeOrderMenus();navegarPedido('+o.id+')" style="color:#ea4335">📍 Navegar</button>'+
+        '<div class="od-sep"></div>'+
+        '<button onclick="_closeOrderMenus();openBoleta('+o.id+')">🧾 Boleta IVA</button>'+
+        '<button onclick="_closeOrderMenus();imprimirGuia('+o.id+')">🖨️ Guía</button>'+
+        '<button onclick="_closeOrderMenus();imprimirTicket('+o.id+')">🏷 Ticket</button>'+
+        (canEdit?'<div class="od-sep"></div><button onclick="_closeOrderMenus();confirmDeleteOrder('+o.id+')" style="color:var(--red)">✕ Eliminar</button>':'')+
+      '</div>'+
     '</div></td>':'')+'</tr>'
   ).join('')+'</tbody></table></div></div>';
   if(highlightChanges)_commitOrderStateSnapshot(orders);
