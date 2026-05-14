@@ -7227,7 +7227,7 @@ PAGES.catalogo=function(q=''){
   $('ca').innerHTML='<div style="max-width:1100px">'+
     // Barra búsqueda + filtros
     '<div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-      '<input type="text" placeholder="🔍 Buscar por nombre o código…" value="'+q+'" oninput="PAGES.catalogo(this.value)" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
+      '<input type="text" placeholder="🔍 Buscar por nombre o código…" value="'+escAttr(q)+'" oninput="_dbSearch(\'cat\',this.value,v=>PAGES.catalogo(v))" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
       (rolLabel?'<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:5px 10px">💡 <b style="color:var(--accent)">'+rolLabel+'</b></div>':'')+
     '</div>'+
     // Filtros rápidos tipo Dropi
@@ -7262,7 +7262,7 @@ PAGES.catalogo_todos=function(q=''){
   if(!keys.length){$('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">No hay productos cargados aún.</div>';return;}
   $('ca').innerHTML='<div style="max-width:860px">'+
     '<div style="margin-bottom:14px">'+
-      '<input type="text" placeholder="🔍 Buscar producto…" value="'+q+'" oninput="PAGES.catalogo_todos(this.value)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
+      '<input type="text" placeholder="🔍 Buscar producto…" value="'+escAttr(q)+'" oninput="_dbSearch(\'catTodos\',this.value,v=>PAGES.catalogo_todos(v))" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
     '</div>'+
     keys.map(oid=>{
       const g=grupos[oid];
@@ -8052,6 +8052,14 @@ function safeUrl(u){return /^https?:\/\//i.test(u||'')?u:'';}
 
 function escQ(s){return s.replace(/'/g,"\\'")}
 
+// PERF: debounce global para inputs de búsqueda — evita re-render en cada tecla
+// Uso: oninput="_dbSearch('clave', this.value, ()=>PAGES.catalogo(value), 220)"
+window._dbTimers={};
+function _dbSearch(key, value, fn, ms){
+  if(window._dbTimers[key]) clearTimeout(window._dbTimers[key]);
+  window._dbTimers[key]=setTimeout(()=>{ window._dbTimers[key]=null; fn(value); }, ms||220);
+}
+
 /* ─── VALIDACIÓN DE PERFIL POR ROL ─── */
 function _perfilCompleto(u){
   if(u?.rol==='superadmin')return{ok:true,missing:[]};
@@ -8776,7 +8784,7 @@ function openNuevoMensaje(){
     '</div>'
   ).join('');
   openA('Nuevo mensaje',
-    '<div style="margin-bottom:8px"><input type="text" id="mcSearch" placeholder="Buscar usuario…" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 12px;color:var(--text);font-size:13px" oninput="filtrarContactos(this.value)"></div>'+
+    '<div style="margin-bottom:8px"><input type="text" id="mcSearch" placeholder="Buscar usuario…" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 12px;color:var(--text);font-size:13px" oninput="_dbSearch(\'mcSrch\',this.value,v=>filtrarContactos(v),180)"></div>'+
     '<div id="mcContactList" style="max-height:320px;overflow-y:auto">'+items+'</div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'
   );
@@ -8824,7 +8832,7 @@ function _renderModalContactos(q){
     '</div>'
   ).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">No hay más usuarios disponibles para agregar.</div>';
   openA('👥 Mis contactos',
-    '<div style="margin-bottom:12px"><input type="text" placeholder="Buscar…" value="'+q+'" oninput="_renderModalContactos(this.value)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:13px"></div>'+
+    '<div style="margin-bottom:12px"><input type="text" placeholder="Buscar…" value="'+escAttr(q)+'" oninput="_dbSearch(\'modCnts\',this.value,v=>_renderModalContactos(v),180)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:13px"></div>'+
     '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);font-weight:700;margin-bottom:6px">Mis contactos</div>'+
     '<div id="mcMios">'+htmlMios+'</div>'+
     '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);font-weight:700;margin:12px 0 6px">Agregar contacto</div>'+
@@ -9311,7 +9319,7 @@ function _renderCatalogoPublico(wrap,data){
       '</div>':'')+
     // Búsqueda
     '<div style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0">'+
-      '<input id="cpSearch" type="text" placeholder="🔍 Buscar producto…" oninput="_cpBuscar(this.value)" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;background:#fff;box-sizing:border-box">'+
+      '<input id="cpSearch" type="text" placeholder="🔍 Buscar producto…" oninput="_dbSearch(\'cpSrch\',this.value,v=>_cpBuscar(v),200)" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;background:#fff;box-sizing:border-box">'+
     '</div>'+
     // Productos
     '<div id="cpLista" style="padding:16px">'+html('')+'</div>'+
