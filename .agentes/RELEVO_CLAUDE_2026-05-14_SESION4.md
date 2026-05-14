@@ -1107,3 +1107,53 @@ Próxima sesión (cuando el usuario regrese, posiblemente con Sonnet 4.5):
 - Crear usuarios de prueba desde panel admin (FK constraint workaround)
 - Pancake features cuando el usuario dé detalles del modelo de negocio
 - Deploy worker para notif push prioridad
+
+---
+
+## INSTRUCCIONES PARA PRÓXIMA SESIÓN
+
+Si retoman con Sonnet 4.5 (más económico que Opus):
+
+### Qué NO hace falta hacer
+- ✅ XSS frontend está cubierto (~80+ lugares con escape)
+- ✅ Performance está optimizado (debounce + throttle + timers limpios)
+- ✅ Login mobile UI completo (bandera + título + bug campanita)
+- ✅ Todos los gráficos potenciados (dashboards + analíticas)
+- ✅ Bug del bell notification al login resuelto
+- ✅ Empty states con icono + guía
+
+### Qué SÍ hace falta hacer (en orden)
+1. **Esperar pedidos reales del usuario** — el sistema está listo para lanzamiento
+2. **Crear usuarios de prueba** desde el panel admin (UI ya tiene "+ Nuevo usuario")
+3. **Pancake features** — cuando el usuario dé detalles del modelo financiero
+4. **Notif push prioridad** — requiere deploy worker (pedir permiso al usuario)
+5. **Monitor real usuarios** — si hay errores, ver console del navegador
+
+### Reglas críticas a respetar (NO violar)
+- ❌ NO tocar auth/login.js/verifyToken
+- ❌ NO tocar RLS de Supabase
+- ❌ NO deploy worker sin permiso explícito del usuario
+- ❌ NO commit sin `node validate.js` primero
+- ❌ NO hacer refactors grandes
+- ✅ SÍ usar el patrón escHtml/escAttr/safeUrl para cualquier nuevo render
+- ✅ SÍ usar _dbSearch para nuevos inputs de búsqueda
+- ✅ SÍ documentar todo en este RELEVO
+
+### Estructura de seguridad XSS para futuras adiciones
+
+Para inputs nuevos:
+```js
+// HTML attribute (value="...", title="...", alt="...")
+'<input value="'+escAttr(data.field)+'">'
+
+// HTML body content
+'<div>'+escHtml(data.field||'')+'</div>'
+
+// URL en src/href
+'<img src="'+safeUrl(data.url)+'">'
+```
+
+Para nuevos search inputs:
+```js
+'<input oninput="_dbSearch(\'miClave\',this.value,v=>miFuncion(v),200)">'
+```
