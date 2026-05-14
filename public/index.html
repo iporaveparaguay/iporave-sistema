@@ -56,6 +56,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .lcard{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);padding:48px 42px;width:100%;max-width:430px;box-shadow:var(--shadow);animation:fadeIn .4s ease;}
 .llogo h1{font-family:'Bebas Neue',sans-serif;font-size:46px;letter-spacing:4px;color:var(--accent);line-height:1;text-align:center; animation: slideInDown 0.8s ease-out forwards;}
 .llogo p{color:var(--text2);font-size:12px;margin-top:5px;letter-spacing:1.5px;text-transform:uppercase;text-align:center;margin-bottom:30px;}
+/* Bandera 🇵🇾 inline al lado del título — separación equilibrada */
+.bandera-py{display:inline-block;font-size:.55em;margin-left:.45em;vertical-align:middle;letter-spacing:normal;line-height:1;animation:slideInDown 1s ease-out forwards}
 .lmode{text-align:center;margin-top:12px;font-size:11px;padding:6px 10px;border-radius:6px;}
 .lmode.sup{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2);}
 .lmode.loc{background:rgba(245,166,35,.1);color:var(--accent);border:1px solid rgba(245,166,35,.2);}
@@ -525,10 +527,10 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   }
   /* Ajustes para la pantalla de login en móviles */
   .lcard{padding:28px 18px;}
-  .llogo h1{font-size:clamp(28px,8vw,38px);letter-spacing:2px;}
+  .llogo h1{font-size:clamp(32px,9.5vw,44px);letter-spacing:2px;white-space:nowrap;}
   .llogo p{font-size:11px;}
-  /* Bandera PY: pegada al título con margen apropiado */
-  .llogo > span[title="Paraguay"]{right:4px!important;font-size:18px!important;top:0px!important;}
+  /* Bandera 🇵🇾 mobile: separación 0.5em (~6mm) del título */
+  .bandera-py{font-size:.5em;margin-left:.5em;}
   /* Padding uniforme en recuadros — igual a Liquidación */
   .lcard2{padding:14px 14px 14px 20px;}
   /* Tablas con borde amarillo (.tc): mismo espacio interno que .lcard2 */
@@ -584,9 +586,8 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="lcard">
-    <div class="llogo" style="position:relative">
-      <span style="position:absolute;top:0;right:-24px;font-size:20px;line-height:1" title="Paraguay">🇵🇾</span>
-      <h1>IPORÃVE CONNECT</h1>
+    <div class="llogo">
+      <h1>IPORÃVE&nbsp;CONNECT <span class="bandera-py" title="Paraguay">🇵🇾</span></h1>
       <p style="margin-bottom:3px">All-in-One Commerce &amp; Logistics Platform</p>
       <p style="margin-top:0;font-size:11px;color:var(--accent);letter-spacing:1.5px">Todo tu negocio, un solo lugar.</p>
     </div>
@@ -2697,6 +2698,9 @@ function doLogout(){
   $('loginUser').value='';$('loginPass').value='';
   const aib=$('aiBtn');if(aib)aib.style.display='none';
   const aip=$('aiPanel');if(aip){aip.classList.remove('open','maximized','minimized','fullscreen');}
+  // Eliminar campana de notificaciones (bug: quedaba visible al volver al login)
+  const cbell=$('codexNotifBell');if(cbell)cbell.remove();
+  const cpanel=$('codexNotifPanel');if(cpanel)cpanel.remove();
   _aiHistory=[];
 }
 
@@ -3201,6 +3205,8 @@ function _notifSessionToggle(open){
   if(visible)_notifSessionRender();
 }
 function _notifSessionEnsureUi(){
+  // No crear la campana si no hay sesión iniciada (bug: aparecía en login)
+  if(!window.CU || !window.CU.id) return;
   if($('codexNotifBell'))return;
   const bell=document.createElement('button');
   bell.id='codexNotifBell';

@@ -765,12 +765,37 @@ Dashboard visual → se puede hacer sin permiso con cuidado
 6. **UI Login mobile** — bandera 🇵🇾 reposicionar (ver TAREA_UI_LOGIN_MOBILE.md)
 7. **Refinamiento botones tabla pedidos** (ver TAREA_PEDIDOS_BOTONES_OVERFLOW.md)
 
-### POST-LANZAMIENTO (NO TOCAR AHORA)
-8. Tienda pública (catalog.html avanzado)
-9. Auto-registro usuarios externos
-10. Módulo B2B / facturación entre roles
-11. WhatsApp webhook
-12. PWA service worker completo
+### POST-LANZAMIENTO — FEATURES "PANCAKE" (esperar detalles del usuario)
+8. **Sistema financiero cross-rol (inspirado en Pancake)**
+   - **Qué es Pancake:** app de gestión de delivery en Paraguay que el usuario usa como referencia
+   - **Qué pidió el usuario:** "lo que debe al proveedor, lo que le deben al vendedor, al dropshipper, quién te debe cuánto, todo eso, y también en métrica como está en pancake"
+   - **El usuario dijo:** dejarlo para después, que él da los detalles en una próxima sesión
+   
+   **Lo que existe hoy (base para construir):**
+   - `analitica_prov` (PAGES.analitica_prov) — vista proveedor: pedidos entregados, pendientes
+   - `analitica_vend` — vista vendedor: comisiones, liquidaciones
+   - `analitica_drop` — vista dropshipper: comisiones por pedido
+   - `_liqProv()` — liquidación proveedor (lista existente)
+   - Campo `costo` en pedidos — precio de costo del producto (60-70% del precio venta)
+   - Campo `comision` en pedidos — comisión al dropshipper (monto fijo o %)
+   
+   **Lo que FALTA construir:**
+   - Tabla `pagos` o `liquidaciones` en Supabase — registrar cuándo se pagó cada deuda
+   - Vista admin: "¿Quién me debe? / ¿A quién le debo?" — overview cross-rol
+     - Proveedor: total entregado - total pagado = deuda pendiente
+     - Vendedor: comisiones generadas - pagadas = deuda pendiente
+     - Dropshipper: comisiones generadas - pagadas = deuda pendiente
+   - Botón "Marcar como pagado" en cada liquidación
+   - Métrica en dashboard admin: gráfico de deudas por rol
+   
+   **NOTA CRÍTICA:** No tocar esto hasta que el usuario dé los detalles exactos.
+   El modelo de negocio (quién le paga a quién, cuándo, cómo) no está confirmado.
+
+9. Tienda pública (catalog.html avanzado)
+10. Auto-registro usuarios externos
+11. Módulo B2B / facturación entre roles
+12. WhatsApp webhook
+13. PWA service worker completo
 
 ---
 
