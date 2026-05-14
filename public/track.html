@@ -73,6 +73,8 @@ header{background:linear-gradient(135deg,#1e1b4b 0%,#1a1d40 100%);padding:14px 1
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function safeUrl(u){return(typeof u==='string'&&/^https?:\/\//i.test(u))?u:'';}
 const API='https://iporave-api.iporaveparaguay.workers.dev';
 const orderId=new URLSearchParams(location.search).get('id');
 
@@ -126,13 +128,13 @@ function render(d){
     <div class="card-title">Tu pedido</div>
     <div class="row"><span class="row-icon">📦</span><div>
       <div class="row-label">Producto</div>
-      <div class="row-val">${d.producto||'Pedido #'+d.id}</div>
+      <div class="row-val">${esc(d.producto||'Pedido #'+d.id)}</div>
     </div></div>`;
   if(pr)infoHtml+=`<div class="row"><span class="row-icon">💵</span><div>
-      <div class="row-label">Total</div><div class="row-val">${pr}</div>
+      <div class="row-label">Total</div><div class="row-val">${esc(pr)}</div>
     </div></div>`;
   if(d.direccion)infoHtml+=`<div class="row"><span class="row-icon">📍</span><div>
-      <div class="row-label">Dirección de entrega</div><div class="row-val">${d.direccion}</div>
+      <div class="row-label">Dirección de entrega</div><div class="row-val">${esc(d.direccion)}</div>
     </div></div>`;
   infoHtml+=`<div class="row"><span class="row-icon">🔄</span><div>
       <div class="row-label">Estado</div>
@@ -144,17 +146,17 @@ function render(d){
   if(d.delivery){
     const dlv=d.delivery;
     const avatarHtml=dlv.foto
-      ?`<img src="${dlv.foto}" class="dlv-avatar" width="54" height="54">`
+      ?`<img src="${safeUrl(dlv.foto)}" class="dlv-avatar" width="54" height="54">`
       :`<div class="dlv-avatar">🛵</div>`;
-    const vehiculo=[dlv.vehiculo,dlv.patente].filter(Boolean).join(' • ');
+    const vehiculo=[dlv.vehiculo,dlv.patente].filter(Boolean).map(v=>esc(v)).join(' • ');
     const at=dlv.at?'📡 GPS '+new Date(dlv.at).toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'}):'';
-    const rating=dlv.calificacion?`<div class="stars" title="${Number(dlv.calificacion).toFixed(1)} estrellas">${stars(dlv.calificacion)} <span style="font-size:12px;color:#64748b;font-family:sans-serif">${Number(dlv.calificacion).toFixed(1)}</span></div>`:'';
+    const rating=dlv.calificacion?`<div class="stars" title="${esc(Number(dlv.calificacion).toFixed(1))} estrellas">${stars(dlv.calificacion)} <span style="font-size:12px;color:#64748b;font-family:sans-serif">${esc(Number(dlv.calificacion).toFixed(1))}</span></div>`:'';
     dlvHtml=`<div class="dlv-card">
       <div class="card-title">Tu repartidor</div>
       <div style="display:flex;gap:14px;align-items:center">
         ${avatarHtml}
         <div style="flex:1;min-width:0">
-          <div class="dlv-name">${dlv.nombre||'Repartidor'}</div>
+          <div class="dlv-name">${esc(dlv.nombre||'Repartidor')}</div>
           ${vehiculo?`<div class="dlv-info-line">🏍️ ${vehiculo}</div>`:''}
           ${at?`<div class="dlv-info-line" id="dlvAt">${at}</div>`:'<div class="dlv-info-line" id="dlvAt">En camino...</div>'}
           ${rating}
@@ -223,7 +225,7 @@ function showErr(msg){
   document.getElementById('loading').style.display='none';
   const el=document.getElementById('error');
   el.style.display='block';
-  el.innerHTML=`<div class="err-icon">❌</div><div style="font-size:16px;font-weight:700;margin-bottom:8px">${msg}</div><div style="font-size:13px;color:#64748b">Si el problema persiste, contactá al vendedor.</div>`;
+  el.innerHTML=`<div class="err-icon">❌</div><div style="font-size:16px;font-weight:700;margin-bottom:8px">${esc(msg)}</div><div style="font-size:13px;color:#64748b">Si el problema persiste, contactá al vendedor.</div>`;
 }
 
 load();
