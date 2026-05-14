@@ -6449,7 +6449,7 @@ setTimeout(function(){
 },0);
 PAGES.analitica_prov=function(){
   $('tbActions').innerHTML='';
-  const mine=_ordersCache.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  const mine=_ordersCache.filter(o=>String(o.proveedorId)===String(CU.id)||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
   if(!mine.length){
     $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">No hay órdenes asignadas a tu nombre de proveedor.<br><span style="font-size:12px;margin-top:8px;display:block">El vendedor debe ingresar tu nombre exacto en el campo "Proveedor" al crear el pedido.</span></div>';
     return;
@@ -6494,7 +6494,9 @@ PAGES.analitica_prov=function(){
     '<div style="background:var(--card);border-radius:16px;padding:18px 18px 12px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid transparent;background-image:linear-gradient(var(--card),var(--card)),linear-gradient(90deg,#22c55e,#3b82f6);background-origin:border-box;background-clip:padding-box,border-box">'+
       '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px">📈 Actividad — últimos 30 días</div>'+
       '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Pedidos enviados vs. entregados</div>'+
-      '<canvas id="apLinea" height="75"></canvas>'+
+      (days30.some(d=>pedByDay[d]>0)
+        ?'<canvas id="apLinea" height="75"></canvas>'
+        :'<div id="apLinea" style="text-align:center;padding:28px 16px;color:var(--text3);font-size:13px">Sin actividad en los últimos 30 días</div>')+
     '</div>';
   if(topProd.length){
     html+=
@@ -6551,7 +6553,7 @@ PAGES.analitica_prov=function(){
     Chart.defaults.color=tc;Chart.defaults.borderColor=gc;Chart.defaults.font.family="'Inter','system-ui',sans-serif";
     const _tt={backgroundColor:cb,titleColor:dark?'#f1f5f9':'#0f172a',bodyColor:tc,borderColor:dark?'#334155':'#e2e8f0',borderWidth:1,cornerRadius:10,padding:10,boxPadding:4};
     const ctxL=$('apLinea');
-    if(ctxL){if(ctxL._ci)ctxL._ci.destroy();
+    if(ctxL&&ctxL.tagName==='CANVAS'){if(ctxL._ci)ctxL._ci.destroy();
       const gl=ctxL.getContext('2d');const h=ctxL.offsetHeight||150;
       const gG=gl.createLinearGradient(0,0,0,h);gG.addColorStop(0,'rgba(34,197,94,.38)');gG.addColorStop(1,'rgba(34,197,94,.02)');
       const gB=gl.createLinearGradient(0,0,0,h);gB.addColorStop(0,'rgba(59,130,246,.30)');gB.addColorStop(1,'rgba(59,130,246,.02)');
@@ -7603,12 +7605,13 @@ function _filtroProdGrid(v){
   const counter=document.querySelector('#ca span[style*="margin-left:auto"]');
   if(counter)counter.textContent=lista.length+' producto(s)';
 }
+function _imgCatErr(el){el.onerror=null;el.style.display='none';el.insertAdjacentHTML('afterend','<div class="prod-img-placeholder">&#x1F4E6;</div>');}
 function _renderProductoCard(p,canEdit,canOrder=false){
   const esAdmin=isAdminLike(CU.rol);
   const tieneOferta=p.precio_comparacion>0;
   const fotoHtml=p.foto
-    ?'<img src="'+safeUrl(p.foto)+'" alt="'+escAttr(p.nombre)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">'
-    :(p.fotos&&p.fotos.length?'<img src="'+safeUrl(p.fotos[0])+'" alt="'+escAttr(p.nombre)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">':'<div class="prod-img-placeholder">📦</div>');
+    ?'<img src="'+safeUrl(p.foto)+'" alt="'+escAttr(p.nombre)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="_imgCatErr(this)">'
+    :(p.fotos&&p.fotos.length?'<img src="'+safeUrl(p.fotos[0])+'" alt="'+escAttr(p.nombre)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="_imgCatErr(this)">':'<div class="prod-img-placeholder">📦</div>');
   const presHtml=p.presentaciones&&p.presentaciones.length
     ?'<div class="prod-pres-grid">'+
       p.presentaciones.map(pr=>{
@@ -8651,6 +8654,14 @@ function openPerfilUsuario(){
     :
       '<input type="hidden" id="pfTipoDoc" value="'+escAttr(u.tipo_doc)+'"><input type="hidden" id="pfCedula" value="'+escAttr(u.cedula)+'">'
     )+
+    (('PushManager' in window)?(function(){const _ok=Notification?.permission==='granted';return(
+      '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">🔔 Notificaciones push</div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);padding:12px 14px;border-radius:var(--radius);gap:10px">'+
+      '<div style="font-size:13px;color:var(--text2)">Recibí alertas de pedidos y mensajes en este dispositivo.</div>'+
+      '<button id="pfPushBtn" class="btn btn-sm" onclick="_activarPush()" style="background:'+(_ok?'#16a34a':'#f59e0b')+';color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer">'+(_ok?'🔔 Activadas':'🔔 Activar')+'</button>'+
+      '</div></div>'
+    );})():'')+
     '</div>'+
     /* TAB 1 — Negocio */
     '<div class="ptab-content">'+
@@ -10490,9 +10501,12 @@ async function _activarPush(){
       const _err=await _resp.json().catch(()=>({}));
       throw new Error(_err.error||'Error al guardar suscripción ('+_resp.status+')');
     }
-    const btn=document.getElementById('btnPushNotif');
-    if(btn){btn.textContent='🔔 Notif ON';btn.style.background='#16a34a';}
-    alert('✅ Notificaciones activadas. Vas a recibir avisos de nuevos pedidos.');
+    // Actualizar todos los botones de push (delivery + perfil)
+    ['btnPushNotif','pfPushBtn'].forEach(id=>{
+      const btn=document.getElementById(id);
+      if(btn){btn.textContent='🔔 Activadas';btn.style.background='#16a34a';}
+    });
+    pushNotif('✅ Notificaciones activadas en este dispositivo.','s');
   }catch(e){
     console.error('[PUSH SUB]',e);
     alert('Error al activar notificaciones: '+e.message);
