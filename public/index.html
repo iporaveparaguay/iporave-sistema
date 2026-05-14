@@ -8044,6 +8044,9 @@ function sendOrderChatMsg(orderId){
 }
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+// SEGURIDAD: escape para HTML attribute (value="..." etc.) — incluye comillas
+function escAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
 // SEGURIDAD: valida que la URL sea http(s) — evita javascript:, data:, vbscript:, etc.
 function safeUrl(u){return /^https?:\/\//i.test(u||'')?u:'';}
 
@@ -8129,10 +8132,10 @@ function openPerfilUsuario(){
     '</div>'+
     /* TAB 0 — Identidad */
     '<div class="ptab-content active">'+
-    '<div class="fg"><label>Nombre completo *</label><input type="text" id="pfNombre" value="'+(u.nombre||'')+'"></div>'+
-    '<div class="frow"><div class="fg"><label>WhatsApp (con código país) *</label><input type="text" id="pfWa" value="'+(u.whatsapp||'')+'" placeholder="595981XXXXXX"></div>'+
-    '<div class="fg"><label>Teléfono alternativo</label><input type="text" id="pfTel2" value="'+(u.telefono2||'')+'"></div></div>'+
-    '<div class="fg"><label>Email *</label><input type="email" id="pfEmail" value="'+(u.email||'')+'" placeholder="tu@email.com"></div>'+
+    '<div class="fg"><label>Nombre completo *</label><input type="text" id="pfNombre" value="'+escAttr(u.nombre)+'"></div>'+
+    '<div class="frow"><div class="fg"><label>WhatsApp (con código país) *</label><input type="text" id="pfWa" value="'+escAttr(u.whatsapp)+'" placeholder="595981XXXXXX"></div>'+
+    '<div class="fg"><label>Teléfono alternativo</label><input type="text" id="pfTel2" value="'+escAttr(u.telefono2)+'"></div></div>'+
+    '<div class="fg"><label>Email *</label><input type="email" id="pfEmail" value="'+escAttr(u.email)+'" placeholder="tu@email.com"></div>'+
     (u.rol==='delivery'?
       '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">'+
       '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">📄 Documentos de identidad *</div>'+
@@ -8151,53 +8154,53 @@ function openPerfilUsuario(){
       '<option value="dni_ext" '+(u.tipo_doc==='dni_ext'?'selected':'')+'>DNI Extranjero</option>'+
       '<option value="pasaporte" '+(u.tipo_doc==='pasaporte'?'selected':'')+'>Pasaporte</option>'+
       '</select></div>'+
-      '<div class="fg"><label>Número de documento</label><input type="text" id="pfCedula" value="'+(u.cedula||'')+'" placeholder="4.123.456"></div></div>'+
+      '<div class="fg"><label>Número de documento</label><input type="text" id="pfCedula" value="'+escAttr(u.cedula)+'" placeholder="4.123.456"></div></div>'+
       '</div>'
     :
-      '<input type="hidden" id="pfTipoDoc" value="'+(u.tipo_doc||'')+'"><input type="hidden" id="pfCedula" value="'+(u.cedula||'')+'">'
+      '<input type="hidden" id="pfTipoDoc" value="'+escAttr(u.tipo_doc)+'"><input type="hidden" id="pfCedula" value="'+escAttr(u.cedula)+'">'
     )+
     '</div>'+
     /* TAB 1 — Negocio */
     '<div class="ptab-content">'+
     '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'+
     '<div id="pfLogoPreview" style="width:64px;height:64px;border-radius:10px;background:var(--bg3);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer" onclick="$(\'pfLogoFile\').click()">'+
-    (u.logo?'<img src="'+u.logo+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:24px">🏢</span>')+
+    (u.logo?'<img src="'+safeUrl(u.logo)+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:24px">🏢</span>')+
     '</div><input type="file" id="pfLogoFile" accept="image/*" style="display:none" onchange="subirLogoPerfil(this)">'+
     '<div><button class="btn btn-secondary btn-sm" onclick="$(\'pfLogoFile\').click()">📷 Subir logo</button>'+
     '<div style="font-size:10px;color:var(--text3);margin-top:4px">Aparece en tickets, guías y PDFs</div></div></div>'+
-    '<div class="fg"><label>Nombre comercial / Empresa</label><input type="text" id="pfNomCom" value="'+(u.nombre_comercial||'')+'" placeholder="Distribuidora Iporãve E.A.S."></div>'+
-    '<div class="frow"><div class="fg"><label>RUC</label><input type="text" id="pfRuc" value="'+(u.ruc||'')+'" placeholder="80012345-6"></div>'+
-    '<div class="fg"><label>Sitio web</label><input type="text" id="pfWeb" value="'+(u.web||'')+'" placeholder="www.empresa.com.py"></div></div>'+
-    '<div class="frow"><div class="fg"><label>Instagram</label><input type="text" id="pfIg" value="'+(u.instagram||'')+'" placeholder="@tuempresa"></div>'+
-    '<div class="fg"><label>Facebook</label><input type="text" id="pfFb" value="'+(u.facebook||'')+'" placeholder="facebook.com/tuempresa"></div></div>'+
+    '<div class="fg"><label>Nombre comercial / Empresa</label><input type="text" id="pfNomCom" value="'+escAttr(u.nombre_comercial)+'" placeholder="Distribuidora Iporãve E.A.S."></div>'+
+    '<div class="frow"><div class="fg"><label>RUC</label><input type="text" id="pfRuc" value="'+escAttr(u.ruc)+'" placeholder="80012345-6"></div>'+
+    '<div class="fg"><label>Sitio web</label><input type="text" id="pfWeb" value="'+escAttr(u.web)+'" placeholder="www.empresa.com.py"></div></div>'+
+    '<div class="frow"><div class="fg"><label>Instagram</label><input type="text" id="pfIg" value="'+escAttr(u.instagram)+'" placeholder="@tuempresa"></div>'+
+    '<div class="fg"><label>Facebook</label><input type="text" id="pfFb" value="'+escAttr(u.facebook)+'" placeholder="facebook.com/tuempresa"></div></div>'+
     '<div class="fg"><label>Descripción del negocio</label>'+
-    '<textarea id="pfDesc" rows="3" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:13px;resize:vertical;font-family:inherit">'+(u.descripcion_negocio||'')+'</textarea></div>'+
+    '<textarea id="pfDesc" rows="3" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:13px;resize:vertical;font-family:inherit">'+escHtml(u.descripcion_negocio||'')+'</textarea></div>'+
     '</div>'+
     /* TAB 2 — Ubicación */
     '<div class="ptab-content">'+
-    '<div class="fg"><label>Dirección (calle y número)</label><input type="text" id="pfDir" value="'+(u.direccion||'')+'" placeholder="Av. España 1234"></div>'+
-    '<div class="frow"><div class="fg"><label>Barrio</label><input type="text" id="pfBarrio" value="'+(u.barrio||'')+'" placeholder="Centro"></div>'+
-    '<div class="fg"><label>Ciudad</label><input type="text" id="pfCiudad" value="'+(u.ciudad||'')+'" placeholder="Asunción"></div></div>'+
-    '<div class="frow"><div class="fg"><label>Departamento</label><input type="text" id="pfDepto" value="'+(u.departamento||'')+'" placeholder="Central"></div>'+
-    '<div class="fg"><label>Código postal</label><input type="text" id="pfCp" value="'+(u.cod_postal||'')+'" placeholder="1111"></div></div>'+
-    '<div class="fg"><label>País</label><input type="text" id="pfPais" value="'+(u.pais||'Paraguay')+'"></div>'+
+    '<div class="fg"><label>Dirección (calle y número)</label><input type="text" id="pfDir" value="'+escAttr(u.direccion)+'" placeholder="Av. España 1234"></div>'+
+    '<div class="frow"><div class="fg"><label>Barrio</label><input type="text" id="pfBarrio" value="'+escAttr(u.barrio)+'" placeholder="Centro"></div>'+
+    '<div class="fg"><label>Ciudad</label><input type="text" id="pfCiudad" value="'+escAttr(u.ciudad)+'" placeholder="Asunción"></div></div>'+
+    '<div class="frow"><div class="fg"><label>Departamento</label><input type="text" id="pfDepto" value="'+escAttr(u.departamento)+'" placeholder="Central"></div>'+
+    '<div class="fg"><label>Código postal</label><input type="text" id="pfCp" value="'+escAttr(u.cod_postal)+'" placeholder="1111"></div></div>'+
+    '<div class="fg"><label>País</label><input type="text" id="pfPais" value="'+escAttr(u.pais||'Paraguay')+'"></div>'+
     '</div>'+
     /* TAB 3 — Cobro */
     '<div class="ptab-content">'+
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">💳 Cuenta bancaria</div>'+
-    '<div class="fg"><label>Banco</label><input type="text" id="pfBanco" value="'+(u.banco||'')+'" placeholder="Banco Continental, Visión, etc."></div>'+
+    '<div class="fg"><label>Banco</label><input type="text" id="pfBanco" value="'+escAttr(u.banco)+'" placeholder="Banco Continental, Visión, etc."></div>'+
     '<div class="frow"><div class="fg"><label>Tipo de cuenta</label><select id="pfTipoCuenta">'+
     ['Caja de ahorro','Cuenta corriente','Cuenta vista'].map(t=>'<option '+(u.tipo_cuenta===t?'selected':'')+'>'+t+'</option>').join('')+
     '</select></div>'+
-    '<div class="fg"><label>Número de cuenta</label><input type="text" id="pfNroCuenta" value="'+(u.nro_cuenta||'')+'" placeholder="0000000000000"></div></div>'+
-    '<div class="fg"><label>Titular de la cuenta</label><input type="text" id="pfTitular" value="'+(u.titular_cuenta||'')+'" placeholder="Nombre exacto como figura en el banco"></div>'+
+    '<div class="fg"><label>Número de cuenta</label><input type="text" id="pfNroCuenta" value="'+escAttr(u.nro_cuenta)+'" placeholder="0000000000000"></div></div>'+
+    '<div class="fg"><label>Titular de la cuenta</label><input type="text" id="pfTitular" value="'+escAttr(u.titular_cuenta)+'" placeholder="Nombre exacto como figura en el banco"></div>'+
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:18px 0 12px">📱 Billetera digital</div>'+
     '<div class="frow"><div class="fg"><label>Tipo de billetera</label><select id="pfWalletTipo">'+
     '<option value="">— Ninguna —</option>'+
     ['Billetera Personal PY','Tigo Money','Claro Pay','Otro'].map(w=>'<option value="'+w+'" '+(u.wallet_tipo===w?'selected':'')+'>'+w+'</option>').join('')+
     '</select></div>'+
-    '<div class="fg"><label>Número / Cuenta</label><input type="text" id="pfWalletNro" value="'+(u.wallet_nro||'')+'" placeholder="0981XXXXXX"></div></div>'+
-    '<div class="fg"><label>Alias</label><input type="text" id="pfWalletAlias" value="'+(u.wallet_alias||'')+'" placeholder="MIEMPRESA o alias CBU"></div>'+
+    '<div class="fg"><label>Número / Cuenta</label><input type="text" id="pfWalletNro" value="'+escAttr(u.wallet_nro)+'" placeholder="0981XXXXXX"></div></div>'+
+    '<div class="fg"><label>Alias</label><input type="text" id="pfWalletAlias" value="'+escAttr(u.wallet_alias)+'" placeholder="MIEMPRESA o alias CBU"></div>'+
     '<div style="margin-top:14px;padding:12px;background:var(--bg3);border-radius:var(--radius);border-left:3px solid var(--accent)">'+
     '<div style="font-size:11px;color:var(--text2)">💡 Estos datos aparecen cuando un cliente quiere transferirte el pago. Verificá que sean correctos.</div></div>'+
     '</div>'+
