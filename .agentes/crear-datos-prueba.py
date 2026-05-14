@@ -121,49 +121,84 @@ def get_max_id_supabase(tabla, anon_key, token):
 # ─────────────────────────────────────────────────────────────────────────────
 
 USUARIOS_PRUEBA = [
+    # ── Vendedores ────────────────────────────────────────────────────
     {
-        "email":    "vendedor_test@iporave.com",
-        "nombre":   "Vendedor Prueba",
+        "email":    "vendedor1@iporave.test",
+        "nombre":   "Ana Vendedora",
         "rol":      "vendedor",
         "whatsapp": "0981000001",
         "ciudad":   "Asunción",
-        "barrio":   "Centro",
+        "barrio":   "Villa Morra",
         "departamento": "Central",
         "pais":     "Paraguay",
     },
     {
-        "email":    "proveedor_test@iporave.com",
-        "nombre":   "Proveedor Prueba",
-        "rol":      "proveedor",
+        "email":    "vendedor2@iporave.test",
+        "nombre":   "Carlos Vendedor",
+        "rol":      "vendedor",
         "whatsapp": "0981000002",
         "ciudad":   "Asunción",
-        "barrio":   "Centro",
+        "barrio":   "San Lorenzo",
         "departamento": "Central",
         "pais":     "Paraguay",
     },
+    # ── Proveedor ─────────────────────────────────────────────────────
     {
-        "email":    "delivery_test1@iporave.com",
-        "nombre":   "Delivery Juan",
-        "rol":      "delivery",
+        "email":    "proveedor1@iporave.test",
+        "nombre":   "Distribuidora Central",
+        "rol":      "proveedor",
         "whatsapp": "0981000003",
         "ciudad":   "Asunción",
-        "barrio":   "Centro",
+        "barrio":   "Mercado 4",
+        "departamento": "Central",
+        "pais":     "Paraguay",
+    },
+    # ── Deliveries ────────────────────────────────────────────────────
+    {
+        "email":    "delivery1@iporave.test",
+        "nombre":   "Juan Delivery",
+        "rol":      "delivery",
+        "whatsapp": "0981000004",
+        "ciudad":   "Asunción",
+        "barrio":   "Herrera",
         "departamento": "Central",
         "pais":     "Paraguay",
         "vehiculo": "Moto",
         "patente":  "AAA 001",
     },
     {
-        "email":    "delivery_test2@iporave.com",
-        "nombre":   "Delivery Pedro",
+        "email":    "delivery2@iporave.test",
+        "nombre":   "Luis Delivery",
         "rol":      "delivery",
-        "whatsapp": "0981000004",
+        "whatsapp": "0981000005",
         "ciudad":   "Asunción",
-        "barrio":   "Centro",
+        "barrio":   "Manorá",
         "departamento": "Central",
         "pais":     "Paraguay",
         "vehiculo": "Moto",
         "patente":  "BBB 002",
+    },
+    # ── Dropshipper ───────────────────────────────────────────────────
+    {
+        "email":    "drop1@iporave.test",
+        "nombre":   "Marta Drop",
+        "rol":      "dropshipper",
+        "whatsapp": "0981000006",
+        "ciudad":   "Asunción",
+        "barrio":   "Centro",
+        "departamento": "Central",
+        "pais":     "Paraguay",
+    },
+    # ── Admin ────────────────────────────────────────────────────────
+    {
+        "email":    "admin1@iporave.test",
+        "nombre":   "Admin Prueba",
+        "rol":      "admin",
+        "whatsapp": "0981000007",
+        "ciudad":   "Asunción",
+        "barrio":   "Centro",
+        "departamento": "Central",
+        "pais":     "Paraguay",
     },
 ]
 PASS_PRUEBA = "Test1234!"
@@ -301,49 +336,100 @@ def crear_productos_supabase(token, anon_key, owner_user_id):
 #    y finalmente Supabase REST directamente.
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Número de contacto para pruebas (real, del dueño del sistema)
+TEL_PRUEBA = "982547222"  # +595 982 547 222 → sin prefijo +595 (el sistema lo agrega)
+
 PEDIDOS_PRUEBA = [
+    # ── Pedidos base ──────────────────────────────────────────────────
     {
-        "cliente":  "María García",
-        "direccion": "Avda. España 1234",
+        "cliente":   "María García",
+        "telefono":  TEL_PRUEBA,
+        "direccion": "Avda. España 1234, Villa Morra, Asunción",
+        "notas":     "Tocar timbre. Edificio Olimpia, 3er piso.",
         "producto":  "Yerba Mate 1kg",
+        "qty":       2,
+        "precio":    15000,
         "estado":    "pendiente",
+        "prioridad": False,
     },
     {
-        "cliente":  "Juan López",
-        "direccion": "Calle Palma 567",
+        "cliente":   "Juan López",
+        "telefono":  TEL_PRUEBA,
+        "direccion": "Calle Palma 567, Centro, Asunción",
+        "notas":     "Casa color verde. Frente a la panadería.",
         "producto":  "Aceite Cañuelas 900ml",
-        "estado":    "pendiente",
+        "qty":       3,
+        "precio":    8500,
+        "estado":    "En camino",
+        "prioridad": False,
     },
     {
-        "cliente":  "Ana Rodríguez",
-        "direccion": "Brasil 890",
+        "cliente":   "Ana Rodríguez",
+        "telefono":  TEL_PRUEBA,
+        "direccion": "Calle Brasil 890, San Lorenzo, Paraguay",
+        "notas":     "Entregar a vecina si no hay nadie.",
         "producto":  "Azúcar 1kg",
-        "estado":    "pendiente",
+        "qty":       5,
+        "precio":    4500,
+        "estado":    "Entregado",
+        "prioridad": False,
     },
-    # Pedidos extendidos — distintos formatos de dirección (TAREA_DATOS_PRUEBA_EXTENDIDOS)
+    # ── Pedidos extendidos — distintos formatos de dirección ──────────
     {
-        "cliente":  "Carlos Benítez",
+        "cliente":   "Carlos Benítez",
+        "telefono":  TEL_PRUEBA,
         "direccion": "Mercado 4, Asunción, Paraguay",
+        "notas":     "Cliente en puesto 42, sector frutas.",
         "producto":  "Fideos Tallarin 500g",
+        "qty":       10,
+        "precio":    3200,
         "estado":    "pendiente",
+        "prioridad": True,   # ⚡ prioridad para probar animación del pin
     },
     {
-        "cliente":  "Laura Gómez",
-        "direccion": "-25.2867, -57.6470",
+        "cliente":   "Laura Gómez",
+        "telefono":  TEL_PRUEBA,
+        "direccion": "-25.2867, -57.6470",   # coordenadas GPS exactas (Asunción centro)
+        "notas":     "GPS confirmado. Depto 4B, intercomunicador 42.",
         "producto":  "Leche Entera 1L",
-        "estado":    "pendiente",
+        "qty":       4,
+        "precio":    5800,
+        "estado":    "Despachado",
+        "prioridad": False,
     },
     {
-        "cliente":  "Miguel Torres",
+        "cliente":   "Miguel Torres",
+        "telefono":  TEL_PRUEBA,
         "direccion": "Av. Mcal. López 1234, Barrio Manorá, Asunción",
+        "notas":     "Llamar 10 min antes de llegar.",
         "producto":  "Arroz Largo Fino 1kg",
+        "qty":       2,
+        "precio":    6500,
         "estado":    "pendiente",
+        "prioridad": False,
     },
     {
-        "cliente":  "Rosa Ferreira",
-        "direccion": "Brasil 890",
+        "cliente":   "Rosa Ferreira",
+        "telefono":  TEL_PRUEBA,
+        "direccion": "Av. Artigas 3650, Barrio Herrera, Asunción",
+        "notas":     "Portón azul. Buscar a Doña Rosa.",
         "producto":  "Yerba Mate 1kg",
-        "estado":    "pendiente",
+        "qty":       1,
+        "precio":    15000,
+        "estado":    "Cancelado",
+        "prioridad": False,
+    },
+    # ── Pedido extra — para probar mapa con estado En Ruta ────────────
+    {
+        "cliente":   "Pedro Villalba",
+        "telefono":  TEL_PRUEBA,
+        "direccion": "Av. Eusebio Ayala 4521, Asunción",
+        "notas":     "Segundo piso, oficina 8. Horario: 8am-6pm.",
+        "producto":  "Aceite Cañuelas 900ml",
+        "qty":       6,
+        "precio":    8500,
+        "estado":    "En Ruta",
+        "prioridad": False,
     },
 ]
 
@@ -382,19 +468,33 @@ def crear_pedidos(token, anon_key, vendedor_id):
 
     creados = 0
     for i, p in enumerate(PEDIDOS_PRUEBA):
-        # Fix 3b: la columna se llama 'direccion', no 'address'
+        telefono = p.get("telefono", "")
+        notas    = p.get("notas", f"Pedido de prueba — {p['producto']}")
+        qty      = p.get("qty", 1)
+        precio   = p.get("precio", 0)
+        prioridad= p.get("prioridad", False)
+
         body_worker = {
-            "cliente": p["cliente"],
-            "direccion":      p["direccion"],
-            "producto":       p["producto"],
-            "estado":         p["estado"],
+            "cliente":   p["cliente"],
+            "telefono":  telefono,
+            "direccion": p["direccion"],
+            "producto":  p["producto"],
+            "estado":    p["estado"],
+            "qty":       qty,
+            "precio":    precio,
+            "notas":     notas,
+            "prioridad": prioridad,
         }
         body_supa = {
-            "cliente": p["cliente"],
-            "direccion":      p["direccion"],
-            "notas":          f"Pedido de prueba — {p['producto']}",
-            "estado":         p["estado"],
-            "vendedor_id":    vendedor_id,
+            "cliente":    p["cliente"],
+            "telefono":   telefono,
+            "direccion":  p["direccion"],
+            "notas":      notas,
+            "estado":     p["estado"],
+            "vendedor_id": vendedor_id,
+            "qty":        qty,
+            "precio":     precio,
+            "prioridad":  prioridad,
         }
         if anon_key:
             body_supa["id"] = max_id + i + 1
