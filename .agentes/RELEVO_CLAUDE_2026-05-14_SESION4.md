@@ -474,7 +474,11 @@ Resolución: Cambiar a 11px (commit 395d6ca)
 - `fa9591f` — delivery mobile: botones mapa touch-friendly, tabla dir+producto
 - `f91e811` — delivery dashboard: 6 stats + gráficos propios
 - `4290c5a` — delivery card: 3 botones + producto + notas + prioridad
-- `939b209` — charts potenciados: gradientes, animaciones, tooltips pro
+- `939b209` — charts dashboard potenciados: gradientes, animaciones, tooltips pro
+- `12c23ad` — RELEVO sesión 4 ultra-detallado (790 líneas)
+- `45ebfac` — charts analítica potenciados: admin/vendedor/proveedor/dropshipper
+- `bbed8f8` — stat cards premium: hover lift + sombra profunda + línea degradada inferior
+- `218fce6` — CSS polish: dropdown premium, inputs glow, btn-sm/map-btn upgrade
 
 **Errores en esta sesión:**
 
