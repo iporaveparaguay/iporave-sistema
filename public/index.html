@@ -6934,10 +6934,16 @@ async function saveNuevoProducto(){
     presentaciones:window._presEdit||[],
     owner_id:CU.id,owner_nombre:CU.nombre,
   };
-  _catalogoCache=[..._catalogoCache,nuevo];
+
+  const saveResult = await DL.saveProducto(nuevo);
+  if (saveResult && saveResult.ok === false) {
+    showAlert('npAlert', 'e', 'Error al guardar el producto: ' + (saveResult.error || 'Desconocido'));
+    return; // Mantener modal abierto
+  }
+
+  _catalogoCache=[..._catalogoCache,nuevo]; // Actualizar caché local solo si el guardado fue exitoso
   closeA();PAGES.catalogo();
   pushNotif('Producto "'+nom+'" creado','s');
-  await DL.saveProducto(nuevo);
 }
 function _renderChips(){
   const c=$('sharesChips');if(!c)return;
