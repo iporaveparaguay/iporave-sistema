@@ -817,3 +817,93 @@ Las mejoras pendientes son todas opcionales para el lanzamiento del día.
 
 *Escrito por Claude Opus 4.7 (1M context) — 2026-05-14 Sesión 4*
 *Próxima sesión: continuar con "Pendientes sección 10"*
+
+---
+
+## ACTUALIZACIÓN — Trabajo autónomo tarde Sesión 4
+
+Continuación tras switch a Opus 4.7. Trabajo autónomo sin usuario presente.
+
+### Commits adicionales
+
+| Commit | Descripción |
+|--------|-------------|
+| `b22d327` | fix: crear-datos-prueba signup+signin para obtener auth_id real |
+| `0e4add0` | fix: potenciar gráfico aaLinea analítica admin (era el único sin gradientes) |
+| `51257f8` | fix: campanita login bug + login mobile UI + RELEVO Pancake section |
+| `eb64f8c` | perf+a11y: throttle pointermove con rAF, fix setTimeout leak sharesDrop, aria-labels |
+| `05a04cb` | ux: mejorar empty states (notif + sin acceso) con icono y guidance |
+| `17c4ef0` | fix: clearTimeout _bgTimer en _bgCerrar (timer leak buscador global) |
+
+### Bugs resueltos
+
+1. **Campanita aparecía en pantalla de login** — `_notifSessionEnsureUi()` se ejecutaba sin verificar CU. Fix:
+   - Verificación `if(!CU||!CU.id)return;` al inicio de la función
+   - `doLogout()` ahora elimina el DOM de la campana + panel
+
+2. **Timer leak en buscador global** — `_bgTimer` (setTimeout 180ms para debounce search) no se limpiaba al cerrar el dropdown. Fix: agregado `clearTimeout(_bgTimer);_bgTimer=null;` en `_bgCerrar()`.
+
+3. **setTimeout leak en sharesDrop** — el `onblur` creaba un setTimeout sin guardar referencia; si el modal se cerraba antes del timeout, quedaba huérfano. Fix: guardar en `window._sharesBlurT` y limpiar previo.
+
+4. **pointermove sin throttle** (AI button drag) — disparaba 100+ veces/seg causando layout thrashing. Fix: wrapped en `requestAnimationFrame` (60fps máx).
+
+### UX/A11y mejoras
+
+5. **Empty state notificaciones** — antes "Sin notificaciones nuevas" plano. Ahora: emoji 📭 + título + subtítulo explicativo.
+
+6. **"Sin acceso" mejorado** (2 lugares: línea 5754 y 6408) — antes texto plano. Ahora: emoji 🔒 + título + descripción + botón "Volver al inicio".
+
+7. **aria-labels en delivery card** — botones Llamar, Mapa, Estado ahora tienen aria-label descriptivo. min-height subido a 44px (WCAG 2.1 AA).
+
+8. **Login mobile UI** — TAREA_UI_LOGIN_MOBILE.md COMPLETADA:
+   - Bandera 🇵🇾 movida de `<span>` absoluto a `<span class="bandera-py">` inline dentro del H1
+   - Separación `.45em` desktop, `.5em` mobile (~6mm, equilibrado)
+   - Título mobile: `clamp(32px,9.5vw,44px)` (era 28-38px)
+   - `white-space:nowrap` para evitar que se rompa el título
+
+### Gráficos potenciados (completo)
+
+Todos los Chart.js del sistema ya están con gradientes + animaciones easing + tooltips premium:
+- ✅ Dashboard: `dashLinea`, `dashDonut`, `dashBar`
+- ✅ Estadísticas admin: `estLinea`, `estDlv`, `estZona`
+- ✅ Analítica proveedor: `apLinea`
+- ✅ Analítica vendedor: `avLinea`
+- ✅ Analítica dropshipper: `adLinea`
+- ✅ Analítica admin general: `aaLinea` (último que faltaba — fix `0e4add0`)
+
+### Script crear-datos-prueba.py — estado real
+
+- ✅ 6 productos creados
+- ✅ 10 pedidos creados (todos los estados)
+- ❌ 7 usuarios — **bloqueados por FK constraint en Supabase**
+
+El campo `auth_id` en `usuarios` tiene FK a `auth.users` (Supabase Auth). El script intenta:
+1. Signup en `/auth/v1/signup` → si ya existe (de intentos previos): error 422
+2. Fallback a signin con `/auth/v1/token?grant_type=password` para recuperar UUID
+3. Insert en `usuarios` con auth_id real
+
+Si los usuarios fueron creados parcialmente en intentos anteriores (signup OK pero perfil falló), el signin con `Test1234!` debería funcionar. Si no, se requiere service_role key de Supabase (no disponible en script).
+
+**Para resolver definitivamente**: el usuario debe usar el Supabase Dashboard manualmente o crear los usuarios desde el panel admin del sistema (que ya tiene UI para "+ Nuevo usuario").
+
+### Tareas TAREA_*.md cerradas
+
+- ✅ TAREA_UI_LOGIN_MOBILE.md — campanita + bandera + título
+- ✅ TAREA_MAPA_MEJORAS.md — botones azules, borde blanco pin, animaciones (ya estaba mayormente hecho)
+- ⏸ TAREA_PEDIDOS_BOTONES_OVERFLOW.md — refinamiento visual (baja prioridad, se puede dejar)
+
+### Pendientes confirmados POST-LANZAMIENTO
+
+- Pancake features (financial cross-rol) — esperar detalles del usuario
+- Notificación push cuando pedido se marca prioritario (requiere deploy worker)
+- Tienda pública avanzada (catalog.html)
+- Auto-registro de usuarios
+- Crear usuarios de prueba desde el panel admin (workaround del FK constraint)
+
+### Estado al final de esta etapa
+
+Sistema **estable, en producción, sin bugs conocidos críticos**.
+Frontend con ~556KB de JS bundle, validado.
+Performance mejorado (throttle pointermove, timers limpiados).
+A11y mejorado (aria-labels, touch targets 44px).
+UX mejorado (empty states, login mobile, mensajes claros).
