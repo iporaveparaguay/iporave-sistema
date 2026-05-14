@@ -5270,9 +5270,9 @@ function filtrarBoletas(){
     const tasaNum=parseInt(o.tipoIva)||10;
     const iva=o.tipoIva==='Exento'?0:Math.round(t/((100+tasaNum)/tasaNum));
     return '<tr>'+
-      '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">'+o.boletaNum+'</td>'+
-      '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">'+(o.numDoc||'—')+'</td>'+
-      '<td>'+fmtDate(o.fecha)+'</td><td>'+o.cliente+'</td><td>'+o.producto+'</td>'+
+      '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">'+escHtml(o.boletaNum||'')+'</td>'+
+      '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">'+escHtml(o.numDoc||'—')+'</td>'+
+      '<td>'+fmtDate(o.fecha)+'</td><td>'+escHtml(o.cliente||'')+'</td><td>'+escHtml(o.producto||'')+'</td>'+
       '<td style="color:var(--green)">'+fmt(t)+'</td>'+
       '<td class="col-hide" style="color:var(--cyan)">'+fmt(iva)+'</td>'+
       '<td>'+bE(o.estado)+'</td>'+
@@ -7008,7 +7008,7 @@ async function saveNuevoProducto(){
 }
 function _renderChips(){
   const c=$('sharesChips');if(!c)return;
-  c.innerHTML=(window._sharesSel||[]).map(u=>'<span style="display:inline-flex;align-items:center;gap:3px;background:var(--accent);color:#fff;padding:2px 8px 2px 10px;border-radius:20px;font-size:12px;white-space:nowrap">'+u.nombre+'<button type="button" onclick="_removeShare('+u.id+')" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;line-height:1;padding:0 0 0 2px">&times;</button></span>').join('');
+  c.innerHTML=(window._sharesSel||[]).map(u=>'<span style="display:inline-flex;align-items:center;gap:3px;background:var(--accent);color:#fff;padding:2px 8px 2px 10px;border-radius:20px;font-size:12px;white-space:nowrap">'+escHtml(u.nombre||'')+'<button type="button" onclick="_removeShare('+u.id+')" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;line-height:1;padding:0 0 0 2px">&times;</button></span>').join('');
 }
 function _removeShare(uid){
   window._sharesSel=(window._sharesSel||[]).filter(u=>u.id!==uid);
@@ -7028,7 +7028,7 @@ function _shareDrop(q){
   const opts=(window._sharesAvail||[]).filter(u=>!selIds.has(u.id)&&(!q||u.nombre.toLowerCase().includes(q.toLowerCase())));
   if(!opts.length){drop.style.display='none';return;}
   drop.style.display='block';
-  drop.innerHTML=opts.map(u=>'<div onclick="_addShare('+u.id+')" style="padding:8px 12px;cursor:pointer;font-size:13px" onmouseenter="this.style.background=\'var(--bg3)\'" onmouseleave="this.style.background=\'\'">'+u.nombre+' <span style="font-size:11px;color:var(--text3)">('+u.rol+')</span></div>').join('');
+  drop.innerHTML=opts.map(u=>'<div onclick="_addShare('+u.id+')" style="padding:8px 12px;cursor:pointer;font-size:13px" onmouseenter="this.style.background=\'var(--bg3)\'" onmouseleave="this.style.background=\'\'">'+escHtml(u.nombre||'')+' <span style="font-size:11px;color:var(--text3)">('+escHtml(u.rol||'')+')</span></div>').join('');
 }
 async function editProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
@@ -7255,7 +7255,7 @@ function _renderPresForm(){
   if(!pres.length){c.innerHTML='<div style="font-size:11px;color:var(--text3);padding:6px 0">Sin presentaciones aún</div>';return;}
   c.innerHTML=pres.map((pr,i)=>
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border2)">'+
-      '<input type="text" value="'+pr.nombre+'" onchange="window._presEdit['+i+'].nombre=this.value" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
+      '<input type="text" value="'+escHtml(pr.nombre||'')+'" onchange="window._presEdit['+i+'].nombre=this.value" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
       '<input type="number" value="'+(pr.precio||0)+'" placeholder="Base" onchange="window._presEdit['+i+'].precio=parseFloat(this.value)||0" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
       '<input type="number" value="'+(pr.precioVendedor||0)+'" placeholder="Vendedor" onchange="window._presEdit['+i+'].precioVendedor=parseFloat(this.value)||0" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
       '<input type="number" value="'+(pr.precioProveedor||0)+'" placeholder="Proveedor" onchange="window._presEdit['+i+'].precioProveedor=parseFloat(this.value)||0" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
@@ -7654,7 +7654,7 @@ function renderOrderChat(orderId){
     const isMe=m.userId===CU.id;
     return '<div class="chat-msg">'+
       '<div class="chat-meta'+(isMe?' right':'')+'">'+
-        '<b>'+m.nombre+'</b> <span style="color:var(--text3)">('+capRole(m.rol)+')</span> · '+m.fecha+
+        '<b>'+escHtml(m.nombre||'')+'</b> <span style="color:var(--text3)">('+capRole(m.rol)+')</span> · '+m.fecha+
       '</div>'+
       '<div class="chat-bubble-wrap'+(isMe?' right':'')+'">'+
         '<div class="chat-bubble'+(isMe?' mine':'')+'">'+escHtml(m.msg)+'</div>'+
@@ -8288,10 +8288,10 @@ PAGES.mensajes=async function(){
     nuevoMsgBtn+
     contactosBtn+
     convs.map(c=>
-      '<div class="mc-conv-item" onclick="openConvThread('+c.pid+',\''+c.pnom.replace(/'/g,'\\\'')+'\')" >'+
-      '<div class="mc-avatar" style="flex-shrink:0">'+c.pnom[0].toUpperCase()+'</div>'+
+      '<div class="mc-conv-item" onclick="openConvThread('+c.pid+')" >'+
+      '<div class="mc-avatar" style="flex-shrink:0">'+escHtml((c.pnom||'?')[0].toUpperCase())+'</div>'+
       '<div class="mc-info" style="min-width:0;flex:1;overflow:hidden">'+
-        '<div class="mc-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+c.pnom+'</div>'+
+        '<div class="mc-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(c.pnom||'')+'</div>'+
         '<div class="mc-preview">'+(c.last.de_id==CU.id?'Vos: ':'')+c.last.mensaje+'</div>'+
       '</div>'+
       '<div class="mc-meta" style="flex-shrink:0">'+
@@ -8303,14 +8303,15 @@ PAGES.mensajes=async function(){
 };
 
 async function openConvThread(partnerId,partnerNom){
-  _msgConvPartner={id:partnerId,nom:partnerNom};
-  $('ca').innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)">Cargando conversación…</div>';
   const pu=_usersCache.find(u=>u.id==partnerId);
+  const resolvedNom=partnerNom||(pu?pu.nombre:String(partnerId));
+  _msgConvPartner={id:partnerId,nom:resolvedNom};
+  $('ca').innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)">Cargando conversación…</div>';
   const partnerRol=pu?capRole(pu.rol):'';
   // Marcar como leídos
   await _supa.from('mensajes').update({leido:true}).eq('para_id',CU.id).eq('de_id',partnerId);
   _unreadMsgs=await DL.getMensajesNoLeidos(CU.id);updateAIBadge();
-  await _renderConvThread(partnerId,partnerNom,partnerRol);
+  await _renderConvThread(partnerId,resolvedNom,partnerRol);
 }
 
 async function _renderConvThread(pid,pnom,prol){
@@ -8340,16 +8341,16 @@ async function _renderConvThread(pid,pnom,prol){
     '<div class="mc-thread">'+
     '<div class="mc-thread-header">'+
       '<div class="mc-back" onclick="PAGES.mensajes()">‹</div>'+
-      '<div class="mc-avatar" style="width:36px;height:36px;font-size:14px">'+pnom[0].toUpperCase()+'</div>'+
+      '<div class="mc-avatar" style="width:36px;height:36px;font-size:14px">'+escHtml((pnom||'?')[0].toUpperCase())+'</div>'+
       '<div>'+
-        '<div class="mc-thread-name">'+pnom+'</div>'+
-        (prol?'<div class="mc-thread-role">'+prol+'</div>':'')+
+        '<div class="mc-thread-name">'+escHtml(pnom||'')+'</div>'+
+        (prol?'<div class="mc-thread-role">'+escHtml(prol)+'</div>':'')+
       '</div>'+
     '</div>'+
     '<div class="mc-bubbles" id="mcBubbles">'+bubblesHtml+'</div>'+
     '<div class="mc-input-bar">'+
-      '<textarea id="mcInput" placeholder="Escribí un mensaje…" rows="1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendMsgThread('+pid+',\''+pnom.replace(/'/g,'\\\'')+'\')}"></textarea>'+
-      '<button class="mc-send-btn" onclick="sendMsgThread('+pid+',\''+pnom.replace(/'/g,'\\\'')+'\')" title="Enviar">➤</button>'+
+      '<textarea id="mcInput" placeholder="Escribí un mensaje…" rows="1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendMsgThread('+pid+')}"></textarea>'+
+      '<button class="mc-send-btn" onclick="sendMsgThread('+pid+')" title="Enviar">➤</button>'+
     '</div>'+
     '</div>';
   // Scroll al final
@@ -8360,7 +8361,8 @@ async function sendMsgThread(toId,toNom){
   const inp=$('mcInput');if(!inp)return;
   const txt=inp.value.trim();if(!txt)return;
   inp.value='';inp.style.height='auto';
-  const m={de_id:CU.id,de_nombre:CU.nombre,para_id:toId,para_nombre:toNom,mensaje:txt,leido:false};
+  const resolvedToNom=toNom||(_msgConvPartner&&_msgConvPartner.id==toId?_msgConvPartner.nom:null)||(_usersCache.find(u=>u.id==toId)||{}).nombre||String(toId);
+  const m={de_id:CU.id,de_nombre:CU.nombre,para_id:toId,para_nombre:resolvedToNom,mensaje:txt,leido:false};
   const saved=await DL.saveMensaje(m);
   if(saved){
     // Agregar burbuja localmente sin recargar todo
@@ -8392,10 +8394,10 @@ function openNuevoMensaje(){
   const otros=_contactosPermitidos();
   if(!otros.length){openA('Nuevo mensaje','<div class="mc-empty">No hay otros usuarios en el sistema.</div>','<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>');return;}
   const items=otros.map(u=>
-    '<div class="mc-conv-item" style="border-radius:var(--radius);margin-bottom:4px" onclick="closeA();openConvThread('+u.id+',\''+u.nombre.replace(/'/g,'\\\'')+'\')" >'+
-    '<div class="mc-avatar" style="width:40px;height:40px;font-size:15px">'+u.nombre[0].toUpperCase()+'</div>'+
+    '<div class="mc-conv-item" style="border-radius:var(--radius);margin-bottom:4px" onclick="closeA();openConvThread('+u.id+')" >'+
+    '<div class="mc-avatar" style="width:40px;height:40px;font-size:15px">'+escHtml((u.nombre||'?')[0].toUpperCase())+'</div>'+
     '<div class="mc-info">'+
-      '<div class="mc-name">'+u.nombre+'</div>'+
+      '<div class="mc-name">'+escHtml(u.nombre||'')+'</div>'+
       '<div class="mc-preview">'+capRole(u.rol)+'</div>'+
     '</div>'+
     '<div style="color:var(--accent);font-size:20px">›</div>'+
@@ -8413,10 +8415,10 @@ function filtrarContactos(q){
   const filtrados=q?otros.filter(u=>u.nombre.toLowerCase().includes(q.toLowerCase())||capRole(u.rol).toLowerCase().includes(q.toLowerCase())):otros;
   if(!filtrados.length){list.innerHTML='<div class="mc-empty" style="padding:20px">Sin resultados</div>';return;}
   list.innerHTML=filtrados.map(u=>
-    '<div class="mc-conv-item" style="border-radius:var(--radius);margin-bottom:4px" onclick="closeA();openConvThread('+u.id+',\''+u.nombre.replace(/'/g,'\\\'')+'\')" >'+
-    '<div class="mc-avatar" style="width:40px;height:40px;font-size:15px">'+u.nombre[0].toUpperCase()+'</div>'+
+    '<div class="mc-conv-item" style="border-radius:var(--radius);margin-bottom:4px" onclick="closeA();openConvThread('+u.id+')" >'+
+    '<div class="mc-avatar" style="width:40px;height:40px;font-size:15px">'+escHtml((u.nombre||'?')[0].toUpperCase())+'</div>'+
     '<div class="mc-info">'+
-      '<div class="mc-name">'+u.nombre+'</div>'+
+      '<div class="mc-name">'+escHtml(u.nombre||'')+'</div>'+
       '<div class="mc-preview">'+capRole(u.rol)+'</div>'+
     '</div>'+
     '<div style="color:var(--accent);font-size:20px">›</div>'+
@@ -8437,15 +8439,15 @@ function _renderModalContactos(q){
   );
   const htmlMios=misContactos.length?misContactos.map(u=>
     '<div class="mc-conv-item" style="margin-bottom:3px;border-radius:var(--radius)">'+
-    '<div class="mc-avatar" style="width:36px;height:36px;font-size:13px">'+u.nombre[0].toUpperCase()+'</div>'+
-    '<div class="mc-info"><div class="mc-name">'+u.nombre+'</div><div class="mc-preview">'+capRole(u.rol)+'</div></div>'+
+    '<div class="mc-avatar" style="width:36px;height:36px;font-size:13px">'+escHtml((u.nombre||'?')[0].toUpperCase())+'</div>'+
+    '<div class="mc-info"><div class="mc-name">'+escHtml(u.nombre||'')+'</div><div class="mc-preview">'+capRole(u.rol)+'</div></div>'+
     '<button class="btn btn-secondary btn-sm" onclick="quitarContacto('+u.id+')">Quitar</button>'+
     '</div>'
   ).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">No tenés contactos agregados aún.</div>';
   const htmlDisp=disponibles.length?disponibles.map(u=>
     '<div class="mc-conv-item" style="margin-bottom:3px;border-radius:var(--radius)">'+
-    '<div class="mc-avatar" style="width:36px;height:36px;font-size:13px">'+u.nombre[0].toUpperCase()+'</div>'+
-    '<div class="mc-info"><div class="mc-name">'+u.nombre+'</div><div class="mc-preview">'+capRole(u.rol)+'</div></div>'+
+    '<div class="mc-avatar" style="width:36px;height:36px;font-size:13px">'+escHtml((u.nombre||'?')[0].toUpperCase())+'</div>'+
+    '<div class="mc-info"><div class="mc-name">'+escHtml(u.nombre||'')+'</div><div class="mc-preview">'+capRole(u.rol)+'</div></div>'+
     '<button class="btn btn-primary btn-sm" onclick="agregarContacto('+u.id+')">+ Agregar</button>'+
     '</div>'
   ).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">No hay más usuarios disponibles para agregar.</div>';
