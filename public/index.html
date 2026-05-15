@@ -3670,7 +3670,7 @@ function _notifSessionToggle(open){
 }
 function _notifSessionEnsureUi(){
   // No mostrar la campana si no hay sesión iniciada
-  if(!window.CU || !window.CU.id) return;
+  if(!CU || !CU.id) return;
   // La campana ya está en el topbar HTML — solo mostrarla
   const bell=$('codexNotifBell');
   if(bell) bell.style.display='flex';
