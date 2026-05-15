@@ -4046,7 +4046,7 @@ PAGES.dashboard=async function(){
       html+='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">'+
         '<button class="btn btn-primary btn-sm" onclick="nav(\'neworder\')">➕ Nuevo pedido</button>'+
         '<button class="btn btn-secondary btn-sm" onclick="nav(\'usuarios\')">👥 Gestionar usuarios</button>'+
-        '<button class="btn btn-secondary btn-sm" onclick="nav(\'pedidos\')">📋 Todos los pedidos</button>'+
+        '<button class="btn btn-secondary btn-sm" onclick="nav(\'orders\')">📋 Todos los pedidos</button>'+
       '</div>';
     }
   }
@@ -10296,8 +10296,8 @@ async function _mapaCargar(map){
   window._mapMarkers={};
   _mapaUpdateContadores();
   const _mapaBase=['vendedor','proveedor','dropshipper'].includes(CU.rol)?getVisibleOrders():_ordersCache;
-  let orders=_mapaBase.filter(o=>o.estado!=='Cancelado'&&o.estado!=='Devuelto');
-  if(window._mapaFiltro)orders=orders.filter(o=>o.estado===window._mapaFiltro);
+  // Sin filtro activo: ocultar Cancelado/Devuelto por defecto. Con filtro activo: mostrar solo los del filtro (incluso Cancelado/Devuelto)
+  let orders=window._mapaFiltro?_mapaBase.filter(o=>o.estado===window._mapaFiltro):_mapaBase.filter(o=>o.estado!=='Cancelado'&&o.estado!=='Devuelto');
   if(window._mapaFiltroZona)orders=orders.filter(o=>String(o.zona)===String(window._mapaFiltroZona));
   if(!['vendedor','proveedor','dropshipper'].includes(CU.rol)&&window._mapaFiltroVend)orders=orders.filter(o=>String(o.vendedorId)===String(window._mapaFiltroVend));
   if(window._mapaFiltroDelivery)orders=orders.filter(o=>String(o.deliveryId)===String(window._mapaFiltroDelivery));
