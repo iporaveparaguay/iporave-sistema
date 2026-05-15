@@ -645,6 +645,38 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .pagoCalDay.sel{background:linear-gradient(180deg,var(--accent) 0%,#d97706 100%);color:#fff;border-color:#d97706}
 .pagoCalDay .dot{font-size:10px;color:var(--accent);margin-top:1px}
 .pagoCalDay.sel .dot{color:#fff}
+/* ── Controles búsqueda/filtro en PAGES.pagos ── */
+.pagosControls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
+.pagosSearchInput{flex:1;min-width:200px;padding:9px 14px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:13px}
+.pagosSearchInput:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(245,158,11,.15)}
+.pagosFilterChips{display:flex;gap:6px;flex-wrap:wrap}
+.pagosChip{padding:7px 12px;border-radius:999px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s ease}
+.pagosChip:hover{transform:translateY(-1px);border-color:var(--accent)}
+.pagosChip.active{background:linear-gradient(180deg,var(--accent) 0%,#d97706 100%);color:#fff;border-color:#d97706;box-shadow:0 3px 8px rgba(245,158,11,.3)}
+.pagosOrderSel{padding:9px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:700;cursor:pointer}
+/* ── At-risk + badge ── */
+.userPagoRow{position:relative}
+.userPagoRow.atRisk{border-left:4px solid #f59e0b}
+.userPagoRow .atRiskBadge{position:absolute;top:8px;right:10px;background:#f59e0b;color:#1a1a1a;font-size:10px;font-weight:900;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;box-shadow:0 2px 6px rgba(245,158,11,.4)}
+/* ── Animaciones suaves ── */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.pago-fade{animation:fadeInUp .3s ease}
+/* ── Indicador de tendencia ── */
+.metricTrend{font-size:11px;font-weight:700;margin-top:4px;display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:999px}
+.metricTrend.up{color:#22c55e;background:rgba(34,197,94,.1)}
+.metricTrend.down{color:#ef4444;background:rgba(239,68,68,.1)}
+.metricTrend.flat{color:var(--text2);background:rgba(120,120,120,.1)}
+/* ── Botón volver con flecha animada ── */
+.btnVolver{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s ease}
+.btnVolver:hover{transform:translateX(-2px);border-color:var(--accent);background:var(--bg3)}
+.btnVolver .arrow{display:inline-block;transition:transform .2s ease}
+.btnVolver:hover .arrow{transform:translateX(-4px)}
+/* ── Paginación ── */
+.pagPager{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.pagPager button{padding:6px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s ease}
+.pagPager button:hover:not(:disabled){border-color:var(--accent);transform:translateY(-1px)}
+.pagPager button:disabled{opacity:.4;cursor:not-allowed}
+.pagPager .info{font-size:12px;color:var(--text2);font-weight:700}
 </style>
 </head>
 <body>
@@ -4242,15 +4274,58 @@ PAGES.dashboard=async function(){
         if(!pagosAll){ pagosAll=await DL.getPagos({}); window._pagosCache=pagosAll; }
         const rolesPagables=['vendedor','dropshipper','proveedor','delivery'];
         let teDeben=0;
+        const saldoPorUser=[];
         (_usersCache||[]).filter(u=>rolesPagables.includes(u.rol)&&u.activo!==false).forEach(u=>{
-          teDeben+=calcularSaldoUsuario(u.id);
+          const s=calcularSaldoUsuario(u.id);
+          teDeben+=s;
+          if(s>0) saldoPorUser.push({u,saldo:s});
         });
-        // "Le debés" = saldos donde CU es el que paga (en sistema actual, admin paga a todos)
-        // Como métrica: total ya pagado este mes desde CU (egresos)
         const mesAct=mesActual();
         const leDebes=(pagosAll||[]).filter(p=>String(p.pagado_por)===String(CU.id)&&(p.fecha||'').startsWith(mesAct))
           .reduce((a,p)=>a+Number(p.monto||0),0);
         const balance=teDeben-leDebes;
+        // Mes pasado
+        const dPrev=new Date(); dPrev.setMonth(dPrev.getMonth()-1);
+        const mesPrev=dPrev.toISOString().slice(0,7);
+        const pagadoPrev=(pagosAll||[]).filter(p=>(p.fecha||'').startsWith(mesPrev))
+          .reduce((a,p)=>a+Number(p.monto||0),0);
+        let pctVs=0, flecha='→', clsT='flat';
+        if(pagadoPrev>0){
+          pctVs=Math.round((leDebes-pagadoPrev)/pagadoPrev*100);
+          if(pctVs>0){flecha='↗';clsT='up';}
+          else if(pctVs<0){flecha='↘';clsT='down';}
+        } else if(leDebes>0){ pctVs=100; flecha='↗'; clsT='up'; }
+        // Días promedio para pagar (entre fecha de pedido entregado y fecha de pago, este mes)
+        let totalDias=0,countDias=0;
+        (pagosAll||[]).filter(p=>(p.fecha||'').startsWith(mesAct)).forEach(p=>{
+          // referencia simple: tomar primer pedido entregado del usuario antes del pago
+          const ords=(_ordersCache||[]).filter(o=>{
+            const u=(_usersCache||[]).find(x=>String(x.id)===String(p.pagado_a));
+            if(!u) return false;
+            const match=u.rol==='vendedor'?String(o.vendedorId)===String(u.id)
+              :u.rol==='dropshipper'?String(o.dropId)===String(u.id)
+              :u.rol==='proveedor'?String(o.proveedorId)===String(u.id)
+              :u.rol==='delivery'?String(o.deliveryId)===String(u.id):false;
+            return match && o.estado==='Entregado' && (o.fecha||'')<=p.fecha;
+          });
+          if(ords.length){
+            const fOrd=new Date(ords[ords.length-1].fecha||0).getTime();
+            const fPag=new Date(p.fecha||0).getTime();
+            const dias=Math.max(0,Math.floor((fPag-fOrd)/(1000*60*60*24)));
+            totalDias+=dias; countDias++;
+          }
+        });
+        const diasProm=countDias?Math.round(totalDias/countDias):0;
+        // Top 3 saldos
+        saldoPorUser.sort((a,b)=>b.saldo-a.saldo);
+        const top3=saldoPorUser.slice(0,3);
+        const topHtml=top3.length?'<div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:10px">'+
+          '<div style="font-size:10px;font-weight:800;color:var(--text2);text-transform:uppercase;margin-bottom:6px">🏆 Top 3 saldos pendientes</div>'+
+          top3.map((x,i)=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px">'+
+            '<span><b style="color:var(--accent)">'+(i+1)+'.</b> '+escHtml(x.u.nombre||'—')+' <span style="color:var(--text2);font-size:10px">('+escHtml(capRole(x.u.rol))+')</span></span>'+
+            '<b style="color:#ef4444">'+fmt(x.saldo)+'</b>'+
+          '</div>').join('')+
+        '</div>':'';
         html+='<div style="margin-top:16px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:all .15s ease" onclick="nav(\'pagos\')" onmouseover="this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.transform=\'\'">'+
           '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px">💼 Estado Financiero — '+mesAct+'</div>'+
           '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">'+
@@ -4261,12 +4336,18 @@ PAGES.dashboard=async function(){
             '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
               '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">🟧 Pagado este mes</div>'+
               '<div style="font-size:18px;font-weight:900;color:var(--accent)">'+fmt(leDebes)+'</div>'+
+              '<div class="metricTrend '+clsT+'">'+flecha+' '+(pctVs>0?'+':'')+pctVs+'% vs mes ant.</div>'+
             '</div>'+
             '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
               '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">🔄 Balance neto</div>'+
               '<div style="font-size:18px;font-weight:900;color:'+(balance>0?'#ef4444':'#22c55e')+'">'+fmt(balance)+'</div>'+
             '</div>'+
+            '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
+              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">⏱️ Días prom. pagar</div>'+
+              '<div style="font-size:18px;font-weight:900;color:var(--text)">'+diasProm+'d</div>'+
+            '</div>'+
           '</div>'+
+          topHtml+
         '</div>';
       }catch(e){console.warn('Estado financiero dashboard:',e.message);}
     }
@@ -11381,6 +11462,44 @@ function calcularSaldoUsuario(userId){
   return Math.max(0,ganado-pagado);
 }
 
+// Helper color de avatar por rol
+function _avatarColorByRol(rol){
+  const c={vendedor:'#f59e0b',dropshipper:'#8b5cf6',proveedor:'#3b82f6',delivery:'#22c55e',admin:'#ef4444',cliente:'#6b7280'};
+  if(rol==='superadmin') return 'linear-gradient(135deg,#fbbf24,#f59e0b 50%,#b45309)';
+  return c[rol]||'#6b7280';
+}
+
+// Estado de filtros admin pagos
+window._pagosFiltro=window._pagosFiltro||{q:'',rol:'todos',orden:'saldo_desc'};
+
+function _setPagosRolFiltro(r){ window._pagosFiltro.rol=r; _renderPagosLista(); }
+function _setPagosOrden(o){ window._pagosFiltro.orden=o; _renderPagosLista(); }
+function _setPagosBusqueda(v){ window._pagosFiltro.q=v||''; _renderPagosLista(); }
+
+function _renderPagosLista(){
+  const box=document.getElementById('pagosListaBox');
+  if(!box || !window._pagosData) return;
+  const data=window._pagosData;
+  const f=window._pagosFiltro;
+  let arr=data.filas.slice();
+  // Búsqueda
+  const q=(f.q||'').toLowerCase().trim();
+  if(q) arr=arr.filter(x=>(x.u.nombre||'').toLowerCase().includes(q));
+  // Filtro rol
+  if(f.rol!=='todos'){
+    const map={vendedores:'vendedor',dropshippers:'dropshipper',proveedores:'proveedor',deliveries:'delivery'};
+    const rolFiltro=map[f.rol]||f.rol;
+    arr=arr.filter(x=>x.u.rol===rolFiltro);
+  }
+  // Orden
+  if(f.orden==='saldo_desc') arr.sort((a,b)=>b.saldo-a.saldo);
+  else if(f.orden==='saldo_asc') arr.sort((a,b)=>a.saldo-b.saldo);
+  else if(f.orden==='nombre') arr.sort((a,b)=>(a.u.nombre||'').localeCompare(b.u.nombre||''));
+  else if(f.orden==='actividad') arr.sort((a,b)=>b.ultActividad-a.ultActividad);
+  box.innerHTML=arr.length?arr.map(x=>x.html).join(''):'<div style="text-align:center;padding:40px;color:var(--text3)">Sin resultados.</div>';
+  box.classList.remove('pago-fade'); void box.offsetWidth; box.classList.add('pago-fade');
+}
+
 PAGES.pagos=function(){
   $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">Cargando pagos...</div>';
   (async()=>{
@@ -11400,12 +11519,38 @@ PAGES.pagos=function(){
       const pagadoPorUser={};
       pagosMes.forEach(p=>{const k=String(p.pagado_a);pagadoPorUser[k]=(pagadoPorUser[k]||0)+(Number(p.monto)||0);});
 
+      // Top 3 saldo (lo calculamos luego con array completo)
+      const ahora=Date.now();
       let totalGanado=0,totalPagado=0,totalSaldo=0;
-      const filas=targetUsers.map(u=>{
+      const filasData=targetUsers.map(u=>{
         const ganado=_ganadoPorUsuarioMes(u,orders);
         const pagado=pagadoPorUser[String(u.id)]||0;
         const saldo=Math.max(0,ganado-pagado);
         totalGanado+=ganado;totalPagado+=pagado;totalSaldo+=saldo;
+        // Última actividad (más reciente pedido o pago)
+        let ultActividad=0;
+        (orders||[]).forEach(o=>{
+          const matchUser=u.rol==='vendedor'?String(o.vendedorId)===String(u.id)
+            :u.rol==='dropshipper'?String(o.dropId)===String(u.id)
+            :u.rol==='proveedor'?String(o.proveedorId)===String(u.id)
+            :u.rol==='delivery'?String(o.deliveryId)===String(u.id):false;
+          if(matchUser){
+            const t=new Date(o.fecha||o.created_at||0).getTime();
+            if(t>ultActividad) ultActividad=t;
+          }
+        });
+        (pagosAll||[]).forEach(p=>{
+          if(String(p.pagado_a)===String(u.id)){
+            const t=new Date(p.fecha||0).getTime();
+            if(t>ultActividad) ultActividad=t;
+          }
+        });
+        const diasInactivo=ultActividad?Math.floor((ahora-ultActividad)/(1000*60*60*24)):999;
+        const atRisk=saldo>0 && diasInactivo>30;
+        const avatarColor=_avatarColorByRol(u.rol);
+        const avatarStyle=avatarColor.startsWith('linear-gradient')
+          ?'background:'+avatarColor
+          :'background:linear-gradient(135deg,'+avatarColor+', '+avatarColor+'cc)';
         const avatarInner=u.foto_perfil
           ?'<img src="'+safeUrl(u.foto_perfil)+'" alt="">'
           :escHtml((u.nombre||'?')[0].toUpperCase());
@@ -11414,8 +11559,10 @@ PAGES.pagos=function(){
         const btnPagado=saldo>0
           ? '<button class="btnPagado" onclick="event.stopPropagation();abrirPagoCompleto(\''+escAttr(u.id)+'\')">✅ Pagado</button>'
           : '';
-        return '<div class="userPagoRow" onclick="abrirPagoUsuario(\''+escAttr(u.id)+'\')">'+
-          '<div class="avatar">'+avatarInner+'</div>'+
+        const badgeAtRisk=atRisk?'<div class="atRiskBadge">⚠️ Antiguo</div>':'';
+        const html='<div class="userPagoRow'+(atRisk?' atRisk':'')+'" onclick="abrirPagoUsuario(\''+escAttr(u.id)+'\')">'+
+          badgeAtRisk+
+          '<div class="avatar" style="'+avatarStyle+'">'+avatarInner+'</div>'+
           '<div class="info">'+
             '<div class="nombre">'+escHtml(u.nombre||'—')+'</div>'+
             '<div class="rol">'+escHtml(capRole(u.rol))+'</div>'+
@@ -11430,7 +11577,12 @@ PAGES.pagos=function(){
             '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();verHistorialPagos(\''+escAttr(u.id)+'\')">📋 Ver Historial</button>'+
           '</div>'+
         '</div>';
+        return {u,saldo,ultActividad,atRisk,html};
       });
+
+      window._pagosData={filas:filasData};
+      const f=window._pagosFiltro;
+      const chip=(id,label)=>'<button class="pagosChip'+(f.rol===id?' active':'')+'" onclick="_setPagosRolFiltro(\''+id+'\')">'+label+'</button>';
 
       $('ca').innerHTML=
         '<div class="stitle" style="margin-top:0">💵 Pagos del sistema — '+mes+'</div>'+
@@ -11439,7 +11591,24 @@ PAGES.pagos=function(){
           '<div class="sc bl"><div class="slabel">Total pagado</div><div class="sval">'+fmt(totalPagado)+'</div></div>'+
           '<div class="sc '+(totalSaldo>0?'re':'ac')+'"><div class="slabel">Saldo pendiente</div><div class="sval">'+fmt(totalSaldo)+'</div></div>'+
         '</div>'+
-        (filas.length?filas.join(''):'<div style="text-align:center;padding:40px;color:var(--text3)">Sin usuarios pagables.</div>');
+        '<div class="pagosControls">'+
+          '<input type="text" class="pagosSearchInput" placeholder="🔍 Buscar usuario..." value="'+escAttr(f.q||'')+'" oninput="_setPagosBusqueda(this.value)">'+
+          '<select class="pagosOrderSel" onchange="_setPagosOrden(this.value)">'+
+            '<option value="saldo_desc"'+(f.orden==='saldo_desc'?' selected':'')+'>Mayor saldo</option>'+
+            '<option value="saldo_asc"'+(f.orden==='saldo_asc'?' selected':'')+'>Menor saldo</option>'+
+            '<option value="nombre"'+(f.orden==='nombre'?' selected':'')+'>Por nombre</option>'+
+            '<option value="actividad"'+(f.orden==='actividad'?' selected':'')+'>Última actividad</option>'+
+          '</select>'+
+        '</div>'+
+        '<div class="pagosFilterChips" style="margin-bottom:14px">'+
+          chip('todos','Todos')+
+          chip('vendedores','Vendedores')+
+          chip('dropshippers','Dropshippers')+
+          chip('proveedores','Proveedores')+
+          chip('deliveries','Deliveries')+
+        '</div>'+
+        '<div id="pagosListaBox" class="pago-fade"></div>';
+      _renderPagosLista();
       return;
     }
 
@@ -11518,7 +11687,7 @@ function _actualizarSaldoLive(saldoActual){
     box.innerHTML='<div class="line"><span>Saldo actual:</span><b>'+fmt(saldoActual)+'</b></div>';
     return;
   }
-  const pct=Math.round(monto/saldoActual*100);
+  const pct=saldoActual>0?Math.round(monto/saldoActual*100):0;
   const restante=Math.max(0,saldoActual-monto);
   box.style.display='block';
   let html='<div class="line"><span>Saldo actual:</span><b>'+fmt(saldoActual)+'</b></div>'+
@@ -11540,27 +11709,43 @@ function abrirPagoUsuario(targetUserId){
 }
 
 async function confirmarRegistroPago(targetUserId){
+  // Prevenir doble click — deshabilitar botón mientras procesa
+  const btn=document.querySelector('[onclick*="confirmarRegistroPago"]');
+  if(btn&&btn.disabled)return; // ya está procesando
+  if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.textContent='⏳ Guardando...';}
   const monto=parseFloat($('pagoMonto').value)||0;
-  if(monto<=0){pushNotif('El monto debe ser mayor a 0','e');return;}
+  if(monto<=0){
+    pushNotif('El monto debe ser mayor a 0','e');
+    if(btn){btn.disabled=false;btn.style.opacity='';btn.textContent='💾 Registrar';}
+    return;
+  }
   const metodo=$('pagoMetodo').value;
   const referencia=$('pagoRef').value.trim();
   const nota=$('pagoNota').value.trim();
   const fecha=$('pagoFecha').value||new Date().toISOString().slice(0,10);
-  const res=await DL.savePago({
-    pagado_por:CU.id,
-    pagado_a:targetUserId,
-    monto,metodo,referencia,nota,fecha
-  });
-  if(res){
-    pushNotif('Pago registrado','ok');
-    closeA();
-    try{ window._pagosCache=await DL.getPagos({}); }catch(_){ }
-    // Si estamos en página dedicada del usuario, refrescar ahí; si no, ir a pagos
-    if(window._pagoUsuarioActual && String(window._pagoUsuarioActual)===String(targetUserId)){
-      nav('pago_usuario');
+  try{
+    const res=await DL.savePago({
+      pagado_por:CU.id,
+      pagado_a:targetUserId,
+      monto,metodo,referencia,nota,fecha
+    });
+    if(res){
+      pushNotif('Pago registrado','ok');
+      closeA();
+      try{ window._pagosCache=await DL.getPagos({}); }catch(_){ }
+      // Si estamos en página dedicada del usuario, refrescar ahí; si no, ir a pagos
+      if(window._pagoUsuarioActual && String(window._pagoUsuarioActual)===String(targetUserId)){
+        nav('pago_usuario');
+      } else {
+        nav('pagos');
+      }
     } else {
-      nav('pagos');
+      // Falló el guardado, re-habilitar botón
+      if(btn){btn.disabled=false;btn.style.opacity='';btn.textContent='💾 Registrar';}
     }
+  } catch(err){
+    pushNotif('Error al registrar: '+(err.message||'desconocido'),'e');
+    if(btn){btn.disabled=false;btn.style.opacity='';btn.textContent='💾 Registrar';}
   }
 }
 
@@ -11701,8 +11886,16 @@ PAGES.pago_usuario=function(){
     }
     calHtml+='</div>';
 
-    // Lista pedidos
-    const filasPed=pedsEntregados.map(o=>{
+    // Lista pedidos (con paginación si > 20)
+    const PAGE_SIZE=20;
+    if(typeof window._pagoPedPage!=='number') window._pagoPedPage=0;
+    const totalPed=pedsEntregados.length;
+    const totalPages=Math.max(1,Math.ceil(totalPed/PAGE_SIZE));
+    if(window._pagoPedPage>=totalPages) window._pagoPedPage=0;
+    const pageStart=window._pagoPedPage*PAGE_SIZE;
+    const pageEnd=Math.min(pageStart+PAGE_SIZE,totalPed);
+    const pedsPage=pedsEntregados.slice(pageStart,pageEnd);
+    const filasPed=pedsPage.map(o=>{
       const cli=(_usersCache||[]).find(u=>String(u.id)===String(o.clienteId));
       const cliNombre=cli?cli.nombre:(o.cliente||'—');
       return '<tr>'+
@@ -11713,6 +11906,45 @@ PAGES.pago_usuario=function(){
         '<td style="text-align:right;font-weight:800;color:var(--green,#16a34a)">'+fmt(ganDeOrden(o))+'</td>'+
       '</tr>';
     }).join('');
+    const pagerHtml = totalPed>PAGE_SIZE ? '<div class="pagPager">'+
+      '<button onclick="_pagoPedPagePrev()" '+(window._pagoPedPage<=0?'disabled':'')+'>← Anterior</button>'+
+      '<span class="info">'+(pageStart+1)+'–'+pageEnd+' de '+totalPed+' (pág. '+(window._pagoPedPage+1)+'/'+totalPages+')</span>'+
+      '<button onclick="_pagoPedPageNext()" '+(window._pagoPedPage>=totalPages-1?'disabled':'')+'>Siguiente →</button>'+
+    '</div>' : '';
+
+    // ── Tendencia vs período anterior (mismo lapso previo) ──
+    const dur=fin.getTime()-ini.getTime();
+    const iniPrev=new Date(ini.getTime()-dur-1);
+    const finPrev=new Date(ini.getTime()-1);
+    const enRangoPrev=(fs)=>{ if(!fs) return false; const d=new Date(fs); return d>=iniPrev && d<=finPrev; };
+    const pedsPrev=(orders||[]).filter(o=>{
+      const matchUser=user.rol==='vendedor'?String(o.vendedorId)===String(user.id)
+        :user.rol==='dropshipper'?String(o.dropId)===String(user.id)
+        :user.rol==='proveedor'?String(o.proveedorId)===String(user.id)
+        :user.rol==='delivery'?String(o.deliveryId)===String(user.id):false;
+      return matchUser && enRangoPrev(o.fecha||o.created_at);
+    });
+    const pedsPrevEnt=pedsPrev.filter(o=>o.estado==='Entregado');
+    const ganadoPrev=pedsPrevEnt.reduce((a,o)=>a+ganDeOrden(o),0);
+    const cobradoPrev=((window._pagosCache)||[]).filter(p=>String(p.pagado_a)===String(userId)&&enRangoPrev(p.fecha)).reduce((a,p)=>a+Number(p.monto||0),0);
+    const pendientePrev=Math.max(0,ganadoPrev-cobradoPrev);
+    const lblPer={hoy:'ayer',semana:'sem ant',mes:'mes ant',ano:'año ant',dia:'día ant'}[periodo]||'ant';
+    function _trend(act,prev){
+      let diff=act-prev, pct=prev>0?Math.round(diff/prev*100):(act>0?100:0);
+      let flecha=diff>0?'↗':(diff<0?'↘':'→');
+      let cls=diff>0?'up':(diff<0?'down':'flat');
+      // Para "pendiente" un aumento es malo - el caller decide
+      return {flecha,cls,pct,diff};
+    }
+    const trPed=_trend(peds.length,pedsPrev.length);
+    const trGan=_trend(ganado,ganadoPrev);
+    const trCob=_trend(cobrado,cobradoPrev);
+    const trPen=_trend(pendientePeriodo,pendientePrev);
+    function _trendBadge(t,invert){
+      let cls=t.cls;
+      if(invert){ if(cls==='up') cls='down'; else if(cls==='down') cls='up'; }
+      return '<div class="metricTrend '+cls+'">'+t.flecha+' '+(t.diff>0?'+':'')+t.pct+'% vs '+lblPer+'</div>';
+    }
 
     // Lista pagos
     const filasPag=pagos.map(p=>{
@@ -11729,12 +11961,16 @@ PAGES.pago_usuario=function(){
 
     const esAdmin=CU.rol==='admin'||CU.rol==='superadmin';
 
+    const avatarColorU=_avatarColorByRol(user.rol);
+    const avatarStyleU=avatarColorU.startsWith('linear-gradient')
+      ?'background:'+avatarColorU
+      :'background:linear-gradient(135deg,'+avatarColorU+', '+avatarColorU+'cc)';
     $('ca').innerHTML=
-      // Botón volver
-      '<button class="btn btn-secondary btn-sm" style="margin-bottom:12px" onclick="nav(\'pagos\')">← Volver a Pagos</button>'+
+      // Botón volver con flecha animada
+      '<button class="btnVolver" style="margin-bottom:12px" onclick="nav(\'pagos\')"><span class="arrow">←</span> Volver a Pagos</button>'+
       // Header
       '<div style="background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">'+
-        '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#d97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;overflow:hidden;flex-shrink:0">'+avatarInner+'</div>'+
+        '<div style="width:64px;height:64px;border-radius:50%;'+avatarStyleU+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;overflow:hidden;flex-shrink:0">'+avatarInner+'</div>'+
         '<div style="flex:1;min-width:200px">'+
           '<div style="font-size:20px;font-weight:900">'+escHtml(user.nombre||'—')+'</div>'+
           '<div style="font-size:13px;color:var(--text2)">'+escHtml(capRole(user.rol))+'</div>'+
@@ -11746,12 +11982,12 @@ PAGES.pago_usuario=function(){
       '</div>'+
       // Tabs período
       '<div class="pagoPeriodTabs">'+tabs+'</div>'+
-      // Métricas período
-      '<div class="sgrid" style="margin-bottom:14px">'+
-        '<div class="sc bl"><div class="slabel">Pedidos del período</div><div class="sval">'+peds.length+'</div></div>'+
-        '<div class="sc gr"><div class="slabel">Ganado</div><div class="sval">'+fmt(ganado)+'</div></div>'+
-        '<div class="sc ac"><div class="slabel">Cobrado</div><div class="sval">'+fmt(cobrado)+'</div></div>'+
-        '<div class="sc re"><div class="slabel">Pendiente</div><div class="sval">'+fmt(pendientePeriodo)+'</div></div>'+
+      // Métricas período (con tendencia)
+      '<div class="sgrid pago-fade" style="margin-bottom:14px">'+
+        '<div class="sc bl"><div class="slabel">Pedidos del período</div><div class="sval">'+peds.length+'</div>'+_trendBadge(trPed,false)+'</div>'+
+        '<div class="sc gr"><div class="slabel">Ganado</div><div class="sval">'+fmt(ganado)+'</div>'+_trendBadge(trGan,false)+'</div>'+
+        '<div class="sc ac"><div class="slabel">Cobrado</div><div class="sval">'+fmt(cobrado)+'</div>'+_trendBadge(trCob,false)+'</div>'+
+        '<div class="sc re"><div class="slabel">Pendiente</div><div class="sval">'+fmt(pendientePeriodo)+'</div>'+_trendBadge(trPen,true)+'</div>'+
       '</div>'+
       // Calendario
       '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:16px">'+
@@ -11764,11 +12000,13 @@ PAGES.pago_usuario=function(){
       '</div>'+
       // Pedidos
       '<div class="stitle">📦 Pedidos del período</div>'+
-      '<div style="overflow-x:auto;margin-bottom:16px"><table class="tbl"><thead><tr>'+
+      '<div style="overflow-x:auto;margin-bottom:8px"><table class="tbl"><thead><tr>'+
         '<th>Fecha</th><th>Cliente</th><th>Estado</th><th style="text-align:right">Total</th><th style="text-align:right">Mi ganancia</th>'+
       '</tr></thead><tbody>'+
         (filasPed||'<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">Sin pedidos entregados en el período</td></tr>')+
       '</tbody></table></div>'+
+      pagerHtml+
+      '<div style="height:8px"></div>'+
       // Pagos
       '<div class="stitle">💵 Historial de pagos del período</div>'+
       '<div style="overflow-x:auto;margin-bottom:16px"><table class="tbl"><thead><tr>'+
@@ -11788,8 +12026,11 @@ PAGES.pago_usuario=function(){
 function _setPagoPeriodo(p){
   window._pagoPeriodoActual=p;
   if(p!=='dia') window._pagoDiaSel=null;
+  window._pagoPedPage=0;
   nav('pago_usuario');
 }
+function _pagoPedPagePrev(){ window._pagoPedPage=Math.max(0,(window._pagoPedPage||0)-1); nav('pago_usuario'); }
+function _pagoPedPageNext(){ window._pagoPedPage=(window._pagoPedPage||0)+1; nav('pago_usuario'); }
 function _selDiaPago(isoDate){
   window._pagoDiaSel=isoDate;
   window._pagoPeriodoActual='dia';

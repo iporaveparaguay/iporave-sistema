@@ -319,6 +319,7 @@ async function _loadMapboxToken(){
     const r=await fetch(API+'/api/config');
     const d=await r.json();
     MAPBOX_TOKEN=d.mapboxToken||'';
+    if(!MAPBOX_TOKEN)console.warn('Token Mapbox vacío — el mapa no cargará');
   }catch(e){console.warn('No se pudo obtener token Mapbox:',e.message);}
 }
 
@@ -338,8 +339,14 @@ let map,dlvMarker,destMarker,routeAdded=false;
 
 function initMap(destLat,destLng){
   if(typeof mapboxgl==='undefined')return;
+  if(!MAPBOX_TOKEN){
+    const mapEl=document.getElementById('map');
+    if(mapEl)mapEl.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9aa0a6;text-align:center;padding:20px">📍 Mapa no disponible<br><small>Reintentá en unos segundos</small></div>';
+    return;
+  }
   mapboxgl.accessToken=MAPBOX_TOKEN;
-  const center=(destLat&&destLng)?[destLng,destLat]:[-57.63,-25.28];
+  const validDest=(typeof destLat==='number'&&typeof destLng==='number'&&destLat!==0&&destLng!==0);
+  const center=validDest?[destLng,destLat]:[-57.63,-25.28];
   map=new mapboxgl.Map({
     container:'map',
     style:'mapbox://styles/mapbox/dark-v11',

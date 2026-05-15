@@ -366,7 +366,8 @@ const CARRITO_KEY = 'iporave-carrito-v2';
 function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function safeUrl(u){return(typeof u==='string'&&/^https?:\/\//i.test(u))?u:'';}
 function fmt(n){return Number(n||0).toLocaleString('es-PY',{minimumFractionDigits:0,maximumFractionDigits:0});}
-function showToast(msg,ms=2800){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms);}
+let _toastTimer=null;
+function showToast(msg,ms=2800){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');if(_toastTimer)clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>{t.classList.remove('show');_toastTimer=null;},ms);}
 
 // Saneado HTML básico — solo permite b, i, br, p, ul, li, strong, em
 function sanitizeHtml(raw){
@@ -479,6 +480,7 @@ function cerrarCarrito(){document.getElementById('carritoOverlay').classList.rem
 
 function enviarCarritoPorWA(){
   if(!_carrito.length){alert('El carrito está vacío.');return;}
+  if(!WA_VENDEDOR||WA_VENDEDOR==='595981000000'){showToast('⚠️ Número del vendedor no configurado');return;}
   const total=_carrito.reduce((a,i)=>a+i.precio*i.cantidad,0);
   const lineas=_carrito.map(i=>'• '+i.nombre+' x'+i.cantidad+' = Gs. '+fmt(i.precio*i.cantidad)).join('\n');
   const msg='🛒 *Pedido desde Iporãve*\n\n*Productos:*\n'+lineas+'\n\n*Total: Gs. '+fmt(total)+'*\n\nPor favor confirmame disponibilidad y datos de entrega. ¡Gracias!';
@@ -521,7 +523,7 @@ function filtrar(){
   const orden=document.getElementById('selectOrden').value;
   let minV=parseInt(document.getElementById('inputMin').value)||0;
   let maxV=parseInt(document.getElementById('inputMax').value)||Infinity;
-  if(maxV<minV) maxV=Infinity;
+  if(maxV<minV)[minV,maxV]=[maxV,minV]; // swap si están invertidos
 
   let lista=[...todosLosProductos];
   if(categoriaActiva) lista=lista.filter(p=>p.categoria===categoriaActiva);
@@ -727,7 +729,9 @@ function enviarPedido(){
   if(!nombre){showToast('⚠️ Ingresá tu nombre');document.getElementById('clienteNombre').focus();return;}
   if(!tel){showToast('⚠️ Ingresá tu teléfono');document.getElementById('clienteTel').focus();return;}
   if(!dir){showToast('⚠️ Ingresá tu dirección');document.getElementById('clienteDireccion').focus();return;}
+  if(cant<=0){showToast('⚠️ La cantidad debe ser mayor a 0');document.getElementById('clienteCant').focus();return;}
   if(!productoActual) return;
+  if(!WA_VENDEDOR||WA_VENDEDOR==='595981000000'){showToast('⚠️ Número del vendedor no configurado');return;}
 
   const p=productoActual;
   const totalStr=p.precio?'*Total aprox.:* Gs. '+fmt(p.precio*cant):'';
