@@ -2,115 +2,401 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Seguí tu pedido — IPORÃVE CONNECT</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<title>Seguí tu pedido — Iporãve</title>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.5.1/mapbox-gl.css" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:system-ui,-apple-system,'DM Sans',sans-serif;background:#0d0f1a;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;}
-header{background:linear-gradient(135deg,#1e1b4b 0%,#1a1d40 100%);padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 16px rgba(0,0,0,.5);position:sticky;top:0;z-index:100;}
-.hdr-logo{background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(99,102,241,.4);}
-.hdr-title{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px;}
-.hdr-sub{font-size:11px;color:#a5b4fc;}
-.hdr-flag{margin-left:auto;font-size:22px;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0a0e1a;
+  --bg2:#131826;
+  --bg3:#1c2333;
+  --text:#e8eaed;
+  --text2:#9aa0a6;
+  --text3:#5f6470;
+  --accent:#fb923c;
+  --accent2:#f59e0b;
+  --blue:#3b82f6;
+  --green:#22c55e;
+  --red:#ef4444;
+  --purple:#a855f7;
+  --border:rgba(255,255,255,.08);
+  --border2:rgba(255,255,255,.14);
+}
+html,body{height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);
+  background-image:
+    radial-gradient(1200px 600px at 50% -100px,rgba(251,146,60,.12),transparent 60%),
+    radial-gradient(800px 400px at 100% 10%,rgba(59,130,246,.08),transparent 60%);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.shell{max-width:640px;width:100%;margin:0 auto;padding:0 16px 32px;display:flex;flex-direction:column;flex:1;}
 
-.card{background:#151827;border:1px solid #1e2235;border-radius:16px;padding:16px;margin:12px 14px 0;}
-.card-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#4b5563;font-weight:700;margin-bottom:12px;}
-.row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
-.row:last-child{margin-bottom:0;}
-.row-icon{font-size:15px;min-width:22px;text-align:center;margin-top:3px;}
-.row-label{font-size:10px;color:#4b5563;margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px;}
-.row-val{font-size:14px;color:#f1f5f9;font-weight:600;}
+/* Header */
+header{
+  padding:22px 16px 18px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  position:sticky;top:0;z-index:50;
+  background:linear-gradient(180deg,rgba(10,14,26,.95) 0%,rgba(10,14,26,.75) 70%,rgba(10,14,26,0) 100%);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.hdr-inner{max-width:640px;width:100%;margin:0 auto;display:flex;align-items:center;gap:14px;padding:0 16px;}
+.logo-img{width:44px;height:44px;border-radius:12px;object-fit:contain;background:#fff;padding:4px;box-shadow:0 4px 16px rgba(251,146,60,.25);}
+.logo-fallback{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg,#fb923c,#f59e0b);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:22px;color:#111;
+  box-shadow:0 4px 16px rgba(251,146,60,.35);
+}
+.hdr-text{display:flex;flex-direction:column;}
+.hdr-title{
+  font-size:22px;font-weight:800;letter-spacing:-.5px;
+  background:linear-gradient(135deg,#fb923c 0%,#fbbf24 100%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+}
+.hdr-sub{font-size:11px;color:var(--text2);font-weight:500;letter-spacing:.4px;text-transform:uppercase;}
 
-.estado-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;}
-.e-pendiente{background:rgba(220,38,38,.15);color:#fca5a5;border:1px solid rgba(220,38,38,.3);}
-.e-despachado{background:rgba(29,78,216,.15);color:#93c5fd;border:1px solid rgba(29,78,216,.3);}
-.e-ruta{background:rgba(234,88,12,.15);color:#fdba74;border:1px solid rgba(234,88,12,.3);}
-.e-entregado{background:rgba(21,128,61,.15);color:#86efac;border:1px solid rgba(21,128,61,.3);}
-.e-cancelado{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2);}
-.e-default{background:rgba(30,41,59,.5);color:#94a3b8;border:1px solid #1e293b;}
+/* Cards */
+.card{
+  background:linear-gradient(180deg,var(--bg2) 0%,#10141f 100%);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:20px;
+  margin-top:14px;
+  box-shadow:0 4px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03);
+  animation:slideUp .5s cubic-bezier(.2,.8,.2,1) both;
+}
+.card:nth-child(2){animation-delay:.05s;}
+.card:nth-child(3){animation-delay:.1s;}
+.card:nth-child(4){animation-delay:.15s;}
+.card:nth-child(5){animation-delay:.2s;}
 
-.dlv-card{background:#151827;border:1px solid #1e2235;border-radius:16px;padding:16px;margin:12px 14px 0;}
-.dlv-avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #6366f1;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#1e1b4b;}
-.dlv-name{font-size:16px;font-weight:800;color:#fff;margin-bottom:2px;}
-.dlv-info-line{font-size:12px;color:#64748b;margin-bottom:3px;}
-.stars{color:#fbbf24;font-size:15px;letter-spacing:1px;}
-.call-btn{margin-top:10px;background:#1d4ed8;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none;}
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(14px);}
+  to{opacity:1;transform:translateY(0);}
+}
 
-#map{height:280px;flex-shrink:0;margin-top:12px;}
+/* Hero status */
+.hero{text-align:center;padding:28px 20px 24px;position:relative;overflow:hidden;}
+.hero::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%,rgba(251,146,60,.12),transparent 70%);
+  pointer-events:none;
+}
+.hero-emoji{
+  font-size:84px;line-height:1;
+  display:inline-block;
+  filter:drop-shadow(0 8px 24px rgba(251,146,60,.35));
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+.hero-status{
+  font-size:32px;font-weight:800;letter-spacing:-.5px;
+  margin-top:14px;color:var(--text);
+}
+.hero-orderid{
+  font-size:13px;color:var(--text2);margin-top:6px;
+  font-variant-numeric:tabular-nums;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:16px;padding:8px 18px;border-radius:99px;
+  font-size:13px;font-weight:700;letter-spacing:.3px;
+  position:relative;
+}
+.hero-badge::before{
+  content:"";width:8px;height:8px;border-radius:50%;
+  background:currentColor;
+}
+.bdg-pendiente{background:rgba(168,85,247,.15);color:#c4b5fd;border:1px solid rgba(168,85,247,.3);}
+.bdg-despachado{background:rgba(59,130,246,.15);color:#93c5fd;border:1px solid rgba(59,130,246,.3);}
+.bdg-ruta{background:rgba(251,146,60,.18);color:#fdba74;border:1px solid rgba(251,146,60,.35);}
+.bdg-ruta::before{animation:dot-pulse 1.4s ease-in-out infinite;}
+@keyframes dot-pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,146,60,.6);}50%{box-shadow:0 0 0 8px rgba(251,146,60,0);}}
+.bdg-entregado{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.3);}
+.bdg-cancelado{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.25);}
+.bdg-default{background:rgba(148,163,184,.12);color:#cbd5e1;border:1px solid rgba(148,163,184,.2);}
 
-.rate-card{background:#151827;border:1px solid #1e2235;border-radius:16px;padding:16px;margin:12px 14px 16px;}
-.rate-card-title{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:14px;}
-.rate-section-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
-.star-row{display:flex;gap:4px;font-size:30px;cursor:pointer;margin-bottom:14px;user-select:none;}
-.star-row span{transition:transform .1s;display:inline-block;}
-.star-row span:hover{transform:scale(1.2);}
-.photos-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
-.photo-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
-.photo-slot{width:56px;height:56px;border-radius:10px;background:#1e2235;border:1.5px dashed #374151;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;color:#4b5563;}
-.submit-btn{width:100%;background:linear-gradient(90deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;}
-.submit-btn:disabled{opacity:.35;cursor:not-allowed;background:#1e2235;}
-.coming-soon{font-size:11px;color:#374151;text-align:center;margin-top:8px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;}
+/* Delivery card */
+.dlv{display:flex;align-items:center;gap:14px;}
+.dlv-avatar{
+  width:60px;height:60px;border-radius:50%;
+  background:linear-gradient(135deg,#fb923c,#f59e0b);
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;flex-shrink:0;
+  border:2px solid rgba(255,255,255,.1);
+  box-shadow:0 6px 20px rgba(251,146,60,.3);
+  object-fit:cover;
+  overflow:hidden;
+}
+.dlv-avatar img{width:100%;height:100%;object-fit:cover;}
+.dlv-info{flex:1;min-width:0;}
+.dlv-name{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.2px;}
+.dlv-meta{font-size:12px;color:var(--text2);margin-top:3px;}
+.dlv-eta{
+  display:inline-flex;align-items:center;gap:4px;
+  margin-top:6px;padding:3px 10px;border-radius:6px;
+  background:rgba(251,146,60,.12);color:#fdba74;
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+}
+.dlv-actions{display:flex;gap:8px;margin-top:14px;}
+.btn{
+  flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 14px;border-radius:12px;font-size:14px;font-weight:700;
+  text-decoration:none;border:none;cursor:pointer;letter-spacing:.2px;
+  transition:transform .15s,filter .15s;
+}
+.btn:active{transform:scale(.97);}
+.btn-call{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.3);}
+.btn-wa{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;box-shadow:0 4px 12px rgba(34,197,94,.3);}
 
-#loading{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:14px;color:#4b5563;min-height:60vh;}
-.spinner{width:34px;height:34px;border:3px solid #1e2235;border-top-color:#6366f1;border-radius:50%;animation:spin .8s linear infinite;}
+/* Map */
+.map-card{padding:0;overflow:hidden;}
+#map{
+  width:100%;height:55vh;min-height:340px;max-height:520px;
+  background:#0f1320;
+}
+.map-legend{
+  display:flex;justify-content:space-around;
+  padding:12px 16px;border-top:1px solid var(--border);
+  background:rgba(10,14,26,.5);
+}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.legend-dot{width:10px;height:10px;border-radius:50%;}
+
+/* Details */
+.detail-title{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text2);font-weight:700;margin-bottom:14px;}
+.detail-row{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);}
+.detail-row:last-child{border-bottom:none;padding-bottom:0;}
+.detail-row:first-of-type{padding-top:0;}
+.detail-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;flex-shrink:0;
+}
+.detail-body{flex:1;min-width:0;}
+.detail-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:2px;}
+.detail-value{font-size:15px;color:var(--text);font-weight:600;word-break:break-word;}
+.detail-value-lg{font-size:18px;font-weight:800;color:#fb923c;}
+
+/* Loading + error */
+#loading{
+  display:flex;align-items:center;justify-content:center;
+  flex:1;flex-direction:column;gap:18px;
+  min-height:60vh;color:var(--text2);
+}
+.spinner{
+  width:42px;height:42px;
+  border:3px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .9s linear infinite;
+}
 @keyframes spin{to{transform:rotate(360deg);}}
-#error{padding:40px 20px;text-align:center;color:#f87171;}
-.err-icon{font-size:48px;margin-bottom:12px;}
+.spinner-text{font-size:14px;font-weight:500;}
+
+#error{
+  display:none;text-align:center;padding:60px 24px;
+  flex-direction:column;align-items:center;gap:14px;
+}
+.err-icon{font-size:56px;}
+.err-title{font-size:18px;font-weight:800;color:var(--text);}
+.err-msg{font-size:14px;color:var(--text2);max-width:320px;}
+
+/* Footer */
+footer{
+  margin-top:28px;padding:24px 16px;text-align:center;
+  border-top:1px solid var(--border);
+}
+.foot-logo{font-size:16px;font-weight:800;letter-spacing:-.3px;
+  background:linear-gradient(135deg,#fb923c,#fbbf24);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.foot-text{font-size:11px;color:var(--text3);margin-top:4px;letter-spacing:.4px;text-transform:uppercase;}
+.foot-links{display:flex;justify-content:center;gap:18px;margin-top:14px;}
+.foot-links a{font-size:13px;color:var(--text2);text-decoration:none;font-weight:600;}
+.foot-links a:hover{color:var(--accent);}
+
+/* Custom Mapbox markers */
+.mk-dlv{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,#fb923c,#f59e0b);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  border:3px solid #fff;
+  box-shadow:0 4px 14px rgba(251,146,60,.5);
+  position:relative;
+}
+.mk-dlv::before{
+  content:"";position:absolute;inset:-6px;border-radius:50%;
+  border:2px solid rgba(251,146,60,.6);
+  animation:sonar 1.8s ease-out infinite;
+}
+@keyframes sonar{
+  0%{transform:scale(.7);opacity:1;}
+  100%{transform:scale(1.8);opacity:0;}
+}
+.mk-dest{
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  border:3px solid #fff;
+  box-shadow:0 4px 14px rgba(34,197,94,.5);
+}
+
+@media (max-width:480px){
+  .hero-emoji{font-size:72px;}
+  .hero-status{font-size:26px;}
+  #map{height:50vh;min-height:300px;}
+}
 </style>
 </head>
 <body>
+
 <header>
-  <div class="hdr-logo">I</div>
-  <div><div class="hdr-title">IPORÃVE CONNECT</div><div class="hdr-sub">Seguimiento en tiempo real</div></div>
-  <div class="hdr-flag">🇵🇾</div>
+  <div class="hdr-inner">
+    <img src="https://iporaveparaguay.com/logo.png" class="logo-img" id="logoImg"
+         onerror="this.outerHTML='<div class=\'logo-fallback\'>I</div>'">
+    <div class="hdr-text">
+      <div class="hdr-title">Iporãve</div>
+      <div class="hdr-sub">Logística & E-commerce</div>
+    </div>
+  </div>
 </header>
 
-<div id="loading"><div class="spinner"></div><span>Cargando tu pedido...</span></div>
-<div id="error" style="display:none"></div>
-<div id="content" style="display:none;flex-direction:column;flex:1;padding-bottom:20px;"></div>
+<div class="shell">
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="spinner-text">Cargando tu pedido...</div>
+  </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <div id="error">
+    <div class="err-icon">📭</div>
+    <div class="err-title" id="errTitle">Pedido no encontrado</div>
+    <div class="err-msg" id="errMsg">Verificá el link o contactá al vendedor.</div>
+  </div>
+
+  <div id="content" style="display:none;flex-direction:column;flex:1;"></div>
+
+  <footer>
+    <div class="foot-logo">Iporãve</div>
+    <div class="foot-text">Powered by Iporãve Paraguay 🇵🇾</div>
+    <div class="foot-links">
+      <a href="https://wa.me/595981234567" target="_blank">Soporte WhatsApp</a>
+      <a href="https://iporaveparaguay.com" target="_blank">Tienda</a>
+    </div>
+  </footer>
+</div>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.5.1/mapbox-gl.js"></script>
 <script>
-function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function safeUrl(u){return(typeof u==='string'&&/^https?:\/\//i.test(u))?u:'';}
+
 const API='https://iporave-api.iporaveparaguay.workers.dev';
+let MAPBOX_TOKEN='';
 const orderId=new URLSearchParams(location.search).get('id');
 
-const ESTADO_CFG={
-  'Pendiente':   {label:'📦 Pedido confirmado',  cls:'e-pendiente'},
-  'Despachado':  {label:'📦 Preparando tu pedido',cls:'e-despachado'},
-  'En ruta':     {label:'🛵 En camino a vos',     cls:'e-ruta'},
-  'Entregado':   {label:'✅ Entregado',            cls:'e-entregado'},
-  'Cancelado':   {label:'❌ Cancelado',            cls:'e-cancelado'},
-  'Devuelto':    {label:'↩️ Devuelto',             cls:'e-cancelado'},
+async function _loadMapboxToken(){
+  try{
+    const r=await fetch(API+'/api/config');
+    const d=await r.json();
+    MAPBOX_TOKEN=d.mapboxToken||'';
+  }catch(e){console.warn('No se pudo obtener token Mapbox:',e.message);}
+}
+
+const HERO_CFG={
+  'Pendiente':  {emoji:'📋',label:'Pedido confirmado',  bdg:'bdg-pendiente'},
+  'Despachado': {emoji:'📦',label:'Preparando tu pedido',bdg:'bdg-despachado'},
+  'En ruta':    {emoji:'🛵',label:'En camino a vos',    bdg:'bdg-ruta'},
+  'Entregado':  {emoji:'✅',label:'¡Entregado!',         bdg:'bdg-entregado'},
+  'Cancelado':  {emoji:'❌',label:'Cancelado',           bdg:'bdg-cancelado'},
+  'Devuelto':   {emoji:'↩️',label:'Devuelto',            bdg:'bdg-cancelado'},
 };
-
-function getEstado(e){return ESTADO_CFG[e]||{label:'📋 '+esc(e),cls:'e-default'};}
-function stars(n){const f=Math.round(n||0);return'★'.repeat(f)+'☆'.repeat(5-f);}
+function getHero(e){return HERO_CFG[e]||{emoji:'📦',label:e||'En proceso',bdg:'bdg-default'};}
 function precio(p){return p?'Gs. '+Number(p).toLocaleString('es-PY'):'';}
-function phone(t){if(!t)return'';const c=t.toString().replace(/\D/g,'');return c.startsWith('595')?c:'595'+c.replace(/^0/,'');}
+function phone(t){if(!t)return'';const c=String(t).replace(/\D/g,'');return c.startsWith('595')?c:'595'+c.replace(/^0/,'');}
 
-let map,dlvMarker,destMarker;
+let map,dlvMarker,destMarker,routeAdded=false;
 
-function initMap(lat,lng){
-  map=L.map('map',{zoomControl:true}).setView([lat||-25.28,lng||-57.63],14);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
-  if(lat&&lng){
-    const icon=L.divIcon({html:'<div style="background:#6366f1;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',iconSize:[20,20],iconAnchor:[10,10],className:''});
-    destMarker=L.marker([lat,lng],{icon}).addTo(map).bindPopup('📍 Tu dirección de entrega');
+function initMap(destLat,destLng){
+  if(typeof mapboxgl==='undefined')return;
+  mapboxgl.accessToken=MAPBOX_TOKEN;
+  const center=(destLat&&destLng)?[destLng,destLat]:[-57.63,-25.28];
+  map=new mapboxgl.Map({
+    container:'map',
+    style:'mapbox://styles/mapbox/dark-v11',
+    center,zoom:13,
+    attributionControl:false,
+  });
+  map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');
+
+  if(destLat&&destLng){
+    const el=document.createElement('div');
+    el.className='mk-dest';
+    el.textContent='🏠';
+    destMarker=new mapboxgl.Marker({element:el,anchor:'center'})
+      .setLngLat([destLng,destLat])
+      .setPopup(new mapboxgl.Popup({offset:24}).setText('Tu dirección'))
+      .addTo(map);
   }
 }
 
 function updateDlvMarker(lat,lng,nombre){
-  if(!map)return;
-  const icon=L.divIcon({html:'<div style="background:#22c55e;width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:14px">🛵</div>',iconSize:[26,26],iconAnchor:[13,13],className:''});
-  if(dlvMarker)dlvMarker.setLatLng([lat,lng]);
-  else{
-    dlvMarker=L.marker([lat,lng],{icon}).addTo(map).bindPopup('🛵 '+(nombre||'Repartidor'));
-    const g=destMarker?L.featureGroup([dlvMarker,destMarker]):L.featureGroup([dlvMarker]);
-    map.fitBounds(g.getBounds().pad(0.35));
+  if(!map||!lat||!lng)return;
+  if(dlvMarker){
+    dlvMarker.setLngLat([lng,lat]);
+  }else{
+    const el=document.createElement('div');
+    el.className='mk-dlv';
+    el.textContent='🛵';
+    dlvMarker=new mapboxgl.Marker({element:el,anchor:'center'})
+      .setLngLat([lng,lat])
+      .setPopup(new mapboxgl.Popup({offset:28}).setText(nombre||'Repartidor'))
+      .addTo(map);
+    // Fit to bounds
+    if(destMarker){
+      const b=new mapboxgl.LngLatBounds();
+      b.extend([lng,lat]);
+      b.extend(destMarker.getLngLat());
+      map.fitBounds(b,{padding:80,duration:800,maxZoom:15});
+    }
+  }
+  // Línea entre delivery y destino
+  if(destMarker&&map.isStyleLoaded()){
+    const coords=[[lng,lat],[destMarker.getLngLat().lng,destMarker.getLngLat().lat]];
+    if(map.getSource('route')){
+      map.getSource('route').setData({type:'Feature',geometry:{type:'LineString',coordinates:coords}});
+    }else{
+      map.addSource('route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:coords}}});
+      map.addLayer({
+        id:'route-line',type:'line',source:'route',
+        layout:{'line-cap':'round','line-join':'round'},
+        paint:{
+          'line-color':'#fb923c',
+          'line-width':4,
+          'line-opacity':.85,
+          'line-dasharray':[2,1.5],
+        }
+      });
+    }
   }
 }
 
@@ -119,85 +405,120 @@ function render(d){
   const content=document.getElementById('content');
   content.style.display='flex';
 
-  const est=getEstado(d.estado);
-  const pr=precio(d.precio);
+  const hero=getHero(d.estado);
   const tel=phone(d.delivery?.telefono);
+  const pr=precio(d.precio);
+  const enRuta=d.estado==='En ruta';
 
-  // Card pedido
-  let infoHtml=`<div class="card">
-    <div class="card-title">Tu pedido</div>
-    <div class="row"><span class="row-icon">📦</span><div>
-      <div class="row-label">Producto</div>
-      <div class="row-val">${esc(d.producto||'Pedido #'+d.id)}</div>
-    </div></div>`;
-  if(pr)infoHtml+=`<div class="row"><span class="row-icon">💵</span><div>
-      <div class="row-label">Total</div><div class="row-val">${esc(pr)}</div>
-    </div></div>`;
-  if(d.direccion)infoHtml+=`<div class="row"><span class="row-icon">📍</span><div>
-      <div class="row-label">Dirección de entrega</div><div class="row-val">${esc(d.direccion)}</div>
-    </div></div>`;
-  infoHtml+=`<div class="row"><span class="row-icon">🔄</span><div>
-      <div class="row-label">Estado</div>
-      <div class="row-val"><span class="estado-pill ${est.cls}">${est.label}</span></div>
-    </div></div></div>`;
+  // HERO
+  let html=`
+    <div class="card hero">
+      <div class="hero-emoji">${hero.emoji}</div>
+      <div class="hero-status">${esc(hero.label)}</div>
+      <div class="hero-orderid">Pedido #${esc(d.id||'')}</div>
+      <div class="hero-badge ${hero.bdg}">${esc(d.estado||'En proceso')}</div>
+    </div>`;
 
-  // Card delivery
-  let dlvHtml='';
+  // DELIVERY CARD (solo si hay delivery o está en ruta/despachado)
   if(d.delivery){
     const dlv=d.delivery;
-    const avatarHtml=dlv.foto
-      ?`<img src="${safeUrl(dlv.foto)}" class="dlv-avatar" width="54" height="54">`
+    const avatarHtml=dlv.foto&&safeUrl(dlv.foto)
+      ?`<div class="dlv-avatar"><img src="${safeUrl(dlv.foto)}" alt=""></div>`
       :`<div class="dlv-avatar">🛵</div>`;
-    const vehiculo=[dlv.vehiculo,dlv.patente].filter(Boolean).map(v=>esc(v)).join(' • ');
-    const at=dlv.at?'📡 GPS '+new Date(dlv.at).toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'}):'';
-    const rating=dlv.calificacion?`<div class="stars" title="${esc(Number(dlv.calificacion).toFixed(1))} estrellas">${stars(dlv.calificacion)} <span style="font-size:12px;color:#64748b;font-family:sans-serif">${esc(Number(dlv.calificacion).toFixed(1))}</span></div>`:'';
-    dlvHtml=`<div class="dlv-card">
-      <div class="card-title">Tu repartidor</div>
-      <div style="display:flex;gap:14px;align-items:center">
-        ${avatarHtml}
-        <div style="flex:1;min-width:0">
-          <div class="dlv-name">${esc(dlv.nombre||'Repartidor')}</div>
-          ${vehiculo?`<div class="dlv-info-line">🏍️ ${vehiculo}</div>`:''}
-          ${at?`<div class="dlv-info-line" id="dlvAt">${at}</div>`:'<div class="dlv-info-line" id="dlvAt">En camino...</div>'}
-          ${rating}
+    const vehiculo=[dlv.vehiculo,dlv.patente].filter(Boolean).map(esc).join(' • ');
+    const eta=dlv.eta?`<div class="dlv-eta">⏱ ${esc(dlv.eta)}</div>`:'';
+    const waNum=tel?tel:'';
+    html+=`
+      <div class="card">
+        <div class="detail-title">Tu repartidor</div>
+        <div class="dlv">
+          ${avatarHtml}
+          <div class="dlv-info">
+            <div class="dlv-name">${esc(dlv.nombre||'Repartidor asignado')}</div>
+            ${vehiculo?`<div class="dlv-meta">🏍️ ${vehiculo}</div>`:''}
+            ${eta}
+          </div>
         </div>
-      </div>
-      ${tel?`<a href="tel:+${tel}" class="call-btn">📞 Llamar al repartidor</a>`:''}
-    </div>`;
-  } else {
-    dlvHtml=`<div class="dlv-card" style="text-align:center;color:#374151;font-size:13px;padding:20px">🛵 Esperando asignación de repartidor...</div>`;
+        ${tel?`
+        <div class="dlv-actions">
+          <a href="tel:+${tel}" class="btn btn-call">📞 Llamar</a>
+          <a href="https://wa.me/${waNum}" target="_blank" class="btn btn-wa">💬 WhatsApp</a>
+        </div>`:''}
+      </div>`;
+  } else if(d.estado==='Despachado'||enRuta){
+    html+=`
+      <div class="card" style="text-align:center;color:var(--text2);padding:24px;">
+        <div style="font-size:32px;margin-bottom:8px;">🛵</div>
+        <div style="font-size:14px;font-weight:600;">Asignando repartidor...</div>
+      </div>`;
   }
 
-  // Mapa
-  const mapHtml=`<div id="map"></div>`;
+  // MAP
+  html+=`
+    <div class="card map-card">
+      <div id="map"></div>
+      <div class="map-legend">
+        <div class="legend-item"><span class="legend-dot" style="background:#fb923c"></span>Repartidor</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Tu dirección</div>
+      </div>
+    </div>`;
 
-  // Rating
-  const entregado=d.estado==='Entregado';
-  const rateHtml=`<div class="rate-card">
-    <div class="rate-card-title">⭐ Calificá tu experiencia</div>
-    <div class="rate-section-label">Repartidor</div>
-    <div class="star-row" id="starsRep">
-      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
-    </div>
-    <div class="rate-section-label">Empresa (Iporãve Connect)</div>
-    <div class="star-row" id="starsEmp">
-      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
-    </div>
-    <div class="photos-label">Fotos/video del producto recibido (hasta 5)</div>
-    <div class="photo-grid">
-      <div class="photo-slot">📷</div><div class="photo-slot">📷</div>
-      <div class="photo-slot">📷</div><div class="photo-slot">📷</div>
-      <div class="photo-slot">📷</div>
-    </div>
-    <button class="submit-btn" disabled>Enviar calificación</button>
-    <div class="coming-soon">Función disponible próximamente</div>
-  </div>`;
+  // DETALLES PEDIDO
+  html+=`
+    <div class="card">
+      <div class="detail-title">Detalles del pedido</div>
+      <div class="detail-row">
+        <div class="detail-icon">📦</div>
+        <div class="detail-body">
+          <div class="detail-label">Producto</div>
+          <div class="detail-value">${esc(d.producto||'Pedido #'+(d.id||''))}</div>
+        </div>
+      </div>`;
+  if(d.direccion){
+    html+=`
+      <div class="detail-row">
+        <div class="detail-icon">📍</div>
+        <div class="detail-body">
+          <div class="detail-label">Dirección de entrega</div>
+          <div class="detail-value">${esc(d.direccion)}</div>
+        </div>
+      </div>`;
+  }
+  if(pr){
+    html+=`
+      <div class="detail-row">
+        <div class="detail-icon">💰</div>
+        <div class="detail-body">
+          <div class="detail-label">Total</div>
+          <div class="detail-value detail-value-lg">${esc(pr)}</div>
+        </div>
+      </div>`;
+  }
+  if(d.metodoPago||d.metodo_pago){
+    html+=`
+      <div class="detail-row">
+        <div class="detail-icon">💳</div>
+        <div class="detail-body">
+          <div class="detail-label">Método de pago</div>
+          <div class="detail-value">${esc(d.metodoPago||d.metodo_pago)}</div>
+        </div>
+      </div>`;
+  }
+  html+=`</div>`;
 
-  content.innerHTML=infoHtml+dlvHtml+mapHtml+rateHtml;
+  content.innerHTML=html;
+
+  // Init mapa
   initMap(d.destLat,d.destLng);
-  if(d.delivery?.lat&&d.delivery?.lng)updateDlvMarker(d.delivery.lat,d.delivery.lng,d.delivery.nombre);
+  if(d.delivery?.lat&&d.delivery?.lng){
+    if(map&&!map.isStyleLoaded()){
+      map.once('load',()=>updateDlvMarker(d.delivery.lat,d.delivery.lng,d.delivery.nombre));
+    }else{
+      setTimeout(()=>updateDlvMarker(d.delivery.lat,d.delivery.lng,d.delivery.nombre),200);
+    }
+  }
 
-  if(d.estado==='En ruta')setTimeout(()=>refresh(orderId),30000);
+  if(enRuta)setTimeout(()=>refresh(orderId),10000);
 }
 
 async function refresh(id){
@@ -205,27 +526,31 @@ async function refresh(id){
     const res=await fetch(`${API}/api/track?id=${id}`);
     const d=await res.json();
     if(d.delivery?.lat&&d.delivery?.lng)updateDlvMarker(d.delivery.lat,d.delivery.lng,d.delivery.nombre);
-    const atEl=document.getElementById('dlvAt');
-    if(atEl&&d.delivery?.at)atEl.textContent='📡 GPS '+new Date(d.delivery.at).toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'});
-    if(d.estado==='En ruta')setTimeout(()=>refresh(id),30000);
-  }catch{}
+    if(d.estado==='En ruta')setTimeout(()=>refresh(id),10000);
+  }catch(e){
+    setTimeout(()=>refresh(id),15000);
+  }
 }
 
 async function load(){
-  if(!orderId){showErr('No se especificó un pedido.');return;}
+  if(!orderId){return showErr('Link inválido','No se especificó un pedido en el link.');}
+  await _loadMapboxToken();
   try{
     const res=await fetch(`${API}/api/track?id=${orderId}`);
     const d=await res.json();
     if(!res.ok||d.error)throw new Error(d.error||'Pedido no encontrado');
     render(d);
-  }catch(e){showErr(e.message);}
+  }catch(e){
+    showErr('Pedido no encontrado',e.message||'Verificá el link o contactá al vendedor.');
+  }
 }
 
-function showErr(msg){
+function showErr(title,msg){
   document.getElementById('loading').style.display='none';
   const el=document.getElementById('error');
-  el.style.display='block';
-  el.innerHTML=`<div class="err-icon">❌</div><div style="font-size:16px;font-weight:700;margin-bottom:8px">${esc(msg)}</div><div style="font-size:13px;color:#64748b">Si el problema persiste, contactá al vendedor.</div>`;
+  el.style.display='flex';
+  document.getElementById('errTitle').textContent=title;
+  document.getElementById('errMsg').textContent=msg;
 }
 
 load();

@@ -215,6 +215,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mapboxgl-popup-close-button{color:#94a3b8!important;font-size:16px!important;top:6px!important;right:8px!important;}
 .mapboxgl-popup-tip{border-top-color:#1e293b!important;border-bottom-color:#1e293b!important;}
 .mapboxgl-ctrl-attrib{font-size:9px!important;}
+/* MAPA BOTONES PREMIUM */
+.mapBtn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);color:var(--text);border:1px solid var(--border);font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.05);transition:all .15s ease;user-select:none}
+.mapBtn:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08)}
+.mapBtn:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(0,0,0,.2),inset 0 2px 4px rgba(0,0,0,.2)}
+.mapBtn.active{background:linear-gradient(180deg,var(--accent) 0%,#d97706 100%);color:#fff;border-color:var(--accent);box-shadow:0 4px 12px rgba(245,158,11,.4),inset 0 1px 0 rgba(255,255,255,.2)}
+.mapBtn .dot{width:8px;height:8px;border-radius:50%}
+.mapBar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;overflow-x:auto}
+.mapBar .sep{width:1px;background:var(--border);margin:0 4px}
+@media(max-width:640px){.mapBtn{padding:6px 10px;font-size:11px}}
 /* GPS */
 .gpsw{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;margin-bottom:12px;}
 .gpss{display:flex;align-items:center;gap:8px;font-size:13px;}
@@ -745,7 +754,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 /* ══════════════════════════════════════════════════
    CONSTANTS
 ══════════════════════════════════════════════════ */
-const ESTADOS = ['Pendiente','Despachado','En ruta','Entregado','Cancelado',
+const ESTADOS = ['Pendiente','Despachado','En Ruta','Entregado','Cancelado',
   'No contesta 1°','No contesta 2°','No contesta 3°','Reprogramado','Devuelto'];
 const ESTADOS_REQ_OBS = new Set(['Cancelado','No contesta 1°','No contesta 2°','No contesta 3°','Devuelto']);
 const METODOS = ['Efectivo','QR','POS','Transferencia'];
@@ -1055,7 +1064,7 @@ function ejecutarAccionNotif(actionStr){
 }
 
 function bE(e){
-  const m={Pendiente:'bp',Despachado:'bdisp','En ruta':'br',Entregado:'be',Cancelado:'bc',
+  const m={Pendiente:'bp',Despachado:'bdisp','En Ruta':'br',Entregado:'be',Cancelado:'bc',
     'No contesta 1°':'bn1','No contesta 2°':'bn2','No contesta 3°':'bn3',Reprogramado:'brp',Devuelto:'bret'};
   return '<span class="badge '+(m[e]||'bp')+'">'+e+'</span>';
 }
@@ -1303,8 +1312,8 @@ const DL = {
       const{error}=await _supa.from('pedidos').upsert(row,{onConflict:'id'});
       if(error){console.warn('Supa saveOrder:',error.message);pushNotif('Error al guardar pedido: '+(error.message||''),'e');}
     }
-    // Notificar al delivery si el estado cambió a Despachado o En ruta
-    if(_prev?.estado!==o.estado&&o.deliveryId&&['Despachado','En ruta'].includes(o.estado)&&_sessionToken){
+    // Notificar al delivery si el estado cambió a Despachado o En Ruta
+    if(_prev?.estado!==o.estado&&o.deliveryId&&['Despachado','En Ruta'].includes(o.estado)&&_sessionToken){
       // Push browser
       fetch(WORKER_URL+'/api/push-send',{
         method:'POST',
@@ -1319,31 +1328,34 @@ const DL = {
       }).catch(e=>console.warn('[WA NOTIFY DELIVERY]',e.message));
     }
     // Notificar al CLIENTE por WhatsApp cuando cambia el estado
-    if(_prev?.estado!==o.estado&&['En ruta','Entregado','Despachado','Cancelado'].includes(o.estado)&&_sessionToken){
+    if(_prev?.estado!==o.estado&&['En Ruta','Entregado','Despachado','Cancelado'].includes(o.estado)&&_sessionToken){
       fetch(WORKER_URL+'/api/orders/status',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
         body:JSON.stringify({id:o.id,estado:o.estado})
       }).catch(e=>console.warn('[WA NOTIFY CLIENTE]',e.message));
     }
-    // Push al vendedor/creador cuando el estado del pedido cambia
+    // Push a todos los relacionados cuando cambia estado (vendedor + creador + dropshipper)
     if(_prev?.estado!==o.estado&&_sessionToken){
-      const _notifTarget=o.vendedorId||o.created_by;
-      const _notifMe=CU?.id;
-      if(_notifTarget&&String(_notifTarget)!==String(_notifMe)){
-        const _estadoEmoji={Despachado:'📦',En_ruta:'🛵','En ruta':'🛵',Entregado:'✅',Cancelado:'❌',Devuelto:'↩️',Pendiente:'🕐'};
-        const _emoji=_estadoEmoji[o.estado]||'📋';
+      const _meId=String(CU?.id||'');
+      const _targets=new Set();
+      if(o.vendedorId&&String(o.vendedorId)!==_meId)_targets.add(o.vendedorId);
+      if(o.created_by&&String(o.created_by)!==_meId)_targets.add(o.created_by);
+      if(o.dropId&&String(o.dropId)!==_meId)_targets.add(o.dropId);
+      const _estadoEmoji={Despachado:'📦','En ruta':'🛵','En Ruta':'🛵',Entregado:'✅',Cancelado:'❌',Devuelto:'↩️',Pendiente:'🕐'};
+      const _emoji=_estadoEmoji[o.estado]||'📋';
+      _targets.forEach(uid=>{
         fetch(WORKER_URL+'/api/push-send',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
           body:JSON.stringify({
-            user_id:_notifTarget,
+            user_id:uid,
             title:_emoji+' Pedido '+o.estado,
             body:'Pedido #'+o.id+(o.cliente?' — '+o.cliente:''),
             url:'/orders'
           })
-        }).catch(e=>console.warn('[PUSH VENDEDOR]',e.message));
-      }
+        }).catch(e=>console.warn('[PUSH RELACIONADO]',e.message));
+      });
     }
     updateNavBadges();
   },
@@ -1665,7 +1677,7 @@ function initRealtime(){
         const r=payload.new;
         const rol=CU?.rol;
         const esEntregado=r.estado==='Entregado';
-        const esEnRuta=['En ruta','En Ruta','Despachado'].includes(r.estado);
+        const esEnRuta=['En Ruta','En Ruta','Despachado'].includes(r.estado);
         // Filtrar: cada rol solo ve los pedidos que le corresponden
         const esAdm=isAdminLike(rol);
         const esVend=rol==='vendedor'&&String(r.vendedor_id)===String(CU?.id);
@@ -1735,7 +1747,8 @@ function _rtRefreshOrders(){
       try{
         _ordersCache=await DL.getOrders();
         const cur=document.querySelector('.ni.active');
-        if(cur){const pid=cur.id.replace('ni_','');if(['orders','entregas','mispedidos','dashboard','suministros'].includes(pid)&&PAGES[pid])PAGES[pid]();}
+        if(cur){const pid=cur.id.replace('ni_','');if(['orders','entregas','mispedidos','dashboard','suministros','mapa','delivery'].includes(pid)&&PAGES[pid])PAGES[pid]();}
+        if(typeof updateNavBadges==='function')updateNavBadges();
         resolve();
       }catch(e){resolve();}
     },1500);
@@ -2191,7 +2204,7 @@ const AI_TOOLS=[
   {name:'consultar_pedidos',description:'Consulta pedidos del sistema con filtros opcionales.',
     input_schema:{type:'object',properties:{
       pedido_id:{type:'integer',description:'ID específico del pedido'},
-      estado:{type:'string',description:'Estado: Pendiente, Despachado, En ruta, Entregado, Cancelado, Devuelto, Reprogramado, No contesta 1°, No contesta 2°, No contesta 3°'},
+      estado:{type:'string',description:'Estado: Pendiente, Despachado, En Ruta, Entregado, Cancelado, Devuelto, Reprogramado, No contesta 1°, No contesta 2°, No contesta 3°'},
       cliente:{type:'string',description:'Nombre del cliente (búsqueda parcial)'},
       limite:{type:'integer',description:'Máximo de resultados (default 10)'},
     }}},
@@ -2570,7 +2583,7 @@ async function sendAI(){
       '=== TODOS LOS PEDIDOS ===\n'+
       'Total: '+visOrders.length+', entregados: '+ent.length+
       ', pendientes: '+visOrders.filter(o=>o.estado==='Pendiente').length+
-      ', en ruta: '+visOrders.filter(o=>o.estado==='En ruta').length+
+      ', en ruta: '+visOrders.filter(o=>o.estado==='En Ruta').length+
       ', cancelados: '+visOrders.filter(o=>o.estado==='Cancelado').length+'.\n'+
       'Ingresos totales entregados: Gs.'+ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0).toLocaleString('es-PY')+
       ' | Ganancia neta total: Gs.'+ent.reduce((a,b)=>a+ganVend(b),0).toLocaleString('es-PY')+'.\n'+
@@ -3404,7 +3417,7 @@ function nextDocNum(){
     if(estado==='Entregado')return'✅';
     if(estado==='Cancelado')return'❌';
     if(estado==='Despachado')return'📦';
-    if(estado==='En ruta'||estado==='En Ruta')return'🛵';
+    if(estado==='En Ruta'||estado==='En Ruta')return'🛵';
     if(estado==='Pendiente')return'⏳';
     if(estado==='Devuelto')return'↩️';
     return'📋';
@@ -3920,7 +3933,7 @@ function _appendSuperadminDashboardExtra(){
   const stateDefs=[
     ['Pendiente','⏳','var(--accent)'],
     ['Despachado','📦','var(--blue)'],
-    ['En ruta','🚴','var(--cyan)'],
+    ['En Ruta','🚴','var(--cyan)'],
     ['Entregado','✅','var(--green)'],
     ['Cancelado','❌','var(--red)'],
     ['Devuelto','↩️','var(--red)']
@@ -4101,7 +4114,7 @@ PAGES.dashboard=async function(){
       '<div class="sc bl"><div class="slabel">Hoy</div><div class="sval">'+hoyV+'</div></div>'+
       '<div class="sc ac"><div class="slabel">Total pedidos</div><div class="sval">'+mine.length+'</div></div>'+
       '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+(mine.length?Math.round(ent.length/mine.length*100):0)+'% éxito</div></div>'+
-      '<div class="sc bl"><div class="slabel">En tránsito</div><div class="sval">'+mine.filter(o=>['Despachado','En ruta'].includes(o.estado)).length+'</div></div>'+
+      '<div class="sc bl"><div class="slabel">En tránsito</div><div class="sval">'+mine.filter(o=>['Despachado','En Ruta'].includes(o.estado)).length+'</div></div>'+
       '<div class="sc ac"><div class="slabel">Pendientes</div><div class="sval">'+mine.filter(o=>o.estado==='Pendiente').length+'</div></div>'+
       '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
       '<div class="sc gr"><div class="slabel">Ganancia neta</div><div class="sval" style="font-size:15px">'+fmt(ing-cos-tar)+'</div></div>'+
@@ -4235,12 +4248,12 @@ PAGES.dashboard=async function(){
         '</div>';
     } else {
       const ent=mine.filter(o=>o.estado==='Entregado');
-      const enCamino=mine.filter(o=>['En ruta','Despachado'].includes(o.estado));
+      const enCamino=mine.filter(o=>['En Ruta','Despachado'].includes(o.estado));
       const gastado=ent.reduce((a,b)=>a+((parseFloat(b.precio)||0)*(parseInt(b.qty)||1)),0);
       // Encontrar el último pedido (por id descendente — id autoincremental)
       const ultimo=[...mine].sort((a,b)=>(b.id||0)-(a.id||0))[0];
-      const _EC_CL={'Pendiente':'#f59e0b','Despachado':'#3b82f6','En ruta':'#f97316','Entregado':'#22c55e','Cancelado':'#ef4444','Devuelto':'#8b5cf6','Reprogramado':'#64748b'};
-      const _EI_CL={'Pendiente':'⏳','Despachado':'📦','En ruta':'🛵','Entregado':'✅','Cancelado':'❌','Devuelto':'↩️','Reprogramado':'🔁'};
+      const _EC_CL={'Pendiente':'#f59e0b','Despachado':'#3b82f6','En Ruta':'#f97316','Entregado':'#22c55e','Cancelado':'#ef4444','Devuelto':'#8b5cf6','Reprogramado':'#64748b'};
+      const _EI_CL={'Pendiente':'⏳','Despachado':'📦','En Ruta':'🛵','Entregado':'✅','Cancelado':'❌','Devuelto':'↩️','Reprogramado':'🔁'};
       const colorEst=_EC_CL[ultimo.estado]||'#64748b';
       const iconEst=_EI_CL[ultimo.estado]||'•';
       html+='<div class="sgrid">'+
@@ -4265,7 +4278,7 @@ PAGES.dashboard=async function(){
         '</div>'+
         '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
         '<button class="btn btn-secondary btn-sm" onclick="nav(\'mispedidos\')">📋 Ver detalles</button>'+
-        (ultimo.estado==='En ruta'?'<button class="btn btn-primary" style="flex:1;min-width:160px" onclick="window.open(\'?track=\'+'+ultimo.id+',\'_blank\')">🛵 Rastrear envío</button>':'')+
+        (ultimo.estado==='En Ruta'?'<button class="btn btn-primary" style="flex:1;min-width:160px" onclick="window.open(\'?track=\'+'+ultimo.id+',\'_blank\')">🛵 Rastrear envío</button>':'')+
         (ultimo.estado==='Despachado'?'<button class="btn btn-secondary btn-sm" onclick="window.open(\'?track=\'+'+ultimo.id+',\'_blank\')">📦 Ver seguimiento</button>':'')+
         (ultimo.estado==='Entregado'&&ultimo.deliveryId?'<button class="btn btn-primary btn-sm" onclick="_clienteCalificarUltimo('+ultimo.id+','+ultimo.deliveryId+')">⭐ Calificar</button>':'')+
         '</div>'+
@@ -4368,7 +4381,7 @@ function _renderCharts(){
   }
 
   // ─── Gráfico 2: Dona — por estado ───
-  const ESTADOS_G=['Pendiente','Despachado','En ruta','Entregado','Cancelado','Devuelto','Reprogramado'];
+  const ESTADOS_G=['Pendiente','Despachado','En Ruta','Entregado','Cancelado','Devuelto','Reprogramado'];
   const COLORES_G=['#fde047','#38bdf8','#f97316','#22d3ee','#fb7185','#c084fc','#94a3b8'];
   const cuentas=ESTADOS_G.map(e=>mine.filter(o=>o.estado===e).length);
   const totalPed=cuentas.reduce((a,b)=>a+b,0);
@@ -4443,27 +4456,27 @@ function _renderCharts(){
 
 /* ─── ORDERS ─── */
 /* ─── VISTA APP DELIVERY ─── */
-const _DLV_EC={'Pendiente':'#f59e0b','Despachado':'#3b82f6','En ruta':'#16a34a','Entregado':'#22c55e','Cancelado':'#ef4444','No contesta 1°':'#f97316','No contesta 2°':'#ef4444','No contesta 3°':'#dc2626','Reprogramado':'#8b5cf6','Devuelto':'#6b7280'};
+const _DLV_EC={'Pendiente':'#f59e0b','Despachado':'#3b82f6','En Ruta':'#16a34a','Entregado':'#22c55e','Cancelado':'#ef4444','No contesta 1°':'#f97316','No contesta 2°':'#ef4444','No contesta 3°':'#dc2626','Reprogramado':'#8b5cf6','Devuelto':'#6b7280'};
 let _orderStatePrevMap=null;
 let _orderStateChangedIds=new Set();
 function _orderStateBadgeClass(estado){
   if(estado==='Entregado')return 'be';
   if(estado==='Despachado')return 'bdisp';
-  if(estado==='En ruta'||estado==='En Ruta')return 'br';
+  if(estado==='En Ruta'||estado==='En Ruta')return 'br';
   if(['Cancelado','Devuelto'].includes(estado)||String(estado||'').startsWith('No contesta'))return 'bc';
   return 'bp';
 }
 function _orderStateColor(estado){
   if(estado==='Entregado')return 'var(--green)';
   if(estado==='Despachado')return 'var(--blue)';
-  if(estado==='En ruta'||estado==='En Ruta')return 'var(--cyan)';
+  if(estado==='En Ruta'||estado==='En Ruta')return 'var(--cyan)';
   if(['Cancelado','Devuelto'].includes(estado)||String(estado||'').startsWith('No contesta'))return 'var(--red)';
   return 'var(--accent)';
 }
 function _orderStateBg(estado){
   if(estado==='Entregado')return 'rgba(34,197,94,.10)';
   if(estado==='Despachado')return 'rgba(59,130,246,.10)';
-  if(estado==='En ruta'||estado==='En Ruta')return 'rgba(6,182,212,.10)';
+  if(estado==='En Ruta'||estado==='En Ruta')return 'rgba(6,182,212,.10)';
   if(['Cancelado','Devuelto'].includes(estado)||String(estado||'').startsWith('No contesta'))return 'rgba(239,68,68,.10)';
   return 'rgba(245,158,11,.10)';
 }
@@ -4504,7 +4517,7 @@ function _orderStateBadgeHtml(estado){
 function _notifStateFromText(txt){
   const t=(txt||'').toLowerCase();
   if(t.includes('despachado'))return 'Despachado';
-  if(t.includes('en ruta'))return 'En ruta';
+  if(t.includes('en ruta'))return 'En Ruta';
   if(t.includes('entregado'))return 'Entregado';
   if(t.includes('cancelado'))return 'Cancelado';
   if(t.includes('devuelto'))return 'Devuelto';
@@ -4603,7 +4616,7 @@ function _deliveryEstadoEmoji(estado){
   if(estado==='Entregado')return '✅';
   if(estado==='Cancelado')return '❌';
   if(estado==='Despachado')return '📦';
-  if(estado==='En ruta'||estado==='En Ruta')return '🛵';
+  if(estado==='En Ruta'||estado==='En Ruta')return '🛵';
   if(estado==='Pendiente')return '⏳';
   return '📋';
 }
@@ -4646,7 +4659,7 @@ function _renderDeliveryOperativo(){
   const did=_deliveryUserId();
   $('tbTitle').textContent='Mis Entregas';
   $('tbActions').innerHTML='<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">Actualizar</button>';
-  const mine=(_ordersCache||[]).filter(o=>String(o.deliveryId)===String(did));
+  const mine=(_ordersCache||[]).filter(o=>String(o.deliveryId)===String(did) && ['Despachado','En ruta','En Ruta','Entregado'].includes(o.estado));
   const asignados=mine.filter(o=>!['Entregado','Cancelado'].includes(o.estado));
   const entregadosHoy=mine.filter(o=>o.fecha===today()&&o.estado==='Entregado');
   const recientes=mine.filter(o=>o.estado==='Entregado').sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')||(b.id||0)-(a.id||0)).slice(0,5);
@@ -5071,9 +5084,9 @@ function viewOrder(id){
   const zona=_getZonaO(o);
   const gan=ganVend(o);
   const dlv=getUser(o.deliveryId);
-  const isMoving=['En ruta','Despachado'].includes(o.estado)&&o.deliveryId;
-  const stepsAll=['Pendiente','Despachado','En ruta','Entregado'];
-  const stepIcons={Pendiente:'⏳',Despachado:'📦','En ruta':'🚴',Entregado:'✅'};
+  const isMoving=['En Ruta','Despachado'].includes(o.estado)&&o.deliveryId;
+  const stepsAll=['Pendiente','Despachado','En Ruta','Entregado'];
+  const stepIcons={Pendiente:'⏳',Despachado:'📦','En Ruta':'🚴',Entregado:'✅'};
   const curIdx=stepsAll.indexOf(o.estado);
   const progressBar='<div style="display:flex;align-items:center;gap:0;margin:10px 0">'+
     stepsAll.map((s,i)=>'<div style="display:flex;align-items:center;gap:0;flex:1">'+
@@ -5316,7 +5329,7 @@ function dlvModal(id){
     '<div class="gpsw"><div class="gpss"><div class="gpsd" id="gpsDot"></div><span style="margin-left:5px" id="gpsText">Obteniendo GPS...</span></div><div class="gpsc" id="gpsCrd">—</div></div>'+
     '<input type="hidden" id="gpsLat"><input type="hidden" id="gpsLng">'+
     '<div class="fg"><label>Nuevo estado</label><select id="dEst" onchange="toggleDlvF()">'+
-    ['Despachado','En ruta','Entregado','No contesta 1°','No contesta 2°','No contesta 3°','Reprogramado','Devuelto','Cancelado'].map(e=>'<option>'+e+'</option>').join('')+'</select></div>'+
+    ['Despachado','En Ruta','Entregado','No contesta 1°','No contesta 2°','No contesta 3°','Reprogramado','Devuelto','Cancelado'].map(e=>'<option>'+e+'</option>').join('')+'</select></div>'+
     '<div id="fieldEnt" style="display:none">'+
       '<div class="stitle">Método de cobro</div>'+
       '<div class="mgrid">'+METODOS.map(m=>'<div class="mcard" onclick="selM(\''+m+'\',this)"><div class="mci">'+MICON[m]+'</div><div class="mcn">'+m+'</div></div>').join('')+'</div>'+
@@ -5391,17 +5404,21 @@ async function confirmDlv(id){
   o.estado=estado;o.notas=notas;
   const _newLat=gv('gpsLat'),_newLng=gv('gpsLng');
   if(_newLat&&_newLng){o.gpsLat=_newLat;o.gpsLng=_newLng;}
-  if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;await DL.incCupo(CU.id);waEntregado(o);notifEntregaAdmin(o);_gpsLoopStop();}
-  if(estado==='Despachado'){waDespachado(o);}
-  if(estado==='En ruta'){waEnRuta(o);notifEnRutaAdmin(o);_gpsLoopStart(o);}
+  // Si es delivery: el mensaje WhatsApp al cliente se envía automáticamente desde saveOrder (/api/orders/status).
+  // Evitamos abrir wa.me en el celular del delivery — solo admin/vendedor/proveedor disparan waEntregado/waDespachado/waEnRuta.
+  const _esDelivery=CU&&CU.rol==='delivery';
+  if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;await DL.incCupo(CU.id);if(!_esDelivery)waEntregado(o);notifEntregaAdmin(o);_gpsLoopStop();}
+  if(estado==='Despachado'){if(!_esDelivery)waDespachado(o);}
+  if(estado==='En Ruta'){if(!_esDelivery)waEnRuta(o);notifEnRutaAdmin(o);_gpsLoopStart(o);}
+  if(_esDelivery&&['Despachado','En Ruta','Entregado'].includes(estado))pushNotif('✅ Mensaje enviado al cliente','ok');
   if(['Cancelado','Devuelto'].includes(estado))_gpsLoopStop();
   if(estado.startsWith('No contesta'))waNoContesta(o);
   await DL.saveOrder(o);
   await refreshCache();
   closeA();filtrar();
   pushNotif('Pedido #'+id+' → '+estado,'s');
-  // Abrir Google Maps automáticamente al marcar En ruta
-  if(estado==='En ruta')setTimeout(()=>navegarPedido(id),300);
+  // Abrir Google Maps automáticamente al marcar En Ruta
+  if(estado==='En Ruta')setTimeout(()=>navegarPedido(id),300);
   // Prompt calificación: el vendedor/admin califica al delivery cuando se entrega
   if(estado==='Entregado'&&o.deliveryId&&isAdminLike(CU.rol)){
     const dlv=getUser(o.deliveryId);
@@ -5762,7 +5779,7 @@ PAGES.balance=function(){
   /* ── KPI Cobrado / Pendiente por mes actual y rol ── */
   const mes=mesActual();
   const entMes=orders.filter(o=>o.estado==='Entregado'&&(o.fecha||'').startsWith(mes));
-  const pendMes=orders.filter(o=>['Pendiente','Despachado','En ruta'].includes(o.estado)&&(o.fecha||'').startsWith(mes));
+  const pendMes=orders.filter(o=>['Pendiente','Despachado','En Ruta'].includes(o.estado)&&(o.fecha||'').startsWith(mes));
   let cobradoMes=0,pendienteMes=0;
   if(CU.rol==='vendedor'){
     cobradoMes=entMes.reduce((a,b)=>a+ganVend(b),0);
@@ -6299,7 +6316,7 @@ PAGES.boletas=function(){
   '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Desde <input type="date" id="bFD" value="'+primerDia+'" onchange="filtrarBoletas()" '+inp+'></label>'+
   '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Hasta <input type="date" id="bFH" value="'+hoy+'" onchange="filtrarBoletas()" '+inp+'></label>'+
   '<select id="bEst" onchange="filtrarBoletas()" '+inp+'>'+
-  '<option value="">Todos los estados</option><option>Entregado</option><option>En ruta</option><option>Despachado</option><option>Nuevo</option><option>Cancelado</option>'+
+  '<option value="">Todos los estados</option><option>Entregado</option><option>En Ruta</option><option>Despachado</option><option>Nuevo</option><option>Cancelado</option>'+
   '</select>'+
   '</div>'+
   '<div id="boletasBody"></div></div>';
@@ -6976,7 +6993,7 @@ PAGES.analitica_vend=function(periodo){
     '<div class="sgrid">'+
       '<div class="sc ac"><div class="slabel">Pedidos</div><div class="sval">'+mine.length+'</div></div>'+
       '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+pctExito+'% éxito</div></div>'+
-      '<div class="sc bl"><div class="slabel">En tránsito</div><div class="sval">'+mine.filter(o=>['Despachado','En ruta'].includes(o.estado)).length+'</div></div>'+
+      '<div class="sc bl"><div class="slabel">En tránsito</div><div class="sval">'+mine.filter(o=>['Despachado','En Ruta'].includes(o.estado)).length+'</div></div>'+
       '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
     '</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:16px">'+
@@ -7770,7 +7787,7 @@ function previewVid(inputId,previewId){
 // Crear pedido pre-cargado desde un producto del catálogo
 function crearPedidoDesdeProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
-  nav('pedidos');
+  nav('orders');
   setTimeout(()=>{
     openNewOrder();
     setTimeout(()=>{
@@ -10154,11 +10171,11 @@ function copiarLinkCatalogo(){
 ══════════════════════════════════════════════════ */
 const TRACK_API=WORKER_URL+'/api/track';
 const _TRACK_ESTADO_COLOR={
-  'Pendiente':'#f59e0b','Despachado':'#3b82f6','En ruta':'#16a34a',
+  'Pendiente':'#f59e0b','Despachado':'#3b82f6','En Ruta':'#16a34a',
   'Entregado':'#22c55e','Cancelado':'#ef4444','Devuelto':'#8b5cf6',
 };
 const _TRACK_ESTADO_ICON={
-  'Pendiente':'⏳','Despachado':'📦','En ruta':'🛵','Entregado':'✅','Cancelado':'❌','Devuelto':'↩️',
+  'Pendiente':'⏳','Despachado':'📦','En Ruta':'🛵','Entregado':'✅','Cancelado':'❌','Devuelto':'↩️',
 };
 let _trackRefreshTimer=null;
 let _trackDlvMarker=null;
@@ -10460,7 +10477,7 @@ async function rechazarDispositivo(id){
 
 /* ─── MAPA EN TIEMPO REAL ─────────────────────────────────────────────────── */
 const _MAPA_COLORS={
-  'Pendiente':'#dc2626','Despachado':'#1d4ed8','En ruta':'#ea580c',
+  'Pendiente':'#dc2626','Despachado':'#1d4ed8','En Ruta':'#ea580c',
   'Entregado':'#15803d',
   'No contesta 1°':'#7e22ce','No contesta 2°':'#6b21a8','No contesta 3°':'#581c87',
   'Reprogramado':'#1d4ed8',
@@ -10474,6 +10491,10 @@ window._mapaFiltro=null;
 window._mapaFiltroZona=null;
 window._mapaFiltroVend=null;
 window._mapaShowDlvs=false;
+// Premium filter bar
+window._mapaFiltroEstado='Todos'; // 'Todos'|'Pendiente'|'Despachado'|'En Ruta'|'Entregado'
+window._mapaFiltroTipo='todos'; // 'todos'|'deliveries'|'pedidos'
+window._mapaFiltroDelivery=window._mapaFiltroDelivery||null;
 
 async function _geocodeAddr(addr){
   if(window._geocodeCache[addr])return window._geocodeCache[addr];
@@ -10491,19 +10512,74 @@ async function _geocodeAddr(addr){
 
 
 function _mapaUpdateContadores(){
+  const el=$('mapaContadores');if(!el)return;
   const counts={};
   _ordersCache.forEach(o=>{counts[o.estado]=(counts[o.estado]||0)+1;});
-  const el=$('mapaContadores');if(!el)return;
-  el.innerHTML=Object.entries(_MAPA_COLORS).map(([estado,color])=>{
-    const n=counts[estado]||0;if(!n)return'';
-    const active=window._mapaFiltro===estado;
-    return'<button onclick="window._mapaFiltro='+(active?'null':JSON.stringify(estado))+';_mapaCargar(window._mapInstance)" '+
-      'style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:2px solid '+color+
-      ';background:'+(active?color:'transparent')+';color:'+(active?'#fff':color)+
-      ';font-size:12px;font-weight:700;cursor:pointer;transition:all .2s">'+
-      '<span style="width:8px;height:8px;background:'+color+';border-radius:50%;display:inline-block"></span>'+
-      estado+' ('+n+')</button>';
+  const DOTS={
+    'Pendiente':'#f59e0b',
+    'Despachado':'#3b82f6',
+    'En Ruta':'#fb923c',
+    'Entregado':'#22c55e'
+  };
+  const ESTADOS=['Todos','Pendiente','Despachado','En Ruta','Entregado'];
+  const fEst=window._mapaFiltroEstado||'Todos';
+  const fTipo=window._mapaFiltroTipo||'todos';
+  const totalAll=Object.values(counts).reduce((a,b)=>a+b,0);
+
+  const btnsEstado=ESTADOS.map(es=>{
+    const isAll=es==='Todos';
+    let n=isAll?totalAll:(counts[es]||0);
+    if(es==='En Ruta'&&!isAll)n=(counts['En Ruta']||0)+(counts['En ruta']||0);
+    const active=(fEst===es)||(es==='En Ruta'&&fEst==='En ruta');
+    const dot=isAll?'':'<span class="dot" style="background:'+DOTS[es]+'"></span>';
+    return '<button class="mapBtn'+(active?' active':'')+'" data-grp="estado" data-val="'+es+'" '+
+      'onclick="window._mapaFiltroEstado=\''+es+'\';_aplicarFiltrosMapa();">'+dot+es+' ('+n+')</button>';
   }).join('');
+
+  const btnsTipo=
+    '<button class="mapBtn'+(fTipo==='deliveries'?' active':'')+'" data-grp="tipo" data-val="deliveries" '+
+      'onclick="window._mapaFiltroTipo=(window._mapaFiltroTipo===&quot;deliveries&quot;?&quot;todos&quot;:&quot;deliveries&quot;);_aplicarFiltrosMapa();">🛵 Solo Deliveries</button>'+
+    '<button class="mapBtn'+(fTipo==='pedidos'?' active':'')+'" data-grp="tipo" data-val="pedidos" '+
+      'onclick="window._mapaFiltroTipo=(window._mapaFiltroTipo===&quot;pedidos&quot;?&quot;todos&quot;:&quot;pedidos&quot;);_aplicarFiltrosMapa();">📍 Solo Pedidos</button>';
+
+  let dlvOpts='<option value="">🔍 Buscar delivery</option>';
+  try{
+    const dlvs=(window._usersCache||[]).filter(u=>u.rol==='delivery'&&u.activo!==false);
+    dlvs.forEach(d=>{
+      const sel=String(window._mapaFiltroDelivery||'')===String(d.id)?' selected':'';
+      const nom=(d.nombre||d.email||('ID '+d.id));
+      dlvOpts+='<option value="'+d.id+'"'+sel+'>🛵 '+nom+'</option>';
+    });
+  }catch(e){}
+  const dlvSel='<select class="mapBtn" onchange="window._mapaFiltroDelivery=this.value||null;_aplicarFiltrosMapa();">'+dlvOpts+'</select>';
+
+  el.innerHTML=btnsEstado+'<div class="sep"></div>'+btnsTipo+'<div class="sep"></div>'+dlvSel;
+
+  window._mapaFiltro=(fEst==='Todos')?null:fEst;
+}
+
+function _aplicarFiltrosMapa(){
+  const fTipo=window._mapaFiltroTipo||'todos';
+  window._mapaFiltro=(window._mapaFiltroEstado&&window._mapaFiltroEstado!=='Todos')?window._mapaFiltroEstado:null;
+  if(fTipo==='deliveries'){
+    Object.values(window._mapMarkers||{}).forEach(m=>{try{m.remove();}catch(e){}});
+    window._mapMarkers={};
+    window._mapaShowDlvs=true;
+    if(window._mapInstance&&typeof _mapaCargarDlvs==='function')_mapaCargarDlvs(window._mapInstance);
+    _mapaUpdateContadores();
+    return;
+  }
+  if(fTipo==='pedidos'){
+    Object.values(window._dlvMapMarkers||{}).forEach(m=>{try{m.remove();}catch(e){}});
+    window._dlvMapMarkers={};
+    window._mapaShowDlvs=false;
+    if(window._mapInstance)_mapaCargar(window._mapInstance);
+    return;
+  }
+  if(window._mapInstance){
+    _mapaCargar(window._mapInstance);
+    if(window._mapaShowDlvs&&typeof _mapaCargarDlvs==='function')_mapaCargarDlvs(window._mapInstance);
+  }
 }
 
 async function _mapaCargar(map){
@@ -10514,6 +10590,8 @@ async function _mapaCargar(map){
   const _mapaBase=['vendedor','proveedor','dropshipper'].includes(CU.rol)?getVisibleOrders():_ordersCache;
   // Sin filtro activo: ocultar Cancelado/Devuelto por defecto. Con filtro activo: mostrar solo los del filtro (incluso Cancelado/Devuelto)
   let orders=window._mapaFiltro?_mapaBase.filter(o=>o.estado===window._mapaFiltro):_mapaBase.filter(o=>o.estado!=='Cancelado'&&o.estado!=='Devuelto');
+  // Delivery no debe ver pedidos Entregado en el mapa (admin/superadmin sí)
+  if(CU&&CU.rol==='delivery')orders=orders.filter(o=>o.estado!=='Entregado');
   if(window._mapaFiltroZona)orders=orders.filter(o=>String(o.zona)===String(window._mapaFiltroZona));
   if(!['vendedor','proveedor','dropshipper'].includes(CU.rol)&&window._mapaFiltroVend)orders=orders.filter(o=>String(o.vendedorId)===String(window._mapaFiltroVend));
   if(window._mapaFiltroDelivery)orders=orders.filter(o=>String(o.deliveryId)===String(window._mapaFiltroDelivery));
@@ -10567,7 +10645,7 @@ function _mapaAddMarker(map,o,lat,lng,exact){
   const isPriority=o.prioridad===true||o.prioridad==='alta'||o.prioridad==='high';
   const priorityLabel=isPriority?'<span style="font-size:9px;background:#ef4444;color:#fff;padding:1px 4px;border-radius:4px;margin-left:3px">PRIO</span>':'';
   const pinClass='pin-priority-wrap'+(isPriority?' pin-priority':'');
-  const isEnCamino=['En camino','En Ruta','Despachado'].includes(o.estado);
+  const isEnCamino=['En Ruta','Despachado'].includes(o.estado);
   const labelBorder=isEnCamino?'border:1px solid #22c55e;':'border:1px solid rgba(255,255,255,.18);';
   const el=document.createElement('div');
   el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer;opacity:'+opacity;
@@ -10873,7 +10951,7 @@ async function _mapaCambiarEstado(id,nuevoEstado){
   if(window._mapMarkers[id])window._mapMarkers[id].getPopup().remove();
   _mapaCargar(window._mapInstance);
   pushNotif('Pedido #'+id+' → '+nuevoEstado,'s');
-  if(nuevoEstado==='En Ruta'||nuevoEstado==='En ruta'){
+  if(nuevoEstado==='En Ruta'||nuevoEstado==='En Ruta'){
     waEnRuta(o);
     setTimeout(()=>navegarPedido(id),300);
   }
@@ -10901,6 +10979,7 @@ async function _toggleTurno(){
 PAGES.mapa=function(){
   if(_ordersLayerInterval){clearInterval(_ordersLayerInterval);_ordersLayerInterval=null;}
   window._mapaFiltro=null;window._mapaFiltroZona=null;window._mapaShowDlvs=false;
+  window._mapaFiltroEstado='Todos';window._mapaFiltroTipo='todos';
   window._mapMarkers={};window._dlvMapMarkers={};
   const esDelivery=CU.rol==='delivery';
   const esAdmin=isAdminLike(CU.rol);
@@ -10927,7 +11006,7 @@ PAGES.mapa=function(){
   const _estilosInfo=[{id:'oscuro',e:'🌙',t:'Noche'},{id:'claro',e:'☀️',t:'Día'},{id:'satelite',e:'🛰️',t:'Satélite'},{id:'relieve',e:'🏔️',t:'Relieve'},{id:'navegacion',e:'🧭',t:'Navegación'}];
   const estilosBtns=_estilosInfo.map(s=>'<button id="btnMapa_'+s.id+'" onclick="_mapaSetEstilo(\''+s.id+'\')" title="'+s.t+'" class="mapa-estilo-btn'+(s.id===_mapaEstilo?' active':'')+'" >'+s.e+'</button>').join('');
   $('ca').innerHTML=
-    '<div id="mapaContadores" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>'+
+    '<div id="mapaContadores" class="mapBar" style="margin-bottom:8px;border-radius:10px"></div>'+
     '<div style="position:relative">'+
       '<div id="ordersMap" style="height:calc(100vh - 220px);min-height:320px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
       '<button onclick="nav(\'orders\')" style="display:none;position:absolute;top:58px;right:10px;z-index:999;font-weight:700;cursor:pointer" id="mapaBackBtn" class="map-btn">← Volver</button>'+
@@ -10989,6 +11068,86 @@ async function _activarPush(){
   }catch(e){
     console.error('[PUSH SUB]',e);
     alert('Error al activar notificaciones: '+e.message);
+  }
+}
+
+// ============================================================
+// PAGES.perfil — Página de perfil del cliente
+// ============================================================
+PAGES.perfil=function(){
+  if(!CU){$('ca').innerHTML='<div class="tc" style="padding:20px">Inicia sesión para ver tu perfil.</div>';return;}
+  $('tbActions').innerHTML='';
+  const u=CU||{};
+  const zonasOpts=(_zonasCache||[]).map(z=>'<option value="'+escHtml(z.nombre||'')+'"'+((u.zona||'')===z.nombre?' selected':'')+'>'+escHtml(z.nombre||'')+'</option>').join('');
+  const waOn=(u.notifWA!==false);
+  const pushOn=(u.notifPush!==false);
+  $('ca').innerHTML=
+    '<div style="max-width:780px;margin:0 auto;padding:8px">'+
+      '<div style="margin-bottom:18px">'+
+        '<h2 style="margin:0 0 4px 0;color:var(--text);font-size:22px">👤 Mi Perfil</h2>'+
+        '<div style="color:var(--text2);font-size:13px">Tus datos para que tus pedidos lleguen rápido y sin problemas</div>'+
+      '</div>'+
+
+      '<div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">'+
+        '<h3 style="margin:0 0 14px 0;color:var(--accent);font-size:15px">📇 Datos personales</h3>'+
+        '<div class="fg"><label>Nombre completo *</label><input type="text" id="pfNombre" value="'+escHtml(u.nombre||'')+'" placeholder="Ej: María González"></div>'+
+        '<div class="fg"><label>Cédula / RUC</label><input type="text" id="pfCedula" value="'+escHtml(u.cedula||'')+'" placeholder="Ej: 1.234.567"></div>'+
+        '<div class="fg"><label>Email</label><input type="email" id="pfEmail" value="'+escHtml(u.email||'')+'" readonly style="opacity:.7;cursor:not-allowed"></div>'+
+        '<div class="fg"><label>Teléfono / WhatsApp *</label><input type="tel" id="pfTel" value="'+escHtml(u.telefono||u.whatsapp||'')+'" placeholder="Ej: +595 981 123456"></div>'+
+      '</div>'+
+
+      '<div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">'+
+        '<h3 style="margin:0 0 14px 0;color:var(--accent);font-size:15px">📍 Dirección de entrega</h3>'+
+        '<div class="fg"><label>Dirección completa *</label><input type="text" id="pfDir" value="'+escHtml(u.direccion||'')+'" placeholder="Ej: Av. España 1234 c/ Brasil"></div>'+
+        '<div class="fg"><label>Zona</label><select id="pfZona"><option value="">Seleccionar...</option>'+zonasOpts+'</select></div>'+
+        '<div class="fg"><label>Referencias / Cómo llegar</label><textarea id="pfRef" rows="3" placeholder="Ej: Casa color blanco, portón negro, al lado del kiosco">'+escHtml(u.referencias||'')+'</textarea></div>'+
+        '<div class="fg"><label>Ciudad</label><input type="text" id="pfCiudad" value="'+escHtml(u.ciudad||'')+'" placeholder="Ej: Asunción"></div>'+
+      '</div>'+
+
+      '<div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">'+
+        '<h3 style="margin:0 0 14px 0;color:var(--accent);font-size:15px">🔔 Preferencias</h3>'+
+        '<label style="display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer">'+
+          '<input type="checkbox" id="pfNotifWA"'+(waOn?' checked':'')+' style="width:18px;height:18px;cursor:pointer">'+
+          '<span style="color:var(--text);font-size:14px">Recibir WhatsApp cuando mi pedido cambie de estado</span>'+
+        '</label>'+
+        '<label style="display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer;border-top:1px solid var(--border)">'+
+          '<input type="checkbox" id="pfNotifPush"'+(pushOn?' checked':'')+' style="width:18px;height:18px;cursor:pointer">'+
+          '<span style="color:var(--text);font-size:14px">Recibir notificaciones push del navegador</span>'+
+        '</label>'+
+      '</div>'+
+
+      '<div style="display:flex;justify-content:flex-end;margin-top:18px">'+
+        '<button class="btn btn-primary" onclick="guardarPerfilCliente()" style="padding:12px 24px;font-size:14px">💾 Guardar cambios</button>'+
+      '</div>'+
+    '</div>';
+};
+
+async function guardarPerfilCliente(){
+  if(!CU){pushNotif('No hay sesión activa','e');return;}
+  const nombre=($('pfNombre')?.value||'').trim();
+  const cedula=($('pfCedula')?.value||'').trim();
+  const telefono=($('pfTel')?.value||'').trim();
+  const direccion=($('pfDir')?.value||'').trim();
+  const zona=($('pfZona')?.value||'').trim();
+  const referencias=($('pfRef')?.value||'').trim();
+  const ciudad=($('pfCiudad')?.value||'').trim();
+  const notifWA=!!($('pfNotifWA')?.checked);
+  const notifPush=!!($('pfNotifPush')?.checked);
+
+  if(!nombre){pushNotif('El nombre es obligatorio','e');return;}
+  if(!telefono){pushNotif('El teléfono es obligatorio','e');return;}
+  if(!direccion){pushNotif('La dirección es obligatoria','e');return;}
+
+  const actualizado={...CU,nombre,cedula,telefono,whatsapp:telefono,direccion,zona,referencias,ciudad,notifWA,notifPush};
+  try{
+    const res=await DL.saveUser(actualizado);
+    if(res&&res.ok===false){pushNotif('Error al guardar: '+(res.error||''),'e');return;}
+    Object.assign(CU,actualizado);
+    const i=_usersCache.findIndex(x=>x.id==CU.id);
+    if(i>=0)_usersCache[i]={..._usersCache[i],...actualizado};
+    pushNotif('Perfil actualizado','ok');
+  }catch(e){
+    pushNotif('Error al guardar: '+(e.message||e),'e');
   }
 }
 
