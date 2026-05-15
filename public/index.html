@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iporãve Connect — Plataforma Integral de Comercio y Logística</title>
+<!-- Content-Security-Policy -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://api.mapbox.com https://unpkg.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://iporave-api.iporaveparaguay.workers.dev https://api.mapbox.com https://*.supabase.co wss://*.supabase.co https://connect.facebook.net https://www.facebook.com; worker-src 'self' blob:; frame-ancestors 'none';">
 
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
@@ -16,7 +18,7 @@
 <meta name="msapplication-TileColor" content="#0b0d12">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<!-- Leaflet — mapas gratis (reemplaza Google Maps) -->
+<!-- Mapbox GL JS -->
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet"/>
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
@@ -367,9 +369,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* OFFLINE BADGE */
 .offline-badge{background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:var(--accent);font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;display:none;}
 .offline-badge.show{display:inline-flex;align-items:center;gap:4px;}
-/* Ocultar elementos flotantes en pantalla de login */
 /* Ocultar elementos flotantes en pantalla de login (forzar !important para vencer cache) */
 #ntBell,#aiBtn,#aiPanel,#notifArea,#codexNotifBell,#bgWrap{display:none !important;}
+body:not(:has(#appScreen.show)) #codexScrollTopBtn{display:none !important;}
 #appScreen.show #ntBell,
 #appScreen.show #aiBtn,
 body:has(#appScreen.show) #notifArea,
@@ -377,6 +379,10 @@ body:has(#appScreen.show) #codexNotifBell{display:flex !important;}
 body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px;flex-shrink:1;}
 #codexNotifBell{transition:opacity .25s ease;}
 #codexNotifBell.scroll-faded{opacity:0.3;}
+/* Fix mobile: campanita con fondo transparente en pantallas pequeñas */
+@media(max-width:768px){
+  #codexNotifBell{background:transparent !important;box-shadow:none !important;border-color:transparent !important;}
+}
 /* CATÁLOGO GRID */
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
 .prod-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);overflow:hidden;display:flex;flex-direction:column;transition:border-color .18s,box-shadow .18s;}
@@ -460,8 +466,10 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
     z-index:199;opacity:0;transition:opacity .28s;
   }
   #sideOverlay.show{display:block;opacity:1;}
-  .main{margin-left:0;overflow-x:hidden;max-width:100vw;}
-  .topbar{padding:10px 14px;gap:8px;}
+  /* Fix: main en mobile como columna fija para que sticky topbar funcione bien */
+  .main{margin-left:0;overflow-x:hidden;max-width:100vw;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+  /* Fix topbar: fija en mobile, no se superpone con contenido */
+  .topbar{padding:10px 14px;gap:8px;position:sticky;top:0;z-index:50;flex-shrink:0;}
   .tbtitle{font-size:15px;}
   .tbactions{gap:5px;flex-wrap:wrap;}
   .tbactions .btn{padding:8px 13px;font-size:12px;}
@@ -470,9 +478,11 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
     width:36px;height:36px;border-radius:8px;border:1px solid var(--border2);
     background:var(--bg3);color:var(--text);cursor:pointer;flex-shrink:0;
   }
-  .ca{padding:14px;overflow-x:hidden;max-width:100%;}
+  /* Fix: ca es el scroll container real en mobile */
+  .ca{padding:14px;overflow-x:hidden;max-width:100%;flex:1;overflow-y:auto;}
+  /* Fix padding uniforme en cards mobile */
+  .sc{padding:12px 12px 10px;}
   .sgrid{grid-template-columns:repeat(2,1fr);gap:10px;}
-  .sc{padding:12px;}
   .sval{font-size:22px;}
   .frow,.frow3{grid-template-columns:1fr;}
   .zgrid{grid-template-columns:1fr;}
@@ -550,11 +560,15 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .tbtitle{order:-1;flex:0 0 100%;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:0 0 7px;border-bottom:1px solid var(--border);margin-bottom:4px;}
   #menuBtn{order:0;flex-shrink:0;margin-top:2px;}
   .tbactions{order:1;flex:1;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-start;margin-top:2px;}
-  /* Botón kebab siempre a la derecha */
+  /* Fix botón ⋮ kebab siempre alineado a la derecha en cualquier contexto */
   .lcard2 .order-menu-wrap{margin-left:auto;flex-shrink:0;}
+  .order-menu-wrap{margin-left:auto;flex-shrink:0;}
   /* Botones acción táctiles en mobile */
   .act-btns{justify-content:flex-start;gap:8px;}
   .order-menu-btn{min-width:40px;min-height:40px;}
+  /* Fix: elementos que se corten por overflow */
+  .sgrid{overflow:hidden;}
+  .sc{box-sizing:border-box;min-width:0;word-break:break-word;}
 }
 @media(max-width:600px){input,select,textarea{font-size:16px !important;}}
 /* En desktop: ocultar elementos que solo deben verse en mobile */
@@ -1754,6 +1768,9 @@ async function _pollMensajes(){
 /* ══════════════════════════════════════════════════
    OFFLINE SYNC QUEUE
 ══════════════════════════════════════════════════ */
+// REVISAR: _queuePending está declarada pero nunca se llama desde ningún lugar del archivo.
+// La cola _pendingQueue existe y _syncPendingQueue la procesa, pero nada agrega ítems a la cola.
+// Si se quiere activar el modo offline-primero, hay que conectar _queuePending a los saves de DL.
 function _queuePending(type,data){
   _pendingQueue.push({type,data,t:Date.now()});
   DL._ls('pendingQueue',_pendingQueue);
@@ -2971,14 +2988,19 @@ const NAV_CFG={
     ]},
     {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
   ],
-  delivery:[{s:'Mi Panel',items:[
-    {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'entregas',l:'Mis entregas',ic:'truck'},
-    {id:'mapa',l:'Mapa de mis pedidos',ic:'map'},
-    {id:'recaudacion',l:'Mi recaudación',ic:'dollar'},{id:'cupo',l:'Mi cupo y premios',ic:'trophy'},
-    {id:'boletas',l:'Mis boletas',ic:'receipt'},
-    {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
-    {id:'mensajes',l:'Mensajes',ic:'chat'},
-  ]}],
+  delivery:[
+    {s:'Mi Panel',items:[
+      {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'entregas',l:'Mis entregas',ic:'truck'},
+      {id:'mapa',l:'Mapa de mis pedidos',ic:'map'},
+      {id:'recaudacion',l:'Mi recaudación',ic:'dollar'},{id:'cupo',l:'Mi cupo y premios',ic:'trophy'},
+      {id:'boletas',l:'Mis boletas',ic:'receipt'},
+      {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+      {id:'mensajes',l:'Mensajes',ic:'chat'},
+    ]},
+    {s:'Analítica',items:[
+      {id:'analitica_dlv',l:'📊 Mi Analítica',ic:'chart'},
+    ]},
+  ],
   proveedor:[
     {s:'Mi Panel',items:[
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'suministros',l:'Mis suministros',ic:'pkg'},
@@ -3029,6 +3051,7 @@ const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'
   pagos_prov:'Mis Pagos',
   analitica_prov:'Mi Analítica',analitica_vend:'Mi Analítica',
   analitica_drop:'Mi Analítica',analitica_admin:'Analítica Ecosistema',
+  analitica_dlv:'Mi Analítica',
   clientes_recurrentes:'Clientes recurrentes'};
 
 /* ── SIDEBAR MOBILE ── */
@@ -3067,6 +3090,7 @@ const NAV_TIPS={
   analitica_vend:'Mi analítica como vendedor',
   analitica_drop:'Mi analítica como dropshipper',
   analitica_prov:'Mi analítica como proveedor',
+  analitica_dlv:'Mi analítica como delivery — entregas, ingresos y zonas',
   mensajes:'Mensajes internos con el equipo',
   neworder:'Crear un nuevo pedido',
   entregas:'Mis entregas asignadas',
@@ -4061,14 +4085,47 @@ PAGES.dashboard=async function(){
     '</div>';
   }
   if(CU.rol==='proveedor'){
-    const mine=orders.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+    const mine=orders.filter(o=>String(o.proveedorId)===String(CU.id)||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
     const ent=mine.filter(o=>o.estado==='Entregado');
+    const act=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+    const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
+    const porCobrar=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
+    const prodActivos=(_catalogoCache||[]).filter(p=>String(p.proveedorId)===String(CU.id)||(p.proveedor||'').toLowerCase()===CU.nombre.toLowerCase()).length;
+    // Gráfico 14 días
+    const now14=new Date();const days14=[];const labels14=[];
+    for(let i=13;i>=0;i--){const d=new Date(now14);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days14.push(iso);labels14.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+    const pedD14={};const entD14={};days14.forEach(d=>{pedD14[d]=0;entD14[d]=0;});
+    mine.forEach(o=>{if(days14.includes(o.fecha)){pedD14[o.fecha]=(pedD14[o.fecha]||0)+1;if(o.estado==='Entregado')entD14[o.fecha]=(entD14[o.fecha]||0)+1;}});
     html+='<div class="sgrid">'+
-      '<div class="sc ac"><div class="slabel">Órdenes activas</div><div class="sval">'+mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
-      '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div></div>'+
+      '<div class="sc ac"><div class="slabel">Órdenes activas</div><div class="sval">'+act.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+(mine.length?Math.round(ent.length/mine.length*100):0)+'% éxito</div></div>'+
       '<div class="sc bl"><div class="slabel">Total órdenes</div><div class="sval">'+mine.length+'</div></div>'+
-      '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
+      '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+canc.length+'</div></div>'+
+      '<div class="sc" style="border:2px solid var(--green)"><div class="slabel" style="color:var(--green)">💰 Por cobrar</div><div class="sval" style="color:var(--green);font-size:14px">'+fmt(porCobrar)+'</div><div class="ssub">pedidos entregados</div></div>'+
+      '<div class="sc" style="border:2px solid var(--cyan)"><div class="slabel" style="color:var(--cyan)">📦 Productos activos</div><div class="sval" style="color:var(--cyan)">'+prodActivos+'</div><div class="ssub">en catálogo</div></div>'+
+      '</div>'+
+      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px 16px 10px;margin-top:14px">'+
+        '<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:2px">📈 Actividad — últimos 14 días</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">Órdenes recibidas vs entregadas</div>'+
+        (days14.some(d=>pedD14[d]>0)
+          ?'<canvas id="dashProvLinea" height="65"></canvas>'
+          :'<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Sin actividad en los últimos 14 días</div>')+
       '</div>';
+    // Inicializar chart después del render
+    setTimeout(()=>{
+      const ctxP=$('dashProvLinea');
+      if(!ctxP||ctxP.tagName!=='CANVAS')return;
+      if(ctxP._ci)ctxP._ci.destroy();
+      const gl=ctxP.getContext('2d');const h=ctxP.offsetHeight||130;
+      const gG=gl.createLinearGradient(0,0,0,h);gG.addColorStop(0,'rgba(34,197,94,.35)');gG.addColorStop(1,'rgba(34,197,94,.02)');
+      const gB=gl.createLinearGradient(0,0,0,h);gB.addColorStop(0,'rgba(245,166,35,.30)');gB.addColorStop(1,'rgba(245,166,35,.02)');
+      ctxP._ci=new Chart(ctxP,{type:'bar',data:{labels:labels14,datasets:[
+        {label:'Órdenes',data:days14.map(d=>pedD14[d]),backgroundColor:gB,borderRadius:5,borderSkipped:false,borderWidth:0},
+        {label:'Entregadas',data:days14.map(d=>entD14[d]),backgroundColor:gG,borderRadius:5,borderSkipped:false,borderWidth:0},
+      ]},options:{responsive:true,animation:{duration:900,easing:'easeOutExpo'},
+        plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:10},usePointStyle:true,pointStyle:'circle',padding:12}}},
+        scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}}}});
+    },120);
   }
   if(CU.rol==='cliente'){
     const mine=orders.filter(o=>o.cliente===CU.nombre);
@@ -6889,6 +6946,80 @@ PAGES.analitica_drop=function(){
         plugins:{legend:{display:false},tooltip:{backgroundColor:cb,titleColor:dark?'#f1f5f9':'#0f172a',bodyColor:tc,borderColor:dark?'#334155':'#e2e8f0',borderWidth:1,cornerRadius:10,padding:10,callbacks:{label:ctx=>' '+ctx.parsed.y+' pedidos'}}},
         scales:{x:{ticks:{maxTicksLimit:10,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:gc}}}}});
     }
+  },100);
+};
+
+/* ─── ANALÍTICA DELIVERY ─── */
+PAGES.analitica_dlv=function(){
+  $('tbActions').innerHTML='';
+  const mine=_ordersCache.filter(o=>o.deliveryId===CU.id);
+  const ent=mine.filter(o=>o.estado==='Entregado');
+  const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
+  const ingresos=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const pctExito=mine.length?Math.round(ent.length/mine.length*100):0;
+  const now=new Date();
+  const hoyISO=now.toISOString().slice(0,10);
+  const semStart=(function(){const d=new Date();const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return d.toISOString().slice(0,10);}());
+  const mesStart=hoyISO.slice(0,7)+'-01';
+  const entHoy=ent.filter(o=>o.fecha===hoyISO).length;
+  const entSemana=ent.filter(o=>o.fecha>=semStart).length;
+  const entMes=ent.filter(o=>o.fecha>=mesStart).length;
+  const days30=[];const labels30=[];
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days30.push(iso);labels30.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  const entByDay={};days30.forEach(d=>entByDay[d]=0);
+  ent.forEach(o=>{if(days30.includes(o.fecha))entByDay[o.fecha]=(entByDay[o.fecha]||0)+1;});
+  const zonaMap={};
+  ent.forEach(o=>{const z=o.zona||o.zonaNombre||'Sin zona';if(!zonaMap[z])zonaMap[z]=0;zonaMap[z]++;});
+  const topZonas=Object.entries(zonaMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const ingHoy=ent.filter(o=>o.fecha===hoyISO).reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const ingSem=ent.filter(o=>o.fecha>=semStart).reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const ingMes=ent.filter(o=>o.fecha>=mesStart).reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const html=
+    '<div class="sgrid">'+
+      '<div class="sc bl"><div class="slabel">Entregas hoy</div><div class="sval">'+entHoy+'</div></div>'+
+      '<div class="sc ac"><div class="slabel">Esta semana</div><div class="sval">'+entSemana+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Este mes</div><div class="sval">'+entMes+'</div></div>'+
+      '<div class="sc bl"><div class="slabel">Tasa de éxito</div><div class="sval" style="font-size:18px">'+pctExito+'%</div><div class="ssub">'+ent.length+' de '+mine.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Ingresos acum.</div><div class="sval" style="font-size:13px">'+fmt(ingresos)+'</div><div class="ssub">valor de entregas</div></div>'+
+      '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+canc.length+'</div></div>'+
+    '</div>'+
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:18px 18px 12px;margin-bottom:14px">'+
+      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px">📊 Entregas — últimos 30 días</div>'+
+      '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Pedidos entregados por día</div>'+
+      (days30.some(d=>entByDay[d]>0)
+        ?'<canvas id="adlvLinea" height="75"></canvas>'
+        :'<div style="text-align:center;padding:28px;color:var(--text3);font-size:13px">Sin entregas en los últimos 30 días</div>')+
+    '</div>'+
+    (topZonas.length?
+      '<div class="tc" style="margin-bottom:14px"><div class="th2"><span class="tt">📍 Top Zonas de Entrega</span></div>'+
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>Zona</th><th style="text-align:center">Entregas</th><th style="text-align:right">% del total</th></tr></thead><tbody>'+
+      topZonas.map(([z,n])=>
+        '<tr><td style="font-weight:600">'+escHtml(z)+'</td>'+
+        '<td style="text-align:center;color:var(--accent);font-weight:700">'+n+'</td>'+
+        '<td style="text-align:right;color:var(--text2);font-size:12px">'+(ent.length?Math.round(n/ent.length*100):0)+'%</td></tr>'
+      ).join('')+
+      '</tbody></table></div></div>':'')+
+    '<div class="tc"><div class="th2"><span class="tt">💰 Ingresos acumulados</span></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+    '<th>Período</th><th style="text-align:right">Entregas</th><th style="text-align:right">Valor</th></tr></thead><tbody>'+
+    '<tr><td>Hoy</td><td style="text-align:right">'+entHoy+'</td><td style="text-align:right;color:var(--green);font-weight:700">'+fmt(ingHoy)+'</td></tr>'+
+    '<tr><td>Esta semana</td><td style="text-align:right">'+entSemana+'</td><td style="text-align:right;color:var(--green);font-weight:700">'+fmt(ingSem)+'</td></tr>'+
+    '<tr><td>Este mes</td><td style="text-align:right">'+entMes+'</td><td style="text-align:right;color:var(--green);font-weight:700">'+fmt(ingMes)+'</td></tr>'+
+    '<tr><td style="font-weight:700">Total histórico</td><td style="text-align:right;font-weight:700">'+ent.length+'</td><td style="text-align:right;color:var(--accent);font-weight:800;font-size:15px">'+fmt(ingresos)+'</td></tr>'+
+    '</tbody></table></div></div>';
+  $('ca').innerHTML=html;
+  setTimeout(()=>{
+    const ctxL=$('adlvLinea');
+    if(!ctxL||ctxL.tagName!=='CANVAS')return;
+    if(ctxL._ci)ctxL._ci.destroy();
+    const gl=ctxL.getContext('2d');const h=ctxL.offsetHeight||150;
+    const gP=gl.createLinearGradient(0,0,0,h);gP.addColorStop(0,'rgba(34,197,94,.95)');gP.addColorStop(1,'rgba(34,197,94,.40)');
+    ctxL._ci=new Chart(ctxL,{type:'bar',data:{labels:labels30,datasets:[
+      {label:'Entregas',data:days30.map(d=>entByDay[d]),backgroundColor:gP,borderRadius:6,borderSkipped:false,borderWidth:0,hoverBackgroundColor:'rgba(34,197,94,1)'},
+    ]},options:{responsive:true,animation:{duration:1000,easing:'easeOutExpo'},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e293b',titleColor:'#f1f5f9',bodyColor:'#94a3b8',borderColor:'#334155',borderWidth:1,cornerRadius:10,padding:10,callbacks:{label:ctx=>' '+ctx.parsed.y+' entregas'}}},
+      scales:{x:{ticks:{maxTicksLimit:10,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}}}});
   },100);
 };
 
