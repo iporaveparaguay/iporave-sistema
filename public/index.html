@@ -602,6 +602,18 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .order-dropdown button:first-child{border-radius:12px 12px 0 0;}
 .order-dropdown button:last-child{border-radius:0 0 12px 12px;}
 .order-dropdown .od-sep{height:1px;background:var(--border);margin:4px 0;}
+/* Botón 3D Cerrar Jornada */
+.btnCerrarJornada{display:block;margin:24px auto;padding:14px 32px;border-radius:14px;background:linear-gradient(180deg,#16a34a 0%,#15803d 100%);color:#fff;border:1px solid #15803d;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(22,163,74,.35),inset 0 1px 0 rgba(255,255,255,.2);transition:all .15s ease;text-shadow:0 1px 2px rgba(0,0,0,.2);}
+.btnCerrarJornada:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(22,163,74,.45),inset 0 1px 0 rgba(255,255,255,.25)}
+.btnCerrarJornada:active{transform:translateY(2px);box-shadow:0 2px 6px rgba(22,163,74,.3),inset 0 2px 6px rgba(0,0,0,.2)}
+/* Toggle 3D genérico */
+.toggleBtn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.05);transition:all .15s ease;}
+.toggleBtn.on{background:linear-gradient(180deg,#16a34a 0%,#15803d 100%);border-color:#15803d;color:#fff;box-shadow:0 4px 12px rgba(22,163,74,.4)}
+.toggleBtn.off{background:linear-gradient(180deg,#475569 0%,#334155 100%);color:#cbd5e1}
+.toggleBtn:hover{transform:translateY(-1px)}
+.toggleBtn:active{transform:translateY(1px)}
+.toggleBtn .dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.4)}
+.toggleBtn.on .dot{background:#fff;box-shadow:0 0 8px rgba(255,255,255,.6)}
 </style>
 </head>
 <body>
@@ -4610,7 +4622,7 @@ PAGES.entregas=function(){
   let _pushBtn='';
   try{
     const _pushOk=Notification?.permission==='granted';
-    if('PushManager' in window)_pushBtn='<button id="btnPushNotif" class="btn btn-sm" onclick="_activarPush()" style="background:'+(_pushOk?'#16a34a':'#f59e0b')+';color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">'+(_pushOk?'🔔 Notif ON':'🔔 Activar notif')+'</button>';
+    if('PushManager' in window)_pushBtn='<button id="btnPushNotif" class="toggleBtn '+(_pushOk?'on':'off')+'" onclick="_togglePushNotif()"><span class="dot"></span>🔔 '+(_pushOk?'Notif ON':'Activar notif')+'</button>';
   }catch(e){}
   $('tbActions').innerHTML=_pushBtn+'<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">🔄</button>';
   const mis=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
@@ -6358,9 +6370,9 @@ PAGES.cupo=function(){
 PAGES.boletas=function(){
   const hoy=new Date().toISOString().slice(0,10);
   const primerDia=hoy.slice(0,8)+'01';
-  const inp='style="background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px"';
+  const inp='style="background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;min-width:130px" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"';
   $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Boletas IVA</span></div>'+
-  '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">'+
+  '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px;margin-bottom:12px;padding-top:6px">'+
   '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Desde <input type="date" id="bFD" value="'+primerDia+'" onchange="filtrarBoletas()" '+inp+'></label>'+
   '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Hasta <input type="date" id="bFH" value="'+hoy+'" onchange="filtrarBoletas()" '+inp+'></label>'+
   '<select id="bEst" onchange="filtrarBoletas()" '+inp+'>'+
@@ -6565,9 +6577,10 @@ function waBoleta(id){
 
 /* ─── CIERRE JORNADA ─── */
 PAGES.cierre=function(){
-  $('tbActions').innerHTML='<button class="btn btn-success" onclick="ejecutarCierre()">🌙 Ejecutar cierre</button>';
+  $('tbActions').innerHTML='';
   const jornadas=DL._lg('jornadas')||[];
-  let html='<div class="alert alrt-i" style="margin-bottom:18px">El cierre genera un resumen completo del día con todos los pedidos, recaudación por método de cobro y balance.</div>';
+  let html='<div class="alert alrt-i" style="margin-bottom:18px">El cierre genera un resumen completo del día con todos los pedidos, recaudación por método de cobro y balance.</div>'+
+    '<div style="text-align:center"><button class="btnCerrarJornada" onclick="ejecutarCierre()">🌙 Cerrar Jornada</button></div>';
   if(jornadas.length){
     html+='<div class="stitle">Historial de cierres</div>';
     jornadas.slice().reverse().forEach(j=>{
@@ -9179,7 +9192,7 @@ function openPerfilUsuario(){
       '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">🔔 Notificaciones push</div>'+
       '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);padding:12px 14px;border-radius:var(--radius);gap:10px">'+
       '<div style="font-size:13px;color:var(--text2)">Recibí alertas de pedidos y mensajes en este dispositivo.</div>'+
-      '<button id="pfPushBtn" class="btn btn-sm" onclick="_activarPush()" style="background:'+(_ok?'#16a34a':'#f59e0b')+';color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer">'+(_ok?'🔔 Activadas':'🔔 Activar')+'</button>'+
+      '<button id="pfPushBtn" class="toggleBtn '+(_ok?'on':'off')+'" onclick="_togglePushNotif()"><span class="dot"></span>🔔 '+(_ok?'Activadas':'Activar')+'</button>'+
       '</div></div>'
     );})():'')+
     '</div>'+
@@ -9302,6 +9315,7 @@ async function guardarPerfilUsuario(){
     banco:gv('pfBanco'),tipo_cuenta:gv('pfTipoCuenta'),nro_cuenta:gv('pfNroCuenta'),
     titular_cuenta:gv('pfTitular'),wallet_tipo:gv('pfWalletTipo'),
     wallet_nro:gv('pfWalletNro'),wallet_alias:gv('pfWalletAlias'),logo:CU.logo||'',
+    foto_perfil:CU.foto_perfil||'',
     foto_cedula_frente:CU.foto_cedula_frente||'',
     foto_cedula_dorso:CU.foto_cedula_dorso||'',
     vehiculo:CU.rol==='delivery'?(gv('pfVeh')||CU.vehiculo||''):CU.vehiculo,
@@ -11026,14 +11040,17 @@ async function _toggleTurno(){
 
 PAGES.mapa=function(){
   if(_ordersLayerInterval){clearInterval(_ordersLayerInterval);_ordersLayerInterval=null;}
-  window._mapaFiltro=null;window._mapaFiltroZona=null;window._mapaShowDlvs=false;
-  window._mapaFiltroEstado='Todos';window._mapaFiltroTipo='todos';
+  // No resetear filtros: preservarlos entre visitas a la página. Solo inicializar si nunca se setearon.
+  if(typeof window._mapaFiltroEstado==='undefined'||window._mapaFiltroEstado===null)window._mapaFiltroEstado='Todos';
+  if(typeof window._mapaFiltroTipo==='undefined'||window._mapaFiltroTipo===null)window._mapaFiltroTipo='todos';
+  if(typeof window._mapaShowDlvs==='undefined')window._mapaShowDlvs=false;
   window._mapMarkers={};window._dlvMapMarkers={};
   const esDelivery=CU.rol==='delivery';
   const esAdmin=isAdminLike(CU.rol);
   const esLimitado=['vendedor','proveedor','dropshipper'].includes(CU.rol);
-  window._mapaFiltroDelivery=esDelivery?String(CU.id):null;
-  window._mapaFiltroVend=esLimitado?String(CU.id):null;
+  // Solo forzar filtros por rol si no hay filtro previo guardado
+  if(esDelivery&&!window._mapaFiltroDelivery)window._mapaFiltroDelivery=String(CU.id);
+  if(esLimitado&&!window._mapaFiltroVend)window._mapaFiltroVend=String(CU.id);
   $('tbTitle').textContent=esDelivery?'Mis pedidos — Mapa':'Mapa de Pedidos';
   const zonaSel=!esDelivery?'<select id="mapaZonaSel" onchange="window._mapaFiltroZona=this.value||null;_mapaCargar(window._mapInstance)" style="'+_mapaSelStyle()+'"><option value="">🌎 Todo Paraguay</option></select>':'';
   const vendSel=esDelivery
@@ -11110,12 +11127,50 @@ async function _activarPush(){
     // Actualizar todos los botones de push (delivery + perfil)
     ['btnPushNotif','pfPushBtn'].forEach(id=>{
       const btn=document.getElementById(id);
-      if(btn){btn.textContent='🔔 Activadas';btn.style.background='#16a34a';}
+      if(btn){
+        btn.classList.remove('off');btn.classList.add('on');
+        btn.innerHTML='<span class="dot"></span>🔔 Activadas';
+      }
     });
     pushNotif('✅ Notificaciones activadas en este dispositivo.','s');
   }catch(e){
     console.error('[PUSH SUB]',e);
     alert('Error al activar notificaciones: '+e.message);
+  }
+}
+
+// Toggle real: activar si está apagado, desactivar (desuscribir) si está prendido
+async function _togglePushNotif(){
+  if(!('PushManager' in window)){alert('Tu navegador no soporta notificaciones push.');return;}
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    const yaActivo=(Notification?.permission==='granted')&&!!sub;
+    if(yaActivo){
+      // Desactivar
+      try{await sub.unsubscribe();}catch(e){}
+      try{
+        const token=sessionStorage.getItem('iporave_token');
+        await fetch(WORKER_URL+'/api/push-unsubscribe',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+          body:JSON.stringify({endpoint:sub.endpoint}),
+        }).catch(()=>{});
+      }catch(e){}
+      ['btnPushNotif','pfPushBtn'].forEach(id=>{
+        const btn=document.getElementById(id);
+        if(btn){
+          btn.classList.remove('on');btn.classList.add('off');
+          btn.innerHTML='<span class="dot"></span>🔔 Activar';
+        }
+      });
+      pushNotif('Notificaciones desactivadas','i');
+    }else{
+      await _activarPush();
+    }
+  }catch(e){
+    console.error('[PUSH TOGGLE]',e);
+    alert('Error al cambiar notificaciones: '+e.message);
   }
 }
 
@@ -11186,7 +11241,8 @@ async function guardarPerfilCliente(){
   if(!telefono){pushNotif('El teléfono es obligatorio','e');return;}
   if(!direccion){pushNotif('La dirección es obligatoria','e');return;}
 
-  const actualizado={...CU,nombre,cedula,telefono,whatsapp:telefono,direccion,zona,referencias,ciudad,notifWA,notifPush};
+  // Preservar foto y campos no editables del form (la foto se sube por separado en subirFotoPerfil)
+  const actualizado={...CU,nombre,cedula,telefono,whatsapp:telefono,direccion,zona,referencias,ciudad,notifWA,notifPush,foto_perfil:CU.foto_perfil||''};
   try{
     const res=await DL.saveUser(actualizado);
     if(res&&res.ok===false){pushNotif('Error al guardar: '+(res.error||''),'e');return;}
