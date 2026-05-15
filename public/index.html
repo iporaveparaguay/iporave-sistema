@@ -1655,6 +1655,32 @@ const DL = {
       prioridad:r.prioridad===true,
     };
   },
+
+  // PAGOS
+  async savePago(p){
+    if(!_supaConnected)return null;
+    const row={
+      pagado_por: p.pagado_por,
+      pagado_a: p.pagado_a,
+      monto: Number(p.monto)||0,
+      metodo: p.metodo||'efectivo',
+      referencia: p.referencia||null,
+      nota: p.nota||null,
+      fecha: p.fecha||new Date().toISOString().slice(0,10)
+    };
+    const {data,error}=await _supa.from('pagos').insert(row).select().single();
+    if(error){console.warn('[savePago]',error.message);pushNotif('Error al registrar pago: '+error.message,'e');return null;}
+    return data;
+  },
+  async getPagos(filtros={}){
+    if(!_supaConnected)return [];
+    let q=_supa.from('pagos').select('*').order('fecha',{ascending:false});
+    if(filtros.pagado_a) q=q.eq('pagado_a',filtros.pagado_a);
+    if(filtros.pagado_por) q=q.eq('pagado_por',filtros.pagado_por);
+    const {data,error}=await q;
+    if(error){console.warn('[getPagos]',error.message);return [];}
+    return data||[];
+  },
 };
 
 /* ══════════════════════════════════════════════════
@@ -1734,6 +1760,14 @@ function initRealtime(){
         // eslint-disable-next-line eqeqeq
         if(msg.para_id==CU.id){
           _mostrarMensajeEntrante(msg);
+        }
+      })
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'pagos'},payload=>{
+        const curPage=document.querySelector('.ni.active')?.id?.replace('ni_','');
+        if(curPage==='pagos'&&typeof nav==='function')nav('pagos');
+        const p=payload.new;
+        if(p&&CU&&String(p.pagado_a)===String(CU.id)){
+          pushNotif('💵 Recibiste un pago de '+fmt(p.monto||0),'ok',"nav('pagos')");
         }
       })
       .subscribe();
@@ -2983,6 +3017,7 @@ const NAV_CFG={
     {s:'Principal',items:[
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Todos los pedidos',ic:'pkg'},
       {id:'balance',l:'Balance diario',ic:'dollar'},{id:'liquidacion',l:'Liquidación',ic:'doc'},
+      {id:'pagos',l:'💵 Pagos',ic:'dollar'},
     ]},
     {s:'Gestión',items:[
       {id:'usuarios',l:'Usuarios',ic:'users'},{id:'zonas',l:'Zonas y tarifas',ic:'map'},
@@ -3005,6 +3040,7 @@ const NAV_CFG={
     {s:'Principal',items:[
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Todos los pedidos',ic:'pkg'},
       {id:'balance',l:'Balance diario',ic:'dollar'},{id:'liquidacion',l:'Liquidación',ic:'doc'},
+      {id:'pagos',l:'💵 Pagos',ic:'dollar'},
     ]},
     {s:'Gestión',items:[
       {id:'usuarios',l:'Usuarios',ic:'users'},{id:'zonas',l:'Zonas y tarifas',ic:'map'},
@@ -3027,6 +3063,7 @@ const NAV_CFG={
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis pedidos',ic:'pkg'},
       {id:'balance',l:'Mi balance',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+      {id:'pagos',l:'💰 Mis Pagos',ic:'dollar'},
     ]},
     {s:'Mapa',items:[{id:'mapa',l:'Mapa de mis pedidos',ic:'map'}]},
     {s:'Reportes',items:[
@@ -3045,6 +3082,7 @@ const NAV_CFG={
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis pedidos',ic:'pkg'},
       {id:'balance',l:'Mis comisiones',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+      {id:'pagos',l:'💰 Mis Pagos',ic:'dollar'},
     ]},
     {s:'Mapa',items:[{id:'mapa',l:'Mapa de mis pedidos',ic:'map'}]},
     {s:'Reportes',items:[
@@ -3064,6 +3102,7 @@ const NAV_CFG={
       {id:'recaudacion',l:'Mi recaudación',ic:'dollar'},{id:'cupo',l:'Mi cupo y premios',ic:'trophy'},
       {id:'boletas',l:'Mis boletas',ic:'receipt'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+      {id:'pagos',l:'💰 Mis Pagos',ic:'dollar'},
       {id:'mensajes',l:'Mensajes',ic:'chat'},
     ]},
     {s:'Analítica',items:[
@@ -3075,6 +3114,7 @@ const NAV_CFG={
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'suministros',l:'Mis suministros',ic:'pkg'},
       {id:'pagos_prov',l:'Mis pagos',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+      {id:'pagos',l:'💰 Mis Pagos',ic:'dollar'},
     ]},
     {s:'Mapa',items:[{id:'mapa',l:'Mapa de mis pedidos',ic:'map'}]},
     {s:'Reportes',items:[
@@ -3118,7 +3158,7 @@ const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'
   neworder:'Nuevo Pedido',entregas:'Mis Entregas',cupo:'Mi Cupo y Premios',mispedidos:'Mis Pedidos',
   catalogo:'Catálogo de Productos',suministros:'Mis Suministros',mensajes:'Mensajes',
   mapa:'Mapa en Tiempo Real',estadisticas:'Estadísticas Avanzadas',
-  pagos_prov:'Mis Pagos',
+  pagos_prov:'Mis Pagos',pagos:'Pagos',
   analitica_prov:'Mi Analítica',analitica_vend:'Mi Analítica',
   analitica_drop:'Mi Analítica',analitica_admin:'Analítica Ecosistema',
   analitica_dlv:'Mi Analítica',
@@ -3167,6 +3207,7 @@ const NAV_TIPS={
   cupo:'Mi cupo del día y premios',
   suministros:'Mis suministros activos',
   pagos_prov:'Mis pagos como proveedor',
+  pagos:'Pagos del sistema — ganado vs pagado',
   clientes_recurrentes:'Mis clientes recurrentes'
 };
 function buildNav(){
@@ -5417,8 +5458,7 @@ async function confirmDlv(id){
   await refreshCache();
   closeA();filtrar();
   pushNotif('Pedido #'+id+' → '+estado,'s');
-  // Abrir Google Maps automáticamente al marcar En Ruta
-  if(estado==='En Ruta')setTimeout(()=>navegarPedido(id),300);
+  // NO abrir Google Maps automáticamente — el delivery decide cuándo navegar apretando el botón "Navegar"
   // Prompt calificación: el vendedor/admin califica al delivery cuando se entrega
   if(estado==='Entregado'&&o.deliveryId&&isAdminLike(CU.rol)){
     const dlv=getUser(o.deliveryId);
@@ -11149,6 +11189,197 @@ async function guardarPerfilCliente(){
   }catch(e){
     pushNotif('Error al guardar: '+(e.message||e),'e');
   }
+}
+
+/* ══════════════════════════════════════════════════
+   PAGES.pagos — Gestión de pagos a usuarios
+══════════════════════════════════════════════════ */
+function _ganadoPorUsuarioMes(user,orders){
+  const mes=mesActual();
+  const ordsMes=(orders||[]).filter(o=>o.estado==='Entregado'&&(o.fecha||'').startsWith(mes));
+  let ganado=0;
+  if(user.rol==='vendedor'){
+    ordsMes.filter(o=>String(o.vendedorId)===String(user.id)).forEach(o=>{ganado+=ganVend(o);});
+  }else if(user.rol==='dropshipper'){
+    ordsMes.filter(o=>String(o.dropId)===String(user.id)).forEach(o=>{ganado+=(o.comision||0)*(o.qty||1);});
+  }else if(user.rol==='proveedor'){
+    ordsMes.filter(o=>String(o.proveedorId)===String(user.id)).forEach(o=>{ganado+=(o.costo||0)*(o.qty||1);});
+  }else if(user.rol==='delivery'){
+    try{
+      const cfg=getCfg();
+      const cupoBase=user.vehiculo==='auto'?(cfg.cupoAuto||0):(cfg.cupoMoto||0);
+      const misMes=ordsMes.filter(o=>String(o.deliveryId)===String(user.id));
+      const byDia={};
+      misMes.forEach(o=>{const d=(o.fecha||'').slice(0,10);if(!byDia[d])byDia[d]=0;byDia[d]++;});
+      const dias=Object.keys(byDia);
+      let sueldoBase=0,premioTotal=0;
+      dias.forEach(d=>{
+        sueldoBase+=cfg.sueldoFijo||0;
+        const extra=Math.max(0,byDia[d]-cupoBase);
+        if(extra>=3)premioTotal+=cfg.premioExtra3||0;
+        else if(extra>=1)premioTotal+=cfg.premioExtra12||0;
+      });
+      ganado=sueldoBase+premioTotal;
+    }catch(e){ganado=0;}
+  }
+  return Math.round(ganado);
+}
+
+PAGES.pagos=function(){
+  $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">Cargando pagos...</div>';
+  (async()=>{
+    const esAdmin=CU.rol==='admin'||CU.rol==='superadmin';
+    const orders=_ordersCache||await DL.getOrders();
+    const users=_usersCache||await DL.getUsers();
+    const mes=mesActual();
+
+    if(esAdmin){
+      // Lista todos los usuarios con saldo
+      const rolesPagables=['vendedor','dropshipper','proveedor','delivery'];
+      const targetUsers=(users||[]).filter(u=>rolesPagables.includes(u.rol)&&u.activo!==false);
+      // Traer todos los pagos del mes
+      const pagosAll=await DL.getPagos({});
+      const pagosMes=pagosAll.filter(p=>(p.fecha||'').startsWith(mes));
+      const pagadoPorUser={};
+      pagosMes.forEach(p=>{const k=String(p.pagado_a);pagadoPorUser[k]=(pagadoPorUser[k]||0)+(Number(p.monto)||0);});
+
+      let totalGanado=0,totalPagado=0,totalSaldo=0;
+      const filas=targetUsers.map(u=>{
+        const ganado=_ganadoPorUsuarioMes(u,orders);
+        const pagado=pagadoPorUser[String(u.id)]||0;
+        const saldo=ganado-pagado;
+        totalGanado+=ganado;totalPagado+=pagado;totalSaldo+=saldo;
+        const avatar=u.foto_perfil
+          ?'<img src="'+safeUrl(u.foto_perfil)+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">'
+          :'<div style="width:42px;height:42px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent)">'+escHtml((u.nombre||'?')[0].toUpperCase())+'</div>';
+        const colorSaldo=saldo>0?'var(--red,#ef4444)':(saldo===0?'var(--green,#16a34a)':'var(--accent)');
+        return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px">'+
+          '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'+
+            avatar+
+            '<div style="flex:1;min-width:160px">'+
+              '<div style="font-weight:700;font-size:15px">'+escHtml(u.nombre||'—')+'</div>'+
+              '<div style="font-size:12px;color:var(--text2)">'+escHtml(capRole(u.rol))+'</div>'+
+            '</div>'+
+            '<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">'+
+              '<div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Ganado mes</div><div style="font-weight:700;color:var(--green,#16a34a)">'+fmt(ganado)+'</div></div>'+
+              '<div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Pagado</div><div style="font-weight:700;color:var(--text2)">'+fmt(pagado)+'</div></div>'+
+              '<div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Saldo</div><div style="font-weight:800;font-size:16px;color:'+colorSaldo+'">'+fmt(saldo)+'</div></div>'+
+            '</div>'+
+          '</div>'+
+          '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">'+
+            '<button class="btn btn-primary btn-sm" onclick="openRegistrarPago(\''+escAttr(u.id)+'\')">💵 Registrar Pago</button>'+
+            '<button class="btn btn-secondary btn-sm" onclick="verHistorialPagos(\''+escAttr(u.id)+'\')">📋 Ver Historial</button>'+
+          '</div>'+
+        '</div>';
+      });
+
+      $('ca').innerHTML=
+        '<div class="stitle" style="margin-top:0">💵 Pagos del sistema — '+mes+'</div>'+
+        '<div class="sgrid" style="margin-bottom:14px">'+
+          '<div class="sc gr"><div class="slabel">Total ganado mes</div><div class="sval">'+fmt(totalGanado)+'</div></div>'+
+          '<div class="sc bl"><div class="slabel">Total pagado</div><div class="sval">'+fmt(totalPagado)+'</div></div>'+
+          '<div class="sc '+(totalSaldo>0?'re':'ac')+'"><div class="slabel">Saldo pendiente</div><div class="sval">'+fmt(totalSaldo)+'</div></div>'+
+        '</div>'+
+        (filas.length?filas.join(''):'<div style="text-align:center;padding:40px;color:var(--text3)">Sin usuarios pagables.</div>');
+      return;
+    }
+
+    // Vista usuario (vendedor/dropshipper/proveedor/delivery)
+    const yo=(users||[]).find(u=>String(u.id)===String(CU.id))||CU;
+    const ganado=_ganadoPorUsuarioMes(yo,orders);
+    const misPagos=await DL.getPagos({pagado_a:CU.id});
+    const misPagosMes=misPagos.filter(p=>(p.fecha||'').startsWith(mes));
+    const cobrado=misPagosMes.reduce((a,p)=>a+(Number(p.monto)||0),0);
+    const saldo=ganado-cobrado;
+    const colorSaldo=saldo>0?'var(--red,#ef4444)':'var(--green,#16a34a)';
+    const filasPagos=misPagosMes.map(p=>{
+      const pagador=(users||[]).find(u=>String(u.id)===String(p.pagado_por));
+      return '<tr>'+
+        '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+'</td>'+
+        '<td style="font-weight:700;color:var(--green)">'+fmt(p.monto)+'</td>'+
+        '<td>'+escHtml(p.metodo||'—')+'</td>'+
+        '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
+        '<td style="font-size:12px;color:var(--text2)">'+escHtml(pagador?pagador.nombre:'—')+'</td>'+
+      '</tr>';
+    });
+    $('ca').innerHTML=
+      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px">'+
+        '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">Te deben</div>'+
+        '<div style="font-size:32px;font-weight:800;color:'+colorSaldo+'">'+fmt(Math.max(0,saldo))+'</div>'+
+        '<div style="display:flex;gap:24px;margin-top:14px;flex-wrap:wrap">'+
+          '<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Ganado este mes</div><div style="font-weight:700;color:var(--green)">'+fmt(ganado)+'</div></div>'+
+          '<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Cobrado este mes</div><div style="font-weight:700;color:var(--text)">'+fmt(cobrado)+'</div></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="stitle">📋 Pagos recibidos — '+mes+'</div>'+
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+        '<th>Fecha</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Pagado por</th>'+
+      '</tr></thead><tbody>'+
+        (filasPagos.length?filasPagos.join(''):'<tr><td colspan="5" style="text-align:center;color:var(--text3)">Sin pagos recibidos este mes</td></tr>')+
+      '</tbody></table></div>';
+  })();
+};
+
+function openRegistrarPago(targetUserId){
+  const u=(_usersCache||[]).find(x=>String(x.id)===String(targetUserId));
+  const nombre=u?u.nombre:'usuario';
+  const hoy=new Date().toISOString().slice(0,10);
+  openA('Registrar Pago a '+nombre,
+    '<div class="fg"><label>Monto (Gs.) *</label><input type="number" id="pagoMonto" min="1" placeholder="100000"></div>'+
+    '<div class="fg"><label>Método</label><select id="pagoMetodo">'+
+      '<option value="efectivo">Efectivo</option>'+
+      '<option value="transferencia">Transferencia</option>'+
+      '<option value="logistica_externa">Logística externa</option>'+
+      '<option value="otro">Otro</option>'+
+    '</select></div>'+
+    '<div class="fg"><label>Referencia (opcional)</label><input type="text" id="pagoRef" placeholder="ej: Transferencia #12345"></div>'+
+    '<div class="fg"><label>Nota (opcional)</label><textarea id="pagoNota" rows="2"></textarea></div>'+
+    '<div class="fg"><label>Fecha</label><input type="date" id="pagoFecha" value="'+hoy+'"></div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-primary" onclick="confirmarRegistroPago(\''+escAttr(targetUserId)+'\')">💾 Registrar</button>'
+  );
+}
+
+async function confirmarRegistroPago(targetUserId){
+  const monto=parseFloat($('pagoMonto').value)||0;
+  if(monto<=0){pushNotif('El monto debe ser mayor a 0','e');return;}
+  const metodo=$('pagoMetodo').value;
+  const referencia=$('pagoRef').value.trim();
+  const nota=$('pagoNota').value.trim();
+  const fecha=$('pagoFecha').value||new Date().toISOString().slice(0,10);
+  const res=await DL.savePago({
+    pagado_por:CU.id,
+    pagado_a:targetUserId,
+    monto,metodo,referencia,nota,fecha
+  });
+  if(res){
+    pushNotif('Pago registrado','ok');
+    closeA();
+    nav('pagos');
+  }
+}
+
+async function verHistorialPagos(targetUserId){
+  const u=(_usersCache||[]).find(x=>String(x.id)===String(targetUserId));
+  const nombre=u?u.nombre:'usuario';
+  const pagos=await DL.getPagos({pagado_a:targetUserId});
+  const filas=pagos.map(p=>'<tr>'+
+    '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+'</td>'+
+    '<td style="font-weight:700;color:var(--green)">'+fmt(p.monto)+'</td>'+
+    '<td>'+escHtml(p.metodo||'—')+'</td>'+
+    '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
+    '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.nota||'')+'</td>'+
+  '</tr>').join('');
+  const total=pagos.reduce((a,p)=>a+(Number(p.monto)||0),0);
+  openA('📋 Historial de pagos — '+nombre,
+    '<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">Total pagado: <b style="color:var(--green)">'+fmt(total)+'</b></div>'+
+    '<div style="overflow-x:auto;max-height:60vh"><table class="tbl"><thead><tr>'+
+      '<th>Fecha</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Nota</th>'+
+    '</tr></thead><tbody>'+
+      (filas||'<tr><td colspan="5" style="text-align:center;color:var(--text3)">Sin pagos registrados</td></tr>')+
+    '</tbody></table></div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>'
+  );
 }
 
 document.addEventListener('DOMContentLoaded',function(){
