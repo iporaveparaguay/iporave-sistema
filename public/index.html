@@ -866,6 +866,13 @@ const today = () => new Date().toISOString().slice(0,10);
 const nowStr = () => new Date().toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const mesActual = () => new Date().toISOString().slice(0,7);
 const ganVend = o => ((o.precio||0)*(o.qty||1))-((o.costo||0)*(o.qty||1))-(_getZonaO(o).precio||0);
+function _timeAgo(date){
+  const diff=Date.now()-(date instanceof Date?date.getTime():new Date(date).getTime());
+  if(diff<60000)return 'Ahora';
+  if(diff<3600000)return Math.floor(diff/60000)+' min';
+  if(diff<86400000)return Math.floor(diff/3600000)+' h';
+  return Math.floor(diff/86400000)+' d';
+}
 
 function togglePwd(inputId,btn){
   const el=$(inputId);if(!el)return;
@@ -3483,10 +3490,11 @@ function _notifSessionRender(){
   list.innerHTML=_notificaciones.slice().reverse().map(n=>{
     const d=new Date(n.timestamp||Date.now());
     const hora=d.toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'});
+    const ago=_timeAgo(d);
     return '<div style="border:1px solid var(--border);border-left:4px solid '+(n.leida?'var(--border)':'var(--accent)')+';background:'+(n.leida?'var(--bg2)':'rgba(108,99,255,.12)')+';border-radius:10px;padding:10px 12px;margin-bottom:8px">'+
       '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:4px">'+
         '<div style="font-size:13px;font-weight:800;color:var(--text)">'+escHtml(n.titulo||'Notificación')+'</div>'+
-        '<div style="font-size:10px;color:var(--text3);white-space:nowrap">'+hora+'</div>'+
+        '<div style="font-size:10px;color:var(--text3);white-space:nowrap">'+hora+' · '+ago+'</div>'+
       '</div>'+
       '<div style="font-size:12px;color:var(--text2);line-height:1.35">'+escHtml(n.cuerpo||'')+'</div>'+
     '</div>';
