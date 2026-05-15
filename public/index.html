@@ -2667,7 +2667,6 @@ async function doLogin(){
     initRealtime();
     if(window._ordersPolling)clearInterval(window._ordersPolling);
     window._ordersPolling=setInterval(()=>{if(_sessionToken)_rtRefreshOrders().catch(()=>{});},30000);
-    loadGoogleMaps();
     _aiHistory=[];
     const aib=$('aiBtn');if(aib){aib.style.display='flex';initAIDrag();}
     DL.getMensajesNoLeidos(CU.id).then(n=>{_unreadMsgs=n;updateAIBadge();});
