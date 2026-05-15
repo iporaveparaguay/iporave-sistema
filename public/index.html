@@ -1326,6 +1326,25 @@ const DL = {
         body:JSON.stringify({id:o.id,estado:o.estado})
       }).catch(e=>console.warn('[WA NOTIFY CLIENTE]',e.message));
     }
+    // Push al vendedor/creador cuando el estado del pedido cambia
+    if(_prev?.estado!==o.estado&&_sessionToken){
+      const _notifTarget=o.vendedorId||o.created_by;
+      const _notifMe=CU?.id;
+      if(_notifTarget&&String(_notifTarget)!==String(_notifMe)){
+        const _estadoEmoji={Despachado:'📦',En_ruta:'🛵','En ruta':'🛵',Entregado:'✅',Cancelado:'❌',Devuelto:'↩️',Pendiente:'🕐'};
+        const _emoji=_estadoEmoji[o.estado]||'📋';
+        fetch(WORKER_URL+'/api/push-send',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
+          body:JSON.stringify({
+            user_id:_notifTarget,
+            title:_emoji+' Pedido '+o.estado,
+            body:'Pedido #'+o.id+(o.cliente?' — '+o.cliente:''),
+            url:'/orders'
+          })
+        }).catch(e=>console.warn('[PUSH VENDEDOR]',e.message));
+      }
+    }
     updateNavBadges();
   },
   async deleteOrder(id){
@@ -3172,6 +3191,40 @@ function updateNavBadges(){
     const act=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)).length;
     const b=$('nbadge_entregas');
     if(b){b.textContent=act>99?'99+':String(act);b.style.display=act>0?'':'none';}
+    // Badge saldo a cobrar en "Mi cupo y premios"
+    try{
+      const bCupo=$('nbadge_cupo');
+      if(bCupo){
+        const cfg=getCfg();
+        const mes=mesActual();
+        const misEntMes=_ordersCache.filter(o=>o.deliveryId===CU.id&&o.estado==='Entregado'&&(o.fecha||'').startsWith(mes));
+        const u=getUser(CU.id);
+        const cupoBase=(u&&u.vehiculo==='auto'?cfg.cupoAuto:cfg.cupoMoto)||0;
+        const byDiaBadge={};
+        misEntMes.forEach(o=>{const d=(o.fecha||today()).slice(0,10);if(!byDiaBadge[d])byDiaBadge[d]=0;byDiaBadge[d]++;});
+        let sueldoBadge=0,premioBadge=0;
+        Object.values(byDiaBadge).forEach(ent=>{
+          sueldoBadge+=cfg.sueldoFijo||0;
+          const extra=Math.max(0,ent-cupoBase);
+          if(extra>=3)premioBadge+=cfg.premioExtra3||0;
+          else if(extra>=1)premioBadge+=cfg.premioExtra12||0;
+        });
+        const saldoBadge=sueldoBadge+premioBadge;
+        if(saldoBadge>0){
+          bCupo.textContent=fmt(saldoBadge);
+          bCupo.style.display='';
+          bCupo.style.background='#16a34a';
+          bCupo.style.color='white';
+          bCupo.style.fontSize='9px';
+          bCupo.style.maxWidth='80px';
+          bCupo.style.overflow='hidden';
+          bCupo.style.textOverflow='ellipsis';
+          bCupo.style.whiteSpace='nowrap';
+        }else{
+          bCupo.style.display='none';
+        }
+      }
+    }catch(_){}
   }
   // Mensajes sin leer — todos los roles
   const bm=$('nbadge_mensajes');
@@ -3580,7 +3633,6 @@ function _notifSessionEnsureUi(){
     '<button class="btn btn-primary btn-sm" onclick="_notifSessionMarkAllRead()" style="padding:5px 10px">Marcar todo como leído</button>'+
   '</div>'+
   '<div id="codexNotifList" style="padding:12px 14px;overflow-y:auto;flex:1"></div>';
-  document.body.appendChild(bell);
   document.body.appendChild(panel);
   _notifSessionRender();
 }
@@ -5707,7 +5759,42 @@ PAGES.balance=function(){
   const totalEntregados=ent.length;
   const pendientesCobro=orders.filter(o=>o.estado!=='Cancelado'&&o.estado!=='Devuelto'&&o.estado!=='Entregado').length;
   const canceladosHoy=orders.filter(o=>o.estado==='Cancelado'||o.estado==='Devuelto').length;
-  $('ca').innerHTML=
+  /* ── KPI Cobrado / Pendiente por mes actual y rol ── */
+  const mes=mesActual();
+  const entMes=orders.filter(o=>o.estado==='Entregado'&&(o.fecha||'').startsWith(mes));
+  const pendMes=orders.filter(o=>['Pendiente','Despachado','En ruta'].includes(o.estado)&&(o.fecha||'').startsWith(mes));
+  let cobradoMes=0,pendienteMes=0;
+  if(CU.rol==='vendedor'){
+    cobradoMes=entMes.reduce((a,b)=>a+ganVend(b),0);
+    pendienteMes=pendMes.reduce((a,b)=>a+ganVend(b),0);
+  }else if(CU.rol==='dropshipper'){
+    cobradoMes=entMes.reduce((a,b)=>a+(b.comision||0)*(b.qty||1),0);
+    pendienteMes=pendMes.reduce((a,b)=>a+(b.comision||0)*(b.qty||1),0);
+  }else if(CU.rol==='proveedor'){
+    cobradoMes=entMes.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
+    pendienteMes=pendMes.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
+  }else{
+    cobradoMes=entMes.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+    pendienteMes=pendMes.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  }
+  const kpiMes=new Date().toLocaleDateString('es-PY',{month:'long',year:'numeric'});
+  const kpiHtml=
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'+
+      '<div style="background:linear-gradient(135deg,#16a34a,#22c55e);border-radius:14px;padding:18px 16px;color:white;text-align:center;box-shadow:0 4px 16px rgba(22,163,74,0.35)">'+
+        '<div style="font-size:10px;opacity:0.85;text-transform:uppercase;letter-spacing:1px;font-weight:700">✅ Cobrado</div>'+
+        '<div style="font-size:22px;font-weight:800;margin-top:6px;letter-spacing:-0.5px">'+fmt(cobradoMes)+'</div>'+
+        '<div style="font-size:11px;opacity:0.75;margin-top:4px">'+entMes.length+' pedido'+(entMes.length!==1?'s':'')+' entregado'+(entMes.length!==1?'s':'')+'</div>'+
+      '</div>'+
+      '<div style="background:linear-gradient(135deg,#d97706,#f59e0b);border-radius:14px;padding:18px 16px;color:white;text-align:center;box-shadow:0 4px 16px rgba(217,119,6,0.35)">'+
+        '<div style="font-size:10px;opacity:0.85;text-transform:uppercase;letter-spacing:1px;font-weight:700">⏳ Pendiente</div>'+
+        '<div style="font-size:22px;font-weight:800;margin-top:6px;letter-spacing:-0.5px">'+fmt(pendienteMes)+'</div>'+
+        '<div style="font-size:11px;opacity:0.75;margin-top:4px">'+pendMes.length+' pedido'+(pendMes.length!==1?'s':'')+' en curso</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="text-align:center;font-size:11px;color:var(--text2);margin-bottom:18px;letter-spacing:0.3px">'+
+      'Este mes ('+kpiMes+') — '+entMes.length+' entregados / '+pendMes.length+' pendientes'+
+    '</div>';
+  $('ca').innerHTML=kpiHtml+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">'+
       '<div style="background:linear-gradient(135deg,#f97316,#fb923c);border-radius:12px;padding:16px;color:white;text-align:center;box-shadow:0 4px 14px rgba(249,115,22,0.35)">'+
         '<div style="font-size:11px;opacity:0.85;text-transform:uppercase;letter-spacing:1px;font-weight:700">Ingresos hoy</div>'+
@@ -6128,6 +6215,77 @@ PAGES.cupo=function(){
         '<div class="lrow"><span class="llbl">Premio 3+ extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra3)+'</span></div>'+
       '</div>'+
       renderTable(hoyO,'Pedidos de hoy',true);
+    /* ── LIQUIDACIÓN MENSUAL DEL DELIVERY ── */
+    (function _renderLiqDelivery(){
+      const mes=mesActual();
+      const misOrdMes=_ordersCache.filter(o=>o.deliveryId===CU.id&&o.estado==='Entregado'&&(o.fecha||'').startsWith(mes));
+      // Agrupar por día
+      const byDia={};
+      misOrdMes.forEach(o=>{
+        const d=(o.fecha||today()).slice(0,10);
+        if(!byDia[d])byDia[d]=0;
+        byDia[d]++;
+      });
+      const diasTrabajados=Object.keys(byDia);
+      const cupoBase=max||0;
+      let sueldoBase=0,premioTotal=0;
+      const filas=diasTrabajados.sort().map(d=>{
+        const ent=byDia[d];
+        sueldoBase+=cfg.sueldoFijo||0;
+        const extra=Math.max(0,ent-cupoBase);
+        let premio=0;
+        if(extra>=3)premio=cfg.premioExtra3||0;
+        else if(extra>=1)premio=cfg.premioExtra12||0;
+        premioTotal+=premio;
+        return '<tr>'+
+          '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+d+'</td>'+
+          '<td style="text-align:center;font-weight:700;color:var(--green)">'+ent+'</td>'+
+          '<td style="text-align:center;color:var(--text2)">'+cupoBase+'</td>'+
+          '<td style="text-align:center;color:'+(extra>0?'var(--accent)':'var(--text3)')+'">'+extra+'</td>'+
+          '<td style="text-align:right;color:'+(premio>0?'var(--accent)':'var(--text3)')+'">'+fmt(premio)+'</td>'+
+        '</tr>';
+      });
+      const totalAcu=sueldoBase+premioTotal;
+      const pagado=0;
+      const saldoCobrar=totalAcu-pagado;
+      // Actualizar badge nav
+      const bCupo=$('nbadge_cupo');
+      if(bCupo&&saldoCobrar>0){
+        bCupo.textContent=fmt(saldoCobrar);
+        bCupo.style.display='';
+        bCupo.style.background='#16a34a';
+        bCupo.style.color='white';
+        bCupo.style.fontSize='9px';
+        bCupo.style.maxWidth='80px';
+        bCupo.style.overflow='hidden';
+        bCupo.style.textOverflow='ellipsis';
+        bCupo.style.whiteSpace='nowrap';
+      }
+      const liqHtml=
+        '<div class="stitle">💰 Mi Liquidación</div>'+
+        '<div style="overflow-x:auto;margin-bottom:14px">'+
+          '<table class="tbl"><thead><tr>'+
+            '<th>Fecha</th><th>Entregas</th><th>Cupo</th><th>Extra</th><th>Premio</th>'+
+          '</tr></thead><tbody>'+
+          (filas.length?filas.join(''):'<tr><td colspan="5" style="text-align:center;color:var(--text3)">Sin entregas este mes</td></tr>')+
+          '</tbody></table>'+
+        '</div>'+
+        '<div class="lcard2">'+
+          '<div class="lrow"><span class="llbl">Días trabajados</span><span style="color:var(--cyan)">'+diasTrabajados.length+'</span></div>'+
+          '<div class="lrow"><span class="llbl">Sueldo base</span><span style="color:var(--green)">'+fmt(sueldoBase)+'</span></div>'+
+          '<div class="lrow"><span class="llbl">Premios por cupos superados</span><span style="color:var(--accent)">'+fmt(premioTotal)+'</span></div>'+
+          '<div class="lrow"><span style="font-weight:700">Total acumulado mes</span><span style="color:var(--green);font-weight:800;font-size:15px">'+fmt(totalAcu)+'</span></div>'+
+          '<div class="lrow"><span class="llbl">Pagado</span><span style="color:var(--text2)">'+fmt(pagado)+'</span></div>'+
+          '<div style="font-size:10px;color:var(--text3);margin:-4px 0 8px 0;padding-left:4px">Próximamente podrá registrar pagos</div>'+
+          '<div class="lrow" style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">'+
+            '<span style="font-weight:700;font-size:14px">💳 Saldo a cobrar</span>'+
+            '<span style="font-weight:800;font-size:18px;color:var(--green)">'+fmt(saldoCobrar)+'</span>'+
+          '</div>'+
+        '</div>';
+      // Adjuntar al contenido existente
+      const ca=$('ca');
+      if(ca)ca.innerHTML+=liqHtml;
+    })();
   })();
 };
 
