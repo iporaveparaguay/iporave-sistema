@@ -87,7 +87,7 @@ const ESTADO_CFG={
   'Devuelto':    {label:'↩️ Devuelto',             cls:'e-cancelado'},
 };
 
-function getEstado(e){return ESTADO_CFG[e]||{label:'📋 '+e,cls:'e-default'};}
+function getEstado(e){return ESTADO_CFG[e]||{label:'📋 '+esc(e),cls:'e-default'};}
 function stars(n){const f=Math.round(n||0);return'★'.repeat(f)+'☆'.repeat(5-f);}
 function precio(p){return p?'Gs. '+Number(p).toLocaleString('es-PY'):'';}
 function phone(t){if(!t)return'';const c=t.toString().replace(/\D/g,'');return c.startsWith('595')?c:'595'+c.replace(/^0/,'');}
