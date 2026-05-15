@@ -224,6 +224,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mapBar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;overflow-x:auto}
 .mapBar .sep{width:1px;background:var(--border);margin:0 4px}
 @media(max-width:640px){.mapBtn{padding:6px 10px;font-size:11px}}
+/* FILTROS PREMIUM REUSABLES */
+.filterBtn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:10px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);color:var(--text);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.05);transition:all .15s ease;user-select:none;white-space:nowrap}
+.filterBtn:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08)}
+.filterBtn:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(0,0,0,.2),inset 0 2px 4px rgba(0,0,0,.2)}
+.filterBtn.active{background:linear-gradient(180deg,var(--accent) 0%,#d97706 100%);color:#fff;border-color:var(--accent);box-shadow:0 4px 12px rgba(245,158,11,.4),inset 0 1px 0 rgba(255,255,255,.2)}
+.filterBtn .dot{width:7px;height:7px;border-radius:50%}
+.filterBar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0;margin-bottom:10px}
+@media(max-width:640px){.filterBtn{padding:5px 9px;font-size:11px}}
 /* GPS */
 .gpsw{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;margin-bottom:12px;}
 .gpss{display:flex;align-items:center;gap:8px;font-size:13px;}
@@ -1703,7 +1711,7 @@ function initRealtime(){
         const r=payload.new;
         const rol=CU?.rol;
         const esEntregado=r.estado==='Entregado';
-        const esEnRuta=['En Ruta','En Ruta','Despachado'].includes(r.estado);
+        const esEnRuta=['En Ruta','En ruta','Despachado'].includes(r.estado);
         // Filtrar: cada rol solo ve los pedidos que le corresponden
         const esAdm=isAdminLike(rol);
         const esVend=rol==='vendedor'&&String(r.vendedor_id)===String(CU?.id);
@@ -4503,14 +4511,14 @@ let _orderStateChangedIds=new Set();
 function _orderStateBadgeClass(estado){
   if(estado==='Entregado')return 'be';
   if(estado==='Despachado')return 'bdisp';
-  if(estado==='En Ruta'||estado==='En Ruta')return 'br';
+  if(estado==='En Ruta'||estado==='En ruta')return 'br';
   if(['Cancelado','Devuelto'].includes(estado)||String(estado||'').startsWith('No contesta'))return 'bc';
   return 'bp';
 }
 function _orderStateColor(estado){
   if(estado==='Entregado')return 'var(--green)';
   if(estado==='Despachado')return 'var(--blue)';
-  if(estado==='En Ruta'||estado==='En Ruta')return 'var(--cyan)';
+  if(estado==='En Ruta'||estado==='En ruta')return 'var(--cyan)';
   if(['Cancelado','Devuelto'].includes(estado)||String(estado||'').startsWith('No contesta'))return 'var(--red)';
   return 'var(--accent)';
 }
@@ -7022,9 +7030,9 @@ PAGES.analitica_vend=function(periodo){
   const zonaMap={};
   mine.forEach(o=>{const z=_getZonaO(o).nombre||'Sin zona';if(!zonaMap[z])zonaMap[z]=0;zonaMap[z]++;});
   const topZonas=Object.entries(zonaMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const btnC=p=>periodo===p?'btn btn-primary btn-sm':'btn btn-secondary btn-sm';
+  const btnC=p=>periodo===p?'filterBtn active':'filterBtn';
   const html=
-    '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">'+
+    '<div class="filterBar">'+
       '<button class="'+btnC('hoy')+'" onclick="PAGES.analitica_vend(\'hoy\')">Hoy</button>'+
       '<button class="'+btnC('semana')+'" onclick="PAGES.analitica_vend(\'semana\')">7 días</button>'+
       '<button class="'+btnC('mes')+'" onclick="PAGES.analitica_vend(\'mes\')">Este mes</button>'+
@@ -8217,7 +8225,7 @@ PAGES.catalogo=function(q=''){
       (cats.length?'<select onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.cat=this.value||null;PAGES.catalogo()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;color:var(--text);font-size:12px"><option value="">Todas las categorías</option>'+cats.map(c=>'<option value="'+escAttr(c)+'" '+(f.cat===c?'selected':'')+'>'+escHtml(c)+'</option>').join('')+'</select>':'')+
       '<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px"><input type="checkbox" '+(f.soloStock?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloStock=this.checked||null;PAGES.catalogo()"> Con stock</label>'+
       (esAdmin?'<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px"><input type="checkbox" '+(f.soloTienda?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloTienda=this.checked||null;PAGES.catalogo()"> En tienda pública</label>':'')+
-      (Object.values(f).some(Boolean)?'<button class="btn btn-sm" onclick="window._catFiltros={};PAGES.catalogo()" style="background:var(--red);color:#fff;font-size:11px;padding:4px 10px;border:none;border-radius:6px;cursor:pointer">✕ Limpiar filtros</button>':'')+
+      (Object.values(f).some(Boolean)?'<button class="filterBtn" onclick="window._catFiltros={};PAGES.catalogo()" style="background:linear-gradient(180deg,#dc2626 0%,#991b1b 100%);color:#fff;border-color:#991b1b">✕ Limpiar filtros</button>':'')+
       '<span style="margin-left:auto;font-size:11px;color:var(--text3)">'+lista.length+' producto(s)</span>'+
     '</div>'+
     (lista.length?'<div class="prod-grid">'+lista.map(p=>_renderProductoCard(p,puedeEditar&&(p.owner_id||p.owner_user_id)===CU.id,puedeVender)).join('')+'</div>'
