@@ -614,6 +614,37 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .toggleBtn:active{transform:translateY(1px)}
 .toggleBtn .dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.4)}
 .toggleBtn.on .dot{background:#fff;box-shadow:0 0 8px rgba(255,255,255,.6)}
+/* Renglón de usuario en Pagos — 3D clickeable */
+.userPagoRow{display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;box-shadow:0 3px 10px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.04);cursor:pointer;transition:all .15s ease;margin-bottom:10px;flex-wrap:wrap}
+.userPagoRow:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06)}
+.userPagoRow:active{transform:translateY(1px);box-shadow:0 1px 4px rgba(0,0,0,.2),inset 0 2px 6px rgba(0,0,0,.15)}
+.userPagoRow .avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#d97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px;flex-shrink:0;overflow:hidden}
+.userPagoRow .avatar img{width:100%;height:100%;object-fit:cover}
+.userPagoRow .info{flex:1;min-width:140px}
+.userPagoRow .nombre{font-size:15px;font-weight:800;color:var(--text)}
+.userPagoRow .rol{font-size:11px;color:var(--text2);text-transform:capitalize}
+.userPagoRow .saldo{font-size:18px;font-weight:900;text-align:right;min-width:120px}
+.userPagoRow .saldo.deuda{color:#ef4444}
+.userPagoRow .saldo.ok{color:#22c55e}
+.userPagoRow .saldo .label{font-size:10px;color:var(--text2);font-weight:600;display:block;text-transform:uppercase}
+.userPagoRow .acciones{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;width:100%}
+.btnPagado{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:linear-gradient(180deg,#16a34a 0%,#15803d 100%);color:#fff;border:1px solid #15803d;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 8px rgba(22,163,74,.3),inset 0 1px 0 rgba(255,255,255,.15);transition:all .15s ease}
+.btnPagado:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(22,163,74,.4)}
+.btnPagado:active{transform:translateY(1px)}
+.pagoSaldoLive{margin-top:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;font-size:12px;line-height:1.7}
+.pagoSaldoLive .line{display:flex;justify-content:space-between;gap:12px}
+.pagoSaldoLive .line b{font-weight:800}
+.pagoSaldoLive .complete{color:#22c55e;font-weight:800;text-align:center;margin-top:4px}
+.pagoPeriodTabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.pagoPeriodTab{padding:8px 14px;border-radius:10px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s ease}
+.pagoPeriodTab:hover{transform:translateY(-1px)}
+.pagoPeriodTab.active{background:linear-gradient(180deg,var(--accent) 0%,#d97706 100%);color:#fff;border-color:#d97706;box-shadow:0 4px 10px rgba(245,158,11,.3)}
+.pagoCalDay{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;background:var(--bg2);border:1px solid var(--border);font-size:12px;cursor:pointer;transition:all .12s ease}
+.pagoCalDay:hover{transform:translateY(-1px);border-color:var(--accent)}
+.pagoCalDay.has{background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border-color:var(--accent)}
+.pagoCalDay.sel{background:linear-gradient(180deg,var(--accent) 0%,#d97706 100%);color:#fff;border-color:#d97706}
+.pagoCalDay .dot{font-size:10px;color:var(--accent);margin-top:1px}
+.pagoCalDay.sel .dot{color:#fff}
 </style>
 </head>
 <body>
@@ -3178,7 +3209,7 @@ const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'
   neworder:'Nuevo Pedido',entregas:'Mis Entregas',cupo:'Mi Cupo y Premios',mispedidos:'Mis Pedidos',
   catalogo:'Catálogo de Productos',suministros:'Mis Suministros',mensajes:'Mensajes',
   mapa:'Mapa en Tiempo Real',estadisticas:'Estadísticas Avanzadas',
-  pagos_prov:'Mis Pagos',pagos:'Pagos',
+  pagos_prov:'Mis Pagos',pagos:'Pagos',pago_usuario:'Estado Financiero',
   analitica_prov:'Mi Analítica',analitica_vend:'Mi Analítica',
   analitica_drop:'Mi Analítica',analitica_admin:'Analítica Ecosistema',
   analitica_dlv:'Mi Analítica',
@@ -4204,6 +4235,55 @@ PAGES.dashboard=async function(){
         '<button class="btn btn-secondary btn-sm" onclick="nav(\'orders\')">📋 Todos los pedidos</button>'+
       '</div>';
     }
+    // ── Estado Financiero (admin/superadmin) ──
+    if(['admin','superadmin'].includes(CU.rol)){
+      try{
+        let pagosAll=window._pagosCache;
+        if(!pagosAll){ pagosAll=await DL.getPagos({}); window._pagosCache=pagosAll; }
+        const rolesPagables=['vendedor','dropshipper','proveedor','delivery'];
+        let teDeben=0;
+        (_usersCache||[]).filter(u=>rolesPagables.includes(u.rol)&&u.activo!==false).forEach(u=>{
+          teDeben+=calcularSaldoUsuario(u.id);
+        });
+        // "Le debés" = saldos donde CU es el que paga (en sistema actual, admin paga a todos)
+        // Como métrica: total ya pagado este mes desde CU (egresos)
+        const mesAct=mesActual();
+        const leDebes=(pagosAll||[]).filter(p=>String(p.pagado_por)===String(CU.id)&&(p.fecha||'').startsWith(mesAct))
+          .reduce((a,p)=>a+Number(p.monto||0),0);
+        const balance=teDeben-leDebes;
+        html+='<div style="margin-top:16px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:all .15s ease" onclick="nav(\'pagos\')" onmouseover="this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.transform=\'\'">'+
+          '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px">💼 Estado Financiero — '+mesAct+'</div>'+
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">'+
+            '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
+              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">💚 Por pagar</div>'+
+              '<div style="font-size:18px;font-weight:900;color:#22c55e">'+fmt(teDeben)+'</div>'+
+            '</div>'+
+            '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
+              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">🟧 Pagado este mes</div>'+
+              '<div style="font-size:18px;font-weight:900;color:var(--accent)">'+fmt(leDebes)+'</div>'+
+            '</div>'+
+            '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
+              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">🔄 Balance neto</div>'+
+              '<div style="font-size:18px;font-weight:900;color:'+(balance>0?'#ef4444':'#22c55e')+'">'+fmt(balance)+'</div>'+
+            '</div>'+
+          '</div>'+
+        '</div>';
+      }catch(e){console.warn('Estado financiero dashboard:',e.message);}
+    }
+  }
+  // ── Saldo pendiente (rol pagable no-admin) ──
+  if(['vendedor','dropshipper','proveedor','delivery'].includes(CU.rol)){
+    try{
+      if(!window._pagosCache){ try{ window._pagosCache=await DL.getPagos({pagado_a:CU.id}); }catch(_){ } }
+      const miSaldo=calcularSaldoUsuario(CU.id);
+      html+='<div style="margin-top:14px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'+
+        '<div>'+
+          '<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700">💰 Tu saldo pendiente</div>'+
+          '<div style="font-size:22px;font-weight:900;color:'+(miSaldo>0?'#22c55e':'var(--text2)')+'">'+fmt(miSaldo)+'</div>'+
+        '</div>'+
+        '<button class="btn btn-primary btn-sm" onclick="nav(\'pagos\')">Ver detalle →</button>'+
+      '</div>';
+    }catch(e){console.warn('Saldo pendiente dashboard:',e.message);}
   }
   if(CU.rol==='delivery'){
     const mine=orders.filter(o=>o.deliveryId===CU.id);
@@ -11289,6 +11369,18 @@ function _ganadoPorUsuarioMes(user,orders){
   return Math.round(ganado);
 }
 
+// Helper común para calcular el saldo actual de un usuario (mes en curso)
+function calcularSaldoUsuario(userId){
+  const user=(_usersCache||[]).find(u=>String(u.id)===String(userId));
+  if(!user) return 0;
+  const ganado=_ganadoPorUsuarioMes(user,_ordersCache||[]);
+  const mes=mesActual();
+  const pagado=((window._pagosCache)||[]).filter(p=>
+    String(p.pagado_a)===String(userId) && (p.fecha||'').startsWith(mes)
+  ).reduce((a,b)=>a+Number(b.monto||0),0);
+  return Math.max(0,ganado-pagado);
+}
+
 PAGES.pagos=function(){
   $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">Cargando pagos...</div>';
   (async()=>{
@@ -11303,6 +11395,7 @@ PAGES.pagos=function(){
       const targetUsers=(users||[]).filter(u=>rolesPagables.includes(u.rol)&&u.activo!==false);
       // Traer todos los pagos del mes
       const pagosAll=await DL.getPagos({});
+      window._pagosCache=pagosAll;
       const pagosMes=pagosAll.filter(p=>(p.fecha||'').startsWith(mes));
       const pagadoPorUser={};
       pagosMes.forEach(p=>{const k=String(p.pagado_a);pagadoPorUser[k]=(pagadoPorUser[k]||0)+(Number(p.monto)||0);});
@@ -11311,28 +11404,30 @@ PAGES.pagos=function(){
       const filas=targetUsers.map(u=>{
         const ganado=_ganadoPorUsuarioMes(u,orders);
         const pagado=pagadoPorUser[String(u.id)]||0;
-        const saldo=ganado-pagado;
+        const saldo=Math.max(0,ganado-pagado);
         totalGanado+=ganado;totalPagado+=pagado;totalSaldo+=saldo;
-        const avatar=u.foto_perfil
-          ?'<img src="'+safeUrl(u.foto_perfil)+'" style="width:42px;height:42px;border-radius:50%;object-fit:cover">'
-          :'<div style="width:42px;height:42px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent)">'+escHtml((u.nombre||'?')[0].toUpperCase())+'</div>';
-        const colorSaldo=saldo>0?'var(--red,#ef4444)':(saldo===0?'var(--green,#16a34a)':'var(--accent)');
-        return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px">'+
-          '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'+
-            avatar+
-            '<div style="flex:1;min-width:160px">'+
-              '<div style="font-weight:700;font-size:15px">'+escHtml(u.nombre||'—')+'</div>'+
-              '<div style="font-size:12px;color:var(--text2)">'+escHtml(capRole(u.rol))+'</div>'+
-            '</div>'+
-            '<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">'+
-              '<div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Ganado mes</div><div style="font-weight:700;color:var(--green,#16a34a)">'+fmt(ganado)+'</div></div>'+
-              '<div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Pagado</div><div style="font-weight:700;color:var(--text2)">'+fmt(pagado)+'</div></div>'+
-              '<div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Saldo</div><div style="font-weight:800;font-size:16px;color:'+colorSaldo+'">'+fmt(saldo)+'</div></div>'+
-            '</div>'+
+        const avatarInner=u.foto_perfil
+          ?'<img src="'+safeUrl(u.foto_perfil)+'" alt="">'
+          :escHtml((u.nombre||'?')[0].toUpperCase());
+        const saldoClass=saldo>0?'deuda':'ok';
+        const saldoLabel=saldo>0?'Te debe':'Al día';
+        const btnPagado=saldo>0
+          ? '<button class="btnPagado" onclick="event.stopPropagation();abrirPagoCompleto(\''+escAttr(u.id)+'\')">✅ Pagado</button>'
+          : '';
+        return '<div class="userPagoRow" onclick="abrirPagoUsuario(\''+escAttr(u.id)+'\')">'+
+          '<div class="avatar">'+avatarInner+'</div>'+
+          '<div class="info">'+
+            '<div class="nombre">'+escHtml(u.nombre||'—')+'</div>'+
+            '<div class="rol">'+escHtml(capRole(u.rol))+'</div>'+
           '</div>'+
-          '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">'+
-            '<button class="btn btn-primary btn-sm" onclick="openRegistrarPago(\''+escAttr(u.id)+'\')">💵 Registrar Pago</button>'+
-            '<button class="btn btn-secondary btn-sm" onclick="verHistorialPagos(\''+escAttr(u.id)+'\')">📋 Ver Historial</button>'+
+          '<div class="saldo '+saldoClass+'">'+
+            '<span class="label">'+saldoLabel+'</span>'+
+            fmt(saldo)+
+          '</div>'+
+          '<div class="acciones">'+
+            '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openRegistrarPago(\''+escAttr(u.id)+'\')">💵 Registrar Pago</button>'+
+            btnPagado+
+            '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();verHistorialPagos(\''+escAttr(u.id)+'\')">📋 Ver Historial</button>'+
           '</div>'+
         '</div>';
       });
@@ -11384,12 +11479,15 @@ PAGES.pagos=function(){
   })();
 };
 
-function openRegistrarPago(targetUserId){
+function openRegistrarPago(targetUserId,montoPreRellenado){
   const u=(_usersCache||[]).find(x=>String(x.id)===String(targetUserId));
   const nombre=u?u.nombre:'usuario';
   const hoy=new Date().toISOString().slice(0,10);
+  const saldoActual=calcularSaldoUsuario(targetUserId);
+  const pre=Number(montoPreRellenado)>0?Math.round(Number(montoPreRellenado)):'';
   openA('Registrar Pago a '+nombre,
-    '<div class="fg"><label>Monto (Gs.) *</label><input type="number" id="pagoMonto" min="1" placeholder="100000"></div>'+
+    '<div class="fg"><label>Monto (Gs.) *</label><input type="number" id="pagoMonto" min="1" placeholder="100000" value="'+pre+'" oninput="_actualizarSaldoLive('+saldoActual+')"></div>'+
+    '<div id="pagoSaldoLive" class="pagoSaldoLive" style="display:none"></div>'+
     '<div class="fg"><label>Método</label><select id="pagoMetodo">'+
       '<option value="efectivo">Efectivo</option>'+
       '<option value="transferencia">Transferencia</option>'+
@@ -11402,6 +11500,43 @@ function openRegistrarPago(targetUserId){
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="confirmarRegistroPago(\''+escAttr(targetUserId)+'\')">💾 Registrar</button>'
   );
+  // Trigger inicial del cálculo en vivo
+  setTimeout(function(){ _actualizarSaldoLive(saldoActual); },50);
+}
+
+function _actualizarSaldoLive(saldoActual){
+  const inp=$('pagoMonto'); const box=$('pagoSaldoLive');
+  if(!inp||!box) return;
+  const monto=parseFloat(inp.value)||0;
+  if(saldoActual<=0){
+    box.style.display='block';
+    box.innerHTML='<div class="line"><span>Saldo actual:</span><b>'+fmt(0)+'</b></div><div class="complete">Sin saldo pendiente</div>';
+    return;
+  }
+  if(monto<=0){
+    box.style.display='block';
+    box.innerHTML='<div class="line"><span>Saldo actual:</span><b>'+fmt(saldoActual)+'</b></div>';
+    return;
+  }
+  const pct=Math.round(monto/saldoActual*100);
+  const restante=Math.max(0,saldoActual-monto);
+  box.style.display='block';
+  let html='<div class="line"><span>Saldo actual:</span><b>'+fmt(saldoActual)+'</b></div>'+
+    '<div class="line"><span>Pagás:</span><b style="color:var(--accent)">'+fmt(monto)+' ('+pct+'%)</b></div>'+
+    '<div class="line"><span>Queda pendiente:</span><b style="color:'+(restante>0?'#ef4444':'#22c55e')+'">'+fmt(restante)+'</b></div>';
+  if(monto>=saldoActual){ html+='<div class="complete">✅ Saldará completo</div>'; }
+  box.innerHTML=html;
+}
+
+function abrirPagoCompleto(targetUserId){
+  const saldo=calcularSaldoUsuario(targetUserId);
+  if(saldo<=0){ pushNotif('Este usuario no tiene saldo pendiente','w'); return; }
+  openRegistrarPago(targetUserId,saldo);
+}
+
+function abrirPagoUsuario(targetUserId){
+  window._pagoUsuarioActual=targetUserId;
+  nav('pago_usuario');
 }
 
 async function confirmarRegistroPago(targetUserId){
@@ -11419,7 +11554,13 @@ async function confirmarRegistroPago(targetUserId){
   if(res){
     pushNotif('Pago registrado','ok');
     closeA();
-    nav('pagos');
+    try{ window._pagosCache=await DL.getPagos({}); }catch(_){ }
+    // Si estamos en página dedicada del usuario, refrescar ahí; si no, ir a pagos
+    if(window._pagoUsuarioActual && String(window._pagoUsuarioActual)===String(targetUserId)){
+      nav('pago_usuario');
+    } else {
+      nav('pagos');
+    }
   }
 }
 
@@ -11444,6 +11585,220 @@ async function verHistorialPagos(targetUserId){
     '</tbody></table></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>'
   );
+}
+
+/* ══════════════════════════════════════════════════
+   PAGES.pago_usuario — Estado financiero por usuario
+══════════════════════════════════════════════════ */
+function _pagoUsuarioRangoFecha(periodo,refDate){
+  const hoy=refDate||new Date();
+  let ini,fin=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate(),23,59,59);
+  if(periodo==='hoy'){
+    ini=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate(),0,0,0);
+  } else if(periodo==='semana'){
+    const d=new Date(hoy); const dow=d.getDay()||7; d.setDate(d.getDate()-(dow-1));
+    ini=new Date(d.getFullYear(),d.getMonth(),d.getDate(),0,0,0);
+  } else if(periodo==='ano'){
+    ini=new Date(hoy.getFullYear(),0,1);
+  } else if(periodo==='dia' && window._pagoDiaSel){
+    const d=new Date(window._pagoDiaSel);
+    ini=new Date(d.getFullYear(),d.getMonth(),d.getDate(),0,0,0);
+    fin=new Date(d.getFullYear(),d.getMonth(),d.getDate(),23,59,59);
+  } else { // mes (default)
+    ini=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  }
+  return {ini,fin};
+}
+
+PAGES.pago_usuario=function(){
+  const userId=window._pagoUsuarioActual;
+  if(!userId){ nav('pagos'); return; }
+  const user=(_usersCache||[]).find(u=>String(u.id)===String(userId));
+  if(!user){ pushNotif('Usuario no encontrado','e'); nav('pagos'); return; }
+  if(!window._pagoPeriodoActual) window._pagoPeriodoActual='mes';
+
+  $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">Cargando estado financiero...</div>';
+
+  (async()=>{
+    try{ window._pagosCache=await DL.getPagos({}); }catch(_){ }
+    const orders=_ordersCache||[];
+    const periodo=window._pagoPeriodoActual||'mes';
+    const {ini,fin}=_pagoUsuarioRangoFecha(periodo);
+    const enRango=(fechaStr)=>{
+      if(!fechaStr) return false;
+      const d=new Date(fechaStr);
+      return d>=ini && d<=fin;
+    };
+
+    // Pedidos del usuario según rol
+    function pedidosDelUsuario(){
+      const all=(orders||[]).filter(o=>{
+        if(user.rol==='vendedor') return String(o.vendedorId)===String(user.id);
+        if(user.rol==='dropshipper') return String(o.dropId)===String(user.id);
+        if(user.rol==='proveedor') return String(o.proveedorId)===String(user.id);
+        if(user.rol==='delivery') return String(o.deliveryId)===String(user.id);
+        return false;
+      });
+      return all.filter(o=>enRango(o.fecha||o.created_at));
+    }
+    function ganDeOrden(o){
+      if(user.rol==='vendedor') return ganVend(o);
+      if(user.rol==='dropshipper') return (o.comision||0)*(o.qty||1);
+      if(user.rol==='proveedor') return (o.costo||0)*(o.qty||1);
+      return 0;
+    }
+    const peds=pedidosDelUsuario();
+    const pedsEntregados=peds.filter(o=>o.estado==='Entregado');
+    const ganado=pedsEntregados.reduce((a,o)=>a+ganDeOrden(o),0);
+
+    // Pagos del período recibidos por este usuario
+    const pagos=((window._pagosCache)||[]).filter(p=>String(p.pagado_a)===String(userId) && enRango(p.fecha));
+    const cobrado=pagos.reduce((a,p)=>a+Number(p.monto||0),0);
+
+    // Saldo del mes en curso (vivo, no del período)
+    const saldoVivo=calcularSaldoUsuario(userId);
+    const pendientePeriodo=Math.max(0,ganado-cobrado);
+
+    const avatarInner=user.foto_perfil
+      ?'<img src="'+safeUrl(user.foto_perfil)+'" alt="" style="width:100%;height:100%;object-fit:cover">'
+      :escHtml((user.nombre||'?')[0].toUpperCase());
+
+    // Tabs de período
+    const tabs=[['hoy','Hoy'],['semana','Semana'],['mes','Mes'],['ano','Año']].map(t=>
+      '<button class="pagoPeriodTab '+(periodo===t[0]?'active':'')+'" onclick="_setPagoPeriodo(\''+t[0]+'\')">'+t[1]+'</button>'
+    ).join('');
+
+    // Calendario mes actual
+    const hoy=new Date();
+    const primer=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+    const ultimo=new Date(hoy.getFullYear(),hoy.getMonth()+1,0);
+    const diasDelMes=ultimo.getDate();
+    const pedsMesCount={};
+    (peds||[]).concat((orders||[]).filter(o=>{
+      const d=new Date(o.fecha||o.created_at||0);
+      const matchUser=user.rol==='vendedor'?String(o.vendedorId)===String(user.id)
+        :user.rol==='dropshipper'?String(o.dropId)===String(user.id)
+        :user.rol==='proveedor'?String(o.proveedorId)===String(user.id)
+        :user.rol==='delivery'?String(o.deliveryId)===String(user.id):false;
+      return matchUser && d.getMonth()===hoy.getMonth() && d.getFullYear()===hoy.getFullYear();
+    })).forEach(o=>{
+      const d=new Date(o.fecha||o.created_at||0);
+      const k=d.getDate();
+      pedsMesCount[k]=(pedsMesCount[k]||0)+1;
+    });
+    let calHtml='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px">';
+    const firstDow=primer.getDay()||7; // L=1..D=7
+    for(let i=1;i<firstDow;i++) calHtml+='<div></div>';
+    const selDiaStr=window._pagoDiaSel?new Date(window._pagoDiaSel).toDateString():'';
+    for(let d=1;d<=diasDelMes;d++){
+      const dDate=new Date(hoy.getFullYear(),hoy.getMonth(),d);
+      const hasOrders=pedsMesCount[d]>0;
+      const isSel=periodo==='dia' && dDate.toDateString()===selDiaStr;
+      calHtml+='<div class="pagoCalDay '+(hasOrders?'has':'')+(isSel?' sel':'')+'" onclick="_selDiaPago(\''+dDate.toISOString().slice(0,10)+'\')">'+
+        '<div>'+d+'</div>'+
+        (hasOrders?'<div class="dot">•'+pedsMesCount[d]+'</div>':'')+
+      '</div>';
+    }
+    calHtml+='</div>';
+
+    // Lista pedidos
+    const filasPed=pedsEntregados.map(o=>{
+      const cli=(_usersCache||[]).find(u=>String(u.id)===String(o.clienteId));
+      const cliNombre=cli?cli.nombre:(o.cliente||'—');
+      return '<tr>'+
+        '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml((o.fecha||'').slice(0,10))+'</td>'+
+        '<td><span style="color:var(--accent);cursor:pointer;text-decoration:underline" onclick="verDetalleOrden&&verDetalleOrden(\''+escAttr(o.id)+'\')">'+escHtml(cliNombre)+'</span></td>'+
+        '<td><span style="font-size:11px;padding:2px 8px;border-radius:6px;background:var(--bg3)">'+escHtml(o.estado||'—')+'</span></td>'+
+        '<td style="text-align:right;font-weight:700">'+fmt((o.precio||0)*(o.qty||1))+'</td>'+
+        '<td style="text-align:right;font-weight:800;color:var(--green,#16a34a)">'+fmt(ganDeOrden(o))+'</td>'+
+      '</tr>';
+    }).join('');
+
+    // Lista pagos
+    const filasPag=pagos.map(p=>{
+      const pagador=(_usersCache||[]).find(u=>String(u.id)===String(p.pagado_por));
+      return '<tr>'+
+        '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+'</td>'+
+        '<td style="font-weight:800;color:var(--green,#16a34a)">'+fmt(p.monto)+'</td>'+
+        '<td>'+escHtml(p.metodo||'—')+'</td>'+
+        '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
+        '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.nota||'')+'</td>'+
+        '<td style="font-size:12px;color:var(--text2)">'+escHtml(pagador?pagador.nombre:'—')+'</td>'+
+      '</tr>';
+    }).join('');
+
+    const esAdmin=CU.rol==='admin'||CU.rol==='superadmin';
+
+    $('ca').innerHTML=
+      // Botón volver
+      '<button class="btn btn-secondary btn-sm" style="margin-bottom:12px" onclick="nav(\'pagos\')">← Volver a Pagos</button>'+
+      // Header
+      '<div style="background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">'+
+        '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#d97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;overflow:hidden;flex-shrink:0">'+avatarInner+'</div>'+
+        '<div style="flex:1;min-width:200px">'+
+          '<div style="font-size:20px;font-weight:900">'+escHtml(user.nombre||'—')+'</div>'+
+          '<div style="font-size:13px;color:var(--text2)">'+escHtml(capRole(user.rol))+'</div>'+
+        '</div>'+
+        '<div style="text-align:right">'+
+          '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700">Saldo actual (mes)</div>'+
+          '<div style="font-size:28px;font-weight:900;color:'+(saldoVivo>0?'#ef4444':'#22c55e')+'">'+fmt(saldoVivo)+'</div>'+
+        '</div>'+
+      '</div>'+
+      // Tabs período
+      '<div class="pagoPeriodTabs">'+tabs+'</div>'+
+      // Métricas período
+      '<div class="sgrid" style="margin-bottom:14px">'+
+        '<div class="sc bl"><div class="slabel">Pedidos del período</div><div class="sval">'+peds.length+'</div></div>'+
+        '<div class="sc gr"><div class="slabel">Ganado</div><div class="sval">'+fmt(ganado)+'</div></div>'+
+        '<div class="sc ac"><div class="slabel">Cobrado</div><div class="sval">'+fmt(cobrado)+'</div></div>'+
+        '<div class="sc re"><div class="slabel">Pendiente</div><div class="sval">'+fmt(pendientePeriodo)+'</div></div>'+
+      '</div>'+
+      // Calendario
+      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:16px">'+
+        '<div style="font-size:12px;font-weight:800;text-transform:uppercase;color:var(--text2);margin-bottom:4px">📅 Calendario — '+hoy.toLocaleDateString('es-PY',{month:'long',year:'numeric'})+'</div>'+
+        '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase;text-align:center;margin-top:8px">'+
+          ['L','M','X','J','V','S','D'].map(x=>'<div>'+x+'</div>').join('')+
+        '</div>'+
+        calHtml+
+        (periodo==='dia'?'<div style="margin-top:8px;text-align:center"><button class="btn btn-secondary btn-sm" onclick="_clearDiaPago()">✕ Limpiar día seleccionado</button></div>':'')+
+      '</div>'+
+      // Pedidos
+      '<div class="stitle">📦 Pedidos del período</div>'+
+      '<div style="overflow-x:auto;margin-bottom:16px"><table class="tbl"><thead><tr>'+
+        '<th>Fecha</th><th>Cliente</th><th>Estado</th><th style="text-align:right">Total</th><th style="text-align:right">Mi ganancia</th>'+
+      '</tr></thead><tbody>'+
+        (filasPed||'<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">Sin pedidos entregados en el período</td></tr>')+
+      '</tbody></table></div>'+
+      // Pagos
+      '<div class="stitle">💵 Historial de pagos del período</div>'+
+      '<div style="overflow-x:auto;margin-bottom:16px"><table class="tbl"><thead><tr>'+
+        '<th>Fecha</th><th>Monto</th><th>Método</th><th>Ref</th><th>Nota</th><th>Por</th>'+
+      '</tr></thead><tbody>'+
+        (filasPag||'<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:20px">Sin pagos en el período</td></tr>')+
+      '</tbody></table></div>'+
+      // Acciones
+      (esAdmin?'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:24px 0">'+
+        '<button class="btn btn-primary" onclick="openRegistrarPago(\''+escAttr(user.id)+'\')">💵 Pago Parcial</button>'+
+        '<button class="btnPagado" onclick="abrirPagoCompleto(\''+escAttr(user.id)+'\')">✅ Marcar Pagado</button>'+
+        '<button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button>'+
+      '</div>':'');
+  })();
+};
+
+function _setPagoPeriodo(p){
+  window._pagoPeriodoActual=p;
+  if(p!=='dia') window._pagoDiaSel=null;
+  nav('pago_usuario');
+}
+function _selDiaPago(isoDate){
+  window._pagoDiaSel=isoDate;
+  window._pagoPeriodoActual='dia';
+  nav('pago_usuario');
+}
+function _clearDiaPago(){
+  window._pagoDiaSel=null;
+  window._pagoPeriodoActual='mes';
+  nav('pago_usuario');
 }
 
 document.addEventListener('DOMContentLoaded',function(){
