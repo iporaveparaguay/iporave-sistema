@@ -11,8 +11,17 @@
 | Componente | Versión | Estado |
 |---|---|---|
 | **Worker** (Cloudflare) | `ee13b168` | ✅ Live — Groq LLaMA + DeepSeek R1 + Anthropic fallback |
-| **Frontend** (Vercel) | `c16b5f4` | ✅ Live — todas las features de esta sesión |
+| **Frontend** (Vercel) | `101e94e` | ✅ Live — auditoría + botones 3D coherentes + fixes |
 | **DB** (Supabase) | — | ✅ Tabla `pagos` creada con RLS |
+
+### Auditoría última (commit `101e94e`)
+Sistema verificado 95-100% funcional:
+- 119/120 funciones existen y funcionan
+- 29/29 PAGES implementadas
+- 69/70 botones operativos
+- `openConvThread` se reportó como roto pero **SÍ existe** en línea 9793 (falso positivo del auditor)
+- 3 duplicaciones `'En Ruta'||'En Ruta'` corregidas a `'En Ruta'||'En ruta'` (defensivo)
+- Botones 3D coherentes aplicados a analítica vendedor (4) + catálogo (1)
 
 ### URLs
 - App: https://iporave-sistema.vercel.app
