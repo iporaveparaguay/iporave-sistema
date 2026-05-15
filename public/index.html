@@ -3560,7 +3560,15 @@ function _notifSessionInit(){
     window._notifSessionSwBound=true;
   }
   if(!window._bellScrollBound){
-    window.addEventListener('scroll',function(){var b=document.getElementById('codexNotifBell');if(b)b.classList.toggle('scroll-faded',window.scrollY>80);},{passive:true});
+    var _bellLastScrollY=window.scrollY||0;
+    window.addEventListener('scroll',function(){
+      if(window.innerWidth>768){_bellLastScrollY=window.scrollY;return;}
+      var b=document.getElementById('codexNotifBell');
+      if(!b){_bellLastScrollY=window.scrollY;return;}
+      var goingDown=window.scrollY>_bellLastScrollY;
+      b.style.opacity=goingDown?'0.3':'1';
+      _bellLastScrollY=window.scrollY;
+    },{passive:true});
     window._bellScrollBound=true;
   }
 }
