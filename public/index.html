@@ -1391,6 +1391,10 @@ body.alta-visibilidad select{
 }
 .toggle-altavis-row input[type="checkbox"]{width:22px;height:22px;cursor:pointer;}
 .toggle-altavis-row label{font-size:15px;font-weight:600;cursor:pointer;flex:1;}
+.sa-mini-card{background:var(--card);border-radius:10px;border:1px solid var(--border);border-top:3px solid var(--card-c,var(--accent));padding:12px 10px;text-align:center;min-width:0}
+.sa-mini-card .sa-mini-icon{font-size:20px;line-height:1;opacity:.78;margin-bottom:5px}
+.sa-mini-card .sa-mini-value{font-size:22px;font-weight:900;line-height:1;color:var(--card-c,var(--accent));overflow-wrap:anywhere}
+.sa-mini-card .sa-mini-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-top:5px}
 </style>
 </head>
 <body class="no-auth">
@@ -1406,7 +1410,7 @@ body.alta-visibilidad select{
 <!-- NOTIFICATION PANEL -->
 <div id="ntPanel">
   <div class="ntp-head">
-    <span style="font-weight:700;font-size:13px">🔔 Notificaciones</span>
+    <span style="font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px"><span class="notif-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>Notificaciones</span>
     <div style="display:flex;gap:6px;align-items:center">
       <span id="ntUnreadLabel" style="font-size:11px;color:var(--text2)"></span>
       <button class="btn btn-secondary btn-sm" onclick="markAllNotifRead()" style="padding:3px 8px;font-size:10px">Marcar leídas</button>
@@ -1481,7 +1485,7 @@ body.alta-visibilidad select{
     <div class="sfooter">
       <button class="btn btn-secondary btn-full" style="margin-bottom:6px;position:relative;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openPerfilUsuario()">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>Mi Perfil</span><span id="perfilIncompletoBadge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;vertical-align:middle">!</span>
+        <span>Mi Perfil</span><span id="perfilIncompletoBadge" style="display:none;background:var(--red,#ef4444);color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;vertical-align:middle">!</span>
       </button>
       <button class="btn btn-secondary btn-full" style="display:flex;align-items:center;justify-content:center;gap:6px" onclick="confirmLogout()" title="Cerrar sesión">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
@@ -1806,7 +1810,7 @@ function _updateBell(){
 }
 function _renderNotifList(){
   const list=$('ntList');if(!list)return;
-  if(!_notifHistory.length){list.innerHTML='<div class="ntp-empty" style="text-align:center;padding:32px 16px"><div style="font-size:42px;margin-bottom:8px;opacity:.7">🔔</div><div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px">Sin notificaciones</div><div style="font-size:11px;color:var(--text3)">Te avisaremos cuando llegue algo nuevo</div></div>';return;}
+  if(!_notifHistory.length){list.innerHTML='<div class="ntp-empty" style="text-align:center;padding:32px 16px"><div style="font-size:48px;margin-bottom:8px;opacity:.5">🔔</div><div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px">Sin notificaciones</div><div style="font-size:11px;color:var(--text3)">Te avisaremos cuando llegue algo nuevo</div></div>';return;}
   list.innerHTML=_notifHistory.map((n,i)=>
     '<div class="ntp-item'+(n.read?'':' unread')+(n.action?' clickable':'')+'" data-nidx="'+i+'">'+
     '<div class="ntp-dot" style="background:'+n.color+'"></div>'+
@@ -3923,7 +3927,7 @@ function confirmLogout(){
       '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Seguro que querés cerrar tu sesión?</div>'+
       '<div style="font-size:12px;color:var(--text3);margin-top:6px">Vas a tener que iniciar sesión otra vez para volver al sistema.</div>',
       '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-      '<button class="btn btn-primary" style="background:var(--red,#ef4444);border-color:var(--red,#ef4444)" onclick="closeA();doLogout()">Sí, cerrar sesión</button>'
+      '<button class="btn btn-danger" onclick="closeA();doLogout()">Sí, cerrar sesión</button>'
     );
   }else if(confirm('¿Cerrar sesión?')){doLogout();}
 }
@@ -4146,6 +4150,7 @@ const NAV_CFG={
   ]}],
 };
 const SVG={
+  bell:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
   grid:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
   pkg:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
   dollar:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
@@ -4696,7 +4701,7 @@ function _notifSessionRender(){
   }
   if(!list)return;
   if(!_notificaciones.length){
-    list.innerHTML='<div style="padding:36px 16px;text-align:center;color:var(--text3);font-size:13px"><div style="font-size:36px;margin-bottom:10px;opacity:.5">📭</div><div style="font-weight:700;color:var(--text2);margin-bottom:4px">Sin notificaciones</div><div style="font-size:11px">Cuando llegue algo importante aparecerá aquí.</div></div>';
+    list.innerHTML='<div style="padding:36px 16px;text-align:center;color:var(--text3);font-size:13px"><div style="font-size:48px;margin-bottom:10px;opacity:.5">📭</div><div style="font-weight:700;color:var(--text2);margin-bottom:4px">Sin notificaciones</div><div style="font-size:11px">Cuando llegue algo importante aparecerá aquí.</div></div>';
     return;
   }
   list.innerHTML=_notificaciones.slice().reverse().map(n=>{
@@ -4752,14 +4757,14 @@ function _notifSessionEnsureUi(){
   panel.id='codexNotifPanel';
   panel.dataset.open='0';
   panel.setAttribute('style','position:fixed;top:0;right:0;z-index:9999;width:min(360px,92vw);height:100vh;background:var(--bg,#0f1117);color:var(--text);border-left:1px solid var(--border);box-shadow:-14px 0 40px rgba(0,0,0,.35);transform:translateX(105%);transition:transform .22s ease;display:flex;flex-direction:column');
-  panel.innerHTML='<div style="padding:14px 14px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">'+
+  panel.innerHTML='<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">'+
     '<div><div style="font-size:16px;font-weight:900;color:var(--text)">Notificaciones</div><div style="font-size:11px;color:var(--text3)">Historial de esta sesión</div></div>'+
     '<button class="btn btn-secondary btn-sm" onclick="_notifSessionToggle(false)" style="padding:4px 8px">Cerrar</button>'+
   '</div>'+
-  '<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:flex-end">'+
+  '<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:flex-end">'+
     '<button class="btn btn-primary btn-sm" onclick="_notifSessionMarkAllRead()" style="padding:5px 10px">Marcar todo como leído</button>'+
   '</div>'+
-  '<div id="codexNotifList" style="padding:12px 14px;overflow-y:auto;flex:1"></div>';
+  '<div id="codexNotifList" style="padding:14px 16px;overflow-y:auto;flex:1"></div>';
   document.body.appendChild(panel);
   _notifSessionRender();
 }
@@ -5036,10 +5041,11 @@ function _styleDashboardStats(){
 
 /* ─── DASHBOARD ─── */
 function _superadminMiniCard(icon,label,value,color){
-  return '<div style="background:var(--card);border-radius:10px;border:1px solid var(--border);border-top:3px solid '+color+';padding:12px 10px;text-align:center;min-width:0">'+
-    '<div style="font-size:20px;line-height:1;opacity:.78;margin-bottom:5px">'+icon+'</div>'+
-    '<div style="font-size:22px;font-weight:900;line-height:1;color:'+color+';overflow-wrap:anywhere">'+value+'</div>'+
-    '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-top:5px">'+label+'</div>'+
+  const c=color||'var(--accent)';
+  return '<div class="sa-mini-card" style="--card-c:'+c+'">'+
+    '<div class="sa-mini-icon">'+icon+'</div>'+
+    '<div class="sa-mini-value">'+value+'</div>'+
+    '<div class="sa-mini-label">'+label+'</div>'+
   '</div>';
 }
 function _appendSuperadminDashboardExtra(){
@@ -5936,7 +5942,7 @@ function _renderDeliveryOperativo(){
   '</div>';
   if(!did||!mine.length||!asignados.length){
     html+='<div style="text-align:center;padding:46px 18px;background:var(--card);border:1px solid var(--border);border-radius:14px;color:var(--text3);margin-bottom:14px">'+
-      '<div style="font-size:42px;margin-bottom:10px">🛵</div>'+
+      '<div style="font-size:48px;margin-bottom:10px;opacity:.5">🛵</div>'+
       '<div style="font-size:17px;font-weight:900;color:var(--text2)">Sin pedidos asignados hoy 🛵</div>'+
     '</div>';
   }else{
@@ -10566,7 +10572,7 @@ function openProductoPicker(){
   if(!_catalogoCache.length){
     openC('Seleccionar producto',
       '<div style="text-align:center;padding:32px;color:var(--text3)">'+
-      '<div style="font-size:36px;margin-bottom:10px">📦</div>'+
+      '<div style="font-size:48px;margin-bottom:10px;opacity:.5">📦</div>'+
       '<div style="font-weight:600;margin-bottom:6px">El catálogo está vacío</div>'+
       '<div style="font-size:13px">Primero cargá productos en <b>Catálogo de Productos</b></div></div>',
       '<button class="btn btn-secondary" onclick="closeC()">Cerrar</button>'+
@@ -10792,7 +10798,7 @@ function renderOrderChat(orderId){
   const o=_ordersCache.find(x=>x.id===orderId);
   const msgs=(o&&o.chat)||[];
   const wrap=$('chatMsgs_'+orderId);if(!wrap)return;
-  if(!msgs.length){wrap.innerHTML='<div style="text-align:center;padding:32px 16px;color:var(--text2)"><div style="font-size:42px;margin-bottom:10px">💬</div><div style="font-size:13px;font-weight:600;margin-bottom:4px">Sin mensajes aún</div><div style="font-size:11px;color:var(--text3)">Escribí abajo para iniciar la conversación</div></div>';return;}
+  if(!msgs.length){wrap.innerHTML='<div style="text-align:center;padding:32px 16px;color:var(--text2)"><div style="font-size:48px;margin-bottom:10px;opacity:.5">💬</div><div style="font-size:13px;font-weight:600;margin-bottom:4px">Sin mensajes aún</div><div style="font-size:11px;color:var(--text3)">Escribí abajo para iniciar la conversación</div></div>';return;}
   wrap.innerHTML=msgs.map(m=>{
     const isMe=m.userId===CU.id;
     return '<div class="chat-msg">'+
