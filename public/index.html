@@ -352,7 +352,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .brp{background:rgba(251,191,36,.13);color:#fbbf24;}
 .bret{background:rgba(239,68,68,.2);color:#fca5a5;}
 /* MODALS */
-.moverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);z-index:1000;align-items:center;justify-content:center;padding:14px;}
+.moverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);z-index:1000;align-items:center;justify-content:center;padding:14px;will-change:backdrop-filter,opacity;}
 .moverlay.open{display:flex;}
 .mbox{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);width:100%;max-width:540px;max-height:93vh;overflow-y:auto;overflow-x:hidden;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05) inset;}
 .mbox.lg{max-width:800px;}.mbox.xl{max-width:1020px;}
@@ -554,7 +554,7 @@ textarea::placeholder{
 /* NOTIFICATIONS */
 #notifArea{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);top:auto;right:auto;z-index:480;display:flex;flex-direction:column-reverse;gap:8px;max-width:min(420px,90vw);width:auto;pointer-events:none;align-items:center;}
 #notifArea > .notif{pointer-events:auto;position:relative;}
-.notif{background:rgba(20,22,28,0.55);backdrop-filter:blur(20px) saturate(120%);-webkit-backdrop-filter:blur(20px) saturate(120%);border:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.92);font-weight:500;font-size:13px;letter-spacing:0.1px;border-radius:999px;padding:8px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.15);opacity:0.85;animation:notifIn .25s ease;transition:opacity .25s ease, transform .25s ease;white-space:nowrap;}
+.notif{background:rgba(20,22,28,0.55);backdrop-filter:blur(12px) saturate(120%);-webkit-backdrop-filter:blur(12px) saturate(120%);border:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.92);font-weight:500;font-size:13px;letter-spacing:0.1px;border-radius:999px;padding:8px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.15);opacity:0.85;animation:notifIn .25s ease;transition:opacity .25s ease, transform .25s ease;white-space:nowrap;will-change:filter,opacity,transform;}
 .notif.notif-out{opacity:0;transform:translateY(20px);}
 :root[data-theme="light"] .notif,:root[data-theme="light-soft"] .notif{background:rgba(255,255,255,0.55);border:1px solid rgba(0,0,0,0.06);color:rgba(40,40,40,0.92);box-shadow:0 4px 16px rgba(0,0,0,0.08);}
 .notif.notif-s,.notif.ok{box-shadow:0 4px 16px rgba(34,197,94,0.25);border-color:rgba(34,197,94,0.3);}
@@ -3515,6 +3515,9 @@ async function _ensureFreshToken(){
   }
 }
 function doLogout(){
+  try{if(window._caResetObs){window._caResetObs.disconnect();window._caResetObs=null;}}catch(_){}
+  try{if(window._navObs){window._navObs.disconnect();window._navObs=null;}}catch(_){}
+  try{if(window._mapaFetchCtrl){window._mapaFetchCtrl.abort();window._mapaFetchCtrl=null;}}catch(_){}
   if(_trackRefreshTimer){clearInterval(_trackRefreshTimer);_trackRefreshTimer=null;}
   ['users','usersVer','orders','zonas','cupos','jornadas','catalogo'].forEach(k => localStorage.removeItem('ipv5_' + k));
   _sensitiveUnlocked=false;
@@ -6755,13 +6758,14 @@ PAGES.liquidacion=function(){
   var _stbLastDragEnd=0;
   var _stbOrigApplyPos=_stbApplyPos;
   _stbApplyPos=function(l,t){_stbOrigApplyPos(l,t);_stbLastDragEnd=Date.now();};
-  var _caResetObs=new MutationObserver(function(){
+  try{if(window._caResetObs)window._caResetObs.disconnect();}catch(_){}
+  window._caResetObs=new MutationObserver(function(){
     if(_stbDragState)return; // arrastrando ahora mismo
     if(Date.now()-_stbLastDragEnd<600)return; // gracia post-drag
     if(_stbTempPos)_stbResetPos();
   });
   var _caForObs=document.getElementById('ca');
-  if(_caForObs)_caResetObs.observe(_caForObs,{childList:true});
+  if(_caForObs)window._caResetObs.observe(_caForObs,{childList:true});
   function _onScroll(){
     var ca=document.getElementById('ca');
     var main=document.querySelector('.main')||document.querySelector('main');
@@ -6787,9 +6791,10 @@ PAGES.liquidacion=function(){
   }
   _bindScroll();
   /* re-bindear cada vez que se navega (el #ca cambia de contenido) */
-  var _navObs=new MutationObserver(function(){_bindScroll();});
+  try{if(window._navObs)window._navObs.disconnect();}catch(_){}
+  window._navObs=new MutationObserver(function(){_bindScroll();});
   var caEl=document.getElementById('ca');
-  if(caEl)_navObs.observe(caEl,{childList:true,subtree:false});
+  if(caEl)window._navObs.observe(caEl,{childList:true,subtree:false});
   setTimeout(_bindScroll,500);
 })();
 
@@ -11144,9 +11149,16 @@ let _trackDestMarker=null;
 let _trackMapInst=null;
 
 async function _fetchTrackData(id){
-  const r=await fetch(TRACK_API+'?id='+id);
-  if(!r.ok)return null;
-  return r.json();
+  try{if(window._mapaFetchCtrl)window._mapaFetchCtrl.abort();}catch(_){}
+  window._mapaFetchCtrl=new AbortController();
+  try{
+    const r=await fetch(TRACK_API+'?id='+id,{signal:window._mapaFetchCtrl.signal});
+    if(!r.ok)return null;
+    return r.json();
+  }catch(err){
+    if(err&&err.name==='AbortError')return null;
+    throw err;
+  }
 }
 
 function _trackMinsAgo(atStr){
@@ -11658,9 +11670,15 @@ function _aplicarFiltrosMapa(){
   window._mapaFiltro=(window._mapaFiltroEstado&&window._mapaFiltroEstado!=='Todos')?window._mapaFiltroEstado:null;
 
   // 1) Limpieza incondicional de AMBOS conjuntos (evita markers fantasma)
-  try{Object.values(window._mapMarkers||{}).forEach(m=>{try{m.remove();}catch(_){}});}catch(_){}
+  try{Object.values(window._mapMarkers||{}).forEach(m=>{
+    try{if(m.getPopup){const p=m.getPopup();if(p)p.remove();}}catch(_){}
+    try{m.remove();}catch(_){}
+  });}catch(_){}
   window._mapMarkers={};
-  try{Object.values(window._dlvMapMarkers||{}).forEach(m=>{try{m.remove();}catch(_){}});}catch(_){}
+  try{Object.values(window._dlvMapMarkers||{}).forEach(m=>{
+    try{if(m.getPopup){const p=m.getPopup();if(p)p.remove();}}catch(_){}
+    try{m.remove();}catch(_){}
+  });}catch(_){}
   window._dlvMapMarkers={};
 
   // 2) Decidir visibilidad
@@ -11676,9 +11694,25 @@ function _aplicarFiltrosMapa(){
   if(typeof _mapaUpdateContadores==='function')_mapaUpdateContadores();
 }
 
+// Debounce 200ms: agrupa cambios de filtros consecutivos en un solo redibujo.
+// Usa function() normal para preservar `arguments`.
+(function(){
+  if(typeof _aplicarFiltrosMapa!=='function')return;
+  const _aplicarFiltrosMapaRaw=_aplicarFiltrosMapa;
+  let _filterDebTimer;
+  _aplicarFiltrosMapa=function(){
+    const args=arguments;
+    clearTimeout(_filterDebTimer);
+    _filterDebTimer=setTimeout(function(){_aplicarFiltrosMapaRaw.apply(null,args);},200);
+  };
+})();
+
 async function _mapaCargar(map){
   if(!map||!$('ordersMap'))return;
-  Object.values(window._mapMarkers).forEach(m=>m.remove());
+  Object.values(window._mapMarkers||{}).forEach(m=>{
+    try{if(m.getPopup){const p=m.getPopup();if(p)p.remove();}}catch(_){}
+    try{m.remove();}catch(_){}
+  });
   window._mapMarkers={};
   // Si el filtro es "Solo Deliveries", no dibujar pedidos
   if((window._mapaFiltroTipo||'todos')==='deliveries'){_mapaUpdateContadores();return;}
@@ -11950,7 +11984,10 @@ function _dlvColor(dlv){
 }
 
 function _mapaCargarDlvs(map){
-  Object.values(window._dlvMapMarkers).forEach(m=>m.remove());
+  Object.values(window._dlvMapMarkers||{}).forEach(m=>{
+    try{if(m.getPopup){const p=m.getPopup();if(p)p.remove();}}catch(_){}
+    try{m.remove();}catch(_){}
+  });
   window._dlvMapMarkers={};
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
   for(const dlv of dlvs){
