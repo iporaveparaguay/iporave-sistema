@@ -261,6 +261,16 @@ footer{
   box-shadow:0 4px 14px rgba(34,197,94,.5);
 }
 
+/* Productos preview */
+.prod-list{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+.prod-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);}
+.prod-thumb{width:54px;height:54px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text3);}
+.prod-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.prod-meta{flex:1;min-width:0;}
+.prod-meta-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.3;word-break:break-word;}
+.prod-meta-row{display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:12px;color:var(--text2);}
+.prod-meta-price{color:#fb923c;font-weight:700;}
+
 @media (max-width:480px){
   .hero-emoji{font-size:72px;}
   .hero-status{font-size:26px;}
@@ -299,6 +309,7 @@ footer{
     <div class="foot-logo">Iporãve</div>
     <div class="foot-text">Powered by Iporãve Paraguay 🇵🇾</div>
     <div class="foot-links">
+      <a href="/catalog.html" class="footer-link">🛍️ Ver catálogo</a>
       <a href="https://wa.me/595981234567" target="_blank">Soporte WhatsApp</a>
       <a href="https://iporaveparaguay.com" target="_blank">Tienda</a>
     </div>
@@ -470,10 +481,41 @@ function render(d){
       </div>
     </div>`;
 
+  // PRODUCTOS (con miniaturas si vienen como array)
+  const productos=Array.isArray(d.productos)?d.productos:Array.isArray(d.items)?d.items:[];
+  if(productos.length){
+    html+=`
+      <div class="card">
+        <div class="detail-title">Productos del pedido</div>
+        <div class="prod-list">`;
+    productos.forEach(function(it){
+      const foto=safeUrl(it.foto||it.imagen||it.image||'');
+      const thumb=foto
+        ?`<div class="prod-thumb"><img src="${esc(foto)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='📦'"></div>`
+        :`<div class="prod-thumb">📦</div>`;
+      const cant=it.cantidad||it.cant||1;
+      const pr=it.precio?precio(it.precio*cant):'';
+      html+=`
+        <div class="prod-item">
+          ${thumb}
+          <div class="prod-meta">
+            <div class="prod-meta-name">${esc(it.nombre||it.producto||'Producto')}</div>
+            <div class="prod-meta-row">
+              <span>Cantidad: ${esc(cant)}</span>
+              ${pr?`<span class="prod-meta-price">${esc(pr)}</span>`:''}
+            </div>
+          </div>
+        </div>`;
+    });
+    html+=`</div></div>`;
+  }
+
   // DETALLES PEDIDO
   html+=`
     <div class="card">
-      <div class="detail-title">Detalles del pedido</div>
+      <div class="detail-title">Detalles del pedido</div>`;
+  if(!productos.length){
+    html+=`
       <div class="detail-row">
         <div class="detail-icon">📦</div>
         <div class="detail-body">
@@ -481,6 +523,7 @@ function render(d){
           <div class="detail-value">${esc(d.producto||'Pedido #'+(d.id||''))}</div>
         </div>
       </div>`;
+  }
   if(d.direccion){
     html+=`
       <div class="detail-row">

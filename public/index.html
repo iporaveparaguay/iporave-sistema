@@ -10877,6 +10877,15 @@ function _mapaUpdateContadores(){
 }
 
 function _aplicarFiltrosMapa(){
+  // Persistir filtros
+  try{
+    localStorage.setItem('_mapaFiltros', JSON.stringify({
+      estado: window._mapaFiltroEstado,
+      tipo: window._mapaFiltroTipo,
+      zona: window._mapaFiltroZona,
+      delivery: window._mapaFiltroDelivery
+    }));
+  }catch(_){}
   const fTipo=window._mapaFiltroTipo||'todos';
   window._mapaFiltro=(window._mapaFiltroEstado&&window._mapaFiltroEstado!=='Todos')?window._mapaFiltroEstado:null;
   if(fTipo==='deliveries'){
@@ -11314,6 +11323,14 @@ async function _toggleTurno(){
 
 PAGES.mapa=function(){
   if(_ordersLayerInterval){clearInterval(_ordersLayerInterval);_ordersLayerInterval=null;}
+  // Restaurar filtros guardados en localStorage
+  try{
+    const saved = JSON.parse(localStorage.getItem('_mapaFiltros') || '{}');
+    if(saved.estado !== undefined) window._mapaFiltroEstado = saved.estado;
+    if(saved.tipo !== undefined) window._mapaFiltroTipo = saved.tipo;
+    if(saved.zona !== undefined) window._mapaFiltroZona = saved.zona;
+    if(saved.delivery !== undefined) window._mapaFiltroDelivery = saved.delivery;
+  }catch(_){}
   // No resetear filtros: preservarlos entre visitas a la página. Solo inicializar si nunca se setearon.
   if(typeof window._mapaFiltroEstado==='undefined'||window._mapaFiltroEstado===null)window._mapaFiltroEstado='Todos';
   if(typeof window._mapaFiltroTipo==='undefined'||window._mapaFiltroTipo===null)window._mapaFiltroTipo='todos';
@@ -11970,6 +11987,9 @@ function _actualizarSaldoLive(saldoActual){
     '<div class="line"><span>Pagás:</span><b style="color:var(--accent)">'+fmt(monto)+' ('+pct+'%)</b></div>'+
     '<div class="line"><span>Queda pendiente:</span><b style="color:'+(restante>0?'#ef4444':'#22c55e')+'">'+fmt(restante)+'</b></div>';
   if(monto>=saldoActual){ html+='<div class="complete">✅ Saldará completo</div>'; }
+  if(monto>saldoActual){
+    html += '<div class="warn" style="color:#f59e0b;margin-top:6px;font-size:11px">⚠️ Pagás más del saldo actual</div>';
+  }
   box.innerHTML=html;
 }
 
@@ -11994,6 +12014,13 @@ async function confirmarRegistroPago(targetUserId){
     pushNotif('El monto debe ser mayor a 0','e');
     if(btn){btn.disabled=false;btn.style.opacity='';btn.textContent='💾 Registrar';}
     return;
+  }
+  const saldoActual=calcularSaldoUsuario(targetUserId);
+  if(monto>saldoActual){
+    if(!confirm('Estás registrando un pago de '+fmt(monto)+' cuando el saldo es '+fmt(saldoActual)+'. ¿Continuar?')){
+      if(btn){btn.disabled=false;btn.style.opacity='';btn.textContent='💾 Registrar';}
+      return;
+    }
   }
   const metodo=$('pagoMetodo').value;
   const referencia=$('pagoRef').value.trim();
@@ -12148,6 +12175,7 @@ function _pagoUsuarioRangoFecha(periodo,refDate){
     fin=new Date(d.getFullYear(),d.getMonth(),d.getDate(),23,59,59);
   } else { // mes (default)
     ini=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+    fin=new Date(hoy.getFullYear(),hoy.getMonth()+1,0,23,59,59);
   }
   return {ini,fin};
 }
@@ -12462,6 +12490,9 @@ PAGES.pago_usuario=function(){
 
 // ── Histórico mensual (últimos 12 meses) ──
 function _renderHistoricoMensual(userId){
+  if (!_ordersCache || _ordersCache.length === 0) {
+    return '<div class="historico-mensual"><h3 style="font-size:14px;font-weight:800;margin:24px 0 12px;display:flex;align-items:center;gap:8px">📅 Histórico Mensual</h3><div style="padding:24px;text-align:center;color:var(--text2);background:var(--bg2);border-radius:10px">Sin pedidos registrados</div></div>';
+  }
   const ahora = new Date();
   const meses = [];
   for(let i = 0; i < 12; i++){
@@ -12606,7 +12637,10 @@ function exportarClientesZonasCSV(){
   }, new Map()).forEach(function(c){
     csv += [c.zona, c.nombre, c.telefono, c.direccion, c.pedidos, c.monto,
             c.ultimo ? c.ultimo.toLocaleDateString('es-PY') : '']
-      .map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',') + '\n';
+      .map(function(v){
+        const str = String(v==null?'':v).replace(/"/g, '""');
+        return '"' + str + '"';
+      }).join(',') + '\n';
   });
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
