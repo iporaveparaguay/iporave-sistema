@@ -814,6 +814,35 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 /* PRINT */
 /* Botón hamburger oculto en desktop, visible solo en mobile */
 #menuBtn{display:none;}
+/* ── Account Switcher (multi-rol tipo TikTok) ── */
+.account-switcher{position:relative;display:inline-block;width:100%}
+.account-current{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border2);border-radius:99px;cursor:pointer;transition:all .15s ease-out;}
+.account-current:hover{border-color:var(--accent)}
+.account-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;background:var(--bg3);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text)}
+.account-name{font-weight:600;font-size:13px}
+.account-role{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-left:6px}
+.account-menu{position:absolute;top:calc(100% + 6px);right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:6px;min-width:260px;box-shadow:0 12px 32px rgba(0,0,0,.18);z-index:1000;}
+.account-list{max-height:300px;overflow-y:auto}
+.account-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .12s;}
+.account-item:hover{background:var(--bg3)}
+.account-item img,.account-item .account-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;font-size:13px}
+.account-item-info{flex:1;min-width:0}
+.account-item-info .nm{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-item-info .role{font-size:11px;color:var(--text3)}
+.badge-active{margin-left:auto;font-size:9px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:99px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.account-rm{margin-left:6px;background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:6px}
+.account-rm:hover{color:var(--red);background:var(--bg3)}
+.account-divider{height:1px;background:var(--border2);margin:6px 0}
+.account-add-btn{width:100%;padding:8px;text-align:left;background:transparent;border:none;color:var(--accent);font-weight:600;cursor:pointer;border-radius:8px;font-size:13px;}
+.account-add-btn:hover{background:var(--bg3)}
+/* ── Toggle moderno (Tutorial switch) ── */
+.toggle-modern{display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none;margin:8px 0}
+.toggle-modern input{position:absolute;opacity:0;width:0;height:0}
+.toggle-modern-track{position:relative;width:40px;height:22px;background:var(--bg3);border:1px solid var(--border2);border-radius:99px;transition:background .15s;flex-shrink:0}
+.toggle-modern-track::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;background:var(--text);border-radius:50%;transition:transform .15s}
+.toggle-modern input:checked + .toggle-modern-track{background:var(--accent);border-color:var(--accent)}
+.toggle-modern input:checked + .toggle-modern-track::after{transform:translateX(18px);background:#fff}
+.toggle-modern-label{font-size:13px;font-weight:600;color:var(--text)}
 @media print{.sidebar,.topbar,.btn,.fbar,.moverlay,#aiBtn,#aiPanel,#notifArea,#menuBtn,#sideOverlay,#ntPanel,#ntBell{display:none!important;}.main{margin:0!important;}}
 /* ── MENSAJES ── */
 .ca.mc-page{padding:0!important;overflow:hidden;height:0;min-height:0;flex:1;}
@@ -3838,6 +3867,7 @@ async function doLogin(){
     buildNav();
     await refreshCache();
     _actualizarBadgePerfil();
+    try{ if(typeof _addAccount==='function') _addAccount(); }catch(_){}
     nav('dashboard');
     // Delay >=800ms para que topbar (botón refresh) + campana (_notifSessionInit) terminen de renderizar
     try{ setTimeout(function(){
@@ -4048,6 +4078,279 @@ async function _doUserAuth() {
     if (btn) { btn.disabled = false; btn.textContent = 'Verificar'; }
   }
 }
+
+/* ══════════════════════════════════════════════════
+   MULTI-ROL ACCOUNT SWITCHER (estilo TikTok)
+══════════════════════════════════════════════════ */
+function _encAcct(s){ try{ return btoa(unescape(encodeURIComponent(String(s||'')))); }catch(_){ return String(s||''); } }
+function _decAcct(s){ try{ return decodeURIComponent(escape(atob(String(s||'')))); }catch(_){ return String(s||''); } }
+function _getAccounts(){
+  try{
+    var raw=localStorage.getItem('iporave_accounts');
+    if(!raw) return [];
+    var arr=JSON.parse(raw);
+    return Array.isArray(arr)?arr:[];
+  }catch(_){ return []; }
+}
+function _saveAccounts(arr){
+  try{
+    if(!Array.isArray(arr)) arr=[];
+    if(arr.length>5) arr=arr.slice(0,5);
+    localStorage.setItem('iporave_accounts',JSON.stringify(arr));
+  }catch(_){}
+}
+window._getAccounts=_getAccounts;
+function _addAccount(extra){
+  try{
+    if(!CU||!CU.id) return false;
+    var tok=sessionStorage.getItem('iporave_token')||_sessionToken||'';
+    var rtk=sessionStorage.getItem('iporave_refresh')||_refreshToken||'';
+    var exp=parseInt(sessionStorage.getItem('iporave_token_expiry')||'0')||0;
+    if(extra&&typeof extra==='object'){
+      if(extra.token) tok=extra.token;
+      if(extra.refresh_token) rtk=extra.refresh_token;
+      if(extra.expiry) exp=extra.expiry;
+    }
+    var entry={
+      user_id: String(CU.id),
+      email: CU.email||'',
+      nombre: CU.nombre||'',
+      rol: CU.rol||'',
+      foto: CU.foto_perfil||'',
+      token: _encAcct(tok),
+      refresh_token: _encAcct(rtk),
+      expiry: exp,
+      last_used: Date.now()
+    };
+    if(extra&&extra.overrideUser){
+      entry.user_id=String(extra.overrideUser.id||entry.user_id);
+      entry.email=extra.overrideUser.email||entry.email;
+      entry.nombre=extra.overrideUser.nombre||entry.nombre;
+      entry.rol=extra.overrideUser.rol||entry.rol;
+      entry.foto=extra.overrideUser.foto_perfil||entry.foto;
+    }
+    var list=_getAccounts();
+    list=list.filter(function(a){ return String(a.user_id)!==entry.user_id; });
+    list.unshift(entry);
+    _saveAccounts(list);
+    return true;
+  }catch(_){ return false; }
+}
+window._addAccount=_addAccount;
+function _removeAccount(user_id){
+  var list=_getAccounts().filter(function(a){ return String(a.user_id)!==String(user_id); });
+  _saveAccounts(list);
+  try{ _renderAccountMenu(); }catch(_){}
+  return true;
+}
+window._removeAccount=_removeAccount;
+async function _switchAccount(user_id){
+  try{
+    var list=_getAccounts();
+    var acc=list.filter(function(a){ return String(a.user_id)===String(user_id); })[0];
+    if(!acc){ if(typeof pushNotif==='function') pushNotif('Cuenta no encontrada','e'); return; }
+    if(CU&&String(CU.id)===String(user_id)){
+      if(typeof pushNotif==='function') pushNotif('Ya estás en esta cuenta','i');
+      return;
+    }
+    var tok=_decAcct(acc.token||'');
+    var rtk=_decAcct(acc.refresh_token||'');
+    var exp=acc.expiry||0;
+    // Si expiró → pedir password
+    if(!tok||(exp&&Date.now()>=exp-60000)){
+      _promptReauth(acc);
+      return;
+    }
+    // Asegurar que la cuenta actual quede guardada antes de cambiar
+    try{ if(CU&&CU.id) _addAccount(); }catch(_){}
+    sessionStorage.setItem('iporave_token',tok);
+    if(rtk) sessionStorage.setItem('iporave_refresh',rtk);
+    sessionStorage.setItem('iporave_token_expiry',String(exp||Date.now()+3600000));
+    acc.last_used=Date.now();
+    var newList=_getAccounts().filter(function(a){ return String(a.user_id)!==String(user_id); });
+    newList.unshift(acc);
+    _saveAccounts(newList);
+    if(typeof pushNotif==='function') pushNotif('Cambiando a '+(acc.nombre||acc.email)+'...','ok');
+    setTimeout(function(){ location.reload(); }, 400);
+  }catch(e){
+    if(typeof pushNotif==='function') pushNotif('Error al cambiar de cuenta: '+(e.message||e),'e');
+  }
+}
+window._switchAccount=_switchAccount;
+function _promptReauth(acc){
+  var email=acc.email||'';
+  _promptAddAccount(email,acc.user_id);
+}
+function _toggleAccountMenu(){
+  var m=document.getElementById('accountMenu');
+  if(!m) return;
+  if(m.style.display==='none'||!m.style.display){
+    _renderAccountMenu();
+    m.style.display='block';
+    setTimeout(function(){
+      document.addEventListener('mousedown',_closeAccountMenuOutside,true);
+    },50);
+  }else{
+    m.style.display='none';
+    document.removeEventListener('mousedown',_closeAccountMenuOutside,true);
+  }
+}
+window._toggleAccountMenu=_toggleAccountMenu;
+function _closeAccountMenuOutside(e){
+  var sw=document.querySelector('.account-switcher');
+  if(sw&&!sw.contains(e.target)){
+    var m=document.getElementById('accountMenu');
+    if(m) m.style.display='none';
+    document.removeEventListener('mousedown',_closeAccountMenuOutside,true);
+  }
+}
+function _renderAccountMenu(){
+  var list=document.getElementById('accountList');
+  if(!list) return;
+  var accs=_getAccounts();
+  // Asegurar que la cuenta actual está en la lista
+  if(CU&&CU.id){
+    var has=accs.some(function(a){ return String(a.user_id)===String(CU.id); });
+    if(!has){ _addAccount(); accs=_getAccounts(); }
+  }
+  var actualId=CU?String(CU.id):'';
+  if(!accs.length){
+    list.innerHTML='<div style="padding:12px;text-align:center;color:var(--text3);font-size:12px">Sin cuentas guardadas</div>';
+    return;
+  }
+  list.innerHTML=accs.map(function(a){
+    var isActive=String(a.user_id)===actualId;
+    var av=a.foto?'<img src="'+escAttr(a.foto)+'" class="account-avatar" alt="">':'<div class="account-avatar">'+escHtml((a.nombre||'?').charAt(0).toUpperCase())+'</div>';
+    return '<div class="account-item"'+(isActive?'':' onclick="_switchAccount(\''+escAttr(a.user_id)+'\')"')+'>'+
+      av+
+      '<div class="account-item-info">'+
+        '<div class="nm">'+escHtml(a.nombre||a.email||'(sin nombre)')+'</div>'+
+        '<div class="role">'+escHtml(capRole?capRole(a.rol||''):(a.rol||''))+'</div>'+
+      '</div>'+
+      (isActive?'<span class="badge-active">Activo</span>':'')+
+      (isActive?'':'<button class="account-rm" title="Quitar" onclick="event.stopPropagation();_confirmRemoveAccount(\''+escAttr(a.user_id)+'\')">×</button>')+
+    '</div>';
+  }).join('');
+}
+window._renderAccountMenu=_renderAccountMenu;
+function _confirmRemoveAccount(uid){
+  if(confirm('¿Quitar esta cuenta del selector? Vas a tener que volver a iniciar sesión para usarla.')){
+    _removeAccount(uid);
+  }
+}
+window._confirmRemoveAccount=_confirmRemoveAccount;
+function _promptAddAccount(prefillEmail,_replaceId){
+  var existing=document.getElementById('_addAccountModal');
+  if(existing) existing.remove();
+  var modal=document.createElement('div');
+  modal.id='_addAccountModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=
+    '<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:min(380px,92vw);box-shadow:var(--shadow)">'+
+      '<div style="font-size:16px;font-weight:700;margin-bottom:6px">➕ Agregar otra cuenta</div>'+
+      '<div style="font-size:13px;color:var(--text2);margin-bottom:16px">Ingresá las credenciales. Tu sesión actual sigue activa.</div>'+
+      '<input id="_aaEmail" type="email" placeholder="Email" value="'+escAttr(prefillEmail||'')+'" autocomplete="off" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;margin-bottom:10px">'+
+      '<input id="_aaPwd" type="password" placeholder="Contraseña" autocomplete="off" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;margin-bottom:10px">'+
+      '<div id="_aaErr" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none"></div>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+        '<button class="btn btn-secondary" onclick="document.getElementById(\'_addAccountModal\').remove()">Cancelar</button>'+
+        '<button class="btn btn-primary" id="_aaBtn" onclick="_doAddAccount()">Agregar</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(modal);
+  setTimeout(function(){
+    var f=document.getElementById(prefillEmail?'_aaPwd':'_aaEmail');
+    if(f) f.focus();
+  },50);
+  var pwdInp=document.getElementById('_aaPwd');
+  if(pwdInp) pwdInp.addEventListener('keydown',function(e){ if(e.key==='Enter') _doAddAccount(); });
+}
+window._promptAddAccount=_promptAddAccount;
+async function _doAddAccount(){
+  var email=(document.getElementById('_aaEmail')||{}).value||'';
+  var pwd=(document.getElementById('_aaPwd')||{}).value||'';
+  var btn=document.getElementById('_aaBtn');
+  var err=document.getElementById('_aaErr');
+  email=email.trim();
+  if(!email||!pwd){
+    if(err){ err.style.display='block'; err.textContent='Completá email y contraseña.'; }
+    return;
+  }
+  if(btn){ btn.disabled=true; btn.textContent='Verificando...'; }
+  try{
+    // Login via worker para mantener consistencia con doLogin
+    var device_hash=(typeof getDeviceFingerprint==='function')?await getDeviceFingerprint():'';
+    var device_info=(typeof getDeviceInfo==='function')?getDeviceInfo():{};
+    var res=await fetch(WORKER_URL+'/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:email,password:pwd,device_hash:device_hash,device_info:device_info})
+    });
+    var data=await res.json();
+    if(!res.ok){
+      if(err){ err.style.display='block'; err.textContent=data.error||'Credenciales incorrectas'; }
+      if(btn){ btn.disabled=false; btn.textContent='Agregar'; }
+      return;
+    }
+    var u=data.user||{};
+    var list=_getAccounts().filter(function(a){ return String(a.user_id)!==String(u.id); });
+    list.unshift({
+      user_id: String(u.id),
+      email: u.email||email,
+      nombre: u.nombre||'',
+      rol: u.rol||'',
+      foto: u.foto_perfil||'',
+      token: _encAcct(data.token||''),
+      refresh_token: _encAcct(data.refresh_token||''),
+      expiry: Date.now()+3600000,
+      last_used: Date.now()
+    });
+    _saveAccounts(list);
+    var m=document.getElementById('_addAccountModal');
+    if(m) m.remove();
+    if(typeof pushNotif==='function') pushNotif('Cuenta agregada. Usá el menú para cambiar entre cuentas.','ok');
+    try{ _renderAccountMenu(); }catch(_){}
+  }catch(e){
+    if(err){ err.style.display='block'; err.textContent='Error: '+(e.message||e); }
+    if(btn){ btn.disabled=false; btn.textContent='Agregar'; }
+  }
+}
+window._doAddAccount=_doAddAccount;
+
+/* ══════════════════════════════════════════════════
+   TUTORIAL TOGGLE (Onboard on/off)
+══════════════════════════════════════════════════ */
+function _isTutorialEnabled(){
+  try{ return localStorage.getItem('iporave_tutorial_enabled')!=='0'; }catch(_){ return true; }
+}
+window._isTutorialEnabled=_isTutorialEnabled;
+function _toggleTutorial(on){
+  try{ localStorage.setItem('iporave_tutorial_enabled', on?'1':'0'); }catch(_){}
+  if(typeof pushNotif==='function'){
+    pushNotif(on?'Tutorial activado':'Tutorial desactivado','ok');
+  }
+  if(!on){
+    try{
+      if(window.Onboard&&typeof window.Onboard._closeCurrent==='function') window.Onboard._closeCurrent();
+      if(window.Onboard) window.Onboard._queue=[];
+    }catch(_){}
+  }
+}
+window._toggleTutorial=_toggleTutorial;
+function _resetTutorial(){
+  if(!confirm('¿Reiniciar todos los tutoriales? Aparecerán de nuevo cuando entres a cada página.')) return;
+  try{
+    var keys=[];
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.indexOf('onboard_v1_')===0) keys.push(k);
+    }
+    keys.forEach(function(k){ try{ localStorage.removeItem(k); }catch(_){} });
+    if(typeof Onboard!=='undefined'&&Onboard.reset) Onboard.reset();
+  }catch(_){}
+  if(typeof pushNotif==='function') pushNotif('Tutoriales reiniciados','ok');
+}
+window._resetTutorial=_resetTutorial;
 
 function confirmLogout(){
   if(typeof openA==='function'){
@@ -11783,6 +12086,16 @@ PAGES.config=function(){
         '</div>'+
       '</div>'
     ):'')+
+    '<div class="lcard2">'+
+      '<div class="stitle" style="margin-top:0">🎓 Tutorial guiado</div>'+
+      '<p style="font-size:13px;color:var(--text2);margin:0 0 10px">Muestra explicaciones sobre cada botón cuando entrás por primera vez a una página.</p>'+
+      '<label class="toggle-modern">'+
+        '<input type="checkbox" id="tutorialEnabledCfg"'+(((typeof _isTutorialEnabled==='function')?_isTutorialEnabled():true)?' checked':'')+' onchange="_toggleTutorial(this.checked);var p=document.getElementById(\'tutorialEnabled\');if(p)p.checked=this.checked;">'+
+        '<span class="toggle-modern-track"></span>'+
+        '<span class="toggle-modern-label">Tutorial activo</span>'+
+      '</label>'+
+      '<div><button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" type="button" onclick="_resetTutorial()">Reiniciar tutoriales (volver a ver)</button></div>'+
+    '</div>'+
     '</div>';
   _cargarTemaActualEnConfig();
   if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredConfig && CU && ['admin','superadmin'].includes(CU.rol)){
@@ -14072,12 +14385,43 @@ PAGES.perfil=function(){
   const cfgWA=u.config_notif_wa||{};
   const waDespOn=(cfgWA.despachado!==false);
   const waRutaOn=(cfgWA.enruta!==false);
+  // Asegurar cuenta actual guardada
+  try{ if(typeof _addAccount==='function') _addAccount(); }catch(_){}
+  var _accs=(typeof _getAccounts==='function')?_getAccounts():[];
+  var _hasMulti=_accs.length>1;
+  var _curAv=u.foto_perfil?'<img src="'+escAttr(u.foto_perfil)+'" class="account-avatar" alt="">':'<div class="account-avatar">'+escHtml((u.nombre||'?').charAt(0).toUpperCase())+'</div>';
+  var _switcherHTML='<div class="account-switcher" style="margin-bottom:14px'+(_hasMulti?'':';display:none')+'" id="accountSwitcherBox">'+
+      '<button class="account-current" type="button" onclick="_toggleAccountMenu()">'+
+        _curAv+
+        '<span class="account-name">'+escHtml(u.nombre||u.email||'')+'</span>'+
+        '<span class="account-role">'+escHtml(capRole?capRole(u.rol||''):(u.rol||''))+'</span>'+
+        '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-left:auto"><polyline points="6 9 12 15 18 9"/></svg>'+
+      '</button>'+
+      '<div id="accountMenu" class="account-menu" style="display:none">'+
+        '<div class="account-list" id="accountList"></div>'+
+        '<div class="account-divider"></div>'+
+        '<button class="account-add-btn" type="button" onclick="_promptAddAccount()">+ Agregar otra cuenta</button>'+
+      '</div>'+
+    '</div>';
+  var _addBtnAlone='<div style="margin-bottom:14px"><button class="btn btn-secondary btn-sm" type="button" onclick="_promptAddAccount()">+ Agregar otra cuenta (multi-rol)</button></div>';
+  var _tutorialEnabled=(typeof _isTutorialEnabled==='function')?_isTutorialEnabled():true;
+  var _tutorialHTML='<div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">'+
+      '<h3 style="margin:0 0 6px 0;color:var(--accent);font-size:15px">Tutorial guiado</h3>'+
+      '<p style="font-size:12px;color:var(--text2);margin:0 0 10px">Muestra explicaciones sobre cada botón cuando entres por primera vez a una página.</p>'+
+      '<label class="toggle-modern">'+
+        '<input type="checkbox" id="tutorialEnabled"'+(_tutorialEnabled?' checked':'')+' onchange="_toggleTutorial(this.checked)">'+
+        '<span class="toggle-modern-track"></span>'+
+        '<span class="toggle-modern-label">Tutorial activo</span>'+
+      '</label>'+
+      '<div><button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" type="button" onclick="_resetTutorial()">Reiniciar tutoriales (volver a ver)</button></div>'+
+    '</div>';
   $('ca').innerHTML=
     '<div style="max-width:780px;margin:0 auto;padding:8px">'+
       '<div style="margin-bottom:18px">'+
         '<h2 style="margin:0 0 4px 0;color:var(--text);font-size:22px;display:flex;align-items:center;gap:8px"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Mi Perfil</h2>'+
         '<div style="color:var(--text2);font-size:13px">Tus datos para que tus pedidos lleguen rápido y sin problemas</div>'+
       '</div>'+
+      (_hasMulti?_switcherHTML:_addBtnAlone)+
 
       '<div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">'+
         '<h3 style="margin:0 0 14px 0;color:var(--accent);font-size:15px;display:flex;align-items:center;gap:6px"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h3M15 12h3M5 18c.8-2 2-3 4-3s3.2 1 4 3"/></svg>Datos personales</h3>'+
@@ -14117,6 +14461,8 @@ PAGES.perfil=function(){
           '</label>'+
         '</div>'+
       '</div>'+
+
+      _tutorialHTML+
 
       '<div style="display:flex;justify-content:flex-end;margin-top:18px">'+
         '<button class="btn btn-primary" onclick="guardarPerfilCliente()" style="padding:12px 24px;font-size:14px">💾 Guardar cambios</button>'+
@@ -16189,6 +16535,7 @@ function toggleTheme(){
 
   function enqueue(id, targetSel, mensaje, opts){
     if(!id){ return false; }
+    if(typeof window._isTutorialEnabled==='function' && !window._isTutorialEnabled()) return false;
     if(wasSeen(id)) return false;
     // evitar duplicados en cola
     for(var i=0;i<QUEUE.length;i++){ if(QUEUE[i].id === id) return false; }
@@ -16362,6 +16709,7 @@ function toggleTheme(){
   function showIfNew(id, targetSel, mensaje, opts){
     _dbg('showIfNew llamado id=', id, 'sel=', targetSel);
     if(!id){ _dbg('bail: sin id'); return false; }
+    if(typeof window._isTutorialEnabled==='function' && !window._isTutorialEnabled()){ _dbg('bail: tutorial desactivado por usuario'); return false; }
     if(wasSeen(id)){ _dbg('bail: ya visto (localStorage onboard_v1_'+id+')'); return false; }
     opts = opts || {};
     opts.id = id;
