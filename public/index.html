@@ -11620,10 +11620,16 @@ PAGES.pagos=function(){
     const cobrado=misPagosMes.reduce((a,p)=>a+(Number(p.monto)||0),0);
     const saldo=ganado-cobrado;
     const colorSaldo=saldo>0?'var(--red,#ef4444)':'var(--green,#16a34a)';
+    // Cargar comprobantes de los pagos del mes
+    try{ await _cargarComprobantesDePagos(misPagosMes.map(function(p){return p.id;})); }catch(_){ }
     const filasPagos=misPagosMes.map(p=>{
       const pagador=(users||[]).find(u=>String(u.id)===String(p.pagado_por));
+      const tieneComp=(window._comprobantesCache&&window._comprobantesCache[p.id]&&window._comprobantesCache[p.id].length);
+      const compIcon=tieneComp
+        ? ' <button class="btn btn-icon" onclick="_verComprobante(\''+escAttr(p.id)+'\')" title="Ver comprobante" style="padding:2px 6px;font-size:14px">📎</button>'
+        : '';
       return '<tr>'+
-        '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+'</td>'+
+        '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+compIcon+'</td>'+
         '<td style="font-weight:700;color:var(--green)">'+fmt(p.monto)+'</td>'+
         '<td>'+escHtml(p.metodo||'—')+'</td>'+
         '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
@@ -11654,6 +11660,8 @@ function openRegistrarPago(targetUserId,montoPreRellenado){
   const hoy=new Date().toISOString().slice(0,10);
   const saldoActual=calcularSaldoUsuario(targetUserId);
   const pre=Number(montoPreRellenado)>0?Math.round(Number(montoPreRellenado)):'';
+  // TAREA 4 — Limpieza del modal entre usos
+  const _mBody=$('mABody'); if(_mBody) _mBody.innerHTML='';
   openA('Registrar Pago a '+nombre,
     '<div class="fg"><label>Monto (Gs.) *</label><input type="number" id="pagoMonto" min="1" placeholder="100000" value="'+pre+'" oninput="_actualizarSaldoLive('+saldoActual+')"></div>'+
     '<div id="pagoSaldoLive" class="pagoSaldoLive" style="display:none"></div>'+
@@ -11665,6 +11673,11 @@ function openRegistrarPago(targetUserId,montoPreRellenado){
     '</select></div>'+
     '<div class="fg"><label>Referencia (opcional)</label><input type="text" id="pagoRef" placeholder="ej: Transferencia #12345"></div>'+
     '<div class="fg"><label>Nota (opcional)</label><textarea id="pagoNota" rows="2"></textarea></div>'+
+    '<div class="fg">'+
+      '<label>📎 Comprobante (opcional)</label>'+
+      '<input type="file" id="pagoComprobante" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:block;padding:8px;background:var(--bg2);border:1px dashed var(--border);border-radius:8px;cursor:pointer">'+
+      '<small id="pagoComprobanteInfo" style="color:var(--text2);font-size:11px;display:block;margin-top:4px">Imagen o PDF · máx 5MB</small>'+
+    '</div>'+
     '<div class="fg"><label>Fecha</label><input type="date" id="pagoFecha" value="'+hoy+'"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="confirmarRegistroPago(\''+escAttr(targetUserId)+'\')">💾 Registrar</button>'
@@ -11731,8 +11744,47 @@ async function confirmarRegistroPago(targetUserId){
     });
     if(res){
       pushNotif('Pago registrado','ok');
+      // TAREA 2 — Subir comprobante si fue adjuntado (antes de cerrar modal para no perder el input)
+      const _fileInp=$('pagoComprobante');
+      const _file=_fileInp&&_fileInp.files?_fileInp.files[0]:null;
+      const _pagoId=res&&(res.id||res.pago_id||(res.pago&&res.pago.id));
+      if(_file && _pagoId){
+        if(_file.size > 5*1024*1024){
+          pushNotif('⚠️ Comprobante no subido: excede 5MB','w');
+        } else {
+          try{
+            const dataBase64=await new Promise(function(resolve,reject){
+              const r=new FileReader();
+              r.onload=function(){ resolve(String(r.result).split(',')[1]); };
+              r.onerror=reject;
+              r.readAsDataURL(_file);
+            });
+            const upRes=await fetch(WORKER_URL+'/api/comprobantes/upload',{
+              method:'POST',
+              headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
+              body: JSON.stringify({
+                pago_id: _pagoId,
+                filename: _file.name,
+                content_type: _file.type,
+                size: _file.size,
+                dataBase64: dataBase64
+              })
+            });
+            const upData=await upRes.json().catch(function(){return{};});
+            if(upRes.ok && upData.ok){
+              pushNotif('✅ Comprobante subido','ok');
+            } else {
+              pushNotif('⚠️ Comprobante no subido: '+(upData.error||'error'),'w');
+            }
+          } catch(err){
+            pushNotif('⚠️ Error subiendo comprobante: '+(err&&err.message||err),'w');
+          }
+        }
+      }
       closeA();
       try{ window._pagosCache=await DL.getPagos({}); }catch(_){ }
+      // Invalidar cache de comprobantes para que se recargue
+      try{ if(window._comprobantesCache) delete window._comprobantesCache[_pagoId]; }catch(_){ }
       // Si estamos en página dedicada del usuario, refrescar ahí; si no, ir a pagos
       if(window._pagoUsuarioActual && String(window._pagoUsuarioActual)===String(targetUserId)){
         nav('pago_usuario');
@@ -11749,17 +11801,59 @@ async function confirmarRegistroPago(targetUserId){
   }
 }
 
+/* ── Comprobantes de pago (TAREA 3) ───────────────────────────── */
+window._comprobantesCache = window._comprobantesCache || {};
+
+async function _cargarComprobantesDePagos(pagosIds){
+  const ids=(pagosIds||[]).filter(function(pid){
+    return pid && !(pid in window._comprobantesCache);
+  });
+  await Promise.all(ids.map(async function(pid){
+    try{
+      const r=await fetch(WORKER_URL+'/api/comprobantes/list?pago_id='+encodeURIComponent(pid),{
+        headers:{'Authorization':'Bearer '+_sessionToken}
+      });
+      const d=await r.json().catch(function(){return{};});
+      window._comprobantesCache[pid] = (d&&d.items)?d.items:[];
+    } catch(_){
+      window._comprobantesCache[pid] = [];
+    }
+  }));
+  return window._comprobantesCache;
+}
+
+function _verComprobante(pagoId){
+  const items=(window._comprobantesCache&&window._comprobantesCache[pagoId])||[];
+  if(!items.length){ pushNotif('Sin comprobantes','w'); return; }
+  if(items.length===1){
+    window.open(WORKER_URL + items[0].downloadUrl, '_blank');
+  } else {
+    const html=items.map(function(i){
+      return '<a href="'+WORKER_URL+escAttr(i.downloadUrl)+'" target="_blank" style="display:block;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;color:var(--text);text-decoration:none">📎 '+escHtml(i.nombre_archivo)+'</a>';
+    }).join('');
+    openA('Comprobantes', html, '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>');
+  }
+}
+
 async function verHistorialPagos(targetUserId){
   const u=(_usersCache||[]).find(x=>String(x.id)===String(targetUserId));
   const nombre=u?u.nombre:'usuario';
   const pagos=await DL.getPagos({pagado_a:targetUserId});
-  const filas=pagos.map(p=>'<tr>'+
-    '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+'</td>'+
-    '<td style="font-weight:700;color:var(--green)">'+fmt(p.monto)+'</td>'+
-    '<td>'+escHtml(p.metodo||'—')+'</td>'+
-    '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
-    '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.nota||'')+'</td>'+
-  '</tr>').join('');
+  // Cargar comprobantes en paralelo antes de renderizar
+  try{ await _cargarComprobantesDePagos(pagos.map(function(p){return p.id;})); }catch(_){ }
+  const filas=pagos.map(p=>{
+    const tieneComp=(window._comprobantesCache&&window._comprobantesCache[p.id]&&window._comprobantesCache[p.id].length);
+    const compIcon=tieneComp
+      ? ' <button class="btn btn-icon" onclick="_verComprobante(\''+escAttr(p.id)+'\')" title="Ver comprobante" style="padding:2px 6px;font-size:14px">📎</button>'
+      : '';
+    return '<tr>'+
+      '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+compIcon+'</td>'+
+      '<td style="font-weight:700;color:var(--green)">'+fmt(p.monto)+'</td>'+
+      '<td>'+escHtml(p.metodo||'—')+'</td>'+
+      '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
+      '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.nota||'')+'</td>'+
+    '</tr>';
+  }).join('');
   const total=pagos.reduce((a,p)=>a+(Number(p.monto)||0),0);
   openA('📋 Historial de pagos — '+nombre,
     '<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">Total pagado: <b style="color:var(--green)">'+fmt(total)+'</b></div>'+
