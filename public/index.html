@@ -627,8 +627,17 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .prod-precio-mayor{font-size:10px;color:var(--text2);margin-top:1px;}
 .prod-stock{font-size:11px;color:var(--text2);}
 .prod-actions{margin-top:auto;padding-top:9px;display:flex;flex-direction:column;gap:5px;}
-.prod-pres-grid{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
-.prod-pres-chip{background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:11px;}
+.prod-pres-grid{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.prod-pres-chip{background:linear-gradient(180deg,rgba(20,20,20,.92),rgba(10,10,10,.96));border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;font-size:11px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);display:flex;flex-direction:column;gap:4px;}
+.prod-pres-chip .pres-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.prod-pres-chip .pres-nombre{font-weight:700;font-size:12px;letter-spacing:.2px;color:#fff;}
+.prod-pres-chip .pres-precio{font-weight:700;font-size:13px;color:var(--accent);letter-spacing:.3px;}
+.prod-pres-chip .pres-roles{font-size:10px;color:rgba(255,255,255,0.6);display:flex;flex-wrap:wrap;gap:8px;}
+.prod-pres-chip .pres-roles span b{color:rgba(255,255,255,0.85);font-weight:600;}
+.prod-pres-chip .pres-actions{display:flex;justify-content:flex-end;gap:4px;margin-top:2px;}
+.prod-pres-chip .pres-actions button{background:transparent;border:none;color:rgba(255,255,255,0.7);padding:3px 6px;border-radius:6px;cursor:pointer;font-size:11px;transition:background .15s var(--ease-out),color .15s var(--ease-out);}
+.prod-pres-chip .pres-actions button:hover{background:rgba(255,255,255,0.12);color:#fff;}
+.prod-pres-chip .pres-actions button.pres-del:hover{background:rgba(220,38,38,.25);color:#fca5a5;}
 /* Imágenes dentro de descripciones HTML */
 .desc-html img{max-width:100%;height:auto;border-radius:8px;margin:6px 0;display:block;}
 .desc-html video{max-width:100%;border-radius:8px;margin:6px 0;display:block;}
@@ -1768,25 +1777,25 @@ const DL = {
     // Notificar al delivery si el estado cambió a Despachado o En Ruta
     if(_prev?.estado!==o.estado&&o.deliveryId&&['Despachado','En Ruta'].includes(o.estado)&&_sessionToken){
       // Push browser
-      fetch(WORKER_URL+'/api/push-send',{
+      _fetchWithTimeout(WORKER_URL+'/api/push-send',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
         body:JSON.stringify({user_id:o.deliveryId,title:o.estado==='Despachado'?'📦 Pedido despachado':'🛵 Pedido en ruta',body:'Pedido #'+o.id+(o.cliente?' — '+o.cliente:''),url:'/pedidos'})
-      }).catch(e=>console.warn('[PUSH DELIVERY]',e.message));
+      },10000).catch(e=>{if(e&&e.name==='AbortError')pushNotif('Tiempo de espera agotado. Reintente.','w');else console.warn('[PUSH DELIVERY]',e.message);});
       // WhatsApp al delivery via worker (respaldo)
-      fetch(WORKER_URL+'/api/orders/notify',{
+      _fetchWithTimeout(WORKER_URL+'/api/orders/notify',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
         body:JSON.stringify({delivery_id:o.deliveryId,order_id:o.id,cliente_nombre:o.cliente||'Cliente',address:o.direccion||''})
-      }).catch(e=>console.warn('[WA NOTIFY DELIVERY]',e.message));
+      },10000).catch(e=>{if(e&&e.name==='AbortError')pushNotif('Tiempo de espera agotado. Reintente.','w');else console.warn('[WA NOTIFY DELIVERY]',e.message);});
     }
     // Notificar al CLIENTE por WhatsApp cuando cambia el estado
     if(_prev?.estado!==o.estado&&['En Ruta','Entregado','Despachado','Cancelado'].includes(o.estado)&&_sessionToken){
-      fetch(WORKER_URL+'/api/orders/status',{
+      _fetchWithTimeout(WORKER_URL+'/api/orders/status',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
         body:JSON.stringify({id:o.id,estado:o.estado})
-      }).catch(e=>console.warn('[WA NOTIFY CLIENTE]',e.message));
+      },10000).catch(e=>{if(e&&e.name==='AbortError')pushNotif('Tiempo de espera agotado. Reintente.','w');else console.warn('[WA NOTIFY CLIENTE]',e.message);});
     }
     // Push a todos los relacionados cuando cambia estado (vendedor + creador + dropshipper)
     if(_prev?.estado!==o.estado&&_sessionToken){
@@ -1798,7 +1807,7 @@ const DL = {
       const _estadoEmoji={Despachado:'📦','En ruta':'🛵','En Ruta':'🛵',Entregado:'✅',Cancelado:'❌',Devuelto:'↩️',Pendiente:'🕐'};
       const _emoji=_estadoEmoji[o.estado]||'📋';
       _targets.forEach(uid=>{
-        fetch(WORKER_URL+'/api/push-send',{
+        _fetchWithTimeout(WORKER_URL+'/api/push-send',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
           body:JSON.stringify({
@@ -1807,7 +1816,7 @@ const DL = {
             body:'Pedido #'+o.id+(o.cliente?' — '+o.cliente:''),
             url:'/orders'
           })
-        }).catch(e=>console.warn('[PUSH RELACIONADO]',e.message));
+        },10000).catch(e=>{if(e&&e.name==='AbortError')pushNotif('Tiempo de espera agotado. Reintente.','w');else console.warn('[PUSH RELACIONADO]',e.message);});
       });
     }
     updateNavBadges();
@@ -2384,28 +2393,30 @@ async function initAddressAutocomplete(inputId,latId,lngId,statusId){
     clearTimeout(debounce);
     debounce=setTimeout(async()=>{
       const q=input.value.trim();if(q.length<3)return;
-      const token=mapboxgl.accessToken;if(!token)return;
       try{
-        const r=await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/'+encodeURIComponent(q+' Paraguay')+'.json?access_token='+token+'&country=py&language=es&limit=6&types=poi,address,place,locality,neighborhood');
+        const r=await _fetchWithTimeout(WORKER_URL+'/api/geocode?q='+encodeURIComponent(q+' Paraguay')+'&limit=6',{headers:{'Authorization':'Bearer '+(sessionStorage.getItem('iporave_token')||_sessionToken||'')}},10000);
         const data=await r.json();
         let box=document.getElementById('__autocomplete_'+inputId);
         if(!box){box=document.createElement('ul');box.id='__autocomplete_'+inputId;box.style.cssText='position:absolute;z-index:9999;background:#1f2330;border:1px solid #2e344a;border-radius:8px;list-style:none;padding:4px 0;margin:0;min-width:280px;max-width:360px;box-shadow:0 4px 16px #0008';input.parentElement.style.position='relative';input.parentElement.appendChild(box);}
         box.innerHTML='';
         (data.features||[]).forEach(f=>{
-          const [lng,lat]=f.geometry.coordinates;
+          const coords=f.center||(f.geometry&&f.geometry.coordinates)||[0,0];
+          const [lng,lat]=coords;
+          const txt=f.text||(f.place_name?f.place_name.split(',')[0]:'');
+          const placeName=f.place_name||txt;
           const li=document.createElement('li');
-          li.innerHTML='<div style="font-size:12px;color:#e2e8f0">'+escHtml(f.text)+'</div><div style="font-size:10px;color:#64748b">'+escHtml(f.place_name)+'</div>';
+          li.innerHTML='<div style="font-size:12px;color:#e2e8f0">'+escHtml(txt)+'</div><div style="font-size:10px;color:#64748b">'+escHtml(placeName)+'</div>';
           li.style.cssText='padding:8px 12px;cursor:pointer;border-bottom:1px solid #2e344a;';
           li.onmouseenter=()=>li.style.background='#252a38';
           li.onmouseleave=()=>li.style.background='';
           li.onclick=()=>{
-            input.value=f.place_name;
-            _setGpsFields(lat,lng,'GPS: '+f.text+' ('+lat.toFixed(4)+', '+lng.toFixed(4)+')',latId,lngId,statusId);
+            input.value=placeName;
+            _setGpsFields(lat,lng,'GPS: '+txt+' ('+lat.toFixed(4)+', '+lng.toFixed(4)+')',latId,lngId,statusId);
             box.innerHTML='';
           };
           box.appendChild(li);
         });
-      }catch(e){}
+      }catch(e){if(e&&e.name==='AbortError')pushNotif('Tiempo de espera agotado. Reintente.','w');}
     },300);
   });
 }
@@ -2415,12 +2426,17 @@ async function showDeliveryMap(containerId,orderAddr,gpsLat,gpsLng){
   try{
     const token=mapboxgl.accessToken;
     let destLat=-25.2867,destLng=-57.647;
-    if(token&&orderAddr){
-      const gq=encodeURIComponent(orderAddr+' Paraguay');
-      const geo=await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/'+gq+'.json?access_token='+token+'&country=py&language=es&limit=1&types=poi,address,place,locality,neighborhood');
-      const geoData=await geo.json();
-      const gf=geoData.features&&geoData.features[0];
-      if(gf){destLat=gf.geometry.coordinates[1];destLng=gf.geometry.coordinates[0];}
+    if(orderAddr){
+      try{
+        const gq=encodeURIComponent(orderAddr+' Paraguay');
+        const geo=await _fetchWithTimeout(WORKER_URL+'/api/geocode?q='+gq+'&limit=1',{headers:{'Authorization':'Bearer '+(sessionStorage.getItem('iporave_token')||_sessionToken||'')}},10000);
+        const geoData=await geo.json();
+        const gf=geoData.features&&geoData.features[0];
+        if(gf){
+          const c=gf.center||(gf.geometry&&gf.geometry.coordinates);
+          if(c){destLat=c[1];destLng=c[0];}
+        }
+      }catch(e){if(e&&e.name==='AbortError')pushNotif('Tiempo de espera agotado. Reintente.','w');}
     }
     const map=new mapboxgl.Map({container,style:'mapbox://styles/mapbox/dark-v11',center:[destLng,destLat],zoom:14});
     map.on('load',function(){
@@ -3849,6 +3865,8 @@ function updateNavBadges(){
   if(bm){bm.textContent=_unreadMsgs>99?'99+':String(_unreadMsgs);bm.style.display=_unreadMsgs>0?'':'none';}
 }
 function nav(page){
+  // Cerrar coachmark Onboard activo al cambiar de página (sin marcarlo como visto)
+  try{ if(typeof Onboard !== 'undefined' && Onboard._closeCurrent) Onboard._closeCurrent(); }catch(_){}
   // Limpiar modales stale al navegar (prevenir modales superpuestos)
   try{
     const mA=document.getElementById('mA');
@@ -5039,6 +5057,11 @@ PAGES.dashboard=async function(){
   $('ca').innerHTML=html;
   _styleDashboardStats();
   if(['admin','superadmin','vendedor','dropshipper','delivery'].includes(CU.rol))_renderCharts();
+  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+    setTimeout(function(){
+      Onboard.showIfNew('page_dashboard_intro','#ca .sgrid .sc:first-child','Panel principal del sistema. Aquí encontrará el resumen operativo de su cuenta.',{position:'auto'});
+    },800);
+  }
 };
 
 function _renderCharts(){
@@ -6579,9 +6602,16 @@ PAGES.balance=function(){
 
 /* ─── LIQUIDACION ─── */
 PAGES.liquidacion=function(){
-  if(CU.rol==='vendedor'){_liqVend();return;}
-  if(CU.rol==='dropshipper'){_liqDrop();return;}
-  if(CU.rol==='proveedor'){_liqProv();return;}
+  var _miLiqHook=function(){
+    if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+      setTimeout(function(){
+        Onboard.showIfNew('page_mi_liquidacion_intro','#ca .sc, #ca .lcard2','Resumen de sus comisiones y liquidaciones pendientes.',{position:'auto'});
+      },800);
+    }
+  };
+  if(CU.rol==='vendedor'){_liqVend();_miLiqHook();return;}
+  if(CU.rol==='dropshipper'){_liqDrop();_miLiqHook();return;}
+  if(CU.rol==='proveedor'){_liqProv();_miLiqHook();return;}
   $('tbActions').innerHTML='<button class="btn btn-primary" onclick="printLiq()">⬇ PDF / Imprimir</button>';
   const orders=_ordersCache;
   const ent=orders.filter(o=>o.estado==='Entregado');
@@ -6654,6 +6684,11 @@ PAGES.liquidacion=function(){
       '<div class="lrow"><span class="llbl">Premio 1–2 extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra12)+'</span></div>'+
       '<div class="lrow"><span class="llbl">Premio 3+ extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra3)+'</span></div>'+
     '</div>';
+  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+    setTimeout(function(){
+      Onboard.showIfNew('page_liquidacion_intro','#ca .lcard2:first-of-type, #ca .stitle','Resumen consolidado de movimientos financieros del período seleccionado.',{position:'auto'});
+    },800);
+  }
 };
 
 /* ══════════════════════════════════════════════════
@@ -8260,7 +8295,7 @@ PAGES.analitica_admin=function(){
 PAGES.usuarios=async function(){
   _requireUserAuth(async function(){
     await refreshCache();
-    $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNewUser()">+ Nuevo usuario</button>';
+    $('tbActions').innerHTML='<button id="btnNuevoUsuario" class="btn btn-primary" onclick="openNewUser()">+ Nuevo usuario</button>';
     $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Usuarios ('+_usersCache.length+')</span></div>'+
     '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
     '<th class="col-hide">ID</th><th>Nombre</th><th class="th-user">Usuario</th><th>Rol</th>'+
@@ -8290,6 +8325,11 @@ PAGES.usuarios=async function(){
         '</div>'+
       '</div></td></tr>'
     ).join('')+'</tbody></table></div></div>';
+    if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+      setTimeout(function(){
+        Onboard.showIfNew('page_usuarios_intro','#btnNuevoUsuario','Gestión completa de usuarios del sistema. Permite crear, editar y administrar roles.',{position:'auto'});
+      },800);
+    }
   });
 };
 function openNewUser(){
@@ -8467,7 +8507,7 @@ PAGES.pagos_prov=function(){
 
 /* ─── ZONAS ─── */
 PAGES.zonas=function(){
-  $('tbActions').innerHTML='<button class="btn btn-primary" onclick="openNewZona()">+ Nueva zona</button>';
+  $('tbActions').innerHTML='<button id="btnNuevaZona" class="btn btn-primary" onclick="openNewZona()">+ Nueva zona</button>';
   $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Zonas de entrega</span></div>'+
   '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
   '<th>Zona</th><th class="col-hide">Ciudades</th><th>Tarifa</th>'+
@@ -8488,6 +8528,11 @@ PAGES.zonas=function(){
       '</div>'+
     '</div></td></tr>'
   ).join('')+'</tbody></table></div></div>';
+  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+    setTimeout(function(){
+      Onboard.showIfNew('page_zonas_intro','#btnNuevaZona','Configuración de zonas operativas y tarifas asociadas para entregas.',{position:'auto'});
+    },800);
+  }
 };
 function openNewZona(){
   openA('Nueva zona',
@@ -8887,12 +8932,17 @@ function _renderProductoCard(p,canEdit,canOrder=false){
       p.presentaciones.map(pr=>{
         const rolPrice=_getPrecioRol(pr,CU.rol);
         return '<div class="prod-pres-chip">'+
-          '<div style="font-weight:700;font-size:11px">'+escHtml(pr.nombre||'')+'</div>'+
-          '<div style="color:var(--accent);font-size:11px">'+(rolPrice>0?fmt(rolPrice):'Sin precio')+'</div>'+
-          (esAdmin?'<div style="font-size:9px;color:var(--text3)">V:'+fmtN(pr.precioVendedor||0)+' D:'+fmtN(pr.precioDropshipper||0)+' P:'+fmtN(pr.precioProveedor||0)+'</div>':'')+
-          (canEdit?'<div style="display:flex;gap:3px;margin-top:3px">'+
-            '<button onclick="editPresentacion('+p.id+','+pr.id+')" style="background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;cursor:pointer;font-size:10px;color:var(--text2)">✎</button>'+
-            '<button onclick="delPresentacion('+p.id+','+pr.id+')" aria-label="Eliminar presentación" style="background:transparent;border:none;cursor:pointer;font-size:10px;color:var(--red);padding:1px 4px">✕</button>'+
+          '<div class="pres-head">'+
+            '<span class="pres-nombre">'+escHtml(pr.nombre||'')+'</span>'+
+            '<span class="pres-precio">'+(rolPrice>0?fmt(rolPrice):'Sin precio')+'</span>'+
+          '</div>'+
+          (esAdmin?'<div class="pres-roles" title="Precios por rol">'+
+            '<span>Vendedor: <b>'+fmtN(pr.precioVendedor||0)+'</b></span>'+
+            '<span>Dropshipper: <b>'+fmtN(pr.precioDropshipper||0)+'</b></span>'+
+            '<span>Proveedor: <b>'+fmtN(pr.precioProveedor||0)+'</b></span>'+
+          '</div>':'')+
+          (canEdit?'<div class="pres-actions">'+
+            '<button class="pres-del" onclick="delPresentacion('+p.id+','+pr.id+')" aria-label="Eliminar esta presentación" title="Eliminar esta presentación (no borra el producto)">✕ Quitar</button>'+
           '</div>':'')+
         '</div>';
       }).join('')+'</div>'
@@ -8937,7 +8987,7 @@ PAGES.catalogo=function(q=''){
   const puedeVender=['vendedor','dropshipper','proveedor'].includes(CU.rol);
   // Botones topbar
   let acciones='';
-  if(puedeEditar)acciones+='<button class="btn btn-primary btn-sm" onclick="openNuevoProducto()">+ Nuevo</button>';
+  if(puedeEditar)acciones+='<button id="btnNuevoProducto" class="btn btn-primary btn-sm" onclick="openNuevoProducto()">+ Nuevo</button>';
   if(esAdmin){
     acciones+='<button class="btn btn-secondary btn-sm" onclick="importarCatalogoCSV()">⬆ Importar</button>';
     acciones+='<button class="btn btn-secondary btn-sm" onclick="exportarCatalogoCSV()">⬇ Exportar</button>';
@@ -8984,6 +9034,11 @@ PAGES.catalogo=function(q=''){
     (lista.length?'<div class="prod-grid">'+lista.map(p=>_renderProductoCard(p,puedeEditar&&(p.owner_id||p.owner_user_id)===CU.id,puedeVender)).join('')+'</div>'
       :'<div style="text-align:center;padding:40px;color:var(--text3)">Sin resultados</div>')+
   '</div>';
+  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+    setTimeout(function(){
+      Onboard.showIfNew('page_catalogo_intro','#btnNuevoProducto, #ca .prod-grid .prod-card:first-child','Administración del catálogo de productos. Incluye presentaciones, precios y estados de publicación.',{position:'auto'});
+    },800);
+  }
 };
 
 // Vista admin: todos los catálogos agrupados por usuario
@@ -10519,6 +10574,11 @@ PAGES.config=function(){
     '</div>'+
     '</div>';
   _cargarTemaActualEnConfig();
+  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+    setTimeout(function(){
+      Onboard.showIfNew('page_config_intro','#ca .fg, #ca input, #ca select','Configuración general del sistema. Personalice la operativa según las necesidades de su negocio.',{position:'auto'});
+    },800);
+  }
 };
 async function saveCfgAPIs(){
   setCfg({
@@ -10668,7 +10728,7 @@ PAGES.mensajes=async function(){
   if(error){$('ca').innerHTML='<div class="mc-empty">Error al cargar mensajes.</div>';return;}
   const msgs=data||[];
   // Botones de acción dentro del contenido (siempre visibles en mobile)
-  const nuevoMsgBtn='<div style="padding:10px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-primary btn-full" onclick="openNuevoMensaje()">+ Nuevo mensaje</button></div>';
+  const nuevoMsgBtn='<div style="padding:10px 14px;border-bottom:1px solid var(--border)"><button id="btnNuevoMensaje" class="btn btn-primary btn-full" onclick="openNuevoMensaje()">+ Nuevo mensaje</button></div>';
   const contactosBtn=!isAdminLike(CU.rol)
     ?'<div style="padding:8px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-secondary btn-full" onclick="openGestionContactos()">👥 Gestionar mis contactos</button></div>'
     :'';
@@ -10704,6 +10764,11 @@ PAGES.mensajes=async function(){
       '</div></div>'
     ).join('')+
   '</div></div>';
+  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+    setTimeout(function(){
+      Onboard.showIfNew('page_mensajes_intro','#btnNuevoMensaje','Centro de comunicación interna del sistema.',{position:'auto'});
+    },800);
+  }
 };
 
 async function openConvThread(partnerId,partnerNom){
@@ -11472,12 +11537,14 @@ window._mapaFiltroDelivery=window._mapaFiltroDelivery||null;
 async function _geocodeAddr(addr){
   if(window._geocodeCache[addr])return window._geocodeCache[addr];
   try{
-    const token=mapboxgl.accessToken;if(!token)return null;
     const q=encodeURIComponent(addr+' Paraguay');
-    const r=await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/'+q+'.json?access_token='+token+'&country=py&language=es&limit=1&types=poi,address,place,locality,neighborhood');
+    const r=await _fetchWithTimeout(WORKER_URL+'/api/geocode?q='+q+'&limit=1',{headers:{'Authorization':'Bearer '+(sessionStorage.getItem('iporave_token')||_sessionToken||'')}},10000);
     const d=await r.json();
     const f=d.features&&d.features[0];
-    if(f){const c=[f.geometry.coordinates[1],f.geometry.coordinates[0]];window._geocodeCache[addr]=c;return c;}
+    if(f){
+      const coords=f.center||(f.geometry&&f.geometry.coordinates);
+      if(coords){const c=[coords[1],coords[0]];window._geocodeCache[addr]=c;return c;}
+    }
   }catch(e){}
   return null;
 }
@@ -13594,6 +13661,11 @@ PAGES.clientes_zonas = function(){
   });
   html += '</div></div>';
   $('ca').innerHTML = html;
+  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+    setTimeout(function(){
+      Onboard.showIfNew('page_clientes_intro','#clientesBuscar','Base de datos de clientes. Visualice historial de pedidos y datos de contacto.',{position:'auto'});
+    },800);
+  }
 };
 
 /* ── ASISTENTE IA AGENTIC ── */
@@ -14392,10 +14464,17 @@ function toggleTheme(){
       var el = document.getElementById(id);
       if(el && el.parentNode) el.parentNode.removeChild(el);
     });
-    if(STATE.id) markSeen(STATE.id);
+    if(!skip && STATE.id) markSeen(STATE.id);
     STATE.target = null; STATE.id = null;
     // Disparar el siguiente de la cola con pausa de 400ms
     setTimeout(_drainQueue, 400);
+  }
+
+  // Cierra el coachmark actual SIN marcarlo como visto.
+  // Útil cuando el usuario cambia de página antes de completar la acción.
+  function closeCurrent(){
+    if(!STATE.active) return;
+    destroy(true);
   }
 
   function _drainQueue(){
@@ -14588,7 +14667,7 @@ function toggleTheme(){
     return removed;
   }
 
-  window.Onboard = { show: show, showIfNew: showIfNew, enqueue: enqueue, reset: reset, _markSeen: markSeen, _wasSeen: wasSeen, _destroy: destroy, _queue: QUEUE };
+  window.Onboard = { show: show, showIfNew: showIfNew, enqueue: enqueue, reset: reset, _markSeen: markSeen, _wasSeen: wasSeen, _destroy: destroy, _closeCurrent: closeCurrent, _queue: QUEUE };
 })();
 </script>
 <script>
