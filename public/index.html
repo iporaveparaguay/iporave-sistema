@@ -2346,7 +2346,16 @@ const DL = {
     if(i>=0)users[i]=uLocal;else users.push(uLocal);
     this._ls('users',users);
 
-    // 2. Si hay contraseña nueva — hashear en el servidor
+    // 2. Sin password y no es edición propia → usar worker API (RLS bloquea edición de otros usuarios con anon key)
+    if(_sessionToken&&typeof CU!=='undefined'&&CU&&String(u.id)!==String(CU.id)&&!password){
+      try{
+        const _wr=await _fetchWithTimeout(WORKER_URL+'/api/save-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},body:JSON.stringify(uLocal)});
+        const _wj=await _wr.json();
+        if(!_wr.ok){console.warn('saveUser API:',_wj.error);pushNotif('Error al guardar: '+(_wj.error||''),'e');return{ok:false,error:_wj.error};}
+        return{ok:true};
+      }catch(e){console.warn('saveUser API fallback:',e.message);}
+    }
+    // 3. Si hay contraseña nueva — hashear en el servidor
     if(password&&!password.startsWith('$2')){
       try{
         const res=await _fetchWithTimeout(WORKER_URL+'/api/save-user',{
@@ -11962,10 +11971,10 @@ function _refreshDeliveries(){
 
 /* ─── VALIDACIÓN DE PERFIL POR ROL ─── */
 function _perfilCompleto(u){
-  if(u?.rol==='superadmin')return{ok:true,missing:[]};
+  return{ok:true,missing:[]};
+  // eslint-disable-next-line no-unreachable
   const rol=u?.rol||'';
   const missing=[];
-  // Admin: solo campos esenciales (nombre + email). El resto es opcional.
   if(rol==='admin'){
     if(!u?.nombre||(u.nombre||'').length<2)missing.push('Nombre');
     if(!u?.email)missing.push('Email');
@@ -14878,7 +14887,6 @@ PAGES.mapa=function(){
     '<div id="mapaContadores" class="mapBar" style="margin-bottom:8px;border-radius:10px"></div>'+
     '<div style="position:relative">'+
       '<div id="ordersMap" style="height:calc(100vh - var(--mapa-offset,220px));min-height:320px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
-      '<button onclick="nav(\'orders\')" style="display:none;position:absolute;top:10px;left:10px;z-index:999;font-weight:700;cursor:pointer" id="mapaBackBtn" class="map-btn">← Volver</button>'+
       '<button class="mapa-estilo-toggle" id="mapaEstiloToggle" onclick="_toggleEstiloPanel()" title="Estilos del mapa" aria-label="Estilos del mapa"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>'+
       '<div id="mapaEstiloBtns" class="mapa-estilo-panel">'+
         estilosBtns+
@@ -14895,9 +14903,6 @@ PAGES.mapa=function(){
       if(mc&&!mc.classList.contains('collapsed'))mc.classList.add('collapsed');
     },100);
   }
-  // CRIT-5: forzar visibilidad del botón Volver en mobile (inline style vence al CSS)
-  const _backBtn=$('mapaBackBtn');
-  if(_backBtn)_backBtn.style.display=window.innerWidth<640?'flex':'none';
   setTimeout(function(){
     const map=new mapboxgl.Map({
       container:'ordersMap',
