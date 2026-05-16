@@ -5569,6 +5569,22 @@ function _renderCharts(){
   const ctxZ=$('chartZonas');
   if(ctxZ){
     if(ctxZ._chartInst)ctxZ._chartInst.destroy();
+    // FIX 4 — estado vacío explícito si no hay datos
+    if(!mine||mine.length===0||topZonas.length===0){
+      ctxZ.style.display='none';
+      const _prevEmpty=ctxZ.parentNode&&ctxZ.parentNode.querySelector('.chart-empty-state');
+      if(!_prevEmpty&&ctxZ.parentNode){
+        const emptyDiv=document.createElement('div');
+        emptyDiv.className='chart-empty-state';
+        emptyDiv.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Sin datos para mostrar</div>';
+        ctxZ.parentNode.appendChild(emptyDiv);
+      }
+    } else {
+      ctxZ.style.display='';
+      const _prevEmpty2=ctxZ.parentNode&&ctxZ.parentNode.querySelector('.chart-empty-state');
+      if(_prevEmpty2)_prevEmpty2.remove();
+    }
+    if(!(!mine||mine.length===0||topZonas.length===0)){
     const gzCtx=ctxZ.getContext('2d');
     const hz=ctxZ.offsetHeight||200;
     const gradBar=gzCtx.createLinearGradient(0,0,0,hz);
@@ -5593,6 +5609,7 @@ function _renderCharts(){
         }
       }
     });
+    }
   }
 }
 
@@ -7412,9 +7429,9 @@ PAGES.recaudacion=function(){
   dlvs.forEach(d=>{
     const dO=orders.filter(o=>o.deliveryId===d.id&&o.estado==='Entregado');
     const byM={};METODOS.forEach(m=>{byM[m]=0;});
-    dO.forEach(o=>{if(o.metodoCobro)byM[o.metodoCobro]=(byM[o.metodoCobro]||0)+(o.precio*o.qty);});
+    dO.forEach(o=>{if(o.metodoCobro&&METODOS.includes(o.metodoCobro)){byM[o.metodoCobro]=(byM[o.metodoCobro]||0)+((o.precio||0)*(o.qty||1));}});
     const tRec=dO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
-    const tTar=dO.reduce((a,b)=>a+_getZonaO(b).precio,0);
+    const tTar=dO.reduce((a,b)=>a+(_getZonaO(b).precio||0),0);
     const tExt=dO.reduce((a,b)=>a+(_getZonaO(b).extraDelivery||0),0);
     html+='<div class="tc" style="margin-bottom:18px">'+
     '<div class="th2"><span class="tt">🚴 '+escHtml(d.nombre||'')+' <span style="font-size:11px;font-weight:400;color:var(--text2)">'+escHtml(d.vehiculo||'moto')+'</span></span></div>'+
@@ -7611,8 +7628,8 @@ function filtrarBoletas(){
   '<th class="col-hide">IVA</th><th>Estado</th><th></th></tr></thead><tbody>'+
   orders.map(o=>{
     const t=o.precio*o.qty;
-    const tasaNum=(parseInt(o.tipoIva)||0)>0?(parseInt(o.tipoIva)):10;
-    const iva=o.tipoIva==='Exento'?0:Math.round(t/((100+tasaNum)/tasaNum));
+    const tasaNum=parseFloat(o.tipoIva)||0;
+    const iva=(o.tipoIva==='Exento'||tasaNum===0)?0:Math.round(t/((100+tasaNum)/tasaNum));
     return '<tr>'+
       '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">'+escHtml(o.boletaNum||'')+'</td>'+
       '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">'+escHtml(o.numDoc||'—')+'</td>'+
@@ -7631,8 +7648,8 @@ function _boletaHTML(o){
   const total=o.precio*o.qty;
   const flete=zona.precio;
   const totalFact=total+flete;
-  const tasaNum=parseInt(o.tipoIva)||10;
-  const iva=o.tipoIva==='Exento'?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
+  const tasaNum=parseFloat(o.tipoIva)||0;
+  const iva=(o.tipoIva==='Exento'||tasaNum===0)?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
   const base=totalFact-iva;
   const _empColor=emp.colorPrimario||'#f5a623';
   const _empSec=emp.colorSecundario||'#1f2937';
@@ -7640,7 +7657,7 @@ function _boletaHTML(o){
   const _empLogo=emp.logo
     ?'<img src="'+safeUrl(emp.logo)+'" style="height:48px;object-fit:contain;display:block;margin-bottom:6px">'
     :'<div style="font-size:24px;font-weight:800;color:'+_empColor+';letter-spacing:-0.5px;margin-bottom:4px;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000">'+_empNom+'</div>';
-  const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'');
+  const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'SIN TIMBRADO');
   return {zona,total,flete,totalFact,iva,base,
     html:'<div class="boleta" id="boletaDiv" style="font-family:\'Helvetica Neue\',\'Arial\',sans-serif;color:#111827;background:#fff;line-height:1.45;border:1px solid #000;box-shadow:0 2px 8px rgba(0,0,0,0.15);padding:24px;max-width:800px;margin:0 auto">'+
     /* === HEADER === */
@@ -7735,14 +7752,14 @@ function _boletaHTML_legacy_unused(o){
   const total=o.precio*o.qty;
   const flete=zona.precio;
   const totalFact=total+flete;
-  const tasaNum=parseInt(o.tipoIva)||10;
-  const iva=o.tipoIva==='Exento'?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
+  const tasaNum=parseFloat(o.tipoIva)||0;
+  const iva=(o.tipoIva==='Exento'||tasaNum===0)?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
   const base=totalFact-iva;
   const _empColor=emp.colorPrimario||'#f5a623';
   const _empSec=emp.colorSecundario||'#1f2937';
   const _empNom=escHtml(emp.nombre||'IPORAVE');
   const _empLogo='';
-  const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'');
+  const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'SIN TIMBRADO');
   const _iva10 = (o.tipoIva==='Exento'||o.tipoIva==='5%') ? 0 : iva;
   const _iva5  = (o.tipoIva==='5%') ? iva : 0;
   const _exenta= (o.tipoIva==='Exento') ? totalFact : 0;
@@ -7986,9 +8003,9 @@ async function ejecutarCierre(){
   const ent=hoyO.filter(o=>o.estado==='Entregado');
   const ing=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
   const cos=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
-  const tar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
+  const tar=ent.reduce((a,b)=>a+(_getZonaO(b).precio||0),0);
   const byM={};METODOS.forEach(m=>{byM[m]=0;});
-  ent.forEach(o=>{if(o.metodoCobro)byM[o.metodoCobro]=(byM[o.metodoCobro]||0)+(o.precio*o.qty);});
+  ent.forEach(o=>{if(o.metodoCobro&&METODOS.includes(o.metodoCobro))byM[o.metodoCobro]=(byM[o.metodoCobro]||0)+((o.precio||0)*(o.qty||1));});
   const j={fecha:today(),timestamp:nowStr(),total:hoyO.length,entregados:ent.length,
     cancelados:hoyO.filter(o=>o.estado==='Cancelado').length,
     pendientes:hoyO.filter(o=>o.estado==='Pendiente').length,
@@ -8729,8 +8746,9 @@ PAGES.clientes_recurrentes=function(){
   const mine=_ordersCache.filter(o=>o.vendedorId===CU.id||o.vendedor===CU.nombre);
   const mapa={};
   mine.forEach(o=>{
-    const k=o.cliente||o.clienteNombre||'Sin nombre';
-    if(!mapa[k])mapa[k]={nombre:k,pedidos:0,total:0,ultimo:''};
+    const nombreOriginal=(o.cliente||o.clienteNombre||'Sin nombre').trim();
+    const k=nombreOriginal.toLowerCase();
+    if(!mapa[k])mapa[k]={nombre:nombreOriginal,pedidos:0,total:0,ultimo:''};
     mapa[k].pedidos++;
     mapa[k].total+=(o.precio||0)*(o.qty||1);
     if(!mapa[k].ultimo||o.fecha>mapa[k].ultimo)mapa[k].ultimo=o.fecha||'';

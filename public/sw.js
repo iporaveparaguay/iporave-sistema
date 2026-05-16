@@ -20,11 +20,13 @@ const APP_SHELL = [
   BASE + '/icon-512.png'
 ];
 
-// Install — pre-cache app shell
+// Install — pre-cache app shell granular (FIX 12: no fallar todo si uno falla)
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_STATIC).then(cache =>
-      cache.addAll(APP_SHELL).catch(() => {})
+      Promise.allSettled(APP_SHELL.map(url =>
+        cache.add(url).catch(e => console.warn('SW pre-cache fail:', url, e && e.message))
+      ))
     )
   );
   self.skipWaiting();
