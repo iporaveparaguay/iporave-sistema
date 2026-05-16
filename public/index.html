@@ -1302,6 +1302,99 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
   /* (9) Pedido grupo: aun mas compacto */
   .pedido-grupo-header{padding:10px;font-size:12px;}
 }
+/* ============================================================
+   MOBILE COMPLETO — proteccion general (auditoria 2026-05-16)
+   ============================================================ */
+@media (max-width: 768px){
+  /* Textos largos no rebalsan */
+  .ni, .btn, .mapBtn, .filterBtn, .userPagoRow, .prod-card *, .tbl td, .tbl th,
+  .mcard, .zcard, .sc, .ranking-row, .empty-state, .pedido-grupo-header,
+  .stat-premium-card, .factura-iva-tabla td, .factura-iva-tabla th{
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  /* Truncar emails/URLs largas con ellipsis */
+  .email-cell, .url-cell, [data-truncate]{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  /* Containers globales: padding consistente */
+  #ca{ padding: 12px 14px !important; }
+  .mbox{ padding: 14px !important; }
+  /* Headers mas compactos */
+  h1, .page-title{ font-size: 18px !important; }
+  h2{ font-size: 15px !important; }
+  h3{ font-size: 14px !important; }
+  /* Botones touch friendly */
+  .btn, .mapBtn, .filterBtn{
+    min-height: 38px;
+    padding: 8px 14px;
+  }
+  .btn-sm{ min-height: 32px; padding: 6px 10px; }
+  /* Inputs anti-zoom iOS */
+  input[type="text"], input[type="email"], input[type="password"],
+  input[type="tel"], input[type="number"], input[type="search"],
+  input[type="date"], input[type="time"], textarea, select{
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+  /* Tablas: scroll horizontal */
+  .tbl{
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+  }
+  /* Modales: ocupar pantalla */
+  .moverlay .mbox{
+    width: 96vw;
+    max-width: 96vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  /* Sidebar mobile: full width al abrir */
+  .sidebar.open, .sidebar.show{
+    width: 80vw !important;
+    max-width: 320px;
+  }
+  /* Toast no estorba */
+  #notifArea{ bottom: 80px !important; left: 12px !important; right: 12px !important; max-width: none !important; }
+  /* GPS pill compact en mobile */
+  #gpsStatusPill .gps-pill-text{ display: none; }
+  /* Stat cards 2 columnas en tablet, 1 en mobile chico */
+  .sgrid{
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+  /* Botones de accion en accordion no se cortan */
+  .pedido-grupo-list .order-actions{
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
+@media (max-width: 480px){
+  /* Stat cards 1 columna */
+  .sgrid{ grid-template-columns: 1fr !important; }
+  /* Title aun mas chico */
+  h1, .page-title{ font-size: 16px !important; }
+  /* Filtros mapa: una fila por boton si hace falta */
+  .mapBar{ gap: 4px; flex-wrap: wrap; }
+  .mapBar .mapBtn{ font-size: 11px; padding: 6px 9px; min-height: 32px; }
+  /* Combobox compactos */
+  .search-combo{ max-width: 100% !important; }
+  /* Topbar compacto */
+  .topbar-icon-btn{ width: 36px !important; height: 36px !important; }
+  /* Cards margen minimo */
+  .sc, .mcard, .zcard, .ranking-row{
+    padding: 12px !important;
+  }
+  /* Boleta padding minimo */
+  .boleta, .factura-iva, .factura-iva-wrap{
+    padding: 12px !important;
+  }
+}
 /* === DELIVERY OUTDOOR UI (alta legibilidad bajo sol fuerte) === */
 body[data-rol="delivery"]{
   --text:#000;--text2:#1a1a1a;--text3:#444;
@@ -1395,6 +1488,25 @@ body.alta-visibilidad select{
 .sa-mini-card .sa-mini-icon{font-size:20px;line-height:1;opacity:.78;margin-bottom:5px}
 .sa-mini-card .sa-mini-value{font-size:22px;font-weight:900;line-height:1;color:var(--card-c,var(--accent));overflow-wrap:anywhere}
 .sa-mini-card .sa-mini-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-top:5px}
+/* UX nuevas (Mejoras 1-5) */
+.btn-loading{pointer-events:none;position:relative;color:transparent !important;}
+.btn-loading::after{content:'';position:absolute;top:50%;left:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:btnSpin .7s linear infinite;}
+@keyframes btnSpin{to{transform:rotate(360deg);}}
+.btn-confirm-pending{background:linear-gradient(180deg,#f59e0b,#d97706) !important;color:#fff !important;animation:pulseConfirm .6s ease-in-out infinite;}
+@keyframes pulseConfirm{50%{filter:brightness(1.15);}}
+.btn-success-flash{position:relative;}
+.btn-success-flash::after{content:'\2713 Listo';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;background:linear-gradient(180deg,#22c55e,#16a34a);border-radius:inherit;animation:successFlash .8s ease forwards;}
+@keyframes successFlash{0%{opacity:0;transform:scale(.7);}25%{opacity:1;transform:scale(1.05);}80%{opacity:1;transform:scale(1);}100%{opacity:0;}}
+#_globalSearchOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding-top:10vh;backdrop-filter:blur(4px);}
+#_globalSearchOverlay ._gs-box{background:var(--card,#fff);color:var(--text,#111);width:min(640px,92vw);max-height:75vh;display:flex;flex-direction:column;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.45);overflow:hidden;border:1px solid var(--border,#e5e7eb);}
+#_globalSearchOverlay ._gs-input{padding:16px 18px;font-size:17px;border:0;outline:0;border-bottom:1px solid var(--border,#e5e7eb);background:transparent;color:inherit;}
+#_globalSearchOverlay ._gs-results{overflow-y:auto;padding:6px 0;}
+#_globalSearchOverlay ._gs-group-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2,#888);padding:8px 18px 4px;}
+#_globalSearchOverlay ._gs-item{padding:9px 18px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-size:14px;}
+#_globalSearchOverlay ._gs-item:hover,#_globalSearchOverlay ._gs-item.sel{background:var(--bg2,#f3f4f6);}
+#_globalSearchOverlay ._gs-item small{color:var(--text2,#888);font-size:12px;}
+#_globalSearchOverlay ._gs-empty{padding:18px;color:var(--text2,#888);font-size:13px;text-align:center;}
+#_globalSearchOverlay ._gs-hint{padding:8px 14px;border-top:1px solid var(--border,#e5e7eb);font-size:11px;color:var(--text2,#888);display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
 </style>
 </head>
 <body class="no-auth">
@@ -16266,6 +16378,283 @@ function toggleTheme(){
     });
     applyScrollLock();
   }).observe(document.body, {childList:true, subtree:true});
+})();
+
+/* ============================================================
+   UX NUEVAS — Mejoras 1-5 (busqueda global, btn-loading,
+   confirmacion doble-click, copia con check, flash exito)
+   Helpers globales, no intrusivos. Solo aplica atajos teclado.
+   ============================================================ */
+(function(){
+  if(window._uxMejorasInstaladas) return;
+  window._uxMejorasInstaladas = true;
+
+  // ---- Helper 1: withLoading (Mejora 2) ----
+  window._withLoading = async function(btn, fn){
+    if(!btn || typeof btn.classList === 'undefined') { try{ return await fn(); }catch(e){ throw e; } }
+    btn.classList.add('btn-loading');
+    var wasDisabled = btn.disabled;
+    try{ btn.disabled = true; }catch(_){}
+    try{ return await fn(); }
+    finally{
+      try{ btn.classList.remove('btn-loading'); }catch(_){}
+      try{ btn.disabled = wasDisabled; }catch(_){}
+    }
+  };
+
+  // ---- Helper 2: confirmDoubleClick (Mejora 3) ----
+  window._confirmDoubleClick = function(btn, action, opts){
+    if(!btn) { try{ action(); }catch(_){} return; }
+    opts = opts || {};
+    var label = opts.label || '⚠️ Confirmar';
+    var timeout = opts.timeout || 3000;
+    if(btn.dataset.pendingConfirm === '1'){
+      btn.classList.remove('btn-confirm-pending');
+      if(btn.dataset._origHtml != null){ btn.innerHTML = btn.dataset._origHtml; delete btn.dataset._origHtml; }
+      delete btn.dataset.pendingConfirm;
+      if(btn._uxConfirmT){ clearTimeout(btn._uxConfirmT); btn._uxConfirmT=null; }
+      try{ action(); }catch(e){ console.warn('[confirmDoubleClick]',e); }
+      return;
+    }
+    btn.dataset.pendingConfirm = '1';
+    btn.dataset._origHtml = btn.innerHTML;
+    btn.classList.add('btn-confirm-pending');
+    btn.innerHTML = label;
+    btn._uxConfirmT = setTimeout(function(){
+      if(btn.dataset.pendingConfirm === '1'){
+        btn.classList.remove('btn-confirm-pending');
+        if(btn.dataset._origHtml != null){ btn.innerHTML = btn.dataset._origHtml; delete btn.dataset._origHtml; }
+        delete btn.dataset.pendingConfirm;
+      }
+    }, timeout);
+  };
+
+  // ---- Helper 3: copyToClipboard con check visual (Mejora 4) ----
+  window._copyWithCheck = function(btn, text){
+    var doCopy = function(){
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          return navigator.clipboard.writeText(text);
+        }
+      }catch(_){}
+      try{
+        var ta=document.createElement('textarea'); ta.value=text;
+        ta.style.position='fixed'; ta.style.top='-9999px'; document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      }catch(_){}
+      return Promise.resolve();
+    };
+    Promise.resolve(doCopy()).then(function(){
+      if(!btn) return;
+      var orig = btn.innerHTML;
+      btn.innerHTML = '✓ Copiado';
+      btn.dataset._copyOrig = orig;
+      setTimeout(function(){
+        try{
+          if(btn.dataset._copyOrig != null){ btn.innerHTML = btn.dataset._copyOrig; delete btn.dataset._copyOrig; }
+        }catch(_){}
+      }, 1500);
+    });
+  };
+
+  // ---- Helper 4: flash de exito en boton (Mejora 5) ----
+  window._flashSuccess = function(btn){
+    if(!btn) return;
+    btn.classList.add('btn-success-flash');
+    setTimeout(function(){ try{ btn.classList.remove('btn-success-flash'); }catch(_){} }, 850);
+  };
+
+  // ---- MEJORA 1: Atajos de teclado globales + busqueda ----
+  function _esEditable(el){
+    if(!el) return false;
+    if(['INPUT','TEXTAREA','SELECT'].indexOf(el.tagName) !== -1) return true;
+    if(el.isContentEditable) return true;
+    return false;
+  }
+
+  function _hayModalAbierto(){
+    try{
+      var modals = document.querySelectorAll('.moverlay');
+      for(var i=0;i<modals.length;i++){
+        var el = modals[i]; if(!el) continue;
+        var st = el.getAttribute('style')||'';
+        if(st.indexOf('display:none') !== -1) continue;
+        var cs = window.getComputedStyle(el);
+        if(cs && cs.display !== 'none' && cs.visibility !== 'hidden') return true;
+      }
+    }catch(_){}
+    return !!document.getElementById('_globalSearchOverlay');
+  }
+
+  function _navSafe(p){
+    try{ if(typeof nav === 'function'){ nav(p); return true; } }catch(_){}
+    return false;
+  }
+
+  function _mostrarAtajosTeclado(){
+    var msg = 'Atajos: / = buscar  -  n = nuevo pedido  -  h = home  -  ? = ayuda  -  Esc = cerrar';
+    try{
+      if(typeof pushNotif === 'function'){ pushNotif(msg,'i',null,5000); return; }
+    }catch(_){}
+    try{ alert(msg); }catch(_){}
+  }
+
+  function _itemsBusqueda(q){
+    q = (q||'').toLowerCase().trim();
+    if(!q) return {pedidos:[],usuarios:[],productos:[]};
+    var pedidos=[], usuarios=[], productos=[];
+    try{
+      var oc = (typeof _ordersCache !== 'undefined' && _ordersCache) ? _ordersCache : [];
+      for(var i=0;i<oc.length && pedidos.length<8;i++){
+        var o=oc[i]||{};
+        var hay = String(o.id||'')+' '+String(o.cliente||'')+' '+String(o.direccion||'')+' '+String(o.telefono||'');
+        if(hay.toLowerCase().indexOf(q) !== -1){
+          pedidos.push({id:o.id, label:'#'+(o.id||'?')+' - '+(o.cliente||'sin cliente'), sub:(o.direccion||'')+' '+(o.estado||''), tipo:'pedido'});
+        }
+      }
+    }catch(_){}
+    try{
+      var uc = (typeof _usersCache !== 'undefined' && _usersCache) ? _usersCache : [];
+      for(var j=0;j<uc.length && usuarios.length<8;j++){
+        var u=uc[j]||{};
+        var huy = String(u.nombre||'')+' '+String(u.email||'')+' '+String(u.telefono||'');
+        if(huy.toLowerCase().indexOf(q) !== -1){
+          usuarios.push({id:u.id, label:(u.nombre||u.email||'?'), sub:(u.email||'')+' '+(u.rol||''), tipo:'usuario'});
+        }
+      }
+    }catch(_){}
+    try{
+      var cc = (typeof _catalogoCache !== 'undefined' && _catalogoCache) ? _catalogoCache : [];
+      for(var k=0;k<cc.length && productos.length<8;k++){
+        var p=cc[k]||{};
+        var hpy = String(p.nombre||'')+' '+String(p.sku||'')+' '+String(p.categoria||'');
+        if(hpy.toLowerCase().indexOf(q) !== -1){
+          productos.push({id:p.id, label:(p.nombre||'?'), sub:(p.categoria||'')+' '+(p.sku||''), tipo:'producto'});
+        }
+      }
+    }catch(_){}
+    return {pedidos:pedidos, usuarios:usuarios, productos:productos};
+  }
+
+  function _navItem(it){
+    _cerrarBusquedaGlobal();
+    if(!it) return;
+    if(it.tipo === 'pedido') _navSafe('orders');
+    else if(it.tipo === 'usuario') _navSafe('users');
+    else if(it.tipo === 'producto') _navSafe('catalogo');
+  }
+
+  function _cerrarBusquedaGlobal(){
+    var ov = document.getElementById('_globalSearchOverlay');
+    if(ov && ov.parentNode) ov.parentNode.removeChild(ov);
+  }
+
+  function _abrirBusquedaGlobal(){
+    if(document.getElementById('_globalSearchOverlay')) return;
+    var ov = document.createElement('div');
+    ov.id = '_globalSearchOverlay';
+    ov.innerHTML = ''
+      + '<div class="_gs-box" role="dialog" aria-label="Busqueda global">'
+      + '<input class="_gs-input" type="text" placeholder="Buscar pedidos, usuarios, productos..." autocomplete="off" spellcheck="false"/>'
+      + '<div class="_gs-results"><div class="_gs-empty">Escribi para buscar</div></div>'
+      + '<div class="_gs-hint"><span>Enter = abrir</span><span>Esc = cerrar</span><span>n = nuevo pedido</span><span>h = home</span></div>'
+      + '</div>';
+    document.body.appendChild(ov);
+    var inp = ov.querySelector('._gs-input');
+    var resBox = ov.querySelector('._gs-results');
+    var items = [];
+    var sel = 0;
+
+    function render(q){
+      var r = _itemsBusqueda(q);
+      items = [].concat(r.pedidos, r.usuarios, r.productos);
+      sel = 0;
+      if(!q){
+        resBox.innerHTML = '<div class="_gs-empty">Escribi para buscar</div>';
+        return;
+      }
+      if(!items.length){
+        resBox.innerHTML = '<div class="_gs-empty">Sin resultados para "'+_esc(q)+'"</div>';
+        return;
+      }
+      var html='';
+      function grupo(titulo, arr, off){
+        if(!arr.length) return '';
+        var s = '<div class="_gs-group-title">'+titulo+'</div>';
+        for(var i=0;i<arr.length;i++){
+          var globalIdx = off+i;
+          s += '<div class="_gs-item" data-idx="'+globalIdx+'"><span>'+_esc(arr[i].label)+'</span><small>'+_esc(arr[i].sub||'')+'</small></div>';
+        }
+        return s;
+      }
+      var off = 0;
+      html += grupo('Pedidos', r.pedidos, off); off += r.pedidos.length;
+      html += grupo('Usuarios', r.usuarios, off); off += r.usuarios.length;
+      html += grupo('Productos', r.productos, off);
+      resBox.innerHTML = html;
+      _marcarSel();
+      Array.prototype.forEach.call(resBox.querySelectorAll('._gs-item'), function(el){
+        el.addEventListener('click', function(){
+          var idx = parseInt(el.getAttribute('data-idx'),10)||0;
+          _navItem(items[idx]);
+        });
+      });
+    }
+
+    function _marcarSel(){
+      var nodes = resBox.querySelectorAll('._gs-item');
+      for(var i=0;i<nodes.length;i++){
+        if(i === sel) nodes[i].classList.add('sel'); else nodes[i].classList.remove('sel');
+      }
+      var act = nodes[sel];
+      if(act && act.scrollIntoView) try{ act.scrollIntoView({block:'nearest'}); }catch(_){}
+    }
+
+    function _esc(s){
+      return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }
+
+    inp.addEventListener('input', function(){ render(inp.value); });
+    inp.addEventListener('keydown', function(e){
+      if(e.key === 'Escape'){ e.preventDefault(); _cerrarBusquedaGlobal(); }
+      else if(e.key === 'ArrowDown'){ e.preventDefault(); if(items.length){ sel=(sel+1)%items.length; _marcarSel(); } }
+      else if(e.key === 'ArrowUp'){ e.preventDefault(); if(items.length){ sel=(sel-1+items.length)%items.length; _marcarSel(); } }
+      else if(e.key === 'Enter'){ e.preventDefault(); if(items[sel]) _navItem(items[sel]); }
+    });
+    ov.addEventListener('click', function(e){ if(e.target === ov) _cerrarBusquedaGlobal(); });
+
+    setTimeout(function(){ try{ inp.focus(); }catch(_){} }, 30);
+  }
+  window._abrirBusquedaGlobal = _abrirBusquedaGlobal;
+
+  document.addEventListener('keydown', function(e){
+    if(_esEditable(e.target)) return;
+    if(e.ctrlKey || e.metaKey || e.altKey) return;
+    if(e.key === '/'){
+      if(_hayModalAbierto()) return;
+      e.preventDefault();
+      _abrirBusquedaGlobal();
+    } else if(e.key === '?'){
+      if(_hayModalAbierto()) return;
+      e.preventDefault();
+      _mostrarAtajosTeclado();
+    } else if(e.key === 'n' || e.key === 'N'){
+      if(_hayModalAbierto()) return;
+      try{
+        if(typeof CU !== 'undefined' && CU && ['admin','superadmin','vendedor','dropshipper'].indexOf(CU.rol) !== -1){
+          e.preventDefault();
+          if(typeof openNuevoPedido === 'function') openNuevoPedido();
+          else _navSafe('orders');
+        }
+      }catch(_){}
+    } else if(e.key === 'h' || e.key === 'H'){
+      if(_hayModalAbierto()) return;
+      e.preventDefault();
+      if(!_navSafe('dashboard')) _navSafe('home');
+    }
+  });
 })();
 
 /* Global error handlers — protegido contra duplicados */
