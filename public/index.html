@@ -10322,32 +10322,69 @@ function crearPedidoDesdeProducto(id){
   },200);
 }
 
+// Escáner helper: formatos EAN/UPC/CODE128/QR para Html5Qrcode
+function _scannerFormats(){
+  try{
+    return[Html5QrcodeSupportedFormats.QR_CODE,Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.CODE_93,
+      Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.DATA_MATRIX];
+  }catch(e){return[];}
+}
+// Beep de confirmación vía Web Audio API (sin librería)
+function _scanBeep(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator();const g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type='sine';o.frequency.value=1200;
+    g.gain.setValueAtTime(0.3,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
+    o.start(ctx.currentTime);o.stop(ctx.currentTime+0.15);
+  }catch(e){}
+}
+
 // Escanear código de barras para buscar producto
 let _scannerInstance=null;
 function abrirScannerCatalogo(){
-  openA('📷 Escanear código de barras',
+  openA(SVG.camera+' Escanear producto',
     '<div id="qr-reader" style="width:100%"></div>'+
-    '<div id="qr-result" style="margin-top:12px;font-size:13px;color:var(--text2);text-align:center">Apuntá la cámara al código del producto</div>',
+    '<div id="qr-result" style="margin-top:12px;font-size:13px;color:var(--text2);text-align:center;min-height:38px">'+
+      'Apuntá la cámara al código de barras del producto</div>'+
+    '<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px">EAN-13 · UPC · QR · CODE-128</div>',
     '<button class="btn btn-secondary" onclick="cerrarScannerCatalogo()">Cerrar</button>'
   );
   setTimeout(()=>{
     try{
-      _scannerInstance=new Html5Qrcode('qr-reader');
-      _scannerInstance.start({facingMode:'environment'},{fps:10,qrbox:250},codigo=>{
-        const prod=_catalogoCache.find(p=>p.codigo_barras===codigo);
-        if(prod){
-          cerrarScannerCatalogo();
-          verProducto(prod.id);
-        }else{
-          const r=$('qr-result');
-          if(r){
-            // SEGURIDAD: codigo viene del scanner QR/barcode — escapar para HTML y para el onclick.
-            const codSafe=escHtml(codigo||'');
-            const codAttr=String(codigo||'').replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            r.innerHTML='<span style="color:var(--accent)">Código: '+codSafe+'</span> — producto no encontrado. <a onclick="cerrarScannerCatalogo();PAGES.catalogo(\''+codAttr+'\')" style="color:var(--blue);cursor:pointer">Buscar igual</a>';
+      const fmts=_scannerFormats();
+      _scannerInstance=new Html5Qrcode('qr-reader',fmts.length?{formatsToSupport:fmts}:{});
+      _scannerInstance.start(
+        {facingMode:'environment'},
+        // Rectángulo horizontal: ideal para códigos de barra 1D
+        {fps:15,qrbox:{width:280,height:120}},
+        codigo=>{
+          _scanBeep();
+          const codigoN=(codigo||'').trim();
+          const prod=_catalogoCache.find(p=>p.codigo_barras&&p.codigo_barras.trim()===codigoN);
+          if(prod){
+            cerrarScannerCatalogo();
+            verProducto(prod.id);
+          }else{
+            const r=$('qr-result');
+            if(r){
+              const codSafe=escHtml(codigoN);
+              const codAttr=codigoN.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+              r.innerHTML=
+                '<div style="margin-bottom:6px"><span style="color:var(--accent);font-weight:700">'+codSafe+'</span> — no está en tu catálogo.</div>'+
+                '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'+
+                '<a onclick="cerrarScannerCatalogo();PAGES.catalogo(\''+codAttr+'\')" style="color:var(--blue);cursor:pointer;font-size:12px">Buscar en catálogo</a>'+
+                ' · <a onclick="_scanCrearConCodigo(\''+codAttr+'\')" style="color:var(--green,#16a34a);cursor:pointer;font-size:12px">Crear producto con este código</a>'+
+                '</div>';
+            }
           }
         }
-      });
+      );
     }catch(e){const r=$('qr-result');if(r)r.textContent='Error al acceder a la cámara: '+e.message;}
   },300);
 }
@@ -10355,20 +10392,69 @@ function cerrarScannerCatalogo(){
   if(_scannerInstance){try{_scannerInstance.stop();}catch(e){}  _scannerInstance=null;}
   closeA();
 }
+// Abre formulario "Nuevo producto" con el código ya cargado
+function _scanCrearConCodigo(codigo){
+  cerrarScannerCatalogo();
+  setTimeout(()=>{
+    openNuevoProducto();
+    setTimeout(()=>{const c=$('npCodigo');if(c)c.value=codigo;},200);
+  },300);
+}
+
 let _scannerNP=null;
+let _scanNPPendingCodigo='';
 function _scanParaNuevoProducto(){
   openA(SVG.camera+' Escanear código',
     '<div id="qr-reader-np" style="width:100%"></div>'+
-    '<div id="qr-result-np" style="margin-top:12px;font-size:13px;color:var(--text2);text-align:center">Apuntá la cámara al código del producto</div>',
-    '<button class="btn btn-secondary" onclick="_cerrarScanNP()">Cerrar</button>'
+    '<div id="qr-result-np" style="margin-top:12px;font-size:13px;color:var(--text2);text-align:center;min-height:38px">'+
+      'Apuntá la cámara al código de barras</div>'+
+    '<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:4px">EAN-13 · UPC · QR · CODE-128</div>',
+    '<button class="btn btn-secondary" onclick="_cerrarScanNP()">Cancelar</button>'
   );
+  _scanNPPendingCodigo='';
   setTimeout(()=>{
     try{
-      _scannerNP=new Html5Qrcode('qr-reader-np');
-      _scannerNP.start({facingMode:'environment'},{fps:10,qrbox:250},codigo=>{
-        _cerrarScanNP();
-        setTimeout(()=>{const campo=$('npCodigo');if(campo){campo.value=codigo;campo.focus();}},200);
-      });
+      const fmts=_scannerFormats();
+      _scannerNP=new Html5Qrcode('qr-reader-np',fmts.length?{formatsToSupport:fmts}:{});
+      _scannerNP.start(
+        {facingMode:'environment'},
+        {fps:15,qrbox:{width:280,height:120}},
+        async codigo=>{
+          _scanBeep();
+          const codigoN=(codigo||'').trim();
+          if(_scannerNP){try{_scannerNP.stop();}catch(e){}_scannerNP=null;}
+          // Intentar lookup en Open Food Facts (gratis, sin API key)
+          const r=$('qr-result-np');
+          if(r)r.innerHTML='<span style="color:var(--text3)">Buscando info del producto...</span>';
+          let nombre='',categoria='';
+          try{
+            const resp=await fetch('https://world.openfoodfacts.org/api/v0/product/'+encodeURIComponent(codigoN)+'.json',{signal:AbortSignal.timeout?AbortSignal.timeout(4000):undefined});
+            const d=await resp.json();
+            if(d.status===1&&d.product){
+              nombre=d.product.product_name_es||d.product.product_name||'';
+              const marca=d.product.brands||'';
+              if(marca&&nombre&&!nombre.includes(marca))nombre=nombre+' - '+marca;
+              const cats=d.product.categories_tags||[];
+              categoria=cats[0]?cats[0].replace(/^[a-z]{2}:/,'').replace(/-/g,' '):'';
+            }
+          }catch(e){}
+          // Reabrir form nuevo producto con datos pre-cargados
+          closeA();
+          setTimeout(()=>{
+            openNuevoProducto();
+            setTimeout(()=>{
+              const cCod=$('npCodigo');if(cCod)cCod.value=codigoN;
+              if(nombre){const cNom=$('npNom');if(cNom&&!cNom.value)cNom.value=nombre;}
+              if(categoria){const cCat=$('npCat');if(cCat&&cCat.querySelector('option[value="'+categoria+'"]'))cCat.value=categoria;}
+              if(nombre){
+                pushNotif('Código listo: '+escHtml(nombre),'i');
+              }else{
+                pushNotif('Código listo: '+escHtml(codigoN),'i');
+              }
+            },250);
+          },200);
+        }
+      );
     }catch(e){const r=$('qr-result-np');if(r)r.textContent='Error al acceder a la cámara: '+e.message;}
   },300);
 }
