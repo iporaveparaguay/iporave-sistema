@@ -1083,6 +1083,20 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .sgrid{overflow:hidden;}
   .sc{box-sizing:border-box;min-width:0;word-break:break-word;}
 }
+/* FIX mobile mapa: variable offset altura + topbar horizontal + panel ⋯ */
+@media(max-width:639px){
+  :root{--mapa-offset:160px;}
+  /* Topbar mapa: no wrappear, scroll horizontal si hace falta */
+  .page-mapa #tbActions,.tbactions:has(.mapa-secundarios) #tbActions,#tbActions:has(.mapa-secundarios){
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    gap:4px;
+    padding-right:4px;
+  }
+  /* Botones del mapa más compactos en mobile */
+  .map-btn{padding:5px 8px!important;font-size:11px!important;gap:3px!important;}
+}
 @media(max-width:600px){input,select,textarea{font-size:16px !important;}}
 /* En desktop: ocultar elementos que solo deben verse en mobile */
 .col-show-mobile{display:none;}
@@ -14766,7 +14780,7 @@ PAGES.mapa=function(){
   $('ca').innerHTML=
     '<div id="mapaContadores" class="mapBar" style="margin-bottom:8px;border-radius:10px"></div>'+
     '<div style="position:relative">'+
-      '<div id="ordersMap" style="height:calc(100vh - 220px);min-height:320px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
+      '<div id="ordersMap" style="height:calc(100vh - var(--mapa-offset,220px));min-height:320px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
       '<button onclick="nav(\'orders\')" style="display:none;position:absolute;top:58px;right:10px;z-index:999;font-weight:700;cursor:pointer" id="mapaBackBtn" class="map-btn">← Volver</button>'+
       '<div id="mapaEstiloBtns" class="mapa-estilo-panel">'+
         estilosBtns+
@@ -14776,6 +14790,13 @@ PAGES.mapa=function(){
       '</button>'+
     '</div>'+
     '<div style="margin-top:5px;font-size:11px;color:var(--text3)">Pin lleno = GPS confirmado · semitransparente = dirección aproximada · Auto-actualiza cada 5 min (sin mover la cámara)</div>';
+  // Mobile: colapsar panel filtros por defecto para dar más espacio al mapa
+  if(window.innerWidth < 640){
+    setTimeout(function(){
+      const mc=$('mapaContadores');
+      if(mc&&!mc.classList.contains('collapsed'))mc.classList.add('collapsed');
+    },100);
+  }
   setTimeout(function(){
     const map=new mapboxgl.Map({
       container:'ordersMap',
