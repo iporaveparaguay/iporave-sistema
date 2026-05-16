@@ -1987,6 +1987,9 @@ let _realtimeSub = null;
 let _rtNotifTimer=null;
 let _notifHistory = [];
 let _notifUnread = 0;
+var _notificaciones=window._notificaciones||[];window._notificaciones=_notificaciones;
+let _shownMsgIds=new Set();
+var SVG; // declarado aquí para evitar TDZ — se asigna abajo en la sección de íconos
 let _pendingQueue = [];
 let _dismissedDevices = new Set();
 
@@ -4377,13 +4380,6 @@ async function _switchAccount(user_id){
   }
 }
 window._switchAccount=_switchAccount;
-function _cleanAllAppStorage(){
-  const uid=typeof CU!=='undefined'&&CU&&CU.id?CU.id:'anon';
-  ['users','usersVer','orders','zonas','cupos','jornadas','catalogo','pagosCache','pendingQueue'].forEach(k=>{
-    localStorage.removeItem('ipv5_'+uid+'_'+k);
-    localStorage.removeItem('ipv5_'+k);
-  });
-}
 function _promptReauth(acc){
   var email=acc.email||'';
   _promptAddAccount(email,acc.user_id);
@@ -4806,7 +4802,7 @@ const NAV_CFG={
     {id:'perfil',l:'Mi Perfil',ic:'user'},
   ]}],
 };
-const SVG={
+SVG={
   bell:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
   grid:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
   pkg:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
@@ -5180,7 +5176,6 @@ function _runPageWithSpinner(fn,page){
    CACHED DATA LAYER (sync wrappers for UI)
 ══════════════════════════════════════════════════ */
 let _ordersCache=[];let _usersCache=[];let _zonasCache=[];let _catalogoCache=[];
-let _shownMsgIds=new Set();
 let _pollInterval=null;
 let _ordersLayerInterval=null;
 async function refreshCache(){
@@ -5367,8 +5362,6 @@ function nextDocNum(){
    PAGES
 ══════════════════════════════════════════════════ */
 const PAGES={};
-var _notificaciones=window._notificaciones||[];
-window._notificaciones=_notificaciones;
 function _notifSessionData(data){
   if(!data)return null;
   if(typeof data==='string')return{titulo:'Notificación',cuerpo:data};
