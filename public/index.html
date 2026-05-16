@@ -526,7 +526,9 @@ textarea::placeholder{
 #aiBtn.dragging{transition:none!important;transform:scale(1.04);box-shadow:0 8px 28px rgba(245,166,35,.55);}
 .ai-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 3px;pointer-events:none;}
 #aiPanel{position:fixed;bottom:86px;right:24px;z-index:500;width:360px;max-height:520px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);box-shadow:var(--shadow);display:none;flex-direction:column;transition:width .2s,max-height .2s;}
-#aiPanel.open{display:flex;}
+#aiPanel.open{display:flex !important;}
+body:has(#appScreen.show) #aiPanel{display:none;}
+body:has(#appScreen.show) #aiPanel.open{display:flex !important;}
 #aiPanel.maximized{width:680px;max-height:82vh;}
 #aiPanel.maximized .ai-msgs{max-height:calc(82vh - 140px);}
 #aiPanel.minimized .ai-msgs,#aiPanel.minimized .ai-input{display:none;}
@@ -595,6 +597,8 @@ textarea::placeholder{
 .offline-badge.show{display:inline-flex;align-items:center;gap:4px;}
 /* Ocultar elementos flotantes en pantalla de login (forzar !important para vencer cache) */
 #ntBell,#aiBtn,#aiPanel,#notifArea,#codexNotifBell,#bgWrap{display:none !important;}
+/* Cuando la app está visible, #aiPanel.open debe vencer al display:none !important global */
+body:has(#appScreen.show) #aiPanel.open{display:flex !important;}
 body:not(:has(#appScreen.show)) #codexScrollTopBtn{display:none !important;}
 #appScreen.show #ntBell,
 #appScreen.show #aiBtn,
