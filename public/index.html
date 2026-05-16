@@ -865,12 +865,13 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .pagPager button:disabled{opacity:.4;cursor:not-allowed}
 .pagPager .info{font-size:12px;color:var(--text2);font-weight:700}
 /* === SIDEBAR COLLAPSE BUTTON (Tarea 14A) === */
-.sidebarCollapseBtn{position:fixed;left:238px;top:50%;transform:translateY(-50%);width:24px;height:48px;background:linear-gradient(180deg,#f59e0b 0%,#d97706 100%);border:2px solid #1a0f00;border-left:none;border-radius:0 12px 12px 0;cursor:pointer;z-index:1000;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-size:14px;font-weight:900;box-shadow:3px 0 12px rgba(245,158,11,0.4),inset 0 1px 0 rgba(255,255,255,0.3),inset -2px 0 4px rgba(0,0,0,0.2);transition:all 0.2s ease;user-select:none;}
-.sidebarCollapseBtn:hover{transform:translateY(-50%) translateX(2px);box-shadow:5px 0 16px rgba(245,158,11,0.6),inset 0 1px 0 rgba(255,255,255,0.4),inset -2px 0 4px rgba(0,0,0,0.25);}
+.sidebarCollapseBtn{position:fixed;left:230px;top:50%;transform:translateY(-50%);width:18px;height:38px;padding:0;background:linear-gradient(180deg,#f59e0b 0%,#d97706 100%);border:1px solid var(--border2,#1a0f00);border-left:none;border-radius:0 8px 8px 0;cursor:pointer;z-index:55;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-size:10px;font-weight:900;box-shadow:2px 0 8px rgba(245,158,11,0.35),inset 0 1px 0 rgba(255,255,255,0.3);transition:background .15s ease, color .15s ease, width .2s ease, transform .15s ease, box-shadow .15s ease;user-select:none;}
+.sidebarCollapseBtn:hover{width:22px;transform:translateY(-50%) translateX(1px);box-shadow:3px 0 12px rgba(245,158,11,0.55),inset 0 1px 0 rgba(255,255,255,0.4);}
+.sidebarCollapseBtn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(245,166,35,0.35);}
 .sidebarCollapseBtn:active{transform:translateY(-50%) translateX(-1px);}
 body.sidebarCollapsed .sidebar{transform:translateX(-100%);transition:transform 0.25s ease;}
 body.sidebarCollapsed .main{margin-left:0!important;width:100%!important;}
-body.sidebarCollapsed .sidebarCollapseBtn{left:0;border-radius:0 12px 12px 0;border-left:2px solid #1a0f00;}
+body.sidebarCollapsed .sidebarCollapseBtn{left:0;border-radius:0 8px 8px 0;border-left:1px solid var(--border2,#1a0f00);}
 body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
 .sidebar{transition:transform 0.25s ease}
 .main{transition:margin-left 0.25s ease, width 0.25s ease}
@@ -910,6 +911,10 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
 #onboardTip .onboardTipTitle{font-weight:700;color:var(--accent);font-size:12px;letter-spacing:.3px;text-transform:uppercase;margin-bottom:4px}
 #onboardTip .onboardTipSkip{display:block;margin-top:8px;font-size:11px;color:var(--text3);text-align:right;cursor:pointer}
 #onboardTip .onboardTipSkip:hover{color:var(--accent)}
+#onboardTip .onboard-tip-action{font-size:11px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border2);font-weight:500;letter-spacing:.2px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+#onboardTip .onboard-tip-action .onboard-tip-action-text{flex:1}
+#onboardTip .onboard-tip-skip{background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:11px;padding:3px 10px;border-radius:6px;cursor:pointer;font-weight:600;letter-spacing:.3px;transition:all .15s ease}
+#onboardTip .onboard-tip-skip:hover{background:var(--accent);border-color:var(--accent);color:#fff}
 #onboardTip::before{content:"";position:absolute;width:12px;height:12px;background:var(--bg2);border-left:1px solid var(--accent);border-top:1px solid var(--accent);transform:rotate(45deg)}
 #onboardTip[data-arrow="top"]::before{top:-7px;left:24px}
 #onboardTip[data-arrow="bottom"]::before{bottom:-7px;left:24px;transform:rotate(225deg)}
@@ -3140,8 +3145,10 @@ async function doLogin(){
     // Delay >=800ms para que topbar (botón refresh) + campana (_notifSessionInit) terminen de renderizar
     try{ setTimeout(function(){
       if(!window.Onboard) return;
-      Onboard.showIfNew('topbar_bell','#codexNotifBell','Acá ves tus notificaciones');
-      setTimeout(function(){ Onboard.showIfNew('topbar_refresh','#refreshBtn','Si algo no se ve actualizado, apretá acá'); }, 4000);
+      Onboard.enqueue('topbar_bell','#codexNotifBell','Centro de notificaciones del sistema. Aquí se reportan alertas, mensajes y eventos relevantes de su cuenta.');
+      Onboard.enqueue('topbar_refresh','#refreshBtn','Actualiza la información de la página activa. Utilícelo si los datos visualizados parecen desactualizados.');
+      Onboard.enqueue('topbar_theme','#themeToggle','Alterna entre modo claro y oscuro de la interfaz, según su preferencia visual.');
+      Onboard.enqueue('aiBtn_intro','#aiBtn','Asistente inteligente integrado. Permite consultar información, registrar acciones y obtener apoyo operativo en lenguaje natural.');
     }, 1500); }catch(_){}
     _checkUrgentOrders();
     initRealtime();
@@ -5320,7 +5327,7 @@ PAGES.orders=PAGES.mispedidos=function(){
   if(wrap&&fbar&&wrap.parentNode!==fbar){fbar.insertBefore(wrap,fbar.firstChild);}
   else if(!wrap){_bgEnsureUI&&_bgEnsureUI();}
   filtrar();
-  try{ setTimeout(function(){ if(window.Onboard) Onboard.showIfNew('orders_nuevo','#btnNuevoPedido','Acá creás un pedido nuevo'); },400); }catch(_){}
+  try{ setTimeout(function(){ if(window.Onboard) Onboard.enqueue('orders_nuevo','#btnNuevoPedido','Inicia el flujo de creación de un nuevo pedido en el sistema.'); },400); }catch(_){}
 };
 function clearF(){['fEst','fZona','fProv','fFecha','fDesde','fHasta'].forEach(id=>{const e=$(id);if(e)e.value='';});const bg=document.getElementById('busquedaGlobal');if(bg)bg.value='';_pedidosShown=_pedidosPageSize;filtrar();}
 function _ordersFilteredFromUI(){
@@ -12011,6 +12018,15 @@ PAGES.mapa=function(){
       if(esAdmin){window._mapaShowDlvs=true;_mapaCargarDlvs(map);}
     });
   },50);
+  // Onboarding del mapa (formal). Solo se muestra una vez por usuario.
+  try{ setTimeout(function(){
+    if(!window.Onboard) return;
+    var filtroSel = document.getElementById('mapaVendSel') ? '#mapaVendSel' : (document.getElementById('btnMapaDlvs') ? '#btnMapaDlvs' : '#mapaContadores');
+    Onboard.enqueue('mapa_filtros', filtroSel, 'Filtros del mapa. Permiten visualizar pedidos, repartidores o ambos según necesidad operativa.');
+    if(document.getElementById('dlvSearchInput')){
+      Onboard.enqueue('mapa_buscador','#dlvSearchInput','Búsqueda de repartidor por nombre. La lista se filtra dinámicamente según el texto ingresado.');
+    }
+  }, 1200); }catch(_){}
 };
 
 async function _activarPush(){
@@ -12500,7 +12516,7 @@ PAGES.pagos=function(){
         '</div>'+
         '<div id="pagosListaBox" class="pago-fade"></div>';
       _renderPagosLista();
-      try{ setTimeout(function(){ if(window.Onboard) Onboard.showIfNew('pagos_primer_renglon','.userPagoRow','Apretá un renglón para ver el detalle del pago'); },500); }catch(_){}
+      try{ setTimeout(function(){ if(window.Onboard) Onboard.enqueue('pagos_primer_renglon','.userPagoRow:first-child','Cada fila representa una transacción. Selecciónela para revisar el detalle completo del pago.'); },500); }catch(_){}
       return;
     }
 
@@ -12604,7 +12620,7 @@ PAGES.pagos=function(){
       '</tr></thead><tbody>'+
         (filasPagos.length?filasPagos.join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text3)">Sin pagos recibidos este mes</td></tr>')+
       '</tbody></table></div>';
-    try{ setTimeout(function(){ if(window.Onboard) Onboard.showIfNew('pagos_primer_renglon','.userPagoRow','Apretá un renglón para ver el detalle del pago'); },500); }catch(_){}
+    try{ setTimeout(function(){ if(window.Onboard) Onboard.enqueue('pagos_primer_renglon','.userPagoRow:first-child','Cada fila representa una transacción. Selecciónela para revisar el detalle completo del pago.'); },500); }catch(_){}
   })();
 };
 
@@ -14064,6 +14080,8 @@ function toggleTheme(){
 (function(){
   var STATE = { active:false, target:null, id:null, timer:null, raf:null,
                 onResize:null, onScroll:null, onKey:null, onDocClick:null, onTargetClick:null };
+  var QUEUE = [];
+  var QUEUE_RUNNING = false;
 
   function $on(el, ev, fn, opts){ if(el) el.addEventListener(ev, fn, opts||false); }
   function $off(el, ev, fn, opts){ if(el) el.removeEventListener(ev, fn, opts||false); }
@@ -14094,6 +14112,35 @@ function toggleTheme(){
     });
     if(STATE.id) markSeen(STATE.id);
     STATE.target = null; STATE.id = null;
+    // Disparar el siguiente de la cola con pausa de 400ms
+    setTimeout(_drainQueue, 400);
+  }
+
+  function _drainQueue(){
+    if(STATE.active) return;
+    if(!QUEUE.length){ QUEUE_RUNNING = false; return; }
+    QUEUE_RUNNING = true;
+    var item = QUEUE.shift();
+    // Si ya fue visto (otra pestaña), saltar
+    if(item.id && wasSeen(item.id)){ _drainQueue(); return; }
+    var ok = show(item.targetSel, item.mensaje, item.opts);
+    if(!ok){
+      // si el target no apareció, simplemente continuar
+      setTimeout(_drainQueue, 200);
+    }
+  }
+
+  function enqueue(id, targetSel, mensaje, opts){
+    if(!id){ return false; }
+    if(wasSeen(id)) return false;
+    // evitar duplicados en cola
+    for(var i=0;i<QUEUE.length;i++){ if(QUEUE[i].id === id) return false; }
+    if(STATE.active && STATE.id === id) return false;
+    opts = opts || {};
+    opts.id = id;
+    QUEUE.push({ id:id, targetSel:targetSel, mensaje:mensaje, opts:opts });
+    if(!QUEUE_RUNNING && !STATE.active){ _drainQueue(); }
+    return true;
   }
 
   function inViewport(rect){
@@ -14192,7 +14239,10 @@ function toggleTheme(){
     var title   = (opts.title) ? '<div class="onboardTipTitle">'+String(opts.title)+'</div>' : '';
     tip.innerHTML = title +
       '<div>'+ String(mensaje||'') +'</div>' +
-      '<div class="onboardTipSkip" data-skip="1">Saltar (Esc)</div>';
+      '<div class="onboard-tip-action">' +
+        '<span class="onboard-tip-action-text">Pulse el elemento resaltado para continuar &middot; ESC para omitir</span>' +
+        '<button type="button" class="onboard-tip-skip" data-skip="1">Omitir</button>' +
+      '</div>';
     document.body.appendChild(overlay);
     document.body.appendChild(hole);
     document.body.appendChild(hand);
@@ -14203,8 +14253,8 @@ function toggleTheme(){
 
     position();
 
-    // auto-dismiss
-    var timeoutMs = (typeof opts.timeout === 'number') ? opts.timeout : 8000;
+    // auto-dismiss: deshabilitado por defecto. Solo se respeta si opts.timeout > 0 explícito.
+    var timeoutMs = (typeof opts.timeout === 'number') ? opts.timeout : 0;
     if(timeoutMs > 0) STATE.timer = setTimeout(function(){ destroy(); }, timeoutMs);
 
     // listeners
@@ -14256,7 +14306,7 @@ function toggleTheme(){
     return removed;
   }
 
-  window.Onboard = { show: show, showIfNew: showIfNew, reset: reset, _markSeen: markSeen, _wasSeen: wasSeen, _destroy: destroy };
+  window.Onboard = { show: show, showIfNew: showIfNew, enqueue: enqueue, reset: reset, _markSeen: markSeen, _wasSeen: wasSeen, _destroy: destroy, _queue: QUEUE };
 })();
 </script>
 <script>
