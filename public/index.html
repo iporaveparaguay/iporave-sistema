@@ -509,7 +509,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .search-combo-list li.empty:hover{background:transparent;color:var(--text3)}
 /* MAPA COMBO BTN — apariencia de botón compacto coherente con .mapBtn */
 #mapaZonaCombo,#mapaVendCombo{min-width:0;max-width:180px;width:180px;vertical-align:middle}
-#mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:36px;padding:7px 30px 7px 32px;font:600 12px var(--font,inherit);border-radius:10px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border:1px solid var(--border);box-shadow:0 2px 4px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.05);cursor:pointer;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+#mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:36px;padding:7px 30px 7px 14px;font:600 12px var(--font,inherit);border-radius:10px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border:1px solid var(--border);box-shadow:0 2px 4px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.05);cursor:pointer;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
 #mapaZonaCombo .search-combo-input:hover,#mapaVendCombo .search-combo-input:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08)}
 #mapaZonaCombo .search-combo-input:focus,#mapaVendCombo .search-combo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.25),inset 0 1px 0 rgba(255,255,255,.05)}
 #mapaZonaCombo .search-combo-emoji,#mapaVendCombo .search-combo-emoji{font-size:12px;left:11px}
@@ -519,7 +519,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 #mapaZonaCombo .search-combo-list li,#mapaVendCombo .search-combo-list li{padding:7px 12px;font:500 13px var(--font,inherit);border-radius:7px}
 [data-theme="light"] #mapaZonaCombo .search-combo-input,[data-theme="light"] #mapaVendCombo .search-combo-input,[data-theme="light-soft"] #mapaZonaCombo .search-combo-input,[data-theme="light-soft"] #mapaVendCombo .search-combo-input{background:linear-gradient(180deg,#ffffff 0%,#f3f4f6 100%);color:#1a1f2c;border-color:#d1d5db;box-shadow:0 1px 3px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.6)}
 [data-theme="light"] #mapaZonaCombo::after,[data-theme="light"] #mapaVendCombo::after,[data-theme="light-soft"] #mapaZonaCombo::after,[data-theme="light-soft"] #mapaVendCombo::after{border-color:#4b5563}
-@media(max-width:640px){#mapaZonaCombo,#mapaVendCombo{max-width:150px;width:150px}#mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:32px;font-size:11px;padding:6px 26px 6px 28px}}
+@media(max-width:640px){#mapaZonaCombo,#mapaVendCombo{max-width:150px;width:150px}#mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:32px;font-size:11px;padding:6px 26px 6px 12px}}
 /* SEARCH INPUT PREMIUM (sin combo, para buscadores simples) */
 .search-input-premium{padding:10px 14px;background:linear-gradient(180deg,var(--bg2),var(--bg3));border:1px solid var(--border2);border-radius:12px;color:var(--text);font:500 14px var(--font,inherit);transition:border .15s,box-shadow .15s;box-sizing:border-box}
 .search-input-premium:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.15)}
@@ -944,18 +944,17 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .order-dropdown button:first-child{border-radius:12px 12px 0 0;}
 .order-dropdown button:last-child{border-radius:0 0 12px 12px;}
 .order-dropdown .od-sep{height:1px;background:var(--border);margin:4px 0;}
-/* Botón premium Cerrar Jornada (morado profundo - cierre del día) */
-.btnCerrarJornada{display:inline-flex;align-items:center;gap:10px;margin:24px auto;padding:12px 22px 12px 18px;font-size:14px;font-weight:700;letter-spacing:0.3px;color:#fff;background:linear-gradient(135deg,#4c1d95 0%,#6d28d9 50%,#5b21b6 100%);border:none;border-radius:14px;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(76,29,149,0.35),0 1px 0 rgba(255,255,255,0.1) inset,0 -1px 0 rgba(0,0,0,0.2) inset;transition:transform .15s var(--ease-out,ease-out),box-shadow .15s var(--ease-out,ease-out),background .2s var(--ease-out,ease-out);}
-.btnCerrarJornada::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 0%,rgba(255,255,255,0.15) 50%,transparent 100%);transform:translateX(-100%);transition:transform .5s var(--ease-out,ease-out);pointer-events:none;}
-.btnCerrarJornada:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(76,29,149,0.45),0 1px 0 rgba(255,255,255,0.15) inset,0 -1px 0 rgba(0,0,0,0.2) inset;background:linear-gradient(135deg,#5b21b6 0%,#7c3aed 50%,#6d28d9 100%);}
-.btnCerrarJornada:hover::before{transform:translateX(100%);}
-.btnCerrarJornada:active{transform:translateY(0);box-shadow:0 2px 8px rgba(76,29,149,0.4),0 1px 0 rgba(255,255,255,0.05) inset,0 -1px 0 rgba(0,0,0,0.3) inset;}
-.btnCerrarJornada:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(124,58,237,0.4),0 4px 16px rgba(76,29,149,0.35);}
-.btnCerrarJornada svg{flex-shrink:0;}
-.btnCerrarJornada .btn-arrow{margin-left:4px;opacity:0.7;transition:transform .2s var(--ease-out,ease-out),opacity .2s var(--ease-out,ease-out);}
-.btnCerrarJornada:hover .btn-arrow{transform:translateX(3px);opacity:1;}
-.btnCerrarJornada:disabled,.btnCerrarJornada[aria-disabled="true"]{opacity:0.5;cursor:not-allowed;pointer-events:none;background:linear-gradient(135deg,#6b7280,#4b5563);}
-:root[data-theme="light"] .btnCerrarJornada,:root[data-theme="light-soft"] .btnCerrarJornada{background:linear-gradient(135deg,#5b21b6 0%,#7c3aed 50%,#6d28d9 100%);box-shadow:0 4px 16px rgba(76,29,149,0.25),0 1px 0 rgba(255,255,255,0.15) inset;}
+/* Botón Cerrar Jornada — sobrio, ghost/outline, hover accent sutil */
+.btnCerrarJornada{display:inline-flex;align-items:center;gap:10px;margin:24px auto;padding:11px 22px 11px 18px;font-size:13.5px;font-weight:600;letter-spacing:0.2px;color:var(--text);background:linear-gradient(180deg, var(--bg2), var(--bg3));border:1px solid var(--border2,var(--border));border-radius:12px;cursor:pointer;position:relative;transition:transform .15s var(--ease-out,ease-out), border-color .15s var(--ease-out,ease-out), color .15s var(--ease-out,ease-out), box-shadow .15s var(--ease-out,ease-out);box-shadow:0 1px 0 rgba(255,255,255,0.05) inset, 0 2px 4px rgba(0,0,0,0.08);}
+.btnCerrarJornada:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 12px rgba(245,166,35,0.12), 0 0 0 1px rgba(245,166,35,0.18);}
+.btnCerrarJornada:active{transform:translateY(0);box-shadow:0 1px 2px rgba(0,0,0,0.1) inset;}
+.btnCerrarJornada:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(245,166,35,0.25);}
+.btnCerrarJornada:disabled,.btnCerrarJornada[aria-disabled="true"]{opacity:0.45;cursor:not-allowed;pointer-events:none;}
+.btnCerrarJornada svg{flex-shrink:0;stroke-width:1.8;opacity:0.85;transition:opacity .15s var(--ease-out,ease-out);}
+.btnCerrarJornada:hover svg{opacity:1;}
+.btnCerrarJornada .btn-arrow{margin-left:4px;opacity:0.55;transition:transform .2s var(--ease-out,ease-out), opacity .2s var(--ease-out,ease-out);}
+.btnCerrarJornada:hover .btn-arrow{transform:translateX(3px);opacity:0.85;}
+:root[data-theme="light"] .btnCerrarJornada,:root[data-theme="light-soft"] .btnCerrarJornada{/* hereda vars del tema */}
 /* Toggle 3D genérico */
 .toggleBtn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.05);transition:all .15s ease;}
 .toggleBtn.on{background:linear-gradient(180deg,#16a34a 0%,#15803d 100%);border-color:#15803d;color:#fff;box-shadow:0 4px 12px rgba(22,163,74,.4)}
@@ -1382,8 +1381,9 @@ body.alta-visibilidad select{
     </div>
     <nav class="snav" id="snav"></nav>
     <div class="sfooter">
-      <button class="btn btn-secondary btn-full" style="margin-bottom:6px;position:relative" onclick="openPerfilUsuario()">
-        👤 Mi Perfil <span id="perfilIncompletoBadge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;vertical-align:middle">!</span>
+      <button class="btn btn-secondary btn-full" style="margin-bottom:6px;position:relative;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openPerfilUsuario()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Mi Perfil</span><span id="perfilIncompletoBadge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;vertical-align:middle">!</span>
       </button>
       <button class="btn btn-secondary btn-full" style="display:flex;align-items:center;justify-content:center;gap:6px" onclick="confirmLogout()" title="Cerrar sesión">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
@@ -2532,11 +2532,15 @@ function _rtRefreshOrders(){
         // FIX BUG mapa reset: si estamos en el mapa, NO mover la cámara en updates automáticos
         // (realtime Supabase / polling 30s). Solo redibujar markers respetando zoom/pan del usuario.
         const _enMapa=!!(cur && cur.id.replace('ni_','')==='mapa');
+        // FIX RADICAL: si estamos en mapa y el toggle Auto-actualizar está OFF,
+        // NO re-renderizar la página del mapa. Solo refrescar cache silenciosamente.
+        // El usuario verá los datos nuevos al pulsar refresh manual o al volver a entrar al mapa.
+        const _mapaAutoOff=_enMapa && window._mapaAutoUpdateEnabled===false;
         const _prevSkip=window._mapaSkipCameraMove===true;
         if(_enMapa) window._mapaSkipCameraMove=true;
-        if(cur){const pid=cur.id.replace('ni_','');if(['orders','entregas','mispedidos','dashboard','suministros','mapa','delivery'].includes(pid)&&PAGES[pid])PAGES[pid]();}
+        if(cur && !_mapaAutoOff){const pid=cur.id.replace('ni_','');if(['orders','entregas','mispedidos','dashboard','suministros','mapa','delivery'].includes(pid)&&PAGES[pid])PAGES[pid]();}
 
-        // RESTAURAR filtros si estábamos en mapa
+        // RESTAURAR filtros si estábamos en mapa (incluso con auto-off, para preservar estado)
         if(_enMapa){
           window._mapaFiltroEstado=savedFE;
           window._mapaFiltroTipo=savedFT;
@@ -2544,7 +2548,13 @@ function _rtRefreshOrders(){
           window._mapaFiltroVend=savedFV;
           window._mapaFiltroDelivery=savedFD;
           window._mapaShowDlvs=savedSD;
-          if(typeof _aplicarFiltrosMapa==='function')_aplicarFiltrosMapa();
+          // Solo re-aplicar filtros (que redibuja markers) si el auto-update está ON.
+          if(!_mapaAutoOff && typeof _aplicarFiltrosMapa==='function'){
+            window._mapaFromUserAction=true;
+            try{_aplicarFiltrosMapa();}finally{
+              setTimeout(()=>{window._mapaFromUserAction=false;},1000);
+            }
+          }
           // Liberar el flag tras 6s (geocoding async puede tardar ~1.1s por marker).
           setTimeout(()=>{window._mapaSkipCameraMove=_prevSkip;},6000);
         }
@@ -3871,12 +3881,12 @@ const NAV_CFG={
     {s:'Principal',items:[
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Todos los pedidos',ic:'pkg'},
       {id:'balance',l:'Balance diario',ic:'dollar'},{id:'liquidacion',l:'Liquidación',ic:'doc'},
-      {id:'pagos',l:'💵 Pagos',ic:'dollar'},
+      {id:'pagos',l:'Pagos',ic:'dollar'},
     ]},
     {s:'Gestión',items:[
       {id:'usuarios',l:'Usuarios',ic:'users'},{id:'zonas',l:'Zonas y tarifas',ic:'map'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
-      {id:'clientes_zonas',l:'👥 Clientes',ic:'users'},
+      {id:'clientes_zonas',l:'Clientes',ic:'users'},
       {id:'config',l:'Configuración',ic:'gear'},{id:'setup',l:'Setup / SQL',ic:'db'},
     ]},
     {s:'Mapa',items:[
@@ -3891,19 +3901,19 @@ const NAV_CFG={
     ]},
     {s:'Comunicación',items:[
       {id:'mensajes',l:'Mensajes',ic:'chat'},
-      {id:'asistente',l:'🤖 Asistente IA',ic:'bot'},
+      {id:'asistente',l:'Asistente IA',ic:'bot'},
     ]},
   ],
   admin:[
     {s:'Principal',items:[
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Todos los pedidos',ic:'pkg'},
       {id:'balance',l:'Balance diario',ic:'dollar'},{id:'liquidacion',l:'Liquidación',ic:'doc'},
-      {id:'pagos',l:'💵 Pagos',ic:'dollar'},
+      {id:'pagos',l:'Pagos',ic:'dollar'},
     ]},
     {s:'Gestión',items:[
       {id:'usuarios',l:'Usuarios',ic:'users'},{id:'zonas',l:'Zonas y tarifas',ic:'map'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
-      {id:'clientes_zonas',l:'👥 Clientes',ic:'users'},
+      {id:'clientes_zonas',l:'Clientes',ic:'users'},
     ]},
     {s:'Mapa',items:[
       {id:'mapa',l:'Mapa en tiempo real',ic:'map'},
@@ -3917,7 +3927,7 @@ const NAV_CFG={
     ]},
     {s:'Comunicación',items:[
       {id:'mensajes',l:'Mensajes',ic:'chat'},
-      {id:'asistente',l:'🤖 Asistente IA',ic:'bot'},
+      {id:'asistente',l:'Asistente IA',ic:'bot'},
     ]},
   ],
   vendedor:[
@@ -3925,7 +3935,7 @@ const NAV_CFG={
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis pedidos',ic:'pkg'},
       {id:'balance',l:'Mi balance',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
-      {id:'pagos',l:'💼 Mi Liquidación',ic:'dollar'},
+      {id:'pagos',l:'Mi Liquidación',ic:'dollar'},
     ]},
     {s:'Mapa',items:[{id:'mapa',l:'Mapa de mis pedidos',ic:'map'}]},
     {s:'Reportes',items:[
@@ -3935,11 +3945,11 @@ const NAV_CFG={
     ]},
     {s:'Analítica',items:[
       {id:'analitica_vend',l:'Mi Analítica',ic:'chart'},
-      {id:'clientes_recurrentes',l:'👥 Clientes Recurrentes',ic:'users'},
+      {id:'clientes_recurrentes',l:'Clientes Recurrentes',ic:'users'},
     ]},
     {s:'Comunicación',items:[
       {id:'mensajes',l:'Mensajes',ic:'chat'},
-      {id:'asistente',l:'🤖 Asistente IA',ic:'bot'},
+      {id:'asistente',l:'Asistente IA',ic:'bot'},
     ]},
   ],
   dropshipper:[
@@ -3947,7 +3957,7 @@ const NAV_CFG={
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis pedidos',ic:'pkg'},
       {id:'balance',l:'Mis comisiones',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
-      {id:'pagos',l:'💼 Mi Liquidación',ic:'dollar'},
+      {id:'pagos',l:'Mi Liquidación',ic:'dollar'},
     ]},
     {s:'Mapa',items:[{id:'mapa',l:'Mapa de mis pedidos',ic:'map'}]},
     {s:'Reportes',items:[
@@ -3960,7 +3970,7 @@ const NAV_CFG={
     ]},
     {s:'Comunicación',items:[
       {id:'mensajes',l:'Mensajes',ic:'chat'},
-      {id:'asistente',l:'🤖 Asistente IA',ic:'bot'},
+      {id:'asistente',l:'Asistente IA',ic:'bot'},
     ]},
   ],
   delivery:[
@@ -3970,12 +3980,12 @@ const NAV_CFG={
       {id:'recaudacion',l:'Mi recaudación',ic:'dollar'},{id:'cupo',l:'Mi cupo y premios',ic:'trophy'},
       {id:'boletas',l:'Mis boletas',ic:'receipt'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
-      {id:'pagos',l:'💼 Mi Liquidación',ic:'dollar'},
+      {id:'pagos',l:'Mi Liquidación',ic:'dollar'},
       {id:'mensajes',l:'Mensajes',ic:'chat'},
-      {id:'asistente',l:'🤖 Asistente IA',ic:'bot'},
+      {id:'asistente',l:'Asistente IA',ic:'bot'},
     ]},
     {s:'Analítica',items:[
-      {id:'analitica_dlv',l:'📊 Mi Analítica',ic:'chart'},
+      {id:'analitica_dlv',l:'Mi Analítica',ic:'chart'},
     ]},
   ],
   proveedor:[
@@ -3983,7 +3993,7 @@ const NAV_CFG={
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'suministros',l:'Mis suministros',ic:'pkg'},
       {id:'pagos_prov',l:'Mis pagos',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
-      {id:'pagos',l:'💼 Mi Liquidación',ic:'dollar'},
+      {id:'pagos',l:'Mi Liquidación',ic:'dollar'},
     ]},
     {s:'Mapa',items:[{id:'mapa',l:'Mapa de mis pedidos',ic:'map'}]},
     {s:'Reportes',items:[
@@ -4001,7 +4011,7 @@ const NAV_CFG={
     {id:'boletas',l:'Mis boletas',ic:'receipt'},
     {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
     {id:'mensajes',l:'Mensajes',ic:'chat'},
-    {id:'perfil',l:'👤 Mi Perfil',ic:'user'},
+    {id:'perfil',l:'Mi Perfil',ic:'user'},
   ]}],
 };
 const SVG={
@@ -4021,6 +4031,7 @@ const SVG={
   chat:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
   chart:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>',
   bot:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><circle cx="8.5" cy="14" r="1.2"/><circle cx="15.5" cy="14" r="1.2"/><line x1="12" y1="3" x2="12" y2="8"/><circle cx="12" cy="3" r="1"/></svg>',
+  user:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
 };
 const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'Liquidación',
   usuarios:'Usuarios',zonas:'Zonas y Tarifas',config:'Configuración',setup:'Setup / SQL',
@@ -4814,7 +4825,7 @@ function _ensureClientesNavCfg(){
     if(yaTiene)return;
     // Buscar sección "Analítica" o agregar al final
     let analitica=list.find(sec=>sec&&sec.s==='Analítica'&&Array.isArray(sec.items));
-    const item={id:'clientes_recurrentes',l:'👥 Clientes Recurrentes',ic:'users'};
+    const item={id:'clientes_recurrentes',l:'Clientes Recurrentes',ic:'users'};
     if(analitica){analitica.items.push(item);}
     else{list.push({s:'Analítica',items:[item]});}
   }catch(e){console.warn('No se pudo agregar clientes_recurrentes al NAV_CFG:',e.message);}
@@ -7571,10 +7582,111 @@ function _boletaHTML(o){
   const _empSec=emp.colorSecundario||'#1f2937';
   const _empNom=escHtml(emp.nombre||'IPORÃVE');
   const _empLogo=emp.logo
-    ?'<img src="'+safeUrl(emp.logo)+'" style="height:42px;object-fit:contain;display:block;margin-bottom:6px">'
-    :'';
+    ?'<img src="'+safeUrl(emp.logo)+'" style="height:48px;object-fit:contain;display:block;margin-bottom:6px">'
+    :'<div style="font-size:24px;font-weight:800;color:'+_empColor+';letter-spacing:-0.5px;margin-bottom:4px;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000">'+_empNom+'</div>';
   const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'');
-  // TODO: si en el futuro se agregan IVA 5% y exenta por item, separar montos por tasa.
+  return {zona,total,flete,totalFact,iva,base,
+    html:'<div class="boleta" id="boletaDiv" style="font-family:\'Helvetica Neue\',\'Arial\',sans-serif;color:#111827;background:#fff;line-height:1.45;border:1px solid #000;box-shadow:0 2px 8px rgba(0,0,0,0.15);padding:24px;max-width:800px;margin:0 auto">'+
+    /* === HEADER === */
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:16px;margin-bottom:18px;border-bottom:2px solid '+_empSec+'">'+
+      '<div style="flex:1;min-width:0">'+
+        _empLogo+
+        '<div style="font-size:13px;font-weight:700;color:'+_empSec+'">'+_empNom+'</div>'+
+        (emp.ruc?'<div style="font-size:10px;color:#6b7280;margin-top:3px">RUC: '+escHtml(emp.ruc)+'</div>':'')+
+        (emp.dir?'<div style="font-size:10px;color:#6b7280">'+escHtml(emp.dir)+'</div>':'')+
+        '<div style="font-size:10px;color:#6b7280;margin-top:2px">'+
+          (emp.tel?'Tel: '+escHtml(emp.tel):'')+
+          ((emp.tel&&emp.email)?' &nbsp;&middot;&nbsp; ':'')+
+          (emp.email?escHtml(emp.email):'')+
+          (((emp.tel||emp.email)&&emp.web)?' &nbsp;&middot;&nbsp; ':'')+
+          (emp.web?escHtml(emp.web):'')+
+        '</div>'+
+      '</div>'+
+      '<div style="text-align:right;flex-shrink:0">'+
+        '<div style="display:inline-block;border:2px solid '+_empColor+';padding:8px 14px;border-radius:6px;color:'+_empColor+';font-size:14px;font-weight:700;letter-spacing:0.5px;margin-bottom:8px">BOLETA DE VENTA</div>'+
+        '<div style="font-size:11px;color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">N&deg; doc:</span> <span style="font-family:\'JetBrains Mono\',monospace;color:#111827">'+escHtml(o.numDoc||o.boletaNum||'')+'</span></div>'+
+        '<div style="font-size:11px;color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">Fecha:</span> <span style="color:#111827">'+fmtDate(o.fecha)+'</span></div>'+
+        '<div style="font-size:11px;color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">Timbrado:</span> <span style="font-family:\'JetBrains Mono\',monospace;color:#111827">'+_timb+'</span></div>'+
+        '<div style="margin-top:6px;display:inline-block;font-size:9px;padding:3px 8px;border:1px solid '+_empColor+';border-radius:4px;color:'+_empColor+';font-weight:600;letter-spacing:0.5px">COMPROBANTE IVA V&Aacute;LIDO</div>'+
+      '</div>'+
+    '</div>'+
+    /* === CLIENTE / ENTREGA === */
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:18px;font-size:11px">'+
+      '<div>'+
+        '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Cliente / Comprador</div>'+
+        '<div style="font-weight:700;font-size:13px;color:'+_empSec+'">'+escHtml(o.cliente||'')+'</div>'+
+        (o.razonSocial?'<div style="color:#374151">'+escHtml(o.razonSocial)+'</div>':'')+
+        '<div style="color:#6b7280;margin-top:2px">CI: '+(escHtml(o.cedula||'')||'&mdash;')+(o.ruc?' &middot; RUC: '+escHtml(o.ruc||''):'')+'</div>'+
+        '<div style="color:#6b7280">'+(escHtml(o.telefono||'')||'&mdash;')+'</div>'+
+      '</div>'+
+      '<div>'+
+        '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Entrega</div>'+
+        '<div style="color:#111827">'+escHtml(o.direccion||'')+'</div>'+
+        '<div style="color:#6b7280;margin-top:2px">'+escHtml(zona.nombre||'')+(zona.tiempoEntrega?' &middot; '+escHtml(zona.tiempoEntrega):'')+'</div>'+
+        '<div style="margin-top:6px;color:#374151"><span style="font-weight:600">Condici&oacute;n:</span> Contado &nbsp;&middot;&nbsp; <span style="font-weight:600">IVA:</span> '+escHtml(o.tipoIva||'10%')+'</div>'+
+      '</div>'+
+    '</div>'+
+    /* === TABLA ITEMS === */
+    '<div class="bt-wrap" style="margin-bottom:14px;overflow-x:auto"><table class="bt" style="width:100%;border-collapse:collapse;border-top:3px solid '+_empSec+';border-bottom:3px solid '+_empSec+'">'+
+      '<thead><tr style="background:#f9fafb">'+
+        '<th style="padding:8px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:60px">Cant.</th>'+
+        '<th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb">Descripci&oacute;n</th>'+
+        '<th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:110px">Precio unit.</th>'+
+        '<th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:120px">Total</th>'+
+      '</tr></thead>'+
+      '<tbody>'+
+        '<tr>'+
+          '<td style="padding:8px;text-align:center;font-size:12px;color:#111827;border-bottom:1px solid #f3f4f6">'+o.qty+'</td>'+
+          '<td style="padding:8px;font-size:12px;color:#111827;border-bottom:1px solid #f3f4f6">'+escHtml(o.producto||'')+(o.proveedor?'<br><span style="font-size:10px;color:#9ca3af">Prov: '+escHtml(o.proveedor)+'</span>':'')+'</td>'+
+          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-variant-numeric:tabular-nums;border-bottom:1px solid #f3f4f6">Gs. '+fmtN(o.precio)+'</td>'+
+          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-weight:600;font-variant-numeric:tabular-nums;border-bottom:1px solid #f3f4f6">Gs. '+fmtN(o.precio*o.qty)+'</td>'+
+        '</tr>'+
+        '<tr>'+
+          '<td style="padding:8px;text-align:center;font-size:12px;color:#111827">1</td>'+
+          '<td style="padding:8px;font-size:12px;color:#111827">Flete &mdash; Zona '+escHtml(zona.nombre||'')+'</td>'+
+          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
+          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-weight:600;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
+        '</tr>'+
+      '</tbody></table></div>'+
+    /* === META + TOTALES === */
+    '<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;margin-top:14px;font-size:11px;align-items:start">'+
+      '<div>'+
+        (getUser(o.vendedorId)?.nombre?'<div style="color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">Vendedor:</span> '+escHtml(getUser(o.vendedorId).nombre)+'</div>':'')+
+        (o.metodoCobro?'<div style="color:#6b7280;margin-top:2px"><span style="font-weight:600;color:'+_empSec+'">Cobrado:</span> '+escHtml(o.metodoCobro||'')+'</div>':'')+
+        (o.estado==='Entregado'?'<div style="margin-top:8px;display:inline-block;background:#dcfce7;color:#15803d;font-weight:700;padding:4px 10px;border-radius:4px;font-size:10px;letter-spacing:0.5px">&#10003; ENTREGADO Y COBRADO</div>':'')+
+      '</div>'+
+      '<div style="background:#f9fafb;border-radius:6px;padding:12px 14px">'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:4px"><span>Base imponible:</span><span style="font-variant-numeric:tabular-nums;color:#111827">Gs. '+fmtN(base)+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:8px"><span>IVA '+escHtml(o.tipoIva||'10%')+' incluido:</span><span style="font-variant-numeric:tabular-nums;color:#111827">Gs. '+fmtN(iva)+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid '+_empSec+';padding-top:8px;margin-top:4px">'+
+          '<span style="font-weight:700;color:'+_empSec+';font-size:13px;letter-spacing:0.5px">TOTAL</span>'+
+          '<span style="font-weight:700;font-size:18px;color:'+_empColor+';font-variant-numeric:tabular-nums">Gs. '+fmtN(totalFact)+'</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    /* === FOOTER (sin duplicar contacto: ya esta en el header) === */
+    '<div style="margin-top:24px;padding-top:14px;border-top:1px solid #e5e7eb;text-align:center">'+
+      '<div style="font-style:italic;color:#64748b;font-size:13px;margin-bottom:6px">Gracias por su preferencia</div>'+
+      '<div style="font-size:9px;color:#9ca3af">'+_empNom+(_timb?' &middot; Timbrado: '+_timb:'')+' &middot; Comprobante v&aacute;lido seg&uacute;n Ley N&deg; 125/91</div>'+
+    '</div>'+
+    '</div>'};
+}
+
+// ---- BLOQUE LEGACY (no usado, mantenido como referencia inerte) ----
+function _boletaHTML_legacy_unused(o){
+  const emp=_getEmpresa();
+  const zona=_getZonaO(o);
+  const total=o.precio*o.qty;
+  const flete=zona.precio;
+  const totalFact=total+flete;
+  const tasaNum=parseInt(o.tipoIva)||10;
+  const iva=o.tipoIva==='Exento'?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
+  const base=totalFact-iva;
+  const _empColor=emp.colorPrimario||'#f5a623';
+  const _empSec=emp.colorSecundario||'#1f2937';
+  const _empNom=escHtml(emp.nombre||'IPORAVE');
+  const _empLogo='';
+  const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'');
   const _iva10 = (o.tipoIva==='Exento'||o.tipoIva==='5%') ? 0 : iva;
   const _iva5  = (o.tipoIva==='5%') ? iva : 0;
   const _exenta= (o.tipoIva==='Exento') ? totalFact : 0;
@@ -12130,7 +12242,7 @@ function _mapaUpdateContadores(){
   // Solo Deliveries va en el MISMO grupo (mutuamente excluyente con los estados)
   const btnsTipo=
     '<button class="mapBtn'+(filtroActivo==='soloDeliveries'?' active':'')+'" id="btnFiltro_soloDeliveries" data-grp="filtro" data-val="soloDeliveries" '+
-      'onclick="_mapaSetFiltro(&quot;soloDeliveries&quot;)">🛵 Solo Deliveries</button>';
+      'onclick="_mapaSetFiltro(&quot;soloDeliveries&quot;)">Solo Deliveries</button>';
 
   // Combobox custom premium para búsqueda de deliveries
   let dlvCurrentName='';
@@ -12293,6 +12405,12 @@ function _mapaSetFiltro(val){
 //  - tipo=pedidos    -> solo pines de pedidos filtrados por estado
 //  - tipo=todos      -> pedidos filtrados por estado + TODOS los deliveries
 function _aplicarFiltrosMapa(){
+  // FIX RADICAL: si toggle Auto-actualizar OFF y NO es acción manual del usuario, abortar.
+  // Permite acciones manuales (click filtros, refresh, etc.) y bloquea flujos automáticos
+  // (realtime Supabase, polling 30s, timer 5min, eventos GPS).
+  if(window._mapaAutoUpdateEnabled===false && window._mapaFromUserAction!==true){
+    return;
+  }
   // FIX #4: si el delivery seleccionado ya no esta activo, limpiar el filtro
   if(window._mapaFiltroDelivery){
     const _dlvs=(window._usersCache||[]).filter(u=>u.rol==='delivery'&&u.activo!==false);
@@ -12393,6 +12511,17 @@ function _mapaActualizarOverlaySinUbicacion(){
   _aplicarFiltrosMapa=function(){
     const args=arguments;
     const now=Date.now();
+    // FIX RADICAL: si el toggle Auto-actualizar está OFF y esta llamada viene de un
+    // event handler del usuario (click/touch/keydown), marcar como acción manual
+    // para que los guards de _mapaCargar/_mapaCargarDlvs permitan el re-render.
+    try{
+      const _ev=window.event;
+      const _trustedUserEv=_ev&&_ev.isTrusted&&['click','mousedown','touchend','touchstart','keydown','change','input'].includes(_ev.type);
+      if(_trustedUserEv){
+        window._mapaFromUserAction=true;
+        setTimeout(()=>{window._mapaFromUserAction=false;},1000);
+      }
+    }catch(_){}
     clearTimeout(_filterDebTimer);
     if(now-_lastFilterRun>150){
       _lastFilterRun=now;
@@ -12408,6 +12537,10 @@ function _mapaActualizarOverlaySinUbicacion(){
 
 async function _mapaCargar(map){
   if(!map||!$('ordersMap'))return;
+  // FIX RADICAL: si toggle Auto-actualizar OFF y NO es acción manual, NO redibujar.
+  if(window._mapaAutoUpdateEnabled===false && window._mapaFromUserAction!==true){
+    return;
+  }
   Object.values(window._mapMarkers||{}).forEach(m=>{
     try{if(m.getPopup){const p=m.getPopup();if(p)p.remove();}}catch(_){}
     try{m.remove();}catch(_){}
@@ -12520,18 +12653,25 @@ async function initOrdersLayer(map){
   const _fTipoInit=window._mapaFiltroTipo||'todos';
   // Carga inicial: permitir encuadrar (fitBounds). El flag se mantiene en false durante el await.
   window._mapaSkipCameraMove=false;
-  if(_fTipoInit!=='deliveries')await _mapaCargar(map);
-  if(_fTipoInit==='deliveries'&&typeof _mapaCargarDlvs==='function')_mapaCargarDlvs(map);
-  // Preferencia persistida del usuario
+  // Preferencia persistida del usuario (LEER ANTES de pintar, para que los guards funcionen).
   if(typeof window._mapaAutoUpdateEnabled==='undefined'){
     window._mapaAutoUpdateEnabled=(localStorage.getItem('mapa_auto')!=='0');
+  }
+  // FIX RADICAL: carga inicial al entrar al mapa SIEMPRE debe pintar, aunque toggle OFF.
+  window._mapaFromUserAction=true;
+  try{
+    if(_fTipoInit!=='deliveries')await _mapaCargar(map);
+    if(_fTipoInit==='deliveries'&&typeof _mapaCargarDlvs==='function')_mapaCargarDlvs(map);
+  }finally{
+    setTimeout(()=>{window._mapaFromUserAction=false;},1500);
   }
   if(window._mapaUpdateTimer){clearInterval(window._mapaUpdateTimer);window._mapaUpdateTimer=null;}
   if(_ordersLayerInterval){clearInterval(_ordersLayerInterval);_ordersLayerInterval=null;}
   if(!window._mapaAutoUpdateEnabled)return;
   const _autoFn=()=>{
-    // Update automático: NO mover cámara
+    // Timer 5min (solo activo si toggle ON): autorizado por el toggle.
     window._mapaSkipCameraMove=true;
+    window._mapaFromUserAction=true;
     const _fTipo=window._mapaFiltroTipo||'todos';
     try{
       if(_fTipo!=='deliveries')_mapaCargar(map);
@@ -12540,8 +12680,8 @@ async function initOrdersLayer(map){
       else if(_fTipo==='pedidos'){Object.values(window._dlvMapMarkers||{}).forEach(m=>{try{m.remove();}catch(e){}});window._dlvMapMarkers={};}
       _checkUrgentOrders();
     }finally{
-      // Liberar el flag después de un tick para que el geocoding async no mueva cámara tampoco
-      setTimeout(()=>{window._mapaSkipCameraMove=false;},5000);
+      // Liberar flags después de un tick para que el geocoding async no mueva cámara tampoco
+      setTimeout(()=>{window._mapaSkipCameraMove=false;window._mapaFromUserAction=false;},5000);
     }
   };
   window._mapaUpdateTimer=setInterval(_autoFn,300000);
@@ -12558,6 +12698,7 @@ function _mapaToggleAutoUpdate(cb){
     const map=window._mapInstance;
     const _autoFn=()=>{
       window._mapaSkipCameraMove=true;
+      window._mapaFromUserAction=true;
       const _fTipo=window._mapaFiltroTipo||'todos';
       try{
         if(_fTipo!=='deliveries')_mapaCargar(map);
@@ -12566,13 +12707,13 @@ function _mapaToggleAutoUpdate(cb){
         else if(_fTipo==='pedidos'){Object.values(window._dlvMapMarkers||{}).forEach(m=>{try{m.remove();}catch(e){}});window._dlvMapMarkers={};}
         _checkUrgentOrders();
       }finally{
-        setTimeout(()=>{window._mapaSkipCameraMove=false;},5000);
+        setTimeout(()=>{window._mapaSkipCameraMove=false;window._mapaFromUserAction=false;},5000);
       }
     };
     window._mapaUpdateTimer=setInterval(_autoFn,300000);
     _ordersLayerInterval=window._mapaUpdateTimer;
   }
-  pushNotif(on?'Auto-actualización del mapa activada (cada 5 min)':'Auto-actualización del mapa desactivada','ok');
+  pushNotif(on?'Auto-actualización del mapa activada (cada 5 min)':'Auto-actualización del mapa desactivada. Usá el botón ↻ para refrescar manualmente.','ok');
 }
 
 let _alertedUrgent=new Set();
@@ -12641,8 +12782,14 @@ function _mapaSetEstilo(tipo){
   });
   const esAdmin=isAdminLike(CU.rol);
   map.once('style.load',function(){
-    _mapaCargar(map);
-    if(esAdmin&&window._mapaShowDlvs)_mapaCargarDlvs(map);
+    // Cambio de estilo del mapa es acción manual del usuario.
+    window._mapaFromUserAction=true;
+    try{
+      _mapaCargar(map);
+      if(esAdmin&&window._mapaShowDlvs)_mapaCargarDlvs(map);
+    }finally{
+      setTimeout(()=>{window._mapaFromUserAction=false;},1500);
+    }
     if(cont){requestAnimationFrame(function(){cont.style.opacity='1';});}
   });
 }
@@ -12667,8 +12814,9 @@ function _mapaRenderSelects(){
       _setupMapComboFilter({
         containerId:'mapaZonaCombo',
         placeholder:'Todo Paraguay',
-        emoji:'🌎',
+        emoji:'',
         defaultLabel:'Todo Paraguay',
+        emptyHint:'Cargando zonas...',
         getItems:function(){
           return (window._zonasCache||[]).map(function(z){return {id:String(z.id),label:(z.nombre||'')};});
         },
@@ -12686,8 +12834,9 @@ function _mapaRenderSelects(){
       _setupMapComboFilter({
         containerId:'mapaVendCombo',
         placeholder:'Todos',
-        emoji:'👤',
+        emoji:'',
         defaultLabel:'Todos',
+        emptyHint:'Cargando vendedores...',
         getItems:function(){
           var vends=(window._usersCache||[]).filter(function(u){return ['vendedor','admin','superadmin','dropshipper','proveedor'].includes(u.rol);});
           return vends.map(function(u){return {id:String(u.id),label:(u.nombre||u.email||('ID '+u.id))};});
@@ -12739,6 +12888,8 @@ function _setupMapComboFilter(cfg){
     }).join('');
     if(!filtered.length&&ql){
       html+='<li class="empty">Sin coincidencias</li>';
+    }else if(!items.length&&!ql){
+      html+='<li class="empty">'+escHtml(cfg.emptyHint||'Cargando...')+'</li>';
     }
     list.innerHTML=html;
     lastShown=Array.prototype.slice.call(list.querySelectorAll('li:not(.empty)'));
@@ -12763,6 +12914,7 @@ function _setupMapComboFilter(cfg){
     try{cfg.onSelect({id:id,label:name});}catch(_){}
   };
   input.addEventListener('focus',open);
+  input.addEventListener('click',function(){open();});
   input.addEventListener('input',function(){
     clear.classList.toggle('show',!!input.value);
     render(input.value);
@@ -12818,6 +12970,10 @@ function _dlvColor(dlv){
 }
 
 function _mapaCargarDlvs(map){
+  // FIX RADICAL: si toggle Auto-actualizar OFF y NO es acción manual, NO redibujar.
+  if(window._mapaAutoUpdateEnabled===false && window._mapaFromUserAction!==true){
+    return;
+  }
   Object.values(window._dlvMapMarkers||{}).forEach(m=>{
     try{if(m.getPopup){const p=m.getPopup();if(p)p.remove();}}catch(_){}
     try{m.remove();}catch(_){}
@@ -12988,7 +13144,10 @@ function verDeliveryEnMapa(deliveryId){
     window._mapaShowDlvs=true;
     const btn=$('btnMapaDlvs');
     if(btn){btn.style.background='#1d4ed8';btn.style.color='#fff';}
-    _mapaCargarDlvs(window._mapInstance);
+    // Acción manual del usuario: autorizar redibujo aun con toggle OFF.
+    window._mapaFromUserAction=true;
+    try{_mapaCargarDlvs(window._mapInstance);}
+    finally{setTimeout(()=>{window._mapaFromUserAction=false;},1500);}
   }
   // Hacer zoom al delivery en el mapa
   const m=window._dlvMapMarkers[deliveryId];
@@ -13005,7 +13164,12 @@ function _mapaToggleDlvs(){
   window._mapaShowDlvs=!window._mapaShowDlvs;
   const btn=$('btnMapaDlvs');
   if(btn){btn.classList.toggle('active',window._mapaShowDlvs);}
-  if(window._mapaShowDlvs)_mapaCargarDlvs(window._mapInstance);
+  if(window._mapaShowDlvs){
+    // Acción manual del usuario.
+    window._mapaFromUserAction=true;
+    try{_mapaCargarDlvs(window._mapInstance);}
+    finally{setTimeout(()=>{window._mapaFromUserAction=false;},1500);}
+  }
   else{Object.values(window._dlvMapMarkers).forEach(m=>m.remove());window._dlvMapMarkers={};}
 }
 
@@ -13018,7 +13182,10 @@ async function _mapaCambiarEstado(id,nuevoEstado){
   o.estado=nuevoEstado;
   await DL.saveOrder(o);
   if(window._mapMarkers[id])window._mapMarkers[id].getPopup().remove();
-  _mapaCargar(window._mapInstance);
+  // Cambio de estado manual desde el mapa.
+  window._mapaFromUserAction=true;
+  try{_mapaCargar(window._mapInstance);}
+  finally{setTimeout(()=>{window._mapaFromUserAction=false;},1500);}
   pushNotif('Pedido #'+id+' → '+nuevoEstado,'s');
   if(nuevoEstado==='En Ruta'||nuevoEstado==='En Ruta'){
     waEnRuta(o);
@@ -13256,12 +13423,12 @@ PAGES.perfil=function(){
   $('ca').innerHTML=
     '<div style="max-width:780px;margin:0 auto;padding:8px">'+
       '<div style="margin-bottom:18px">'+
-        '<h2 style="margin:0 0 4px 0;color:var(--text);font-size:22px">👤 Mi Perfil</h2>'+
+        '<h2 style="margin:0 0 4px 0;color:var(--text);font-size:22px;display:flex;align-items:center;gap:8px"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Mi Perfil</h2>'+
         '<div style="color:var(--text2);font-size:13px">Tus datos para que tus pedidos lleguen rápido y sin problemas</div>'+
       '</div>'+
 
       '<div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">'+
-        '<h3 style="margin:0 0 14px 0;color:var(--accent);font-size:15px">📇 Datos personales</h3>'+
+        '<h3 style="margin:0 0 14px 0;color:var(--accent);font-size:15px;display:flex;align-items:center;gap:6px"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h3M15 12h3M5 18c.8-2 2-3 4-3s3.2 1 4 3"/></svg>Datos personales</h3>'+
         '<div class="fg"><label>Nombre completo *</label><input type="text" id="pfNombre" value="'+escHtml(u.nombre||'')+'" placeholder="Ej: María González"></div>'+
         '<div class="fg"><label>Cédula / RUC</label><input type="text" id="pfCedula" value="'+escHtml(u.cedula||'')+'" placeholder="Ej: 1.234.567"></div>'+
         '<div class="fg"><label>Email</label><input type="email" id="pfEmail" value="'+escHtml(u.email||'')+'" readonly style="opacity:.7;cursor:not-allowed"></div>'+
@@ -13269,7 +13436,7 @@ PAGES.perfil=function(){
       '</div>'+
 
       '<div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">'+
-        '<h3 style="margin:0 0 14px 0;color:var(--accent);font-size:15px">📍 Dirección de entrega</h3>'+
+        '<h3 style="margin:0 0 14px 0;color:var(--accent);font-size:15px;display:flex;align-items:center;gap:6px"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Dirección de entrega</h3>'+
         '<div class="fg"><label>Dirección completa *</label><input type="text" id="pfDir" value="'+escHtml(u.direccion||'')+'" placeholder="Ej: Av. España 1234 c/ Brasil"></div>'+
         '<div class="fg"><label>Zona</label><select id="pfZona"><option value="">Seleccionar...</option>'+zonasOpts+'</select></div>'+
         '<div class="fg"><label>Referencias / Cómo llegar</label><textarea id="pfRef" rows="3" placeholder="Ej: Casa color blanco, portón negro, al lado del kiosco">'+escHtml(u.referencias||'')+'</textarea></div>'+
@@ -13277,7 +13444,7 @@ PAGES.perfil=function(){
       '</div>'+
 
       '<div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">'+
-        '<h3 style="margin:0 0 14px 0;color:var(--accent);font-size:15px">🔔 Preferencias</h3>'+
+        '<h3 style="margin:0 0 14px 0;color:var(--accent);font-size:15px;display:flex;align-items:center;gap:6px"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Preferencias</h3>'+
         '<label style="display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer">'+
           '<input type="checkbox" id="pfNotifWA"'+(waOn?' checked':'')+' style="width:18px;height:18px;cursor:pointer">'+
           '<span style="color:var(--text);font-size:14px">Recibir WhatsApp cuando mi pedido cambie de estado</span>'+
@@ -15158,10 +15325,13 @@ async function _refreshActualPage(){
             // Si ya había markers antes, NO mover cámara (usuario está trabajando con su zoom/pan)
             const _hadMarkers = !!(window._mapMarkers && Object.keys(window._mapMarkers).length);
             if(_hadMarkers) window._mapaSkipCameraMove = true;
+            // FIX RADICAL: refresh manual del usuario -> autorizar redibujo aun con toggle OFF.
+            window._mapaFromUserAction = true;
             try{ _mapaCargar(_m); }catch(e){ console.warn('refresh mapa _mapaCargar',e); }
             if(window._mapaShowDlvs && typeof _mapaCargarDlvs === 'function'){
               try{ _mapaCargarDlvs(_m); }catch(e){ console.warn('refresh mapa _mapaCargarDlvs',e); }
             }
+            setTimeout(()=>{ window._mapaFromUserAction = false; }, 1500);
             if(_hadMarkers) setTimeout(()=>{ window._mapaSkipCameraMove = false; }, 5000);
             if(typeof _mapaRenderSelects === 'function'){
               try{ _mapaRenderSelects(); }catch(_){}
