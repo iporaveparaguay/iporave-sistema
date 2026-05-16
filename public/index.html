@@ -2141,7 +2141,7 @@ function _renderNotifList(){
   ).join('');
   // Asignar eventos con addEventListener (más confiable que onclick en innerHTML)
   list.querySelectorAll('.ntp-item.clickable').forEach(el=>{
-    const idx=parseInt(el.dataset.nidx);
+    const idx=parseInt(el.dataset.nidx)||0;
     const n=_notifHistory[idx];
     if(!n||!n.action)return;
     el.addEventListener('click',()=>{
@@ -4611,7 +4611,7 @@ function _cleanAllAppStorage(){
 }
 async function _ensureFreshToken(){
   try{
-    const expiry=parseInt(sessionStorage.getItem('iporave_token_expiry')||'0');
+    const expiry=parseInt(sessionStorage.getItem('iporave_token_expiry')||'0')||0;
     if(expiry&&Date.now()<expiry-60000)return true;
     if(!_supa||!_supa.auth||typeof _supa.auth.refreshSession!=='function')return true;
     const{data,error}=await _supa.auth.refreshSession();
@@ -7250,7 +7250,7 @@ function editOrder(id){
     '<input type="text" id="eSitio" value="'+escAttr(o.sitio)+'" placeholder="Referencia del lugar"></div>'+
     '<div class="fg">'+
     '<label>🔗 Pegar enlace o coordenadas <span style="font-weight:400;color:var(--text3);font-size:11px">(Google Maps, WhatsApp, lat,lng)</span></label>'+
-    '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="_dbSearch(\'gpsUbic\',this.value,v=>procesarUbicacion(v),350)">'+
+    '<input type="text" id="nUbicacionInput" autocomplete="off" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="_dbSearch(\'gpsUbic\',this.value,v=>procesarUbicacion(v),350)">'+
     '<input type="hidden" id="nGpsLat" value="'+escHtml(_validGps(o.gpsLat,o.gpsLng)?o.gpsLat:'')+'"><input type="hidden" id="nGpsLng" value="'+escHtml(_validGps(o.gpsLat,o.gpsLng)?o.gpsLng:'')+'">'+
     '<div id="nGpsStatus" style="font-size:11px;color:var(--text3);margin-top:3px">'+(_validGps(o.gpsLat,o.gpsLng)?'<span style="color:var(--green)">📍 GPS guardado: '+parseFloat(o.gpsLat).toFixed(5)+', '+parseFloat(o.gpsLng).toFixed(5)+'</span>':'')+'</div>'+
     '</div>'+
@@ -7496,7 +7496,7 @@ function openNewOrder(){
     '<input type="text" id="nSitio" placeholder="Referencia del lugar — más certero que la dirección en muchos casos"></div>'+
     '<div class="fg">'+
     '<label>🔗 Pegar enlace o coordenadas <span style="font-weight:400;color:var(--text3);font-size:11px">(Google Maps, WhatsApp, lat,lng)</span></label>'+
-    '<input type="text" id="nUbicacionInput" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="_dbSearch(\'gpsUbic\',this.value,v=>procesarUbicacion(v),350)">'+
+    '<input type="text" id="nUbicacionInput" autocomplete="off" placeholder="Ej: -25.2867,-57.6362  ó  https://maps.google.com/..." oninput="_dbSearch(\'gpsUbic\',this.value,v=>procesarUbicacion(v),350)">'+
     '<input type="hidden" id="nGpsLat"><input type="hidden" id="nGpsLng">'+
     '<div id="nGpsStatus" style="font-size:11px;color:var(--text3);margin-top:3px"></div>'+
     '</div>'+
@@ -7674,7 +7674,7 @@ function autoFillCliente(pedidoId){
     if($('nGpsLng'))$('nGpsLng').value=o.gpsLng;
     const btn=$('nGpsBtn'),status=$('nGpsStatus');
     if(btn){btn.textContent='✅ GPS OK';btn.style.color='var(--green)';}
-    if(status)status.innerHTML='<span style="color:var(--green)">📍 GPS del pedido #'+o.id+' cargado</span>';
+    if(status)status.innerHTML='<span style="color:var(--green)">📍 GPS del pedido #'+escHtml(String(o.id||''))+' cargado</span>';
   }
   const sug=$('nCliSug');if(sug)sug.style.display='none';
   const inp=$('nCli');
