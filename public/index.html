@@ -166,6 +166,15 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
   color:var(--accent);
 }
 @keyframes premiumSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+/* GPS pill — indicador integrado en topbar */
+.gps-pill{display:none;align-items:center;gap:6px;padding:5px 10px 5px 8px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);border-radius:99px;color:#16a34a;font-size:11px;font-weight:600;letter-spacing:0.2px;cursor:pointer;transition:background .15s var(--ease-out),border-color .15s var(--ease-out);white-space:nowrap;height:30px;margin-right:8px;font-family:inherit;}
+.gps-pill.active{display:inline-flex;}
+.gps-pill:hover{background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.5);}
+.gps-pill-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,0.7);animation:gpsPulse 2s ease-in-out infinite;}
+@keyframes gpsPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.7)}50%{box-shadow:0 0 0 5px rgba(34,197,94,0)}}
+.gps-pill-time{font-size:10px;opacity:0.8;}
+:root[data-theme="dark"] .gps-pill{background:rgba(34,197,94,0.15);color:#4ade80;border-color:rgba(34,197,94,0.4);}
+@media (max-width: 480px){.gps-pill-text{display:none;}.gps-pill{padding:5px 8px;}}
 .topbar-icon-btn.theme-btn span{
   font-size:18px;
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));
@@ -1513,6 +1522,7 @@ body.alta-visibilidad select{
       </button>
       <span class="tbtitle" id="tbTitle">Dashboard</span>
       <div class="tbactions" id="tbActions"></div>
+      <button id="gpsStatusPill" class="gps-pill" type="button" onclick="_gpsToggleFromPill()" aria-label="Compartiendo ubicacion"><span class="gps-pill-dot"></span><span class="gps-pill-text">GPS activo</span><span class="gps-pill-time"></span></button>
       <button id="refreshBtn" type="button" onclick="_refreshActualPage()" class="topbar-icon-btn" title="Actualizar página" aria-label="Actualizar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
       <button id="themeToggleBtn" type="button" onclick="toggleTheme()" class="topbar-icon-btn theme-btn" title="Cambiar tema" aria-label="Cambiar tema"><svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg id="themeIconSoft" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M2 12s3.5-6 10-6 10 6 10 6"/><path d="M12 16v-2"/><path d="M8 14l-1 2"/><path d="M16 14l1 2"/></svg></button>
       <button id="codexNotifBell" type="button" onclick="_notifSessionToggle()" class="topbar-icon-btn" style="display:none" aria-label="Notificaciones"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="codexNotifBadge"></span></button>
@@ -5102,7 +5112,7 @@ function _appendSuperadminDashboardExtra(){
         '<text x="'+labelX+'" y="'+(H-4)+'" text-anchor="middle" font-size="8" fill="var(--text3)">'+labels7[i]+'</text>';
     }).join('');
     html+='<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">'+
-      '<div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">📊 Entregados — últimos 7 días</div>'+
+      '<div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:inline-flex;align-items:center;gap:6px">'+SVG.chart+'<span>Entregados — últimos 7 días</span></div>'+
       '<div style="overflow-x:auto">'+
         '<svg viewBox="0 0 '+totalW+' '+H+'" width="100%" style="display:block;max-width:360px;margin:0 auto" aria-label="Ventas últimos 7 días">'+
           svgBars+
@@ -5530,7 +5540,7 @@ PAGES.dashboard=async function(){
           '<canvas id="chartDona" height="170" style="filter:drop-shadow(0 0 8px rgba(249,115,22,0.4))"></canvas>'+
         '</div>'+
         '<div style="background:var(--card);border-radius:16px;padding:18px 18px 10px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid #6366f1">'+
-          '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">📊 Top zonas</div>'+
+          '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px;display:inline-flex;align-items:center;gap:6px">'+SVG.chart+'<span>Top zonas</span></div>'+
           '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">Zonas con más pedidos</div>'+
           '<canvas id="chartZonas" height="170"></canvas>'+
         '</div>'+
@@ -7649,7 +7659,38 @@ PAGES.cupo=function(){
           '<td style="text-align:right;color:'+(premio>0?'var(--accent)':'var(--text3)')+'">'+fmt(premio)+'</td>'+
         '</tr>';
       });
-      const totalAcu=sueldoBase+premioTotal;
+      // ── Pago configurable según pago_metodo del usuario ──
+      // Si está configurado (porPedido/fija/externa), sumamos el cálculo correspondiente al total.
+      // Si no, el flujo histórico (sueldoBase + premioTotal) se mantiene intacto.
+      let pagoConfigurado=0, pagoConfigLabel='', pagoConfigDetalle='';
+      try{
+        const pm=(u&&u.pago_metodo)||'cupo';
+        const pc=(u&&u.pago_config)||{};
+        if(pm==='porPedido'){
+          pagoConfigurado=misOrdMes.length*((pc.monto_por_pedido)||0);
+          pagoConfigLabel='Por pedido entregado';
+          pagoConfigDetalle=misOrdMes.length+' entregas × '+fmt(pc.monto_por_pedido||0);
+        } else if(pm==='fija'){
+          pagoConfigurado=(pc.monto_mensual)||0;
+          pagoConfigLabel='Tarifa fija mensual';
+          pagoConfigDetalle=fmt(pc.monto_mensual||0)+' / mes';
+        } else if(pm==='externa'){
+          const bruto=misOrdMes.length*((pc.tarifa_base)||0);
+          const com=bruto*(((pc.comision_pct)||0)/100);
+          pagoConfigurado=bruto-com;
+          pagoConfigLabel='Logística externa ('+(pc.plataforma||'—')+')';
+          pagoConfigDetalle=misOrdMes.length+' entregas × '+fmt(pc.tarifa_base||0)+' − '+(pc.comision_pct||0)+'% comisión';
+        } else if(pm==='cupo'){
+          // Bonus mensual por cumplir cupo configurado (independiente del flujo diario histórico)
+          const cm=pc.cupo_mensual||0;
+          if(cm>0 && misOrdMes.length>=cm){
+            pagoConfigurado=pc.premio_x_cupo||0;
+            pagoConfigLabel='Premio por cupo mensual';
+            pagoConfigDetalle='Cupo '+cm+' alcanzado → '+fmt(pc.premio_x_cupo||0);
+          }
+        }
+      }catch(_){}
+      const totalAcu=sueldoBase+premioTotal+pagoConfigurado;
       const pagado=0;
       const saldoCobrar=totalAcu-pagado;
       // Actualizar badge nav
@@ -7666,7 +7707,7 @@ PAGES.cupo=function(){
         bCupo.style.whiteSpace='nowrap';
       }
       const liqHtml=
-        '<div class="stitle">💰 Mi Liquidación</div>'+
+        '<div class="stitle"><span style="display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Mi Liquidación</span></span></div>'+
         '<div style="overflow-x:auto;margin-bottom:14px">'+
           '<table class="tbl"><thead><tr>'+
             '<th>Fecha</th><th>Entregas</th><th>Cupo</th><th>Extra</th><th>Premio</th>'+
@@ -7678,6 +7719,9 @@ PAGES.cupo=function(){
           '<div class="lrow"><span class="llbl">Días trabajados</span><span style="color:var(--cyan)">'+diasTrabajados.length+'</span></div>'+
           '<div class="lrow"><span class="llbl">Sueldo base</span><span style="color:var(--green)">'+fmt(sueldoBase)+'</span></div>'+
           '<div class="lrow"><span class="llbl">Premios por cupos superados</span><span style="color:var(--accent)">'+fmt(premioTotal)+'</span></div>'+
+          (pagoConfigurado>0?
+            '<div class="lrow"><span class="llbl">'+escHtml(pagoConfigLabel)+'<br><span style="font-size:10px;color:var(--text3)">'+escHtml(pagoConfigDetalle)+'</span></span><span style="color:var(--accent)">'+fmt(pagoConfigurado)+'</span></div>'
+            :'')+
           '<div class="lrow"><span style="font-weight:700">Total acumulado mes</span><span style="color:var(--green);font-weight:800;font-size:15px">'+fmt(totalAcu)+'</span></div>'+
           '<div class="lrow"><span class="llbl">Pagado</span><span style="color:var(--text2)">'+fmt(pagado)+'</span></div>'+
           '<div style="font-size:10px;color:var(--text3);margin:-4px 0 8px 0;padding-left:4px">Próximamente podrá registrar pagos</div>'+
@@ -8351,7 +8395,7 @@ function _s3VendorExtraHtml(){
     '</div>'+
     _s3StateSummary(mine,'Estado esta semana')+
     '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:14px">'+
-      '<div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">📊 Ventas por día - últimos 7 días</div>'+
+      '<div style="font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:inline-flex;align-items:center;gap:6px">'+SVG.chart+'<span>Ventas por día - últimos 7 días</span></div>'+
       '<div style="display:flex;align-items:end;gap:6px;height:128px">'+
         ventas.map((v,i)=>'<div style="flex:1;min-width:0;text-align:center">'+
           '<div title="'+fmt(v)+'" style="height:'+Math.max(6,Math.round(v/max*92))+'px;background:var(--green);border-radius:6px 6px 2px 2px;opacity:.88"></div>'+
@@ -8595,7 +8639,7 @@ PAGES.analitica_vend=function(periodo){
       '</div>'+
     '</div>'+
     '<div style="background:var(--card);border-radius:16px;padding:18px 18px 12px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid transparent;background-image:linear-gradient(var(--card),var(--card)),linear-gradient(90deg,#6366f1,#f59e0b);background-origin:border-box;background-clip:padding-box,border-box">'+
-      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px">💰 Ganancia neta diaria — últimos 30 días</div>'+
+      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px;display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Ganancia neta diaria — últimos 30 días</span></div>'+
       '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Ingresos después de costos y logística</div>'+
       '<canvas id="avLinea" height="75"></canvas>'+
     '</div>'+
@@ -8808,14 +8852,14 @@ PAGES.analitica_dlv=function(){
       '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+canc.length+'</div></div>'+
     '</div>'+
     '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:18px 18px 12px;margin-bottom:14px">'+
-      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px">📊 Entregas — últimos 30 días</div>'+
+      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px;display:inline-flex;align-items:center;gap:6px">'+SVG.chart+'<span>Entregas — últimos 30 días</span></div>'+
       '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Pedidos entregados por día</div>'+
       (days30.some(d=>entByDay[d]>0)
         ?'<canvas id="adlvLinea" height="75"></canvas>'
         :'<div style="text-align:center;padding:28px;color:var(--text3);font-size:13px">Sin entregas en los últimos 30 días</div>')+
     '</div>'+
     (topZonas.length?
-      '<div class="tc" style="margin-bottom:14px"><div class="th2"><span class="tt">📍 Top Zonas de Entrega</span></div>'+
+      '<div class="tc" style="margin-bottom:14px"><div class="th2"><span class="tt"><span style="display:inline-flex;align-items:center;gap:6px">'+SVG.map+'<span>Top Zonas de Entrega</span></span></span></div>'+
       '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
       '<th>Zona</th><th style="text-align:center">Entregas</th><th style="text-align:right">% del total</th></tr></thead><tbody>'+
       topZonas.map(([z,n])=>
@@ -8824,7 +8868,7 @@ PAGES.analitica_dlv=function(){
         '<td style="text-align:right;color:var(--text2);font-size:12px">'+(ent.length?Math.round(n/ent.length*100):0)+'%</td></tr>'
       ).join('')+
       '</tbody></table></div></div>':'')+
-    '<div class="tc"><div class="th2"><span class="tt">💰 Ingresos acumulados</span></div>'+
+    '<div class="tc"><div class="th2"><span class="tt"><span style="display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Ingresos acumulados</span></span></span></div>'+
     '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
     '<th>Período</th><th style="text-align:right">Entregas</th><th style="text-align:right">Valor</th></tr></thead><tbody>'+
     '<tr><td>Hoy</td><td style="text-align:right">'+entHoy+'</td><td style="text-align:right;color:var(--green);font-weight:700">'+fmt(ingHoy)+'</td></tr>'+
@@ -8929,7 +8973,7 @@ PAGES.analitica_admin=function(){
       '<div class="sc bl"><div class="slabel">Ticket promedio</div><div class="sval" style="font-size:14px">'+fmt(ticketProm)+'</div></div>'+
       '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+orders.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
     '</div>'+
-    '<div class="stitle">💰 Flujo Financiero — pedidos entregados</div>'+
+    '<div class="stitle"><span style="display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Flujo Financiero — pedidos entregados</span></span></div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:16px">'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #22c55e">'+
         '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">💵 Ingresos brutos</div>'+
@@ -9125,13 +9169,33 @@ async function saveNewUser(){
 }
 function editUser(id){
   const u=_usersCache.find(x=>x.id===id);if(!u)return;
+  const esDelivery=(u.rol==='delivery');
+  const pagoMetodo=u.pago_metodo||'cupo';
+  const pagoNotas=u.pago_notas||'';
+  // Sección método de pago: visible solo si rol = delivery. Se toggleea con _togglePagoSection.
+  const pagoSectionHtml=
+    '<div id="euPagoSection" class="pago-config-section" style="display:'+(esDelivery?'block':'none')+';margin-top:14px;padding:14px;background:var(--bg2);border-radius:10px;border:1px solid var(--border2)">'+
+      '<h4 style="margin:0 0 10px 0;font-size:13px;font-weight:600;color:var(--text)">Método de pago del Delivery</h4>'+
+      '<div class="fg"><label>Modalidad</label>'+
+        '<select id="euPagoMetodo" onchange="_renderPagoConfig(this.value)">'+
+          '<option value="cupo" '+(pagoMetodo==='cupo'?'selected':'')+'>Por cupo mensual</option>'+
+          '<option value="porPedido" '+(pagoMetodo==='porPedido'?'selected':'')+'>Por pedido entregado</option>'+
+          '<option value="fija" '+(pagoMetodo==='fija'?'selected':'')+'>Tarifa fija mensual</option>'+
+          '<option value="externa" '+(pagoMetodo==='externa'?'selected':'')+'>Logística externa (Uber, PedidosYa, etc.)</option>'+
+        '</select>'+
+      '</div>'+
+      '<div id="euPagoConfigCampos"></div>'+
+      '<div class="fg"><label>Notas del acuerdo (opcional)</label>'+
+        '<textarea id="euPagoNotas" rows="2" maxlength="500" placeholder="Ej: Acuerdo cerrado por 6 meses. Bonus de 10% al cumplir 100 entregas.">'+escHtml(pagoNotas)+'</textarea>'+
+      '</div>'+
+    '</div>';
   openA('Editar — '+escHtml(u.nombre||''),
     '<div class="fg"><label>Nombre</label><input type="text" id="euNom" value="'+escAttr(u.nombre)+'" autocomplete="off"></div>'+
     '<div class="frow"><div class="fg"><label>Email</label><input type="email" id="euEmail" value="'+escAttr(u.email)+'" autocomplete="off"></div>'+
     '<div class="fg"><label>Nueva contraseña</label>'+pwdField('euPass','(sin cambios)')+'</div></div>'+
     (u.rol==='superadmin'
       ?'<div class="fg"><label>Rol</label><div style="padding:8px 0;font-size:13px;color:var(--text2)">Superadministrador <span style="font-size:11px;color:var(--text3)">(rol fijo — no modificable)</span></div></div>'
-      :'<div class="fg"><label>Rol</label><select id="euRol">'+
+      :'<div class="fg"><label>Rol</label><select id="euRol" onchange="_togglePagoSection(this.value)">'+
        (CU.rol==='superadmin'?['vendedor','dropshipper','delivery','proveedor','cliente','admin']:['vendedor','dropshipper','delivery','proveedor','cliente']).map(r=>'<option value="'+r+'" '+(u.rol===r?'selected':'')+'>'+escHtml(capRole(r))+'</option>').join('')+
        '</select></div>')+
     '<div class="frow"><div class="fg"><label>Vehículo</label><select id="euVeh">'+
@@ -9141,10 +9205,98 @@ function editUser(id){
     '</select></div>'+
     '<div class="fg"><label>Patente</label><input type="text" id="euPat" value="'+escAttr(u.patente)+'"></div></div>'+
     '<div class="fg"><label>WhatsApp</label><input type="text" id="euWa" value="'+escAttr(u.whatsapp)+'"></div>'+
+    pagoSectionHtml+
     '<div id="euAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveEditUser('+id+')">Guardar</button>'
   );
+  try{ _renderPagoConfig(pagoMetodo, u.pago_config||{}); }catch(_){}
+}
+function _togglePagoSection(rol){
+  const s=document.getElementById('euPagoSection');
+  if(s) s.style.display=(rol==='delivery'?'block':'none');
+}
+function _renderPagoConfig(metodo, cfg){
+  const c=document.getElementById('euPagoConfigCampos');
+  if(!c) return;
+  cfg=cfg||{};
+  switch(metodo){
+    case 'cupo':
+      c.innerHTML=
+        '<div class="fg"><label>Cupo mensual de pedidos</label>'+
+          '<input type="number" id="euPagoCupoMensual" min="0" step="1" value="'+(cfg.cupo_mensual!=null?cfg.cupo_mensual:100)+'"></div>'+
+        '<div class="fg"><label>Premio por completar cupo (Gs)</label>'+
+          '<input type="number" id="euPagoPremioCupo" min="0" step="1000" value="'+(cfg.premio_x_cupo!=null?cfg.premio_x_cupo:50000)+'"></div>';
+      break;
+    case 'porPedido':
+      c.innerHTML=
+        '<div class="fg"><label>Monto por pedido entregado (Gs)</label>'+
+          '<input type="number" id="euPagoMontoPedido" min="0" step="1000" value="'+(cfg.monto_por_pedido!=null?cfg.monto_por_pedido:20000)+'"></div>';
+      break;
+    case 'fija':
+      c.innerHTML=
+        '<div class="fg"><label>Monto mensual fijo (Gs)</label>'+
+          '<input type="number" id="euPagoMontoFijo" min="0" step="1000" value="'+(cfg.monto_mensual!=null?cfg.monto_mensual:1500000)+'"></div>';
+      break;
+    case 'externa':
+      c.innerHTML=
+        '<div class="fg"><label>Plataforma</label>'+
+          '<input type="text" id="euPagoPlataforma" placeholder="Uber, PedidosYa, etc." maxlength="50" value="'+escAttr(cfg.plataforma||'')+'"></div>'+
+        '<div class="fg"><label>Comisión plataforma (%)</label>'+
+          '<input type="number" id="euPagoComisionPct" min="0" max="100" step="0.1" value="'+(cfg.comision_pct!=null?cfg.comision_pct:15)+'"></div>'+
+        '<div class="fg"><label>Tarifa base por entrega (Gs)</label>'+
+          '<input type="number" id="euPagoTarifaBase" min="0" step="1000" value="'+(cfg.tarifa_base!=null?cfg.tarifa_base:18000)+'"></div>';
+      break;
+    default:
+      c.innerHTML='';
+  }
+}
+function _collectPagoConfig(){
+  const metodoEl=document.getElementById('euPagoMetodo');
+  if(!metodoEl) return null;
+  const metodo=metodoEl.value||'cupo';
+  const g=function(id){ return document.getElementById(id); };
+  let cfg={};
+  if(metodo==='cupo'){
+    cfg={
+      cupo_mensual: parseInt((g('euPagoCupoMensual')&&g('euPagoCupoMensual').value)||100,10),
+      premio_x_cupo: parseInt((g('euPagoPremioCupo')&&g('euPagoPremioCupo').value)||50000,10)
+    };
+  } else if(metodo==='porPedido'){
+    cfg={ monto_por_pedido: parseInt((g('euPagoMontoPedido')&&g('euPagoMontoPedido').value)||20000,10) };
+  } else if(metodo==='fija'){
+    cfg={ monto_mensual: parseInt((g('euPagoMontoFijo')&&g('euPagoMontoFijo').value)||0,10) };
+  } else if(metodo==='externa'){
+    cfg={
+      plataforma: ((g('euPagoPlataforma')&&g('euPagoPlataforma').value)||'').slice(0,50),
+      comision_pct: parseFloat((g('euPagoComisionPct')&&g('euPagoComisionPct').value)||15),
+      tarifa_base: parseInt((g('euPagoTarifaBase')&&g('euPagoTarifaBase').value)||0,10)
+    };
+  }
+  const notas=((g('euPagoNotas')&&g('euPagoNotas').value)||'').slice(0,500);
+  return { metodo: metodo, config: cfg, notas: notas };
+}
+// Cálculo de pago del delivery según método configurado.
+// Si no hay método, asume 'cupo' (compat con sistema actual).
+function _calcularPagoDelivery(usuario, pedidosDelMes){
+  const m=(usuario&&usuario.pago_metodo)||'cupo';
+  const c=(usuario&&usuario.pago_config)||{};
+  const entregados=(pedidosDelMes||[]).filter(function(p){return p&&p.estado==='Entregado';}).length;
+  if(m==='porPedido'){
+    return entregados*(c.monto_por_pedido||0);
+  }
+  if(m==='fija'){
+    return c.monto_mensual||0;
+  }
+  if(m==='externa'){
+    const bruto=entregados*(c.tarifa_base||0);
+    const comision=bruto*((c.comision_pct||0)/100);
+    return bruto-comision;
+  }
+  if(entregados>=(c.cupo_mensual||100)){
+    return c.premio_x_cupo||0;
+  }
+  return 0;
 }
 async function saveEditUser(id){
   const u=_usersCache.find(x=>x.id==id);if(!u)return;
@@ -9155,6 +9307,15 @@ async function saveEditUser(id){
   if(gv('euRol')&&u.rol!=='superadmin')u.rol=gv('euRol');
   u.vehiculo=gv('euVeh');u.patente=gv('euPat');u.whatsapp=gv('euWa');
   if(!u.contactos)u.contactos=[];
+  // Método de pago (solo si el rol resultante es 'delivery')
+  if(u.rol==='delivery'){
+    const pago=_collectPagoConfig();
+    if(pago){
+      u.pago_metodo=pago.metodo;
+      u.pago_config=pago.config;
+      u.pago_notas=pago.notas;
+    }
+  }
   const idx=_usersCache.findIndex(x=>x.id==id);
   if(idx>=0)_usersCache[idx]=u;
   showAlert('euAlert','i','Guardando...');
@@ -9867,7 +10028,7 @@ function openNuevoProducto(){
     '<div class="fg"><label>Descripción del producto <span style="font-size:10px;color:var(--text3)">— pegá desde Shopify o escribí</span></label>'+
       _richEditorHTML('npDesc')+'</div>'+
     // PRECIOS
-    '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">💰 Precios</div>'+
+    '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Precios</span></div>'+
     '<div class="fg"><label>Precio anterior (tachado) <span style="font-size:10px;color:var(--text3)">— el precio "antes" que aparece tachado</span></label><input type="number" id="npPrecioComp" placeholder="0" min="0"></div>'+
     '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">💡 Los precios de venta (vendedor, dropshipper, proveedor) se cargan por presentación.</div>'+
     // INVENTARIO
@@ -10804,7 +10965,7 @@ function openPerfilUsuario(){
     )+
     (('PushManager' in window)?(function(){const _ok=Notification?.permission==='granted';return(
       '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">'+
-      '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">🔔 Notificaciones push</div>'+
+      '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Notificaciones push</div>'+
       '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);padding:12px 14px;border-radius:var(--radius);gap:10px">'+
       '<div style="font-size:13px;color:var(--text2)">Recibí alertas de pedidos y mensajes en este dispositivo.</div>'+
       '<button id="pfPushBtn" class="toggleBtn '+(_ok?'on':'off')+'" onclick="_togglePushNotif()"><span class="dot"></span>🔔 '+(_ok?'Activadas':'Activar')+'</button>'+
@@ -10816,7 +10977,7 @@ function openPerfilUsuario(){
       const _d=(_cfg.despachado!==false);
       const _r=(_cfg.enruta!==false);
       return '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">'+
-        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📱 WhatsApp por estado de pedido</div>'+
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">WhatsApp por estado de pedido</div>'+
         '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer">'+
           '<input type="checkbox" id="prefWaDespachado"'+(_d?' checked':'')+' onchange="_savePrefWaDespachado(this.checked)" style="width:18px;height:18px;cursor:pointer">'+
           '<span style="font-size:13px;color:var(--text2)">Recibir WhatsApp cuando despachen mi pedido</span>'+
@@ -10863,7 +11024,7 @@ function openPerfilUsuario(){
     '</select></div>'+
     '<div class="fg"><label>Número de cuenta</label><input type="text" inputmode="numeric" pattern="[0-9-]*" id="pfNroCuenta" value="'+escAttr(u.nro_cuenta)+'" placeholder="0000000000000"></div></div>'+
     '<div class="fg"><label>Titular de la cuenta</label><input type="text" id="pfTitular" value="'+escAttr(u.titular_cuenta)+'" placeholder="Nombre exacto como figura en el banco"></div>'+
-    '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:18px 0 12px">📱 Billetera digital</div>'+
+    '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:18px 0 12px">Billetera digital</div>'+
     '<div class="frow"><div class="fg"><label>Tipo de billetera</label><select id="pfWalletTipo">'+
     '<option value="">— Ninguna —</option>'+
     ['Billetera Personal PY','Tigo Money','Claro Pay','Otro'].map(w=>'<option value="'+w+'" '+(u.wallet_tipo===w?'selected':'')+'>'+w+'</option>').join('')+
@@ -11321,7 +11482,7 @@ PAGES.config=function(){
       '<button class="btn btn-primary" onclick="saveCfgAPIs()">Guardar y reconectar Supabase</button>'+
     '</div>'+
     '<div class="lcard2">'+
-      '<div class="stitle" style="margin-top:0">📱 WhatsApp automático</div>'+
+      '<div class="stitle" style="margin-top:0"><span style="display:inline-flex;align-items:center;gap:6px">'+SVG.chat+'<span>WhatsApp automático</span></span></div>'+
       '<div class="fg"><label><input type="checkbox" id="cfgWaE" '+(cfg.waEnabled?'checked':'')+' style="margin-right:6px;width:auto"> Activar mensajes automáticos</label></div>'+
       '<div class="fg"><label>Mensaje pedido confirmado (usa {id},{producto},{cliente})</label><textarea id="cfgWaP">'+escHtml(cfg.waMsgPedido||DEF_CONFIG.waMsgPedido)+'</textarea></div>'+
       '<div class="fg"><label>Mensaje no contesta</label><textarea id="cfgWaNC">'+escHtml(cfg.waMsgNoContesta||DEF_CONFIG.waMsgNoContesta)+'</textarea></div>'+
@@ -12514,19 +12675,22 @@ function _mapaUpdateContadores(){
       if(found)dlvCurrentName=(found.nombre||found.email||('ID '+found.id));
     }
   }catch(e){}
-  const dlvSel='<div class="search-combo" id="dlvSearchCombo">'+
+  // El combobox de búsqueda de delivery solo aplica para roles que ven varios deliveries.
+  // Un usuario con rol 'delivery' solo se ve a sí mismo, así que lo ocultamos.
+  const _esDeliveryRol=(typeof CU!=='undefined'&&CU&&CU.rol==='delivery');
+  const dlvSel=_esDeliveryRol?'':('<div class="search-combo" id="dlvSearchCombo">'+
     '<svg class="search-combo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>'+
     '<input type="text" class="search-combo-input" id="dlvSearchInput" placeholder="Buscar delivery..." autocomplete="off" value="'+escAttr(dlvCurrentName)+'">'+
     '<button type="button" class="search-combo-clear'+(dlvCurrentName?' show':'')+'" id="dlvSearchClear" aria-label="Limpiar"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>'+
     '<ul class="search-combo-list" id="dlvSearchList"></ul>'+
-    '</div>';
+    '</div>');
 
   // Fila secundaria de botones por zona eliminada: ya están en el dropdown #mapaZonaCombo (evita duplicación).
 
-  el.innerHTML=btnsEstado+btnsTipo+'<div class="sep"></div>'+dlvSel;
+  el.innerHTML=btnsEstado+btnsTipo+(dlvSel?'<div class="sep"></div>'+dlvSel:'');
 
-  // Cablear combobox custom de delivery
-  try{_setupDlvSearchCombo();}catch(e){console.warn('dlvCombo setup',e);}
+  // Cablear combobox custom de delivery (solo si está en el DOM)
+  if(!_esDeliveryRol){try{_setupDlvSearchCombo();}catch(e){console.warn('dlvCombo setup',e);}}
 
   window._mapaFiltro=(fEst==='Todos')?null:fEst;
 }
@@ -13364,27 +13528,22 @@ function _gpsLoopTick(){
   },{enableHighAccuracy:true,timeout:8000,maximumAge:0});
 }
 let _gpsBannerTimer=null;
-function _gpsBannerEnsure(){
-  let el=document.getElementById('gpsConsentBanner');
-  if(el)return el;
-  el=document.createElement('div');
-  el.id='gpsConsentBanner';
-  el.style.cssText='display:none;position:fixed;top:64px;left:50%;transform:translateX(-50%);background:rgba(34,197,94,0.95);color:#fff;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:600;z-index:9000;gap:8px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
-  el.innerHTML='<span>📍 Compartiendo ubicación</span> <span id="gpsConsentDur" style="opacity:.85;font-weight:500"></span> <button id="gpsConsentPause" type="button" style="background:rgba(0,0,0,.25);border:none;color:#fff;padding:4px 10px;border-radius:8px;cursor:pointer;font-weight:600;font-size:12px">Pausar</button>';
-  document.body.appendChild(el);
-  const btn=el.querySelector('#gpsConsentPause');
-  if(btn)btn.addEventListener('click',function(){
+function _gpsToggleFromPill(){
+  if(confirm('¿Pausar compartir ubicación?')){
     _gpsLoopStop();
     if(typeof pushNotif==='function')pushNotif('Compartido de ubicación pausado','i');
-  });
-  return el;
+  }
 }
 function _gpsBannerShow(){
-  const el=_gpsBannerEnsure();
-  el.style.display='flex';
+  // Eliminar banner viejo si quedó suelto en el DOM
+  const oldEl=document.getElementById('gpsConsentBanner');
+  if(oldEl)oldEl.remove();
+  const pill=document.getElementById('gpsStatusPill');
+  if(!pill)return;
+  pill.classList.add('active');
   if(_gpsBannerTimer)clearInterval(_gpsBannerTimer);
   const upd=function(){
-    const dur=document.getElementById('gpsConsentDur');
+    const dur=pill.querySelector('.gps-pill-time');
     if(!dur)return;
     const s=Math.max(0,Math.floor((Date.now()-_gpsLoopStartTime)/1000));
     const mm=String(Math.floor(s/60)).padStart(2,'0');
@@ -13395,8 +13554,10 @@ function _gpsBannerShow(){
   _gpsBannerTimer=setInterval(upd,1000);
 }
 function _gpsBannerHide(){
-  const el=document.getElementById('gpsConsentBanner');
-  if(el)el.style.display='none';
+  const pill=document.getElementById('gpsStatusPill');
+  if(pill)pill.classList.remove('active');
+  const oldEl=document.getElementById('gpsConsentBanner');
+  if(oldEl)oldEl.remove();
   if(_gpsBannerTimer){clearInterval(_gpsBannerTimer);_gpsBannerTimer=null;}
 }
 function _gpsLoopStart(order){
@@ -13513,7 +13674,8 @@ PAGES.mapa=function(){
   if(esDelivery&&!window._mapaFiltroDelivery)window._mapaFiltroDelivery=String(CU.id);
   if(esLimitado&&!window._mapaFiltroVend)window._mapaFiltroVend=String(CU.id);
   $('tbTitle').textContent=esDelivery?'Mis pedidos — Mapa':'Mapa de Pedidos';
-  const zonaSel=!esDelivery?'<div id="mapaZonaCombo" class="search-combo"></div>':'';
+  // Combo de Zona disponible para todos los roles (incluyendo delivery) para filtrar por zona.
+  const zonaSel='<div id="mapaZonaCombo" class="search-combo"></div>';
   const vendSel=esDelivery
     ?''
     :'<div id="mapaVendCombo" class="search-combo"></div>';
@@ -13733,7 +13895,7 @@ PAGES.perfil=function(){
           '<span style="color:var(--text);font-size:14px">Recibir notificaciones push del navegador</span>'+
         '</label>'+
         '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">'+
-          '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">📱 WhatsApp por estado de pedido</div>'+
+          '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;display:inline-flex;align-items:center;gap:6px">'+SVG.chat+'<span>WhatsApp por estado de pedido</span></div>'+
           '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer">'+
             '<input type="checkbox" id="prefWaDespachado"'+(waDespOn?' checked':'')+' onchange="_savePrefWaDespachado(this.checked)" style="width:18px;height:18px;cursor:pointer">'+
             '<span style="color:var(--text2);font-size:13px">Avisarme cuando despachen mi pedido</span>'+
@@ -14142,7 +14304,7 @@ PAGES.pagos=function(){
         '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px">💼 Tu Estado Financiero — '+mes+'</div>'+
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px">'+
           '<div style="text-align:center;padding:12px;background:var(--bg3);border-radius:12px">'+
-            '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">💰 Ganado mes</div>'+
+            '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;display:inline-flex;align-items:center;gap:4px">'+SVG.dollar+'<span>Ganado mes</span></div>'+
             '<div style="font-size:20px;font-weight:900;color:var(--accent)">'+fmt(ganado)+'</div>'+
           '</div>'+
           '<div style="text-align:center;padding:12px;background:var(--bg3);border-radius:12px">'+
@@ -14773,7 +14935,7 @@ PAGES.pago_usuario=function(){
       '</div>'+
       // Calendario navegable (TAREA 3)
       '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:16px">'+
-        '<div style="font-size:12px;font-weight:800;text-transform:uppercase;color:var(--text2);margin-bottom:8px">📅 Calendario</div>'+
+        '<div style="font-size:12px;font-weight:800;text-transform:uppercase;color:var(--text2);margin-bottom:8px;display:inline-flex;align-items:center;gap:6px">'+SVG.calendar+'<span>Calendario</span></div>'+
         _calNavHtml+
         '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase;text-align:center;margin-top:8px">'+
           ['L','M','X','J','V','S','D'].map(x=>'<div>'+x+'</div>').join('')+
@@ -14813,7 +14975,7 @@ PAGES.pago_usuario=function(){
 // ── Histórico mensual (últimos 12 meses) ──
 function _renderHistoricoMensual(userId){
   if (!_ordersCache || _ordersCache.length === 0) {
-    return '<div class="historico-mensual"><h3 style="font-size:14px;font-weight:800;margin:24px 0 12px;display:flex;align-items:center;gap:8px">📅 Histórico Mensual</h3><div style="padding:24px;text-align:center;color:var(--text2);background:var(--bg2);border-radius:10px">Sin pedidos registrados</div></div>';
+    return '<div class="historico-mensual"><h3 style="font-size:14px;font-weight:800;margin:24px 0 12px;display:flex;align-items:center;gap:8px">'+SVG.calendar+'<span>Histórico Mensual</span></h3><div style="padding:24px;text-align:center;color:var(--text2);background:var(--bg2);border-radius:10px">Sin pedidos registrados</div></div>';
   }
   const ahora = new Date();
   const meses = [];
@@ -14837,7 +14999,7 @@ function _renderHistoricoMensual(userId){
     meses.push({ mesKey, nombreMes, pedidos: cantidad, cobrado, esActual: i === 0 });
   }
   return '<div class="historico-mensual">'+
-    '<h3 style="font-size:14px;font-weight:800;margin:24px 0 12px;display:flex;align-items:center;gap:8px">📅 Histórico Mensual (12 meses)</h3>'+
+    '<h3 style="font-size:14px;font-weight:800;margin:24px 0 12px;display:flex;align-items:center;gap:8px">'+SVG.calendar+'<span>Histórico Mensual (12 meses)</span></h3>'+
     '<div class="historico-grid">'+
     meses.map(m =>
       '<div class="hmes'+(m.esActual?' actual':'')+'">'+
