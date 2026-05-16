@@ -4344,8 +4344,18 @@ async function _loadFacturasB2B(){
   body.innerHTML='<div style="text-align:center;padding:28px;color:var(--text3)">Cargando facturas...</div>';
   if(!_supa){body.innerHTML='<div class="alert alrt-e">Supabase no disponible.</div>';return;}
   try{
-    const{data,error}=await _supa.from('facturas_b2b').select('*').or('emisor_id.eq.'+u.id+',receptor_id.eq.'+u.id).order('created_at',{ascending:false}).limit(20);
-    if(error)throw error;
+    // TODO: verificar columna real en Supabase. Schema esperado: id, emisor_id, receptor_id, monto, descripcion, estado, created_at.
+    // Si esta query falla con "column ... does not exist" o "relation ... does not exist",
+    // aplicar sql/migration_facturas_b2b.sql en el SQL Editor de Supabase.
+    const{data,error}=await _supa.from('facturas_b2b').select('id,emisor_id,receptor_id,monto,descripcion,estado,created_at').or('emisor_id.eq.'+u.id+',receptor_id.eq.'+u.id).order('created_at',{ascending:false}).limit(20);
+    if(error){
+      var msg=(error.message||'')+'';
+      if(/does not exist|column .* does not exist|relation .* does not exist|schema cache/i.test(msg)){
+        body.innerHTML='<div class="alert alrt-e">La tabla <b>facturas_b2b</b> no está creada o le faltan columnas en Supabase.<br>Aplicá <code>sql/migration_facturas_b2b.sql</code> en el SQL Editor.<br><small style="opacity:.7">Detalle: '+escHtml(msg)+'</small></div>';
+        return;
+      }
+      throw error;
+    }
     const rows=data||[];
     if(!rows.length){body.innerHTML='<div style="text-align:center;padding:46px 16px;color:var(--text3);background:var(--card);border:1px solid var(--border);border-radius:12px">Sin facturas aún 📄</div>';return;}
     body.innerHTML='<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
