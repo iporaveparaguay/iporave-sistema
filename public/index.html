@@ -292,6 +292,16 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 :root[data-theme="light"] .mapa-locate-btn,
 :root[data-theme="light-soft"] .mapa-locate-btn{background:rgba(255,255,255,0.92);color:#1a1a1a;border:1px solid rgba(0,0,0,0.1);}
 .mapa-estilo-fade #ordersMap{transition:opacity .2s ease;opacity:.0;}
+/* MAPA MOBILE: menú 3 puntos */
+.mapa-secundarios{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.mapa-menu-btn{display:none;}
+.mapa-secundarios-panel{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;}
+@media(max-width:640px){
+  .mapa-menu-btn{display:inline-flex;}
+  .mapa-secundarios-panel{display:none;position:absolute;top:100%;right:0;z-index:200;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:8px;gap:6px;flex-direction:column;align-items:stretch;box-shadow:0 8px 24px rgba(0,0,0,.35);min-width:180px;}
+  .mapa-secundarios-panel.open{display:flex;}
+  .mapa-secundarios{position:relative;}
+}
 /* APP LAYOUT */
 #appScreen{display:none;min-height:100vh;}
 #appScreen.show{display:flex;}
@@ -2050,7 +2060,7 @@ function bE(e){
     'No contesta 1°':'bn1','No contesta 2°':'bn2','No contesta 3°':'bn3',Reprogramado:'brp',Devuelto:'bret'};
   return '<span class="badge '+(m[e]||'bp')+'">'+e+'</span>';
 }
-function openA(t,b,f,size=''){$('mABox').className='mbox'+(size?' '+size:'');$('mATitle').textContent=t;$('mABody').innerHTML=b;$('mAFoot').innerHTML=f||'';$('mA').classList.add('open');}
+function openA(t,b,f,size=''){$('mABox').className='mbox'+(size?' '+size:'');$('mATitle').innerHTML=t;$('mABody').innerHTML=b;$('mAFoot').innerHTML=f||'';$('mA').classList.add('open');}
 function closeA(){$('mA').classList.remove('open');}
 function openB(t,b,f){$('mBTitle').textContent=t;$('mBBody').innerHTML=b;$('mBFoot').innerHTML=f||'';$('mB').classList.add('open');}
 function closeB(){$('mB').classList.remove('open');}
@@ -4465,6 +4475,7 @@ const NAV_CFG={
       {id:'mapa',l:'Mapa en tiempo real',ic:'map'},
     ]},
     {s:'Reportes',items:[
+      {id:'configuracion_delivery',l:'Configuración Delivery',ic:'truck'},
       {id:'recaudacion',l:'Recaudación Delivery',ic:'truck'},{id:'boletas',l:'Boletas IVA',ic:'receipt'},
       {id:'cierre',l:'Cierre de jornada',ic:'sun'},{id:'estadisticas',l:'Estadísticas Avanzadas',ic:'chart'},
     ]},
@@ -4491,6 +4502,7 @@ const NAV_CFG={
       {id:'mapa',l:'Mapa en tiempo real',ic:'map'},
     ]},
     {s:'Reportes',items:[
+      {id:'configuracion_delivery',l:'Configuración Delivery',ic:'truck'},
       {id:'recaudacion',l:'Recaudación Delivery',ic:'truck'},{id:'boletas',l:'Boletas IVA',ic:'receipt'},
       {id:'cierre',l:'Cierre de jornada',ic:'sun'},{id:'estadisticas',l:'Estadísticas Avanzadas',ic:'chart'},
     ]},
@@ -8197,13 +8209,130 @@ PAGES.cupo=function(){
   })();
 };
 
+/* ─── CONFIGURACIÓN DELIVERY ─── */
+PAGES.configuracion_delivery=async function(){
+  if(!isAdminLike(CU.rol)){$('ca').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)">Sin acceso.</div>';return;}
+  $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">Cargando...</div>';
+  await DL.getUsers();
+  const dlvs=(_usersCache||[]).filter(u=>u.rol==='delivery');
+  if(!dlvs.length){
+    $('ca').innerHTML=
+      '<div class="tc"><div class="th2"><span class="tt" style="display:inline-flex;align-items:center;gap:8px">'+SVG.truck+'Configuración del Delivery</span></div>'+
+      '<div style="padding:60px;text-align:center;color:var(--text3)">'+
+        '<div style="margin-bottom:12px;opacity:.4">'+SVG.truck+'</div>'+
+        '<div style="font-weight:700;font-size:15px;margin-bottom:8px">Sin personal de delivery</div>'+
+        '<div style="font-size:13px">Creá primero un usuario con rol Delivery desde la sección Usuarios.</div>'+
+      '</div></div>';
+    return;
+  }
+  const etiqMetodo={cupo:'Cupo mensual',porPedido:'Por entrega',fija:'Salario fijo',externa:'Logística externa'};
+  const rows=dlvs.map(d=>{
+    const met=d.pago_metodo||'cupo';
+    const badgeColor=met==='cupo'?'var(--accent)':met==='porPedido'?'var(--green)':met==='fija'?'#3b82f6':'#7c3aed';
+    return '<tr>'+
+      '<td style="font-weight:600">'+escHtml(d.nombre||'—')+'</td>'+
+      '<td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;background:'+badgeColor+'22;color:'+badgeColor+'">'+escHtml(etiqMetodo[met]||met)+'</span></td>'+
+      '<td><button class="btn btn-secondary btn-sm" onclick="_abrirConfigDelivery('+d.id+')">Configurar</button></td>'+
+    '</tr>';
+  }).join('');
+  $('ca').innerHTML=
+    '<div class="tc">'+
+      '<div class="th2"><span class="tt" style="display:inline-flex;align-items:center;gap:8px">'+SVG.truck+'<span>Configuración del Delivery</span></span></div>'+
+      '<div style="overflow-x:auto">'+
+        '<table class="tbl"><thead><tr>'+
+          '<th>Delivery</th><th>Método de pago</th><th></th>'+
+        '</tr></thead><tbody>'+rows+'</tbody></table>'+
+      '</div>'+
+    '</div>';
+};
+
+function _abrirConfigDelivery(userId){
+  const u=(_usersCache||[]).find(x=>x.id===userId);
+  if(!u)return;
+  const met=u.pago_metodo||'cupo';
+  const notas=u.pago_notas||'';
+  openA(
+    SVG.truck+' Configurar pago — '+escHtml(u.nombre||''),
+    '<div class="fg"><label>Delivery</label>'+
+      '<input type="text" value="'+escHtml(u.nombre||'')+'" disabled style="background:var(--bg2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;width:100%;box-sizing:border-box">'+
+    '</div>'+
+    '<div class="fg"><label>Método de pago</label>'+
+      '<select id="cdMetodo" onchange="_renderCamposMetodoPago(this.value)">'+
+        '<option value="cupo" '+(met==='cupo'?'selected':'')+'>Cupos mensuales</option>'+
+        '<option value="porPedido" '+(met==='porPedido'?'selected':'')+'>Pago por entrega</option>'+
+        '<option value="fija" '+(met==='fija'?'selected':'')+'>Salario fijo mensual</option>'+
+        '<option value="externa" '+(met==='externa'?'selected':'')+'>Logística externa</option>'+
+      '</select>'+
+    '</div>'+
+    '<div id="cdCamposDinamicos"></div>'+
+    '<div class="fg"><label>Notas del acuerdo <span style="color:var(--text3);font-weight:400">(opcional)</span></label>'+
+      '<textarea id="cdNotas" rows="3" maxlength="500" style="resize:vertical" placeholder="Ej: Acuerdo revisable cada 3 meses.">'+escHtml(notas)+'</textarea>'+
+    '</div>'+
+    '<div id="cdAlert"></div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-primary" onclick="_guardarConfigDelivery('+userId+')">Guardar</button>'
+  );
+  setTimeout(()=>_renderCamposMetodoPago(met, u.pago_config||{}),80);
+}
+
+function _renderCamposMetodoPago(metodo, cfg){
+  const c=document.getElementById('cdCamposDinamicos');
+  if(!c)return;
+  cfg=cfg||{};
+  if(metodo==='cupo'){
+    c.innerHTML='<div class="frow">'+
+      '<div class="fg"><label>Cupo mensual (pedidos)</label><input type="number" id="cdCupoMensual" inputmode="numeric" min="0" value="'+(cfg.cupo_mensual!=null?cfg.cupo_mensual:100)+'"></div>'+
+      '<div class="fg"><label>Premio por cupo (Gs.)</label><input type="number" id="cdPremioCupo" inputmode="numeric" min="0" value="'+(cfg.premio_x_cupo!=null?cfg.premio_x_cupo:50000)+'"></div>'+
+    '</div>';
+  } else if(metodo==='porPedido'){
+    c.innerHTML='<div class="fg"><label>Monto por entrega (Gs.)</label><input type="number" id="cdMontoPedido" inputmode="numeric" min="0" value="'+(cfg.monto_por_pedido!=null?cfg.monto_por_pedido:20000)+'"></div>';
+  } else if(metodo==='fija'){
+    c.innerHTML='<div class="fg"><label>Monto mensual (Gs.)</label><input type="number" id="cdMontoFijo" inputmode="numeric" min="0" value="'+(cfg.monto_mensual!=null?cfg.monto_mensual:1500000)+'"></div>';
+  } else if(metodo==='externa'){
+    c.innerHTML='<div class="fg"><label>Plataforma</label><input type="text" id="cdPlataforma" placeholder="Uber, PedidosYa, Fixy..." maxlength="50" value="'+escHtml(cfg.plataforma||'')+'"></div>'+
+      '<div class="frow">'+
+        '<div class="fg"><label>Comisión (%)</label><input type="number" id="cdComisionPct" inputmode="numeric" min="0" max="100" step="0.1" value="'+(cfg.comision_pct!=null?cfg.comision_pct:15)+'"></div>'+
+        '<div class="fg"><label>Tarifa base (Gs.)</label><input type="number" id="cdTarifaBase" inputmode="numeric" min="0" value="'+(cfg.tarifa_base!=null?cfg.tarifa_base:18000)+'"></div>'+
+      '</div>';
+  } else { c.innerHTML=''; }
+}
+
+async function _guardarConfigDelivery(userId){
+  const metodoEl=document.getElementById('cdMetodo');
+  const alertEl=document.getElementById('cdAlert');
+  if(!metodoEl)return;
+  const metodo=metodoEl.value||'cupo';
+  const g=id=>document.getElementById(id);
+  let pago_config={};
+  if(metodo==='cupo'){
+    pago_config={cupo_mensual:parseInt((g('cdCupoMensual')&&g('cdCupoMensual').value)||0,10),premio_x_cupo:parseInt((g('cdPremioCupo')&&g('cdPremioCupo').value)||0,10)};
+  } else if(metodo==='porPedido'){
+    pago_config={monto_por_pedido:parseInt((g('cdMontoPedido')&&g('cdMontoPedido').value)||0,10)};
+  } else if(metodo==='fija'){
+    pago_config={monto_mensual:parseInt((g('cdMontoFijo')&&g('cdMontoFijo').value)||0,10)};
+  } else if(metodo==='externa'){
+    const plat=((g('cdPlataforma')&&g('cdPlataforma').value)||'').trim().slice(0,50);
+    if(!plat){if(alertEl)alertEl.innerHTML='<div style="color:#ef4444;font-size:13px;padding:6px 0">Ingresá el nombre de la plataforma.</div>';return;}
+    pago_config={plataforma:plat,comision_pct:parseFloat((g('cdComisionPct')&&g('cdComisionPct').value)||0),tarifa_base:parseInt((g('cdTarifaBase')&&g('cdTarifaBase').value)||0,10)};
+  }
+  const pago_notas=((g('cdNotas')&&g('cdNotas').value)||'').slice(0,500);
+  if(alertEl)alertEl.innerHTML='<div style="color:var(--text2);font-size:13px;padding:6px 0">Guardando...</div>';
+  const r=await DL.saveUser({id:userId,pago_metodo:metodo,pago_config:pago_config,pago_notas:pago_notas});
+  if(!r||!r.ok){if(alertEl)alertEl.innerHTML='<div style="color:#ef4444;font-size:13px;padding:6px 0">Error al guardar. Revisá la consola.</div>';return;}
+  const idx=(_usersCache||[]).findIndex(x=>x.id===userId);
+  if(idx>=0){_usersCache[idx].pago_metodo=metodo;_usersCache[idx].pago_config=pago_config;_usersCache[idx].pago_notas=pago_notas;}
+  closeA();
+  pushNotif('Configuración guardada','s');
+  PAGES.configuracion_delivery();
+}
+
 /* ─── BOLETAS ─── */
 PAGES.boletas=function(){
   const hoy=new Date().toISOString().slice(0,10);
   const primerDia=hoy.slice(0,8)+'01';
   const inp='style="background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;min-width:130px" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"';
   $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Boletas IVA</span></div>'+
-  '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px;margin-bottom:12px;padding-top:6px">'+
+  '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px;margin-bottom:12px;padding-top:6px;padding-left:16px">'+
   '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Desde <input type="date" id="bFD" value="'+primerDia+'" onchange="filtrarBoletas()" '+inp+'></label>'+
   '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Hasta <input type="date" id="bFH" value="'+hoy+'" onchange="filtrarBoletas()" '+inp+'></label>'+
   '<select id="bEst" onchange="filtrarBoletas()" '+inp+'>'+
@@ -9486,7 +9615,7 @@ PAGES.analitica_admin=function(){
       '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;display:inline-flex;align-items:center;gap:6px">'+SVG.trendingUp+'<span>Ingresos vs Ganancia — últimos 30 días</span></div>'+
       '<canvas id="aaLinea" height="80"></canvas>'+
     '</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:14px">'+
       '<div style="background:var(--card);border-radius:12px;padding:16px">'+
         '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">🧑‍💼 Ranking Vendedores / Dropshippers</div>'+
         (rankVend.length?rankVend.map((v,i)=>
@@ -10083,6 +10212,27 @@ function cerrarScannerCatalogo(){
   if(_scannerInstance){try{_scannerInstance.stop();}catch(e){}  _scannerInstance=null;}
   closeA();
 }
+let _scannerNP=null;
+function _scanParaNuevoProducto(){
+  openA(SVG.camera+' Escanear código',
+    '<div id="qr-reader-np" style="width:100%"></div>'+
+    '<div id="qr-result-np" style="margin-top:12px;font-size:13px;color:var(--text2);text-align:center">Apuntá la cámara al código del producto</div>',
+    '<button class="btn btn-secondary" onclick="_cerrarScanNP()">Cerrar</button>'
+  );
+  setTimeout(()=>{
+    try{
+      _scannerNP=new Html5Qrcode('qr-reader-np');
+      _scannerNP.start({facingMode:'environment'},{fps:10,qrbox:250},codigo=>{
+        _cerrarScanNP();
+        setTimeout(()=>{const campo=$('npCodigo');if(campo){campo.value=codigo;campo.focus();}},200);
+      });
+    }catch(e){const r=$('qr-result-np');if(r)r.textContent='Error al acceder a la cámara: '+e.message;}
+  },300);
+}
+function _cerrarScanNP(){
+  if(_scannerNP){try{_scannerNP.stop();}catch(e){} _scannerNP=null;}
+  closeA();
+}
 
 // Parser CSV robusto (maneja comillas y comas dentro de campos)
 function _parseCSVLine(line){
@@ -10492,6 +10642,7 @@ PAGES.catalogo_todos=function(q=''){
 
 function openNuevoProducto(){
   const provs=isAdminLike(CU.rol)?_usersCache.filter(u=>u.rol==='proveedor').map(u=>'<option value="'+escAttr(u.nombre)+'">'+escHtml(u.nombre||'')+'</option>').join(''):'';
+  const vends=isAdminLike(CU.rol)?_usersCache.filter(u=>u.rol==='vendedor').map(u=>'<option value="'+escAttr(u.nombre)+'">'+escHtml(u.nombre||'')+'</option>').join(''):'';
   const cats=['Línea Automotriz','Línea Hogar e Industrial','Ferretería','Electrónicos','Accesorios','Otro'].map(c=>'<option value="'+c+'">'+c+'</option>').join('');
   openA('Nuevo producto',
     // MULTIMEDIA
@@ -10511,7 +10662,7 @@ function openNuevoProducto(){
     '<div class="fg"><label>Nombre del producto</label><input type="text" id="npNom" maxlength="100" placeholder="Ej: Crystal Gloss Hybrid Pro"></div>'+
     '<div class="frow">'+
       '<div class="fg"><label>Categoría</label><select id="npCat"><option value="">Sin categoría</option>'+cats+'</select></div>'+
-      '<div class="fg"><label>Código de barras</label><input type="text" id="npCodigo" placeholder="EAN-13, QR..."></div>'+
+      '<div class="fg"><label>Código de barras</label><div style="display:flex;gap:6px;align-items:center"><input type="text" id="npCodigo" placeholder="EAN-13, QR..." style="flex:1"><button type="button" class="btn btn-secondary btn-sm" title="Escanear código" onclick="_scanParaNuevoProducto()" style="padding:6px 8px;flex-shrink:0">'+SVG.camera+'</button></div></div>'+
     '</div>'+
     // DESCRIPCIÓN
     '<div class="fg"><label>Descripción del producto <span style="font-size:10px;color:var(--text3)">— pegá desde Shopify o escribí</span></label>'+
@@ -10524,6 +10675,7 @@ function openNuevoProducto(){
     '<div class="frow">'+
       '<div class="fg"><label>Stock</label><input type="number" id="npStock" placeholder="0" min="0"></div>'+
       (provs?'<div class="fg"><label>Proveedor</label><select id="npProv"><option value="">Sin asignar</option>'+provs+'</select></div>':'<input type="hidden" id="npProv" value="">')+
+      (vends?'<div class="fg"><label>Vendedor <span style="font-size:10px;color:var(--text3)">(opcional)</span></label><select id="npVendedor"><option value="">Sin asignar</option>'+vends+'</select></div>':'<input type="hidden" id="npVendedor" value="">')+
     '</div>'+
     // PRESENTACIONES
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;margin-top:4px">📦 Presentaciones y precios</div>'+
@@ -10564,6 +10716,7 @@ async function saveNuevoProducto(){
   const nuevo={
     id,nombre:nom,
     proveedorNombre:gv('npProv')||'',
+    vendedorNombre:gv('npVendedor')||'',
     categoria:gv('npCat')||'',
     codigo_barras:gv('npCodigo')||'',
     descripcion_html:_getRichContent('npDesc')||'',
@@ -14225,7 +14378,9 @@ PAGES.mapa=function(){
   const _autoOn=(localStorage.getItem('mapa_auto')!=='0');
   window._mapaAutoUpdateEnabled=_autoOn;
   const autoToggle='<label class="map-btn" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer;user-select:none" title="Auto-actualizar el mapa cada 5 minutos (sin mover la cámara)"><input type="checkbox" id="mapaAutoUpdate" '+(_autoOn?'checked':'')+' onchange="_mapaToggleAutoUpdate(this)" style="margin:0"><span style="font-size:12px">Auto-actualizar</span></label>';
-  $('tbActions').innerHTML=zonaSel+vendSel+dlvBtn+rutaBtn+turnoBtn+autoToggle+'<button class="map-btn" onclick="_refreshActualPage()" title="Recargar mapa"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>';
+  const _recargarBtn='<button class="map-btn" onclick="_refreshActualPage()" title="Recargar mapa"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>';
+  const _tresPuntosBtn='<button class="map-btn mapa-menu-btn" onclick="(function(b){var p=b.closest(\'.mapa-secundarios\').querySelector(\'.mapa-secundarios-panel\');p.classList.toggle(\'open\');b.textContent=p.classList.contains(\'open\')?\'✕\':\'⋯\';})(this)" title="Más opciones" style="font-size:18px;padding:4px 10px;line-height:1">⋯</button>';
+  $('tbActions').innerHTML=zonaSel+vendSel+rutaBtn+turnoBtn+_recargarBtn+'<span class="mapa-secundarios">'+_tresPuntosBtn+'<span class="mapa-secundarios-panel">'+dlvBtn+autoToggle+'</span></span>';
   // FIX #6: sincronizar checkbox de auto-update con la preferencia actual
   try{
     const _chkAuto=document.getElementById('mapaAutoUpdate');
@@ -15062,8 +15217,8 @@ async function confirmarRegistroPago(targetUserId){
   const fecha=$('pagoFecha').value||new Date().toISOString().slice(0,10);
   try{
     const res=await DL.savePago({
-      pagado_por:CU.auth_id||CU.id,
-      pagado_a:targetUserId,
+      pagado_por:CU.auth_id,
+      pagado_a:Number(targetUserId),
       monto,metodo,referencia,nota,fecha
     });
     if(res){
@@ -15179,7 +15334,7 @@ async function verHistorialPagos(targetUserId){
     '</tr>';
   }).join('');
   const total=pagos.reduce((a,p)=>a+(Number(p.monto)||0),0);
-  openA(SVG.clipboard+' Historial de pagos — '+nombre,
+  openA(SVG.clipboard+' Historial de pagos — '+escHtml(nombre),
     '<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">Total pagado: <b style="color:var(--green)">'+fmt(total)+'</b></div>'+
     '<div style="overflow-x:auto;max-height:60vh"><table class="tbl"><thead><tr>'+
       '<th>Fecha</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Nota</th>'+
