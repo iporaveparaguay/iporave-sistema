@@ -654,6 +654,22 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .pagosChip:hover{transform:translateY(-1px);border-color:var(--accent)}
 .pagosChip.active{background:linear-gradient(180deg,var(--accent) 0%,#d97706 100%);color:#fff;border-color:#d97706;box-shadow:0 3px 8px rgba(245,158,11,.3)}
 .pagosOrderSel{padding:9px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:700;cursor:pointer}
+/* ── Histórico mensual (Bloque 5) ── */
+.historico-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px}
+.hmes{padding:10px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);transition:all .15s}
+.hmes:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.2);border-color:var(--accent)}
+.hmes.actual{background:linear-gradient(180deg,var(--bg3),var(--bg2));border-color:var(--accent);box-shadow:0 4px 12px rgba(245,158,11,.2)}
+.hmes-nombre{font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase;margin-bottom:4px}
+.hmes-pedidos{font-size:11px;color:var(--text2)}
+.hmes-monto{font-size:14px;font-weight:900;color:var(--text);margin-top:4px}
+/* ── Base de clientes por zona ── */
+.zona-clientes{margin-bottom:10px}
+.zona-clientes summary::-webkit-details-marker{display:none}
+.zona-clientes summary::before{content:'▶';margin-right:6px;display:inline-block;transition:transform .15s}
+.zona-clientes[open] summary::before{transform:rotate(90deg)}
+.cliente-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);transition:background .15s}
+.cliente-row:hover{background:var(--bg2)}
+.cliente-row:last-child{border-bottom:none}
 /* ── At-risk + badge ── */
 .userPagoRow{position:relative}
 .userPagoRow.atRisk{border-left:4px solid #f59e0b}
@@ -3125,6 +3141,7 @@ const NAV_CFG={
     {s:'Gestión',items:[
       {id:'usuarios',l:'Usuarios',ic:'users'},{id:'zonas',l:'Zonas y tarifas',ic:'map'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+      {id:'clientes_zonas',l:'👥 Clientes',ic:'users'},
       {id:'config',l:'Configuración',ic:'gear'},{id:'setup',l:'Setup / SQL',ic:'db'},
     ]},
     {s:'Mapa',items:[
@@ -3148,6 +3165,7 @@ const NAV_CFG={
     {s:'Gestión',items:[
       {id:'usuarios',l:'Usuarios',ic:'users'},{id:'zonas',l:'Zonas y tarifas',ic:'map'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
+      {id:'clientes_zonas',l:'👥 Clientes',ic:'users'},
     ]},
     {s:'Mapa',items:[
       {id:'mapa',l:'Mapa en tiempo real',ic:'map'},
@@ -3265,7 +3283,8 @@ const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'
   analitica_prov:'Mi Analítica',analitica_vend:'Mi Analítica',
   analitica_drop:'Mi Analítica',analitica_admin:'Analítica Ecosistema',
   analitica_dlv:'Mi Analítica',
-  clientes_recurrentes:'Clientes recurrentes'};
+  clientes_recurrentes:'Clientes recurrentes',
+  clientes_zonas:'Base de Clientes por Zona'};
 
 /* ── SIDEBAR MOBILE ── */
 function toggleSidebar(){
@@ -12418,9 +12437,169 @@ PAGES.pago_usuario=function(){
         '<button class="btn btn-secondary" onclick="imprimirEstadoCuenta(\''+escAttr(user.id)+'\',\''+periodo+'\')">🖨️ Imprimir</button>'+
         '<button class="btn btn-secondary" onclick="exportarEstadoPDF(\''+escAttr(user.id)+'\',\''+periodo+'\')">📥 Exportar PDF</button>'+
         '<button class="btn btn-secondary" onclick="exportarEstadoCSV(\''+escAttr(user.id)+'\',\''+periodo+'\')">📊 Exportar CSV</button>'+
-      '</div>':'');
+      '</div>':'')+
+      // Bloque 5 — Histórico mensual
+      _renderHistoricoMensual(userId);
   })();
 };
+
+// ── Histórico mensual (últimos 12 meses) ──
+function _renderHistoricoMensual(userId){
+  const ahora = new Date();
+  const meses = [];
+  for(let i = 0; i < 12; i++){
+    const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+    const mesKey = fecha.toISOString().slice(0, 7);
+    const nombreMes = fecha.toLocaleDateString('es-PY', {month:'long', year:'numeric'});
+    const ini = new Date(fecha.getFullYear(), fecha.getMonth(), 1);
+    const fin = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0, 23, 59, 59);
+    const pedidosMes = (_ordersCache||[]).filter(o => {
+      const fp = new Date(o.fecha || o.created_at);
+      return fp >= ini && fp <= fin && o.estado === 'Entregado' &&
+        (String(o.vendedorId)===String(userId) || String(o.dropId)===String(userId) || String(o.deliveryId)===String(userId));
+    });
+    const pagosMes = (window._pagosCache||[]).filter(p => {
+      const fp = new Date(p.fecha);
+      return fp >= ini && fp <= fin && String(p.pagado_a)===String(userId);
+    });
+    const cobrado = pagosMes.reduce((a,b) => a + Number(b.monto||0), 0);
+    const cantidad = pedidosMes.length;
+    meses.push({ mesKey, nombreMes, pedidos: cantidad, cobrado, esActual: i === 0 });
+  }
+  return '<div class="historico-mensual">'+
+    '<h3 style="font-size:14px;font-weight:800;margin:24px 0 12px;display:flex;align-items:center;gap:8px">📅 Histórico Mensual (12 meses)</h3>'+
+    '<div class="historico-grid">'+
+    meses.map(m =>
+      '<div class="hmes'+(m.esActual?' actual':'')+'">'+
+      '<div class="hmes-nombre">'+escHtml(m.nombreMes)+'</div>'+
+      '<div class="hmes-pedidos">'+m.pedidos+' pedidos</div>'+
+      '<div class="hmes-monto">'+fmt(m.cobrado)+'</div>'+
+      '</div>'
+    ).join('')+
+    '</div></div>';
+}
+
+// ── Página: Clientes por zona ──
+PAGES.clientes_zonas = function(){
+  if(!isAdminLike(CU.rol)){
+    $('ca').innerHTML = '<div style="padding:40px;text-align:center">Solo admin/superadmin</div>';
+    return;
+  }
+  const clientesPorZona = {};
+  (_ordersCache||[]).forEach(o => {
+    if(!o.cliente) return;
+    const zonaId = o.zonaId || 'sin_zona';
+    const zona = (typeof _zonasCache!=='undefined' && _zonasCache) ? _zonasCache.find(z => String(z.id)===String(zonaId)) : null;
+    const zonaNombre = zona && zona.nombre ? zona.nombre : 'Sin zona asignada';
+    if(!clientesPorZona[zonaNombre]){
+      clientesPorZona[zonaNombre] = new Map();
+    }
+    const key = (o.telefono || o.cliente).toLowerCase();
+    if(!clientesPorZona[zonaNombre].has(key)){
+      clientesPorZona[zonaNombre].set(key, {
+        nombre: o.cliente,
+        telefono: o.telefono || '',
+        direccion: o.direccion || '',
+        pedidos: 0,
+        ultimoPedido: null,
+        montoTotal: 0
+      });
+    }
+    const c = clientesPorZona[zonaNombre].get(key);
+    c.pedidos++;
+    c.montoTotal += (Number(o.precio||0) * Number(o.qty||1));
+    const fechaPedido = new Date(o.fecha || o.created_at);
+    if(!c.ultimoPedido || fechaPedido > c.ultimoPedido){
+      c.ultimoPedido = fechaPedido;
+    }
+  });
+  const zonas = Object.entries(clientesPorZona).sort((a,b) => b[1].size - a[1].size);
+  let html = '<div style="padding:18px">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">';
+  html += '<h2 style="margin:0;font-size:20px;font-weight:900">👥 Base de Datos de Clientes</h2>';
+  html += '<button class="btn btn-secondary" onclick="exportarClientesZonasCSV()">📊 Exportar CSV</button>';
+  html += '</div>';
+  html += '<input type="search" id="clientesBuscar" placeholder="🔍 Buscar cliente..." class="pagosSearchInput" style="margin-bottom:14px;width:100%" oninput="_filtrarClientesZonas(this.value)">';
+  html += '<div id="clientesZonasContainer">';
+  if(zonas.length===0){
+    html += '<div style="padding:40px;text-align:center;color:var(--text2)">Sin clientes registrados todavía</div>';
+  }
+  zonas.forEach(function(par){
+    const zonaNombre = par[0];
+    const clientesMap = par[1];
+    const clientes = Array.from(clientesMap.values()).sort((a,b) => b.pedidos - a.pedidos);
+    html += '<details class="zona-clientes" open>';
+    html += '<summary style="padding:12px 14px;background:var(--bg2);border-radius:10px;cursor:pointer;font-weight:800;display:flex;justify-content:space-between;align-items:center">';
+    html += '<span>📍 '+escHtml(zonaNombre)+'</span>';
+    html += '<span style="font-size:11px;color:var(--text2)">'+clientes.length+' clientes</span>';
+    html += '</summary>';
+    html += '<div style="padding:8px 0">';
+    clientes.forEach(function(c){
+      const ultimo = c.ultimoPedido ? c.ultimoPedido.toLocaleDateString('es-PY') : '—';
+      html += '<div class="cliente-row" data-search="'+escAttr((c.nombre+' '+c.telefono).toLowerCase())+'">';
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div style="font-weight:700;font-size:13px">'+escHtml(c.nombre)+'</div>';
+      html += '<div style="font-size:11px;color:var(--text2)">📞 '+escHtml(c.telefono)+' · 📍 '+escHtml((c.direccion||'').substring(0,40))+'</div>';
+      html += '</div>';
+      html += '<div style="text-align:right;font-size:11px">';
+      html += '<div><b>'+c.pedidos+'</b> pedidos</div>';
+      html += '<div>'+fmt(c.montoTotal)+'</div>';
+      html += '<div style="color:var(--text3)">Último: '+ultimo+'</div>';
+      html += '</div>';
+      if(c.telefono){
+        let phone = String(c.telefono).replace(/\D/g,'');
+        if(!phone.startsWith('595')) phone = '595' + phone.replace(/^0/,'');
+        html += '<button class="btn btn-icon" onclick="window.open(\'https://wa.me/'+phone+'\',\'_blank\')" title="WhatsApp">💬</button>';
+      }
+      html += '</div>';
+    });
+    html += '</div></details>';
+  });
+  html += '</div></div>';
+  $('ca').innerHTML = html;
+};
+
+function _filtrarClientesZonas(q){
+  q = (q||'').toLowerCase().trim();
+  document.querySelectorAll('.cliente-row').forEach(function(r){
+    const search = r.dataset.search || '';
+    r.style.display = (!q || search.includes(q)) ? 'flex' : 'none';
+  });
+}
+
+function exportarClientesZonasCSV(){
+  let csv = '﻿';
+  csv += 'Zona,Nombre,Telefono,Direccion,Pedidos,Monto Total,Ultimo Pedido\n';
+  (_ordersCache||[]).reduce(function(map, o){
+    if(!o.cliente) return map;
+    const zonaId = o.zonaId || 'sin_zona';
+    const zona = (typeof _zonasCache!=='undefined' && _zonasCache) ? _zonasCache.find(z => String(z.id)===String(zonaId)) : null;
+    const zonaNombre = zona && zona.nombre ? zona.nombre : 'Sin zona';
+    const key = zonaNombre + '|' + (o.telefono || o.cliente).toLowerCase();
+    if(!map.has(key)){
+      map.set(key, {zona: zonaNombre, nombre: o.cliente, telefono: o.telefono||'',
+                    direccion: o.direccion||'', pedidos: 0, monto: 0, ultimo: null});
+    }
+    const c = map.get(key);
+    c.pedidos++;
+    c.monto += Number(o.precio||0) * Number(o.qty||1);
+    const f = new Date(o.fecha || o.created_at);
+    if(!c.ultimo || f > c.ultimo) c.ultimo = f;
+    return map;
+  }, new Map()).forEach(function(c){
+    csv += [c.zona, c.nombre, c.telefono, c.direccion, c.pedidos, c.monto,
+            c.ultimo ? c.ultimo.toLocaleDateString('es-PY') : '']
+      .map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',') + '\n';
+  });
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'clientes-por-zona-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  pushNotif('CSV descargado','ok');
+}
 
 function _setPagoPeriodo(p){
   window._pagoPeriodoActual=p;
