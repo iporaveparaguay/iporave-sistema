@@ -11927,7 +11927,7 @@ PAGES.mapa=function(){
   const turnoBtnTxt=turnoActivo?'Finalizar turno':'Iniciar turno';
   const turnoBtnCls=turnoActivo?'btn-end':'btn-start';
   const turnoBtn=esDelivery?'<button id="btnTurno" class="map-btn '+turnoBtnCls+'" onclick="_toggleTurno()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/>'+(turnoActivo?'<rect x="9" y="9" width="6" height="6"/>':'<polygon points="10,8 16,12 10,16"/>')+'</svg>'+turnoBtnTxt+'</button>':'';
-  $('tbActions').innerHTML=zonaSel+vendSel+dlvBtn+rutaBtn+turnoBtn+'<button class="map-btn" onclick="_mapaCargar(window._mapInstance)" title="Recargar mapa"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>';
+  $('tbActions').innerHTML=zonaSel+vendSel+dlvBtn+rutaBtn+turnoBtn+'<button class="map-btn" onclick="_refreshActualPage()" title="Recargar mapa"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>';
   if(turnoActivo&&!window._gpsLoopTimer){
     const misPedidos=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     _gpsLoopStart(misPedidos[0]||null);
@@ -13922,13 +13922,29 @@ async function _refreshActualPage(){
       try{
         // Página de mapa: en vez de re-renderizar todo (recrea Mapbox),
         // recargar markers/deliveries/contadores sobre la instancia existente.
-        if(cur === 'mapa' && window._mapInstance && typeof _mapaCargar === 'function'){
-          try{ _mapaCargar(window._mapInstance); }catch(e){ console.warn('refresh mapa _mapaCargar',e); }
-          if(window._mapaShowDlvs && typeof _mapaCargarDlvs === 'function'){
-            try{ _mapaCargarDlvs(window._mapInstance); }catch(e){ console.warn('refresh mapa _mapaCargarDlvs',e); }
-          }
-          if(typeof _mapaRenderSelects === 'function'){
-            try{ _mapaRenderSelects(); }catch(_){}
+        if(cur === 'mapa'){
+          const _m = window._mapInstance;
+          if(_m && typeof _mapaCargar === 'function'){
+            // Limpiar markers de deliveries explícitamente (no los limpia _mapaCargar)
+            try{
+              if(window._dlvMapMarkers){
+                Object.values(window._dlvMapMarkers).forEach(m=>{try{m.remove();}catch(_){}});
+                window._dlvMapMarkers={};
+              }
+            }catch(_){}
+            try{ _mapaCargar(_m); }catch(e){ console.warn('refresh mapa _mapaCargar',e); }
+            if(window._mapaShowDlvs && typeof _mapaCargarDlvs === 'function'){
+              try{ _mapaCargarDlvs(_m); }catch(e){ console.warn('refresh mapa _mapaCargarDlvs',e); }
+            }
+            if(typeof _mapaRenderSelects === 'function'){
+              try{ _mapaRenderSelects(); }catch(_){}
+            }
+            if(typeof _mapaUpdateContadores === 'function'){
+              try{ _mapaUpdateContadores(); }catch(_){}
+            }
+          } else {
+            // Instancia aún no inicializada: re-renderizar la página completa
+            PAGES[cur]();
           }
         } else {
           PAGES[cur]();
