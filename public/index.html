@@ -246,7 +246,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .btn{transition:transform .12s var(--ease-out),box-shadow .15s var(--ease-out),background .15s var(--ease-out),opacity .15s var(--ease-out)}
 .btn:active:not(:disabled){transform:translateY(1px)}
 .skip-link{position:absolute;left:-9999px;top:0;background:var(--accent);color:#000;padding:8px 16px;border-radius:0 0 8px 0;font-weight:600;z-index:99999}
-.skip-link:focus{left:0}
+.skip-link:focus{left:0;min-height:44px;padding:12px 16px;max-width:90vw;}
 /* MAP BUTTONS */
 .dropdown-premium{appearance:none;-webkit-appearance:none;background:linear-gradient(180deg,var(--bg2),var(--bg3));background-image:linear-gradient(180deg,var(--bg2),var(--bg3)),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat,no-repeat;background-position:0 0, right 12px center;background-size:100% 100%, 12px 12px;border:1px solid var(--border2);border-radius:12px;padding:9px 36px 9px 14px;color:var(--text);font:500 13px 'DM Sans',sans-serif;cursor:pointer;transition:border-color .15s var(--ease-out),box-shadow .15s var(--ease-out),background .15s var(--ease-out);min-width:160px;letter-spacing:.1px;}
 .dropdown-premium:hover{border-color:var(--accent);background-image:linear-gradient(180deg,var(--bg3),var(--bg2)),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f5a623' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");}
@@ -948,18 +948,26 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
 [data-theme="light"] .filterBtn.active,[data-theme="light"] .mapBtn.active{background:linear-gradient(180deg,#f59e0b 0%,#d97706 100%);color:#fff;}
 /* Hover gris sobrio en modo claro (override azul brillante) */
 :root[data-theme="light"] .mapBtn:hover,
-:root[data-theme="light"] .filterBtn:hover,
-:root[data-theme="light-soft"] .mapBtn:hover,
-:root[data-theme="light-soft"] .filterBtn:hover{
+:root[data-theme="light"] .filterBtn:hover{
   background:#e5e5e5;
   color:#1a1a1a;
   border-color:#c4c4c4;
 }
+:root[data-theme="light-soft"] .mapBtn:hover,
+:root[data-theme="light-soft"] .filterBtn:hover{
+  background:var(--bg3);
+  color:var(--text);
+  border-color:var(--border2);
+}
 :root[data-theme="light"] .mapBtn.active:hover,
-:root[data-theme="light"] .filterBtn.active:hover,
+:root[data-theme="light"] .filterBtn.active:hover{
+  background:linear-gradient(180deg,#f59e0b 0%,#d97706 100%);
+  color:#fff;
+  border-color:var(--accent);
+}
 :root[data-theme="light-soft"] .mapBtn.active:hover,
 :root[data-theme="light-soft"] .filterBtn.active:hover{
-  background:linear-gradient(180deg,#f59e0b 0%,#d97706 100%);
+  background:linear-gradient(180deg,var(--accent),#a0571a);
   color:#fff;
   border-color:var(--accent);
 }
@@ -1589,6 +1597,12 @@ function updateConnUI(online){
 /* DATA LAYER — fallback transparente */
 async function _fetchWithTimeout(url, opts, timeoutMs){
   timeoutMs = timeoutMs || 10000;
+  // FIX #8: si la URL apunta al worker, asegurar token fresco antes del fetch
+  try{
+    if(typeof WORKER_URL!=='undefined' && url && typeof url==='string' && url.indexOf(WORKER_URL)===0){
+      if(typeof _ensureFreshToken==='function') await _ensureFreshToken();
+    }
+  }catch(_){}
   const ctrl = new AbortController();
   const userSignal = opts && opts.signal;
   if(userSignal){
@@ -3508,6 +3522,8 @@ function _cleanAllAppStorage(){
         localStorage.removeItem(k);
       }
     });
+    // FIX #14: claves sin prefijo conocido (mapa)
+    ['_mapaFiltros','mapa_auto'].forEach(k=>localStorage.removeItem(k));
     sessionStorage.clear();
   }catch(_){}
 }
@@ -3531,6 +3547,13 @@ async function _ensureFreshToken(){
   }
 }
 function doLogout(){
+  // FIX #5: limpiar cola de Onboard si existe
+  try{
+    if(window.Onboard){
+      if(typeof window.Onboard._closeCurrent==='function')window.Onboard._closeCurrent();
+      window.Onboard._queue=[];
+    }
+  }catch(_){}
   try{if(window._caResetObs){window._caResetObs.disconnect();window._caResetObs=null;}}catch(_){}
   try{if(window._navObs){window._navObs.disconnect();window._navObs=null;}}catch(_){}
   try{if(window._mapaFetchCtrl){window._mapaFetchCtrl.abort();window._mapaFetchCtrl=null;}}catch(_){}
@@ -11214,7 +11237,7 @@ let _trackDestMarker=null;
 let _trackMapInst=null;
 
 async function _fetchTrackData(id){
-  try{if(window._mapaFetchCtrl)window._mapaFetchCtrl.abort();}catch(_){}
+  try{if(window._mapaFetchCtrl&&document.visibilityState==='visible')window._mapaFetchCtrl.abort();}catch(_){}
   window._mapaFetchCtrl=new AbortController();
   try{
     const r=await fetch(TRACK_API+'?id='+id,{signal:window._mapaFetchCtrl.signal});
@@ -11725,6 +11748,17 @@ function _mapaSetEstado(es){
 //  - tipo=pedidos    -> solo pines de pedidos filtrados por estado
 //  - tipo=todos      -> pedidos filtrados por estado + TODOS los deliveries
 function _aplicarFiltrosMapa(){
+  // FIX #4: si el delivery seleccionado ya no esta activo, limpiar el filtro
+  if(window._mapaFiltroDelivery){
+    const _dlvs=(window._usersCache||[]).filter(u=>u.rol==='delivery'&&u.activo!==false);
+    const _stillActive=_dlvs.some(d=>String(d.id)===String(window._mapaFiltroDelivery));
+    if(!_stillActive){
+      window._mapaFiltroDelivery='';
+      const _inp=document.getElementById('dlvSearchInput');
+      if(_inp)_inp.value='';
+      if(typeof pushNotif==='function')pushNotif('El repartidor seleccionado ya no esta activo. Filtro limpio.','warn');
+    }
+  }
   try{
     localStorage.setItem('_mapaFiltros', JSON.stringify({
       estado: window._mapaFiltroEstado,
@@ -11761,16 +11795,26 @@ function _aplicarFiltrosMapa(){
   if(typeof _mapaUpdateContadores==='function')_mapaUpdateContadores();
 }
 
-// Debounce 200ms: agrupa cambios de filtros consecutivos en un solo redibujo.
-// Usa function() normal para preservar `arguments`.
+// Debounce leading+trailing 100ms: primera llamada inmediata si pasó >150ms,
+// subsiguientes en rafaga se agrupan. Usa function() normal para preservar `arguments`.
 (function(){
   if(typeof _aplicarFiltrosMapa!=='function')return;
   const _aplicarFiltrosMapaRaw=_aplicarFiltrosMapa;
-  let _filterDebTimer;
+  let _filterDebTimer=null;
+  let _lastFilterRun=0;
   _aplicarFiltrosMapa=function(){
     const args=arguments;
+    const now=Date.now();
     clearTimeout(_filterDebTimer);
-    _filterDebTimer=setTimeout(function(){_aplicarFiltrosMapaRaw.apply(null,args);},200);
+    if(now-_lastFilterRun>150){
+      _lastFilterRun=now;
+      _aplicarFiltrosMapaRaw.apply(null,args);
+    }else{
+      _filterDebTimer=setTimeout(function(){
+        _lastFilterRun=Date.now();
+        _aplicarFiltrosMapaRaw.apply(null,args);
+      },100);
+    }
   };
 })();
 
@@ -11784,11 +11828,11 @@ async function _mapaCargar(map){
   // Si el filtro es "Solo Deliveries", no dibujar pedidos
   if((window._mapaFiltroTipo||'todos')==='deliveries'){_mapaUpdateContadores();return;}
   _mapaUpdateContadores();
-  const _mapaBase=['vendedor','proveedor','dropshipper'].includes(CU.rol)?getVisibleOrders():_ordersCache;
+  let _mapaBase=['vendedor','proveedor','dropshipper'].includes(CU.rol)?getVisibleOrders():_ordersCache;
+  // FIX #7: delivery NUNCA ve Entregado, aun si el filtro de estado lo pide. Aplicar ANTES del filtro de estado.
+  if(CU&&CU.rol==='delivery')_mapaBase=_mapaBase.filter(o=>o.estado!=='Entregado');
   // Sin filtro activo: ocultar Cancelado/Devuelto por defecto. Con filtro activo: mostrar solo los del filtro (incluso Cancelado/Devuelto)
   let orders=window._mapaFiltro?_mapaBase.filter(o=>o.estado===window._mapaFiltro):_mapaBase.filter(o=>o.estado!=='Cancelado'&&o.estado!=='Devuelto');
-  // Delivery no debe ver pedidos Entregado en el mapa (admin/superadmin sí)
-  if(CU&&CU.rol==='delivery')orders=orders.filter(o=>o.estado!=='Entregado');
   if(window._mapaFiltroZona)orders=orders.filter(o=>String(o.zona)===String(window._mapaFiltroZona));
   if(!['vendedor','proveedor','dropshipper'].includes(CU.rol)&&window._mapaFiltroVend)orders=orders.filter(o=>String(o.vendedorId)===String(window._mapaFiltroVend));
   if(window._mapaFiltroDelivery)orders=orders.filter(o=>String(o.deliveryId)===String(window._mapaFiltroDelivery));
@@ -12314,6 +12358,11 @@ PAGES.mapa=function(){
   window._mapaAutoUpdateEnabled=_autoOn;
   const autoToggle='<label class="map-btn" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer;user-select:none" title="Auto-actualizar el mapa cada 5 minutos (sin mover la cámara)"><input type="checkbox" id="mapaAutoUpdate" '+(_autoOn?'checked':'')+' onchange="_mapaToggleAutoUpdate(this)" style="margin:0"><span style="font-size:12px">Auto-actualizar</span></label>';
   $('tbActions').innerHTML=zonaSel+vendSel+dlvBtn+rutaBtn+turnoBtn+autoToggle+'<button class="map-btn" onclick="_refreshActualPage()" title="Recargar mapa"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>';
+  // FIX #6: sincronizar checkbox de auto-update con la preferencia actual
+  try{
+    const _chkAuto=document.getElementById('mapaAutoUpdate');
+    if(_chkAuto)_chkAuto.checked=window._mapaAutoUpdateEnabled!==false;
+  }catch(_){}
   if(turnoActivo&&!window._gpsLoopTimer){
     const misPedidos=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     _gpsLoopStart(misPedidos[0]||null);
