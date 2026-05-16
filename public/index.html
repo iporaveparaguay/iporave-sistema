@@ -469,6 +469,26 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .bprov{background:rgba(184,84,31,.22);color:#e0a070;border:1px solid rgba(184,84,31,.5);}
 .brp{background:rgba(251,191,36,.13);color:#fbbf24;}
 .bret{background:rgba(239,68,68,.2);color:#fca5a5;}
+/* BADGES DE ROL — por rol, con dot + borde */
+.brol{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase;border:1px solid transparent;}
+.brol::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.brol-superadmin{background:rgba(251,191,36,.13);color:#fbbf24;border-color:rgba(251,191,36,.35);}
+.brol-admin{background:rgba(239,68,68,.13);color:#f87171;border-color:rgba(239,68,68,.35);}
+.brol-subadmin{background:rgba(249,115,22,.13);color:#fb923c;border-color:rgba(249,115,22,.35);}
+.brol-vendedor{background:rgba(59,130,246,.13);color:#60a5fa;border-color:rgba(59,130,246,.35);}
+.brol-dropshipper{background:rgba(168,85,247,.13);color:#c084fc;border-color:rgba(168,85,247,.35);}
+.brol-delivery{background:rgba(34,197,94,.13);color:#4ade80;border-color:rgba(34,197,94,.35);}
+.brol-proveedor{background:rgba(236,72,153,.13);color:#f472b6;border-color:rgba(236,72,153,.35);}
+.brol-cliente{background:rgba(6,182,212,.13);color:#22d3ee;border-color:rgba(6,182,212,.35);}
+/* Fila usuario con acento lateral por rol */
+.urow-superadmin td:first-child{border-left:3px solid #fbbf24;}
+.urow-admin td:first-child{border-left:3px solid #f87171;}
+.urow-subadmin td:first-child{border-left:3px solid #fb923c;}
+.urow-vendedor td:first-child{border-left:3px solid #60a5fa;}
+.urow-dropshipper td:first-child{border-left:3px solid #c084fc;}
+.urow-delivery td:first-child{border-left:3px solid #4ade80;}
+.urow-proveedor td:first-child{border-left:3px solid #f472b6;}
+.urow-cliente td:first-child{border-left:3px solid #22d3ee;}
 /* MODALS */
 .moverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);z-index:1000;align-items:center;justify-content:center;padding:14px;will-change:backdrop-filter,opacity;}
 .moverlay.open{display:flex;}
@@ -9844,33 +9864,42 @@ PAGES.usuarios=async function(){
     $('tbActions').innerHTML='<button id="btnNuevoUsuario" class="btn btn-primary" onclick="openNewUser()">+ Nuevo usuario</button>';
     $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Usuarios ('+_usersCache.length+')</span></div>'+
     '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
-    '<th class="col-hide">ID</th><th>Nombre</th><th class="th-user">Usuario</th><th>Rol</th>'+
-    '<th class="col-hide">Vehículo</th><th class="col-hide">Patente</th>'+
-    '<th class="col-hide">WhatsApp</th><th class="col-hide">Calificación</th><th>Acciones</th></tr></thead><tbody>'+
-    _usersCache.map(u=>'<tr>'+
-      '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">#'+u.id+'</td>'+
-      '<td style="font-weight:600">'+
-        (u.foto_perfil?'<img src="'+safeUrl(u.foto_perfil)+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:6px;vertical-align:middle">':'')+
-        escHtml(u.nombre||'')+
-        (u.badge_confianza?' <span class="badge-confianza" style="font-size:9px">🛡️</span>':'')+
-        (u.verificado?' <span class="badge-verif" style="font-size:9px">✓</span>':'')+
-      '</td>'+
-      '<td class="td-user" style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--text2)" title="'+escAttr(u.username)+'">'+escHtml(u.username||'')+'</td>'+
-      '<td><span class="badge '+(u.rol==='admin'?'bc':u.rol==='vendedor'?'bdisp':u.rol==='dropshipper'?'bn1':u.rol==='delivery'?'be':u.rol==='proveedor'?'bprov':'br')+'">'+escHtml(capRole(u.rol))+'</span></td>'+
-      '<td class="col-hide" style="font-size:12px">'+escHtml(u.vehiculo||'—')+'</td>'+
-      '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">'+escHtml(u.patente||'—')+'</td>'+
-      '<td class="col-hide" style="font-size:11px;color:var(--cyan)">'+escHtml(u.whatsapp||'—')+'</td>'+
-      '<td class="col-hide" style="font-size:12px">'+
-        (u.calificacion_prom>0?_renderStars(u.calificacion_prom)+' <span style="color:var(--text3);font-size:10px">'+u.calificacion_prom.toFixed(1)+' ('+u.calificaciones_total+')</span>':'<span style="color:var(--text3)">—</span>')+
-      '</td>'+
-      '<td style="white-space:nowrap"><div class="order-menu-wrap">'+
-        '<button class="order-menu-btn" onclick="_toggleUserMenu(event,'+u.id+')" title="Acciones">⋮</button>'+
-        '<div class="order-dropdown" id="udrop-'+u.id+'">'+
-          '<button onclick="_closeUserMenus();editUser('+u.id+')">'+SVG.pencil+' Editar</button>'+
-          (u.id!==1?'<div class="od-sep"></div><button onclick="_closeUserMenus();delUser('+u.id+')" style="color:var(--red)">'+SVG.trash+' Eliminar</button>':'')+
-        '</div>'+
-      '</div></td></tr>'
-    ).join('')+'</tbody></table></div></div>';
+    '<th style="width:40%">Usuario</th><th style="text-align:center">Rol</th>'+
+    '<th class="col-hide">Contacto</th><th class="col-hide">Calificación</th><th style="text-align:center">Acciones</th></tr></thead><tbody>'+
+    _usersCache.map(u=>{
+      const rolCls='brol brol-'+(u.rol||'cliente');
+      const rolLabel=capRole(u.rol||'cliente');
+      const initials=(u.nombre||'?').trim().split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+      const avatarBg={superadmin:'#fbbf24',admin:'#f87171',subadmin:'#fb923c',vendedor:'#60a5fa',dropshipper:'#c084fc',delivery:'#4ade80',proveedor:'#f472b6',cliente:'#22d3ee'}[u.rol]||'var(--accent)';
+      const avatar=u.foto_perfil
+        ?'<img src="'+safeUrl(u.foto_perfil)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid '+avatarBg+'">'
+        :'<div style="width:38px;height:38px;border-radius:50%;background:'+avatarBg+';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#000;flex-shrink:0;letter-spacing:-.5px">'+escHtml(initials)+'</div>';
+      return '<tr class="urow-'+escHtml(u.rol||'cliente')+'">'+
+        '<td><div style="display:flex;align-items:center;gap:10px">'+
+          avatar+
+          '<div>'+
+            '<div style="font-weight:700;font-size:13px;line-height:1.2">'+escHtml(u.nombre||'')+'</div>'+
+            '<div style="font-size:11px;color:var(--text3);font-family:\'JetBrains Mono\',monospace;margin-top:1px">@'+escHtml(u.username||u.email||'')+'</div>'+
+            (u.badge_confianza?'<span class="badge-confianza" style="font-size:9px;margin-top:3px;display:inline-flex">'+SVG.checkCircle+' Confianza</span>':'')+
+          '</div>'+
+        '</div></td>'+
+        '<td style="text-align:center"><span class="'+rolCls+'">'+escHtml(rolLabel)+'</span></td>'+
+        '<td class="col-hide"><div style="font-size:11px;line-height:1.7">'+
+          (u.whatsapp?'<div style="color:var(--cyan)">'+SVG.phone+' '+escHtml(u.whatsapp)+'</div>':'')+
+          (u.vehiculo?'<div style="color:var(--text3)">'+SVG.scooter+' '+escHtml(u.vehiculo)+(u.patente?' · '+escHtml(u.patente):'')+'</div>':'')+
+          (!u.whatsapp&&!u.vehiculo?'<span style="color:var(--text3)">—</span>':'')+
+        '</div></td>'+
+        '<td class="col-hide" style="text-align:center;font-size:12px">'+
+          (u.calificacion_prom>0?_renderStars(u.calificacion_prom)+'<br><span style="color:var(--text3);font-size:10px">'+u.calificacion_prom.toFixed(1)+' ('+u.calificaciones_total+')</span>':'<span style="color:var(--text3)">—</span>')+
+        '</td>'+
+        '<td style="text-align:center;white-space:nowrap"><div class="order-menu-wrap">'+
+          '<button class="order-menu-btn" onclick="_toggleUserMenu(event,'+u.id+')" title="Acciones">⋮</button>'+
+          '<div class="order-dropdown" id="udrop-'+u.id+'">'+
+            '<button onclick="_closeUserMenus();editUser('+u.id+')">'+SVG.pencil+' Editar</button>'+
+            (u.id!==1?'<div class="od-sep"></div><button onclick="_closeUserMenus();delUser('+u.id+')" style="color:var(--red)">'+SVG.trash+' Eliminar</button>':'')+
+          '</div>'+
+        '</div></td></tr>';
+    }).join('')+'</tbody></table></div></div>';
     if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredUsuarios && CU && ['admin','superadmin'].includes(CU.rol)){
       window._onboardFiredUsuarios = true;
       setTimeout(function(){
