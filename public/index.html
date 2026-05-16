@@ -600,6 +600,13 @@ body:has(#appScreen.show) #aiPanel.open{display:flex !important;}
 .ai-msg{margin-bottom:10px;font-size:13px;line-height:1.5;}
 .ai-msg.user{text-align:right;}.ai-msg.user span{background:var(--accent);color:#000;padding:6px 12px;border-radius:12px 12px 2px 12px;display:inline-block;max-width:85%;word-break:break-word;}
 .ai-msg.bot span{background:var(--bg4);padding:6px 12px;border-radius:12px 12px 12px 2px;display:inline-block;max-width:90%;word-break:break-word;}
+:root[data-theme="light"] .ai-msg.bot span,:root[data-theme="light-soft"] .ai-msg.bot span{background:linear-gradient(180deg,#f3f4f6,#e5e7eb);color:#1a1a1a;border:1px solid #d1d5db;}
+:root[data-theme="light"] .ai-msg.user span,:root[data-theme="light-soft"] .ai-msg.user span{background:linear-gradient(180deg,#fef3cd,#fde68a);color:#1a1a1a;border:1px solid #fcd34d;}
+.mic-btn{width:36px;height:36px;border-radius:50%;background:transparent;border:1px solid var(--border2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s var(--ease-out);flex-shrink:0;padding:0;}
+.mic-btn:hover{background:var(--bg3);border-color:var(--accent);color:var(--accent);transform:scale(1.05);}
+.mic-btn.recording{background:#ef4444;border-color:#dc2626;color:#fff;animation:micPulse 1.2s ease-in-out infinite;}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.5);}50%{box-shadow:0 0 0 8px rgba(239,68,68,0);}}
+.ai-hint{display:block;font-size:10px;color:var(--text3);margin-top:4px;text-align:right;padding:0 10px 6px;}
 .ai-input{border-top:1px solid var(--border);padding:10px;display:flex;gap:8px;align-items:flex-end;}
 .ai-input textarea{flex:1;min-width:0;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 11px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;resize:none;overflow-y:hidden;line-height:1.45;height:38px;max-height:130px;transition:border-color .18s;}
 .ai-input textarea:focus{border-color:var(--accent);}
@@ -1225,10 +1232,11 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
       <div class="ai-msg bot"><span>¡Hola! Soy el asistente de Iporãve. Puedo ayudarte con pedidos, balances, estadísticas y operaciones. ¿Qué necesitás?</span></div>
     </div>
     <div class="ai-input">
-      <textarea id="aiInput" rows="1" placeholder="Preguntá algo… (Ctrl+Enter para enviar)" onkeydown="aiKeyDown(event)" oninput="aiAutoGrow(this)"></textarea>
-      <button id="micBtn" type="button" title="Hablar" aria-label="Activar micrófono" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:6px;border-radius:6px;flex-shrink:0;transition:.2s" onclick="toggleVoice()">🎤</button>
+      <textarea id="aiInput" rows="1" placeholder="Escribe tu mensaje..." onkeydown="aiKeyDown(event)" oninput="aiAutoGrow(this)"></textarea>
+      <button id="micBtn" class="mic-btn" type="button" title="Hablar con el asistente" aria-label="Activar micrófono" onclick="toggleVoice()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
       <button class="btn btn-primary btn-sm" onclick="sendAI()" style="align-self:flex-end">→</button>
     </div>
+    <small class="ai-hint">Ctrl+Enter para enviar</small>
   </div>
 
   <div class="main" id="mainContent">
@@ -2808,7 +2816,7 @@ function toggleVoice(){
   if(_voiceActive){
     if(_voiceRecognition)_voiceRecognition.stop();
     _voiceActive=false;
-    if(btn){btn.textContent='🎤';btn.style.color='var(--text3)';}
+    if(btn){btn.classList.remove('recording');}
     return;
   }
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -2818,7 +2826,7 @@ function toggleVoice(){
   _voiceRecognition.continuous=false;
   _voiceRecognition.onstart=function(){
     _voiceActive=true;
-    if(btn){btn.textContent='🔴';btn.style.color='#ef4444';}
+    if(btn){btn.classList.add('recording');}
   };
   _voiceRecognition.onresult=function(e){
     const transcript=e.results[0][0].transcript;
@@ -2827,11 +2835,11 @@ function toggleVoice(){
   };
   _voiceRecognition.onend=function(){
     _voiceActive=false;
-    if(btn){btn.textContent='🎤';btn.style.color='var(--text3)';}
+    if(btn){btn.classList.remove('recording');}
   };
   _voiceRecognition.onerror=function(e){
     _voiceActive=false;
-    if(btn){btn.textContent='🎤';btn.style.color='var(--text3)';}
+    if(btn){btn.classList.remove('recording');}
     console.warn('[VOZ]',e.error);
   };
   _voiceRecognition.start();
@@ -9276,10 +9284,15 @@ PAGES.catalogo=function(q=''){
     window._onboardFiredCatalogo = true;
     setTimeout(function(){
       try{
-        Onboard.enqueue('page_cat_nuevo','#btnNuevoProducto','Alta de un nuevo producto al catálogo.');
-        Onboard.enqueue('page_cat_buscador','#cpSearch, #ca input[type="search"]','Búsqueda de producto por nombre o código.');
-        Onboard.enqueue('page_cat_filtro','#ca select, #ca .filter-select, #ca .dropdown-premium','Filtros por categoría, estado o publicación pública.');
-        Onboard.enqueue('page_cat_producto','#ca .prod-grid .prod-card:first-child, #ca .prod-card:first-child','Cada tarjeta es un producto. Incluye foto, nombre, presentaciones, precios y acciones.');
+        Onboard.enqueue('page_cat_nuevo','#btnNuevoProducto','Botón para crear un nuevo producto en el catálogo.');
+        Onboard.enqueue('page_cat_buscador','#cpSearch, #ca input[type="search"]','Búsqueda de productos por nombre o código en el catálogo.');
+        Onboard.enqueue('page_cat_filtros','#ca .filter-select, #ca select.dropdown-premium, #ca .dropdown-premium, #ca select','Filtros por categoría, estado de publicación o tipo de producto.');
+        Onboard.enqueue('page_cat_card','#ca .prod-grid .prod-card:first-child, #ca .prod-card:first-child','Cada tarjeta representa un producto con su foto, nombre, presentaciones y precios.');
+        Onboard.enqueue('page_cat_presentacion','#ca .prod-card:first-child .prod-pres-chip:first-child, #ca .prod-card:first-child .pres-chip:first-child','Cada presentación incluye el nombre, precio y acciones específicas. Puede eliminarse y restaurarse desde el editor del producto.');
+        Onboard.enqueue('page_cat_eliminar','#ca .prod-card:first-child .pres-actions button[title*="Eliminar"], #ca .prod-card:first-child button[title*="Eliminar"], #ca .prod-card:first-child .btn-eliminar','Eliminar una presentación. La acción solicita confirmación y puede revertirse desde la sección "Presentaciones eliminadas" en el editor.');
+        Onboard.enqueue('page_cat_acciones','#ca .prod-card:first-child button[onclick*="editProducto"], #ca .prod-card:first-child .btn-acciones, #ca .prod-card:first-child [title*="Acciones"]','Editor completo del producto. Permite modificar nombre, foto, presentaciones, stock y publicación.');
+        Onboard.enqueue('page_cat_stock','#ca .prod-card:first-child [data-stock], #ca .prod-card:first-child .prod-stock, #ca .prod-card:first-child button[onclick*="stock"], #ca .prod-card:first-child [title*="Stock"]','Cantidad disponible en inventario. Se actualiza al registrar movimientos de entrada o salida.');
+        Onboard.enqueue('page_cat_publica','#ca .prod-card:first-child input[type="checkbox"][name*="publica"], #ca .prod-card:first-child .toggle-publica, #ca .prod-card:first-child input[type="checkbox"][onchange*="publica"]','Toggle para publicar este producto en la tienda pública (visible para clientes externos sin login).');
       }catch(_){}
     },1000);
   }
