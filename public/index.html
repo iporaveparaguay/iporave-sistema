@@ -6599,7 +6599,7 @@ function _renderDlvCard(o,dist){
     (o.telefono?'<div style="font-size:13px;'+(enRuta?'color:#1a4d1a':'color:var(--text2)')+';margin-bottom:10px">📞 '+escHtml(o.telefono)+'</div>':'')+
     (entregado
       ?'<div style="text-align:center;padding:8px 0;font-size:13px;font-weight:700;color:var(--text2)">✅ Entregado</div>'
-      :'<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      :'<div style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap">'+
         '<button onclick="dlvModal('+o.id+')" style="flex:1;min-width:110px;padding:12px;border:none;border-radius:10px;background:'+btnColor+';color:#fff;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px">'+btnLabel+'</button>'+
         '<button onclick="navegarPedido('+o.id+')" style="padding:12px 16px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:14px;font-weight:800;cursor:pointer">🗺️</button>'+
         (tel?'<a href="https://wa.me/'+waNum+'" target="_blank" rel="noopener noreferrer" style="padding:12px 16px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:14px;font-weight:800;cursor:pointer;text-decoration:none;display:flex;align-items:center">💬</a>':'')+
@@ -7380,9 +7380,9 @@ function openNewOrder(){
     '<div class="stitle">Producto y proveedor</div>'+
     '<div class="frow"><div class="fg"><label>Proveedor *</label><input type="text" id="nProv"></div>'+
     '<div class="fg"><label>Producto *</label>'+
-    '<div style="display:flex;gap:6px;align-items:center">'+
-    '<input type="text" id="nProd" placeholder="Escribí el producto o elegí del catálogo →" style="flex:1;min-width:0">'+
-    '<button type="button" class="btn btn-secondary btn-sm" onclick="openProductoPicker()" title="Seleccionar del catálogo" style="flex-shrink:0;white-space:nowrap">📦 Catálogo</button>'+
+    '<div style="display:flex;gap:6px;align-items:flex-start">'+
+    '<textarea id="nProd" rows="3" placeholder="Escribí el producto o elegí del catálogo →" style="flex:1;min-width:0;width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px;resize:vertical;min-height:60px;max-height:120px;box-sizing:border-box;font-family:inherit"></textarea>'+
+    '<button type="button" class="btn btn-secondary btn-sm" onclick="openProductoPicker()" title="Seleccionar del catálogo" style="flex-shrink:0;white-space:nowrap;margin-top:2px">📦 Catálogo</button>'+
     '</div>'+
     '</div></div>'+
     '<div class="frow3"><div class="fg"><label>Cantidad</label><input type="number" id="nQty" value="1" min="1" onchange="calcNT()"></div>'+
