@@ -1083,13 +1083,17 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .btnCerrarJornada:hover .btn-arrow{transform:translateX(3px);opacity:0.85;}
 :root[data-theme="light"] .btnCerrarJornada,:root[data-theme="light-soft"] .btnCerrarJornada{/* hereda vars del tema */}
 /* Toggle 3D genérico */
-.toggleBtn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.05);transition:all .15s ease;}
-.toggleBtn.on{background:linear-gradient(180deg,#16a34a 0%,#15803d 100%);border-color:#15803d;color:#fff;box-shadow:0 4px 12px rgba(22,163,74,.4)}
-.toggleBtn.off{background:linear-gradient(180deg,#475569 0%,#334155 100%);color:#cbd5e1}
-.toggleBtn:hover{transform:translateY(-1px)}
+.toggleBtn{position:relative;display:inline-flex;align-items:center;gap:10px;padding:9px 18px 9px 14px;border-radius:999px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:700;letter-spacing:.01em;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05);transition:all .2s cubic-bezier(.2,.8,.2,1);overflow:hidden}
+.toggleBtn::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(34,197,94,.0) 0%,rgba(6,182,212,.0) 100%);transition:background .25s ease;pointer-events:none}
+.toggleBtn.on{background:linear-gradient(135deg,#10b981 0%,#06b6d4 100%);border-color:rgba(6,182,212,.55);color:#fff;box-shadow:0 6px 18px rgba(16,185,129,.35),0 0 0 1px rgba(6,182,212,.25) inset,0 0 24px rgba(34,197,94,.18)}
+.toggleBtn.off{background:linear-gradient(180deg,#475569 0%,#334155 100%);color:#cbd5e1;border-color:rgba(148,163,184,.25)}
+.toggleBtn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(16,185,129,.32)}
+.toggleBtn.off:hover{box-shadow:0 6px 16px rgba(0,0,0,.28)}
 .toggleBtn:active{transform:translateY(1px)}
-.toggleBtn .dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.4)}
-.toggleBtn.on .dot{background:#fff;box-shadow:0 0 8px rgba(255,255,255,.6)}
+.toggleBtn .dot{position:relative;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.25);box-shadow:inset 0 1px 0 rgba(255,255,255,.2);transition:all .25s ease}
+.toggleBtn.on .dot{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9),0 0 18px rgba(34,197,94,.55),inset 0 0 0 2px rgba(255,255,255,.6)}
+.toggleBtn.on .dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1px solid rgba(255,255,255,.35);animation:tglPulse 2.2s ease-in-out infinite}
+@keyframes tglPulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.25);opacity:0}}
 /* Renglón de usuario en Pagos — 3D clickeable */
 .userPagoRow{display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;box-shadow:0 3px 10px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.04);cursor:pointer;transition:all .15s var(--ease-out);margin-bottom:10px;flex-wrap:wrap}
 .userPagoRow:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06)}
@@ -1104,14 +1108,15 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .userPagoRow .saldo.ok{color:#22c55e}
 .userPagoRow .saldo .label{font-size:10px;color:var(--text2);font-weight:600;display:block;text-transform:uppercase}
 .userPagoRow .acciones{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;width:100%}
-.btnPagado{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:linear-gradient(180deg,#16a34a 0%,#15803d 100%);color:#fff;border:1px solid #15803d;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 8px rgba(22,163,74,.3),inset 0 1px 0 rgba(255,255,255,.15);transition:all .15s ease;position:relative}
-.btnPagado:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(22,163,74,.4)}
-.btnPagado:active{transform:translateY(1px)}
-.btnPagado.alto{box-shadow:0 0 0 3px rgba(245,158,11,.4),0 3px 8px rgba(22,163,74,.3)}
-.btnPagado.urgente{animation:pulseUrg 1.5s infinite;box-shadow:0 0 0 0 rgba(239,68,68,.55),0 3px 8px rgba(22,163,74,.3)}
+.btnPagado{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:999px;background:linear-gradient(135deg,#10b981 0%,#16a34a 55%,#059669 100%);color:#fff;border:1px solid rgba(16,185,129,.55);font-size:13px;font-weight:800;letter-spacing:.01em;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,.32),0 0 22px rgba(34,197,94,.18),inset 0 1px 0 rgba(255,255,255,.22);transition:all .2s cubic-bezier(.2,.8,.2,1);position:relative;text-shadow:0 1px 1px rgba(0,0,0,.18)}
+.btnPagado:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(16,185,129,.5),0 0 32px rgba(34,197,94,.35),inset 0 1px 0 rgba(255,255,255,.28)}
+.btnPagado:active{transform:translateY(1px);box-shadow:0 2px 8px rgba(16,185,129,.35)}
+.btnPagado:disabled,.btnPagado[disabled]{box-shadow:none;filter:saturate(.4)}
+.btnPagado.alto{box-shadow:0 0 0 3px rgba(245,158,11,.45),0 6px 18px rgba(16,185,129,.45),0 0 26px rgba(34,197,94,.28)}
+.btnPagado.urgente{animation:pulseUrg 1.5s infinite;box-shadow:0 0 0 0 rgba(239,68,68,.55),0 6px 18px rgba(16,185,129,.45),0 0 26px rgba(34,197,94,.28)}
 @keyframes pulseUrg{
-  0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.55),0 3px 8px rgba(22,163,74,.3)}
-  50%{box-shadow:0 0 0 10px rgba(239,68,68,0),0 3px 8px rgba(22,163,74,.3)}
+  0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.55),0 6px 18px rgba(16,185,129,.45),0 0 26px rgba(34,197,94,.28)}
+  50%{box-shadow:0 0 0 12px rgba(239,68,68,0),0 6px 18px rgba(16,185,129,.45),0 0 26px rgba(34,197,94,.28)}
 }
 .pagoSaldoLive{margin-top:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;font-size:12px;line-height:1.7}
 .pagoSaldoLive .line{display:flex;justify-content:space-between;gap:12px}
@@ -6744,20 +6749,30 @@ function renderTable(orders,title,showActs,highlightChanges){
     if(highlightChanges)_commitOrderStateSnapshot(orders);
     const _rol=typeof CU!=='undefined'?CU.rol:'';
     const _emptyMsgs={
-      vendedor:{icon:'📋',titulo:'Todavía no creaste pedidos',sub:'Registrá tu primer pedido para un cliente y empezá a vender.',btn:true},
-      dropshipper:{icon:'🛒',titulo:'Sin pedidos asignados',sub:'Aún no tenés pedidos activos. Cuando se te asigne uno aparecerá aquí.',btn:true},
-      delivery:{icon:'🛵',titulo:'Sin pedidos para entregar',sub:'No hay pedidos asignados a tu cuenta en este momento.',btn:false},
-      cliente:{icon:'🛍️',titulo:'Todavía no hiciste pedidos',sub:'Explorá el catálogo y realizá tu primer compra.',btn:false},
-      proveedor:{icon:'📦',titulo:'Sin pedidos registrados',sub:'No hay pedidos vinculados a tu cuenta de proveedor todavía.',btn:false},
-      admin:{icon:'📊',titulo:'Sin pedidos en el sistema',sub:'Aún no hay pedidos registrados. Podés crear el primero o importar desde CSV.',btn:true},
-      superadmin:{icon:'📊',titulo:'Sin pedidos en el sistema',sub:'Aún no hay pedidos registrados. Podés crear el primero o importar desde CSV.',btn:true},
+      vendedor:{titulo:'Todavía no creaste pedidos',sub:'Registrá tu primer pedido para un cliente y empezá a vender.',btn:true},
+      dropshipper:{titulo:'Sin pedidos asignados',sub:'Aún no tenés pedidos activos. Cuando se te asigne uno aparecerá aquí.',btn:true},
+      delivery:{titulo:'Sin pedidos para entregar',sub:'No hay pedidos asignados a tu cuenta en este momento.',btn:false},
+      cliente:{titulo:'Todavía no hiciste pedidos',sub:'Explorá el catálogo y realizá tu primer compra.',btn:false},
+      proveedor:{titulo:'Sin pedidos registrados',sub:'No hay pedidos vinculados a tu cuenta de proveedor todavía.',btn:false},
+      admin:{titulo:'Sin pedidos en el sistema',sub:'Aún no hay pedidos registrados. Podés crear el primero o importar desde CSV.',btn:true},
+      superadmin:{titulo:'Sin pedidos en el sistema',sub:'Aún no hay pedidos registrados. Podés crear el primero o importar desde CSV.',btn:true},
     };
-    const _em=_emptyMsgs[_rol]||{icon:'📦',titulo:'No hay pedidos',sub:'Comenzá creando tu primer pedido.',btn:true};
+    const _em=_emptyMsgs[_rol]||{titulo:'No hay pedidos',sub:'Comenzá creando tu primer pedido.',btn:true};
     const _canCreate=['admin','superadmin','vendedor','proveedor','dropshipper'].includes(_rol);
-    return '<div style="text-align:center;padding:60px 20px;color:var(--text2)">'+
-      '<div style="font-size:64px;margin-bottom:16px">'+_em.icon+'</div>'+
-      '<div style="font-size:16px;font-weight:600;margin-bottom:6px">'+_em.titulo+'</div>'+
-      '<div style="font-size:13px;color:var(--text3);margin-bottom:18px;max-width:320px;margin-left:auto;margin-right:auto">'+_em.sub+'</div>'+
+    const _emptySvg='<svg width="88" height="88" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:18px;opacity:.85" aria-hidden="true">'+
+      '<defs><linearGradient id="emptyBoxG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity=".18"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>'+
+      '<ellipse cx="44" cy="74" rx="28" ry="4" fill="var(--text3)" opacity=".18"/>'+
+      '<path d="M16 32 L44 20 L72 32 L72 60 L44 72 L16 60 Z" fill="url(#emptyBoxG)" stroke="var(--text2)" stroke-width="1.6" stroke-linejoin="round"/>'+
+      '<path d="M16 32 L44 44 L72 32" stroke="var(--text2)" stroke-width="1.6" stroke-linejoin="round" fill="none"/>'+
+      '<path d="M44 44 L44 72" stroke="var(--text2)" stroke-width="1.6" stroke-linejoin="round" fill="none"/>'+
+      '<path d="M30 26 L30 38" stroke="var(--text3)" stroke-width="1.2" stroke-linecap="round" opacity=".55"/>'+
+      '<path d="M58 26 L58 38" stroke="var(--text3)" stroke-width="1.2" stroke-linecap="round" opacity=".55"/>'+
+      '<circle cx="44" cy="56" r="2" fill="var(--text3)" opacity=".7"/>'+
+    '</svg>';
+    return '<div style="text-align:center;padding:60px 20px;color:var(--text2);display:flex;flex-direction:column;align-items:center;justify-content:center">'+
+      _emptySvg+
+      '<div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">'+_em.titulo+'</div>'+
+      '<div style="font-size:13px;color:var(--text3);margin-bottom:18px;max-width:320px;line-height:1.5">'+_em.sub+'</div>'+
       (_em.btn&&_canCreate?'<button class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
       '</div>';
   }
@@ -11768,7 +11783,7 @@ function openPerfilUsuario(){
       '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Notificaciones push</div>'+
       '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);padding:12px 14px;border-radius:var(--radius);gap:10px">'+
       '<div style="font-size:13px;color:var(--text2)">Recibí alertas de pedidos y mensajes en este dispositivo.</div>'+
-      '<button id="pfPushBtn" class="toggleBtn '+(_ok?'on':'off')+'" onclick="_togglePushNotif()"><span class="dot"></span>🔔 '+(_ok?'Activadas':'Activar')+'</button>'+
+      '<button id="pfPushBtn" class="toggleBtn '+(_ok?'on':'off')+'" onclick="_togglePushNotif()" aria-pressed="'+(_ok?'true':'false')+'"><span class="dot"></span><span style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>'+(_ok?'Activadas':'Activar')+'</span></button>'+
       '</div></div>'
     );})():'')+
     /* WhatsApp por estado de pedido (TAREA 1) */
@@ -14646,7 +14661,7 @@ async function _activarPush(){
       const btn=document.getElementById(id);
       if(btn){
         btn.classList.remove('off');btn.classList.add('on');
-        btn.innerHTML='<span class="dot"></span>🔔 Activadas';
+        btn.innerHTML='<span class="dot"></span><span style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>Activadas</span>';
       }
     });
     pushNotif('✅ Notificaciones activadas en este dispositivo.','s');
@@ -15099,7 +15114,7 @@ PAGES.pagos=function(){
             fmt(saldo)+
           '</div>'+
           '<div class="acciones">'+
-            '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openRegistrarPago(\''+escAttr(u.id)+'\')">💵 Registrar Pago</button>'+
+            '<button class="btnPagado" style="padding:8px 14px;font-size:12.5px" onclick="event.stopPropagation();openRegistrarPago(\''+escAttr(u.id)+'\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>Registrar Pago</button>'+
             btnPagado+
             '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();verHistorialPagos(\''+escAttr(u.id)+'\')">'+SVG.clipboard+' Ver Historial</button>'+
           '</div>'+
@@ -15293,7 +15308,7 @@ function openRegistrarPago(targetUserId,montoPreRellenado){
     '</div>'+
     '<div class="fg"><label>Fecha</label><input type="date" id="pagoFecha" value="'+hoy+'"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="confirmarRegistroPago(\''+escAttr(targetUserId)+'\')">💾 Registrar</button>'
+    '<button class="btnPagado" onclick="confirmarRegistroPago(\''+escAttr(targetUserId)+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Registrar</button>'
   );
   // Trigger inicial del cálculo en vivo
   setTimeout(function(){ _actualizarSaldoLive(saldoActual); },50);
