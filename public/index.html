@@ -4441,9 +4441,12 @@ function _renderAccountMenu(){
 }
 window._renderAccountMenu=_renderAccountMenu;
 function _confirmRemoveAccount(uid){
-  if(confirm('¿Quitar esta cuenta del selector? Vas a tener que volver a iniciar sesión para usarla.')){
-    _removeAccount(uid);
-  }
+  openA('Quitar cuenta',
+    '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Quitar esta cuenta del selector?</div>'+
+    '<div style="font-size:12px;color:var(--text3);margin-top:6px">Vas a tener que volver a iniciar sesión para usarla.</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_removeAccount('+uid+')">Quitar</button>'
+  );
 }
 window._confirmRemoveAccount=_confirmRemoveAccount;
 function _promptAddAccount(prefillEmail,_replaceId){
@@ -4561,8 +4564,7 @@ function _updateTutorialToggleBtn(){
   btn.style.opacity=on?'':'0.55';
 }
 window._updateTutorialToggleBtn=_updateTutorialToggleBtn;
-function _resetTutorial(){
-  if(!confirm('¿Reiniciar todos los tutoriales? Aparecerán de nuevo cuando entres a cada página.')) return;
+function _doResetTutorial(){
   try{
     var keys=[];
     for(var i=0;i<localStorage.length;i++){
@@ -4574,6 +4576,13 @@ function _resetTutorial(){
   }catch(_){}
   if(typeof pushNotif==='function') pushNotif('Tutoriales reiniciados','ok');
 }
+function _resetTutorial(){
+  openA('Reiniciar tutoriales',
+    '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Reiniciar todos los tutoriales? Aparecerán de nuevo cuando entrés a cada página.</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn" style="background:var(--accent);color:#fff;border:none" onclick="closeA();_doResetTutorial()">Sí, reiniciar</button>'
+  );
+}
 window._resetTutorial=_resetTutorial;
 
 function confirmLogout(){
@@ -4584,7 +4593,7 @@ function confirmLogout(){
       '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
       '<button class="btn btn-danger" onclick="closeA();doLogout()">Sí, cerrar sesión</button>'
     );
-  }else if(confirm('¿Cerrar sesión?')){doLogout();}
+  }
 }
 function _cleanAllAppStorage(){
   try{
@@ -11691,18 +11700,26 @@ async function saveEditPresentacion(prodId,presId){
   pushNotif('Presentación actualizada','s');
   DL.saveProducto(p);
 }
-async function delPresentacion(prodId,presId){
+async function _doDelPresentacion(prodId,presId){
   const p=_catalogoCache.find(x=>String(x.id)===String(prodId));if(!p||!Array.isArray(p.presentaciones))return;
-  const pr=p.presentaciones.find(x=>String(x.id)===String(presId));
-  if(!pr)return;
-  if(!confirm('¿Eliminar la presentación "'+(pr.nombre||'sin nombre')+'"?\n\nPodrá restaurarla desde la sección "Presentaciones eliminadas" dentro del producto.'))return;
-  // Soft delete: marca, no remueve
+  const pr=p.presentaciones.find(x=>String(x.id)===String(presId));if(!pr)return;
   pr._eliminado=true;
   pr._eliminadoAt=new Date().toISOString();
   pr._eliminadoPor=(typeof CU!=='undefined'&&CU)?CU.id:null;
   await DL.saveProducto(p);
   if(typeof pushNotif==='function')pushNotif('Presentación eliminada. Podrá restaurarla desde el producto.','ok');
   PAGES.catalogo();
+}
+async function delPresentacion(prodId,presId){
+  const p=_catalogoCache.find(x=>String(x.id)===String(prodId));if(!p||!Array.isArray(p.presentaciones))return;
+  const pr=p.presentaciones.find(x=>String(x.id)===String(presId));
+  if(!pr)return;
+  openA('Eliminar presentación',
+    '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Eliminar la presentación "<strong>'+escHtml(pr.nombre||'sin nombre')+'</strong>"?</div>'+
+    '<div style="font-size:12px;color:var(--text3);margin-top:6px">Podrá restaurarla desde "Presentaciones eliminadas" dentro del producto.</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doDelPresentacion(\''+prodId+'\',\''+presId+'\')">Eliminar</button>'
+  );
 }
 async function restaurarPresentacion(prodId,presId){
   const p=(window._catalogoCache||_catalogoCache||[]).find(x=>String(x.id)===String(prodId));
@@ -12874,12 +12891,15 @@ function _resetColor(key,defaultValue){
     document.documentElement.style.removeProperty('--'+key);
   }
 }
+function _doResetTema(){
+  try{localStorage.removeItem('iporave_tema_custom');location.reload();}catch(e){}
+}
 function _resetTema(){
-  if(!confirm('¿Restaurar todos los colores a los valores originales?'))return;
-  try{
-    localStorage.removeItem('iporave_tema_custom');
-    location.reload();
-  }catch(e){}
+  openA('Restaurar colores',
+    '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Restaurar todos los colores a los valores originales? La página se va a recargar.</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn" style="background:var(--accent);color:#fff;border:none" onclick="closeA();_doResetTema()">Sí, restaurar</button>'
+  );
 }
 function _exportarTema(){
   const tema={
@@ -12978,12 +12998,19 @@ function _aplicarGradient(){
     }
   }catch(e){}
 })();
-function resetAll(){
-  if(!confirm('¿Resetear TODOS los datos al estado demo?'))return;
+function _doResetAll(){
   ['users','usersVer','orders','zonas','cupos','jornadas'].forEach(k=>localStorage.removeItem('ipv5_'+k));
   DL._initLocal();
   refreshCache().then(()=>nav('dashboard'));
   pushNotif('Datos reseteados','w');
+}
+function resetAll(){
+  openA('Resetear datos demo',
+    '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Resetear <strong>TODOS</strong> los datos al estado demo?</div>'+
+    '<div style="font-size:12px;color:var(--red);margin-top:6px">Esta acción no se puede deshacer.</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doResetAll()">Sí, resetear</button>'
+  );
 }
 
 /* ─── MENSAJES PAGE ─── */
