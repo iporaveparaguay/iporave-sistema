@@ -269,7 +269,11 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 :root[data-theme="light"] .mapa-estilo-btn:hover,
 :root[data-theme="light-soft"] .mapa-estilo-btn:hover{background:rgba(255,255,255,1);}
 :root[data-theme="light"] .mapa-estilo-btn.active,
-:root[data-theme="light-soft"] .mapa-estilo-btn.active{color:#fff;}
+:root[data-theme="light-soft"] .mapa-estilo-btn.active{background:linear-gradient(180deg, var(--accent), #c47a1a);color:#fff;border-color:var(--accent);box-shadow:0 4px 14px rgba(196,122,26,0.4), 0 0 0 2px rgba(196,122,26,0.15);}
+:root[data-theme="light"] .mapa-estilo-btn:hover:not(.active),
+:root[data-theme="light-soft"] .mapa-estilo-btn:hover:not(.active){background:rgba(255,255,255,0.98);border-color:rgba(196,122,26,0.4);color:#c47a1a;transform:translateY(-1px);}
+:root[data-theme="light"] .mapa-locate-btn.active,
+:root[data-theme="light-soft"] .mapa-locate-btn.active{background:linear-gradient(180deg, var(--accent), #c47a1a);color:#fff;border-color:var(--accent);}
 .mapa-locate-btn{position:absolute;bottom:14px;right:12px;z-index:5;width:36px;height:36px;border-radius:10px;background:rgba(20,22,28,0.85);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.18);transition:transform .15s var(--ease-out,ease-out), background .15s var(--ease-out,ease-out), border-color .15s var(--ease-out,ease-out);}
 .mapa-locate-btn:hover{background:rgba(20,22,28,0.95);transform:translateY(-1px);border-color:var(--accent);box-shadow:0 6px 16px rgba(0,0,0,0.25), 0 0 0 1px rgba(245,166,35,0.2);}
 .mapa-locate-btn svg{width:18px;height:18px;stroke-width:1.8;}
@@ -461,6 +465,19 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .search-combo-list li:hover,.search-combo-list li.active{background:var(--accent);color:#fff}
 .search-combo-list li.empty{color:var(--text3);cursor:default;font-style:italic}
 .search-combo-list li.empty:hover{background:transparent;color:var(--text3)}
+/* MAPA COMBO BTN — apariencia de botón compacto coherente con .mapBtn */
+#mapaZonaCombo,#mapaVendCombo{min-width:0;max-width:180px;width:180px;vertical-align:middle}
+#mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:36px;padding:7px 30px 7px 32px;font:600 12px var(--font,inherit);border-radius:10px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border:1px solid var(--border);box-shadow:0 2px 4px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.05);cursor:pointer;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+#mapaZonaCombo .search-combo-input:hover,#mapaVendCombo .search-combo-input:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08)}
+#mapaZonaCombo .search-combo-input:focus,#mapaVendCombo .search-combo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.25),inset 0 1px 0 rgba(255,255,255,.05)}
+#mapaZonaCombo .search-combo-emoji,#mapaVendCombo .search-combo-emoji{font-size:12px;left:11px}
+#mapaZonaCombo::after,#mapaVendCombo::after{content:"";position:absolute;right:12px;top:50%;width:8px;height:8px;border-right:2px solid var(--text2);border-bottom:2px solid var(--text2);transform:translateY(-70%) rotate(45deg);pointer-events:none;opacity:.85}
+#mapaZonaCombo .search-combo-clear,#mapaVendCombo .search-combo-clear{right:6px}
+#mapaZonaCombo .search-combo-list,#mapaVendCombo .search-combo-list{max-height:220px;border-radius:10px}
+#mapaZonaCombo .search-combo-list li,#mapaVendCombo .search-combo-list li{padding:7px 12px;font:500 13px var(--font,inherit);border-radius:7px}
+[data-theme="light"] #mapaZonaCombo .search-combo-input,[data-theme="light"] #mapaVendCombo .search-combo-input,[data-theme="light-soft"] #mapaZonaCombo .search-combo-input,[data-theme="light-soft"] #mapaVendCombo .search-combo-input{background:linear-gradient(180deg,#ffffff 0%,#f3f4f6 100%);color:#1a1f2c;border-color:#d1d5db;box-shadow:0 1px 3px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.6)}
+[data-theme="light"] #mapaZonaCombo::after,[data-theme="light"] #mapaVendCombo::after,[data-theme="light-soft"] #mapaZonaCombo::after,[data-theme="light-soft"] #mapaVendCombo::after{border-color:#4b5563}
+@media(max-width:640px){#mapaZonaCombo,#mapaVendCombo{max-width:150px;width:150px}#mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:32px;font-size:11px;padding:6px 26px 6px 28px}}
 /* SEARCH INPUT PREMIUM (sin combo, para buscadores simples) */
 .search-input-premium{padding:10px 14px;background:linear-gradient(180deg,var(--bg2),var(--bg3));border:1px solid var(--border2);border-radius:12px;color:var(--text);font:500 14px var(--font,inherit);transition:border .15s,box-shadow .15s;box-sizing:border-box}
 .search-input-premium:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.15)}
@@ -12838,10 +12855,10 @@ PAGES.mapa=function(){
   if(esDelivery&&!window._mapaFiltroDelivery)window._mapaFiltroDelivery=String(CU.id);
   if(esLimitado&&!window._mapaFiltroVend)window._mapaFiltroVend=String(CU.id);
   $('tbTitle').textContent=esDelivery?'Mis pedidos — Mapa':'Mapa de Pedidos';
-  const zonaSel=!esDelivery?'<div id="mapaZonaCombo" class="search-combo" style="min-width:200px"></div>':'';
+  const zonaSel=!esDelivery?'<div id="mapaZonaCombo" class="search-combo"></div>':'';
   const vendSel=esDelivery
     ?''
-    :'<div id="mapaVendCombo" class="search-combo" style="min-width:200px"></div>';
+    :'<div id="mapaVendCombo" class="search-combo"></div>';
   const dlvBtn=esAdmin?'<button id="btnMapaDlvs" class="map-btn'+(window._mapaShowDlvs?' active':'')+'" onclick="_mapaToggleDlvs()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Deliverys</button>':'';
   const rutaBtn=esDelivery?'<button class="map-btn" onclick="_rutaOptima()" style="background:#7c3aed;border-color:#6d28d9;color:#fff"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v9h5v-5h4v5h5v-9"/></svg>Ruta óptima</button>':'';
   const turnoActivo=esDelivery&&CU.turno_activo;
