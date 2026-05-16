@@ -3235,7 +3235,9 @@ function waSend(phone,msg){
   const clean=phone.toString().replace(/\D/g,'');
   const num=clean.startsWith('595')?clean:'595'+clean.replace(/^0/,'');
   const url='https://wa.me/'+num+'?text='+encodeURIComponent(msg);
-  window.open(url,'_blank');
+  const _a=document.createElement('a');
+  _a.href=url;_a.target='_blank';_a.rel='noopener noreferrer';
+  document.body.appendChild(_a);_a.click();document.body.removeChild(_a);
 }
 function waPedidoCreado(o){
   const cfg=getCfg();if(!cfg.waEnabled)return;
@@ -7354,6 +7356,7 @@ function dlvModal(id){
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-success" onclick="confirmDlv('+id+')">Confirmar</button>'
   );
+  _fotoBase64='';
   startGPS();toggleDlvF();
 }
 function toggleDlvF(){
@@ -10688,25 +10691,29 @@ async function _scannerNuevoProductoLeido(codigo){
   const codigoN=(codigo||'').trim();
   if(!codigoN||_scannerNPLock)return;
   _scannerNPLock=true;
-  _scanBeep();
-  if(_scannerNP){try{await _scannerNP.stop();}catch(e){}_scannerNP=null;}
-  const r=$('qr-result-np');
-  if(r)r.innerHTML='<span style="color:var(--text3)">Buscando info del producto...</span>';
-  const info=await _scanLookupOpenFood(codigoN);
-  closeA();
-  setTimeout(()=>{
-    openNuevoProducto();
+  try{
+    _scanBeep();
+    if(_scannerNP){try{await _scannerNP.stop();}catch(e){}_scannerNP=null;}
+    const r=$('qr-result-np');
+    if(r)r.innerHTML='<span style="color:var(--text3)">Buscando info del producto...</span>';
+    const info=await _scanLookupOpenFood(codigoN);
+    closeA();
     setTimeout(()=>{
-      const cCod=$('npCodigo');if(cCod)cCod.value=codigoN;
-      if(info.nombre){const cNom=$('npNom');if(cNom&&!cNom.value)cNom.value=info.nombre;}
-      if(info.categoria){const cCat=$('npCat');if(cCat&&cCat.querySelector('option[value="'+info.categoria+'"]'))cCat.value=info.categoria;}
-      if(info.nombre){
-        pushNotif('Codigo listo: '+escHtml(info.nombre),'i');
-      }else{
-        pushNotif('Codigo listo: '+escHtml(codigoN),'i');
-      }
-    },250);
-  },200);
+      openNuevoProducto();
+      setTimeout(()=>{
+        const cCod=$('npCodigo');if(cCod)cCod.value=codigoN;
+        if(info.nombre){const cNom=$('npNom');if(cNom&&!cNom.value)cNom.value=info.nombre;}
+        if(info.categoria){const cCat=$('npCat');if(cCat&&cCat.querySelector('option[value="'+info.categoria+'"]'))cCat.value=info.categoria;}
+        if(info.nombre){
+          pushNotif('Codigo listo: '+escHtml(info.nombre),'i');
+        }else{
+          pushNotif('Codigo listo: '+escHtml(codigoN),'i');
+        }
+      },250);
+    },200);
+  }finally{
+    _scannerNPLock=false;
+  }
 }
 function _scanManualNuevoProducto(){
   const codigo=_scanManualValue('scanManualNP');
@@ -14739,10 +14746,11 @@ function _gpsLoopTick(){
 }
 let _gpsBannerTimer=null;
 function _gpsToggleFromPill(){
-  if(confirm('¿Pausar compartir ubicación?')){
-    _gpsLoopStop();
-    if(typeof pushNotif==='function')pushNotif('Compartido de ubicación pausado','i');
-  }
+  openA('Pausar GPS',
+    '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Pausar compartir ubicación?</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-danger" onclick="closeA();_gpsLoopStop();if(typeof pushNotif===\'function\')pushNotif(\'Compartido de ubicación pausado\',\'i\')">Sí, pausar</button>'
+  );
 }
 function _gpsBannerShow(){
   // Eliminar banner viejo si quedó suelto en el DOM
@@ -14843,15 +14851,23 @@ async function _mapaCambiarEstado(id,nuevoEstado){
   }
 }
 
+async function _toggleTurnoConfirmado(){
+  const btn=$('btnTurno');
+  _gpsLoopStop();
+  CU.turno_activo=false;
+  await DL.saveUser({id:CU.id,turno_activo:false});
+  if(btn){btn.innerHTML='<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16"/><'+'/svg>Iniciar turno';btn.className='map-btn btn-start';}
+  pushNotif('Turno finalizado — ya no se comparte tu posición','w');
+}
 async function _toggleTurno(){
   const btn=$('btnTurno');
   if(CU.turno_activo){
-    if(!confirm('¿Finalizar turno? Dejarás de compartir tu posición.'))return;
-    _gpsLoopStop();
-    CU.turno_activo=false;
-    await DL.saveUser({id:CU.id,turno_activo:false});
-    if(btn){btn.innerHTML='<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16"/><'+'/svg>Iniciar turno';btn.className='map-btn btn-start';}
-    pushNotif('Turno finalizado — ya no se comparte tu posición','w');
+    openA('Finalizar turno',
+      '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Finalizar turno? Dejarás de compartir tu posición.</div>',
+      '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-danger" onclick="closeA();_toggleTurnoConfirmado()">Sí, finalizar</button>'
+    );
+    return;
   } else {
     const misPedidos=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     _gpsLoopStart(misPedidos[0]||null);
