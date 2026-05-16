@@ -319,7 +319,7 @@ footer{
     <div class="foot-text">Powered by Iporãve Paraguay 🇵🇾</div>
     <div class="foot-links">
       <a href="/catalog.html" class="footer-link">🛍️ Ver catálogo</a>
-      <a href="https://wa.me/595981234567" target="_blank">Soporte WhatsApp</a>
+      <a href="#" onclick="return false">Soporte WhatsApp</a>
       <a href="https://iporaveparaguay.com" target="_blank">Tienda</a>
     </div>
   </footer>
@@ -434,7 +434,7 @@ function render(d){
 
   const hero=getHero(d.estado);
   const tel=phone(d.delivery?.telefono);
-  const pr=precio(d.precio);
+  const pr=precio((d.precio||0)*(d.qty||1));
   const enRuta=d.estado==='En ruta';
 
   // HERO
@@ -581,13 +581,20 @@ function render(d){
   if(enRuta)setTimeout(()=>refresh(orderId),10000);
 }
 
+var _refreshRetries=0;
 async function refresh(id){
   try{
     const res=await fetch(`${API}/api/track?id=${id}`);
     const d=await res.json();
+    _refreshRetries=0;
     if(d.delivery?.lat&&d.delivery?.lng)updateDlvMarker(d.delivery.lat,d.delivery.lng,d.delivery.nombre);
     if(d.estado==='En ruta')setTimeout(()=>refresh(id),10000);
   }catch(e){
+    _refreshRetries++;
+    if(_refreshRetries>10){
+      showErr('Sin conexión','No se pudo conectar. Recargá la página.');
+      return;
+    }
     setTimeout(()=>refresh(id),15000);
   }
 }

@@ -969,13 +969,13 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
     width:260px;
     transform:translateX(-100%);
     transition:transform .28s cubic-bezier(.4,0,.2,1);
-    z-index:200;
+    z-index:400;
     box-shadow:4px 0 24px rgba(0,0,0,.5);
   }
   .sidebar.open{transform:translateX(0);}
   #sideOverlay{
     display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
-    z-index:199;opacity:0;transition:opacity .28s;
+    z-index:399;opacity:0;transition:opacity .28s;
   }
   #sideOverlay.show{display:block;opacity:1;}
   /* Fix: main en mobile como columna fija para que sticky topbar funcione bien */
@@ -1096,23 +1096,38 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .sgrid{overflow:hidden;}
   .sc{box-sizing:border-box;min-width:0;word-break:break-word;}
 }
-/* FIX mobile mapa: variable offset altura + topbar horizontal + panel ⋯ */
+/* FIX mobile mapa: 2 filas en topbar — botones fila 1, combos fila 2 */
 @media(max-width:639px){
-  :root{--mapa-offset:160px;}
-  /* Topbar mapa: no wrappear, scroll horizontal si hace falta */
-  .page-mapa #tbActions,.tbactions:has(.mapa-secundarios) #tbActions,#tbActions:has(.mapa-secundarios){
-    flex-wrap:nowrap!important;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
+  :root{--mapa-offset:175px;}
+  /* Topbar mapa mobile: 2 filas */
+  .page-mapa #tbActions,#tbActions:has(.mapa-secundarios){
+    flex-wrap:wrap!important;
+    overflow:visible!important;
     gap:4px!important;
-    padding-right:4px;
+    padding:4px 6px;
     align-items:center;
   }
-  /* Combos zona/vendedor: compactos en mobile */
-  .page-mapa .search-combo,.tbactions:has(.mapa-secundarios) .search-combo{
-    min-width:70px!important;
-    max-width:100px!important;
+  /* Fila 1: botones de acción */
+  .page-mapa #tbActions .map-btn,#tbActions:has(.mapa-secundarios) .map-btn,.mapa-secundarios{
+    order:1;
     flex-shrink:0;
+  }
+  /* Fila 2: combos zona y usuario — 50% cada uno */
+  #mapaZonaCombo,#mapaVendCombo{
+    order:2!important;
+    flex:1 1 calc(50% - 4px)!important;
+    max-width:calc(50% - 4px)!important;
+    min-width:0!important;
+  }
+  /* Dropdown combos: position fixed para evitar clipping por overflow del parent */
+  #mapaZonaCombo .search-combo-list,#mapaVendCombo .search-combo-list{
+    position:fixed!important;
+    left:8px!important;
+    right:8px!important;
+    top:145px!important;
+    width:auto!important;
+    max-height:40vh!important;
+    z-index:9999!important;
   }
   /* Botones del mapa más compactos en mobile */
   .map-btn{padding:5px 8px!important;font-size:11px!important;gap:3px!important;flex-shrink:0;white-space:nowrap;}
@@ -2875,7 +2890,7 @@ function initRealtime(){
         const esVend=rol==='vendedor'&&String(r.vendedor_id)===String(CU?.id);
         const esDrop=rol==='dropshipper'&&String(r.drop_id)===String(CU?.id);
         const esDlv=rol==='delivery'&&String(r.delivery_id)===String(CU?.id);
-        const esProv=rol==='proveedor'&&String(r.vendedor_id)===String(CU?.id);
+        const esProv=rol==='proveedor'&&String(r.proveedor_id)===String(CU?.id);
         const esCli=rol==='cliente'&&(r.cliente||'')===(CU?.nombre||'');
         const esRelevante=esAdm||esVend||esDrop||esDlv||esProv||esCli;
         if(!esRelevante)return;
@@ -10460,12 +10475,12 @@ function crearPedidoDesdeProducto(id){
   setTimeout(()=>{
     openNewOrder();
     setTimeout(()=>{
-      const ep=$('noProducto');if(ep)ep.value=p.nombre;
-      const epProv=$('noProveedor');if(epProv&&p.proveedorNombre)epProv.value=p.proveedorNombre;
+      const ep=$('nProd');if(ep)ep.value=p.nombre;
+      const epProv=$('nProv');if(epProv&&p.proveedorNombre)epProv.value=p.proveedorNombre;
       if(p.presentaciones&&p.presentaciones.length){
         const pr=p.presentaciones[0];
-        const ep2=$('noPrecio');if(ep2)ep2.value=_getPrecioRol(pr,CU.rol)||pr.precio||0;
-        const ep3=$('noCosto');if(ep3)ep3.value=pr.precioProveedor||0;
+        const ep2=$('nPrec');if(ep2)ep2.value=_getPrecioRol(pr,CU.rol)||pr.precio||0;
+        const ep3=$('nCost');if(ep3)ep3.value=pr.precioProveedor||0;
       }
     },300);
   },200);
@@ -16243,7 +16258,7 @@ PAGES.clientes_zonas = function(){
   const clientesPorZona = {};
   (_ordersCache||[]).forEach(o => {
     if(!o.cliente) return;
-    const zonaId = o.zonaId || 'sin_zona';
+    const zonaId = o.zona || 'sin_zona';
     const zona = (typeof _zonasCache!=='undefined' && _zonasCache) ? _zonasCache.find(z => String(z.id)===String(zonaId)) : null;
     const zonaNombre = zona && zona.nombre ? zona.nombre : 'Sin zona asignada';
     if(!clientesPorZona[zonaNombre]){
@@ -16580,7 +16595,7 @@ function exportarClientesZonasCSV(){
   csv += 'Zona,Nombre,Telefono,Direccion,Pedidos,Monto Total,Ultimo Pedido\n';
   (_ordersCache||[]).reduce(function(map, o){
     if(!o.cliente) return map;
-    const zonaId = o.zonaId || 'sin_zona';
+    const zonaId = o.zona || 'sin_zona';
     const zona = (typeof _zonasCache!=='undefined' && _zonasCache) ? _zonasCache.find(z => String(z.id)===String(zonaId)) : null;
     const zonaNombre = zona && zona.nombre ? zona.nombre : 'Sin zona';
     const key = zonaNombre + '|' + (o.telefono || o.cliente).toLowerCase();
