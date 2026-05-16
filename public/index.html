@@ -341,6 +341,25 @@ body:not(:has(#appScreen.show)) .overlay-sidebar{display:none!important;visibili
 .mapBar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;overflow-x:auto}
 .mapBar .sep{width:1px;background:var(--border);margin:0 4px}
 @media(max-width:640px){.mapBtn{padding:6px 10px;font-size:11px}}
+/* SEARCH COMBO PREMIUM (estilo Apple/Linear) */
+.search-combo{position:relative;min-width:220px;display:inline-block;vertical-align:middle}
+.search-combo-input{width:100%;padding:10px 36px 10px 38px;background:linear-gradient(180deg,var(--bg2),var(--bg3));border:1px solid var(--border2);border-radius:12px;color:var(--text);font:500 14px var(--font,inherit);transition:border .15s,box-shadow .15s;box-sizing:border-box}
+.search-combo-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.15)}
+.search-combo-input::placeholder{color:var(--text3);opacity:.7}
+.search-combo-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text3);pointer-events:none}
+.search-combo-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;color:var(--text3);padding:4px;border-radius:6px;display:none}
+.search-combo-clear.show{display:flex;align-items:center;justify-content:center}
+.search-combo-clear:hover{background:var(--bg3);color:var(--text)}
+.search-combo-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;list-style:none;padding:4px;margin:0;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:1000;display:none}
+.search-combo-list.open{display:block}
+.search-combo-list li{padding:8px 12px;border-radius:8px;cursor:pointer;font:500 13px var(--font,inherit);color:var(--text)}
+.search-combo-list li:hover,.search-combo-list li.active{background:var(--accent);color:#fff}
+.search-combo-list li.empty{color:var(--text3);cursor:default;font-style:italic}
+.search-combo-list li.empty:hover{background:transparent;color:var(--text3)}
+/* SEARCH INPUT PREMIUM (sin combo, para buscadores simples) */
+.search-input-premium{padding:10px 14px;background:linear-gradient(180deg,var(--bg2),var(--bg3));border:1px solid var(--border2);border-radius:12px;color:var(--text);font:500 14px var(--font,inherit);transition:border .15s,box-shadow .15s;box-sizing:border-box}
+.search-input-premium:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.15)}
+.search-input-premium::placeholder{color:var(--text3);opacity:.7}
 /* FILTROS PREMIUM REUSABLES */
 .filterBtn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:10px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);color:var(--text);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.05);transition:all .15s ease;user-select:none;white-space:nowrap}
 .filterBtn:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08)}
@@ -10559,7 +10578,7 @@ function openNuevoMensaje(){
     '</div>'
   ).join('');
   openA('Nuevo mensaje',
-    '<div style="margin-bottom:8px"><input type="text" id="mcSearch" placeholder="Buscar usuario…" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 12px;color:var(--text);font-size:13px" oninput="_dbSearch(\'mcSrch\',this.value,v=>filtrarContactos(v),180)"></div>'+
+    '<div style="margin-bottom:8px"><input type="text" id="mcSearch" class="search-input-premium" placeholder="Buscar usuario…" style="width:100%" oninput="_dbSearch(\'mcSrch\',this.value,v=>filtrarContactos(v),180)"></div>'+
     '<div id="mcContactList" style="max-height:320px;overflow-y:auto">'+items+'</div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'
   );
@@ -10607,7 +10626,7 @@ function _renderModalContactos(q){
     '</div>'
   ).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">No hay más usuarios disponibles para agregar.</div>';
   openA('👥 Mis contactos',
-    '<div style="margin-bottom:12px"><input type="text" placeholder="Buscar…" value="'+escAttr(q)+'" oninput="_dbSearch(\'modCnts\',this.value,v=>_renderModalContactos(v),180)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:13px"></div>'+
+    '<div style="margin-bottom:12px"><input type="text" class="search-input-premium" placeholder="Buscar…" value="'+escAttr(q)+'" oninput="_dbSearch(\'modCnts\',this.value,v=>_renderModalContactos(v),180)" style="width:100%"></div>'+
     '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);font-weight:700;margin-bottom:6px">Mis contactos</div>'+
     '<div id="mcMios">'+htmlMios+'</div>'+
     '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);font-weight:700;margin:12px 0 6px">Agregar contacto</div>'+
@@ -11248,25 +11267,32 @@ function _mapaUpdateContadores(){
     const active=(fEst===es)||(es==='En Ruta'&&fEst==='En ruta');
     const dot=isAll?'':'<span class="dot" style="background:'+DOTS[es]+'"></span>';
     return '<button class="mapBtn'+(active?' active':'')+'" data-grp="estado" data-val="'+es+'" '+
-      'onclick="window._mapaFiltroEstado=\''+es+'\';_aplicarFiltrosMapa();">'+dot+es+' ('+n+')</button>';
+      'onclick="_mapaSetEstado(\''+es+'\')">'+dot+es+' ('+n+')</button>';
   }).join('');
 
   const btnsTipo=
+    '<button class="mapBtn'+(fTipo==='todos'?' active':'')+'" data-grp="tipo" data-val="todos" '+
+      'onclick="_mapaSetTipo(&quot;todos&quot;)">🌐 Todos</button>'+
     '<button class="mapBtn'+(fTipo==='deliveries'?' active':'')+'" data-grp="tipo" data-val="deliveries" '+
-      'onclick="window._mapaFiltroTipo=(window._mapaFiltroTipo===&quot;deliveries&quot;?&quot;todos&quot;:&quot;deliveries&quot;);_aplicarFiltrosMapa();">🛵 Solo Deliveries</button>'+
+      'onclick="_mapaSetTipo(&quot;deliveries&quot;)">🛵 Solo Deliveries</button>'+
     '<button class="mapBtn'+(fTipo==='pedidos'?' active':'')+'" data-grp="tipo" data-val="pedidos" '+
-      'onclick="window._mapaFiltroTipo=(window._mapaFiltroTipo===&quot;pedidos&quot;?&quot;todos&quot;:&quot;pedidos&quot;);_aplicarFiltrosMapa();">📍 Solo Pedidos</button>';
+      'onclick="_mapaSetTipo(&quot;pedidos&quot;)">📍 Solo Pedidos</button>';
 
-  let dlvOpts='<option value="">🔍 Buscar delivery</option>';
+  // Combobox custom premium para búsqueda de deliveries
+  let dlvCurrentName='';
   try{
-    const dlvs=(window._usersCache||[]).filter(u=>u.rol==='delivery'&&u.activo!==false);
-    dlvs.forEach(d=>{
-      const sel=String(window._mapaFiltroDelivery||'')===String(d.id)?' selected':'';
-      const nom=(d.nombre||d.email||('ID '+d.id));
-      dlvOpts+='<option value="'+d.id+'"'+sel+'>🛵 '+nom+'</option>';
-    });
+    const cur=String(window._mapaFiltroDelivery||'');
+    if(cur){
+      const found=(window._usersCache||[]).find(u=>String(u.id)===cur);
+      if(found)dlvCurrentName=(found.nombre||found.email||('ID '+found.id));
+    }
   }catch(e){}
-  const dlvSel='<select class="mapBtn" onchange="window._mapaFiltroDelivery=this.value||null;_aplicarFiltrosMapa();">'+dlvOpts+'</select>';
+  const dlvSel='<div class="search-combo" id="dlvSearchCombo">'+
+    '<svg class="search-combo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>'+
+    '<input type="text" class="search-combo-input" id="dlvSearchInput" placeholder="Buscar delivery..." autocomplete="off" value="'+escAttr(dlvCurrentName)+'">'+
+    '<button type="button" class="search-combo-clear'+(dlvCurrentName?' show':'')+'" id="dlvSearchClear" aria-label="Limpiar"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>'+
+    '<ul class="search-combo-list" id="dlvSearchList"></ul>'+
+    '</div>';
 
   // Botones por zona (fila secundaria)
   let zonaButtonsHtml='';
@@ -11286,9 +11312,116 @@ function _mapaUpdateContadores(){
 
   el.innerHTML=btnsEstado+'<div class="sep"></div>'+btnsTipo+'<div class="sep"></div>'+dlvSel+zonaButtonsHtml;
 
+  // Cablear combobox custom de delivery
+  try{_setupDlvSearchCombo();}catch(e){console.warn('dlvCombo setup',e);}
+
   window._mapaFiltro=(fEst==='Todos')?null:fEst;
 }
 
+// Setup del combobox custom de búsqueda de delivery (estilo Apple/Linear)
+function _setupDlvSearchCombo(){
+  const combo=document.getElementById('dlvSearchCombo');
+  const input=document.getElementById('dlvSearchInput');
+  const list=document.getElementById('dlvSearchList');
+  const clear=document.getElementById('dlvSearchClear');
+  if(!combo||!input||!list||!clear)return;
+  const getDlvs=()=>{
+    try{return (window._usersCache||[]).filter(u=>u.rol==='delivery'&&u.activo!==false);}catch(e){return[];}
+  };
+  let activeIdx=-1;
+  const render=(q)=>{
+    const dlvs=getDlvs();
+    const ql=(q||'').toLowerCase().trim();
+    const filtered=ql?dlvs.filter(d=>((d.nombre||d.email||'').toLowerCase().includes(ql))):dlvs;
+    if(!filtered.length){
+      list.innerHTML='<li class="empty">'+(dlvs.length?'Sin coincidencias':'Sin deliveries activos')+'</li>';
+      activeIdx=-1;
+      return;
+    }
+    list.innerHTML=filtered.map((d,i)=>{
+      const nom=(d.nombre||d.email||('ID '+d.id));
+      return '<li data-id="'+escAttr(String(d.id))+'" data-name="'+escAttr(nom)+'" data-idx="'+i+'">'+escHtml(nom)+'</li>';
+    }).join('');
+    activeIdx=-1;
+  };
+  const open=()=>{render(input.value);list.classList.add('open');};
+  const close=()=>{list.classList.remove('open');activeIdx=-1;};
+  const selectItem=(li)=>{
+    if(!li||li.classList.contains('empty'))return;
+    const id=li.getAttribute('data-id');
+    const name=li.getAttribute('data-name');
+    window._mapaFiltroDelivery=id||null;
+    input.value=name||'';
+    clear.classList.add('show');
+    close();
+    try{_aplicarFiltrosMapa();}catch(e){}
+  };
+  input.addEventListener('focus',open);
+  input.addEventListener('input',function(){
+    clear.classList.toggle('show',!!input.value);
+    render(input.value);
+    list.classList.add('open');
+  });
+  list.addEventListener('mousedown',function(ev){
+    const li=ev.target.closest('li');
+    if(!li)return;
+    ev.preventDefault();
+    selectItem(li);
+  });
+  clear.addEventListener('mousedown',function(ev){
+    ev.preventDefault();
+    input.value='';
+    window._mapaFiltroDelivery=null;
+    clear.classList.remove('show');
+    close();
+    try{_aplicarFiltrosMapa();}catch(e){}
+  });
+  input.addEventListener('keydown',function(ev){
+    const items=Array.from(list.querySelectorAll('li:not(.empty)'));
+    if(ev.key==='ArrowDown'){
+      ev.preventDefault();
+      if(!list.classList.contains('open'))open();
+      if(!items.length)return;
+      activeIdx=(activeIdx+1)%items.length;
+      items.forEach((li,i)=>li.classList.toggle('active',i===activeIdx));
+      items[activeIdx].scrollIntoView({block:'nearest'});
+    }else if(ev.key==='ArrowUp'){
+      ev.preventDefault();
+      if(!items.length)return;
+      activeIdx=(activeIdx<=0?items.length-1:activeIdx-1);
+      items.forEach((li,i)=>li.classList.toggle('active',i===activeIdx));
+      items[activeIdx].scrollIntoView({block:'nearest'});
+    }else if(ev.key==='Enter'){
+      if(activeIdx>=0&&items[activeIdx]){ev.preventDefault();selectItem(items[activeIdx]);}
+    }else if(ev.key==='Escape'){
+      close();
+      input.blur();
+    }
+  });
+  document.addEventListener('mousedown',function(ev){
+    if(!combo.contains(ev.target))close();
+  });
+}
+
+// Setea filtro de TIPO (grupo mutuamente excluyente). Si se elige "deliveries",
+// resetea estado a "Todos" porque los deliveries no tienen estado de pedido.
+function _mapaSetTipo(t){
+  window._mapaFiltroTipo=t||'todos';
+  if(window._mapaFiltroTipo==='deliveries'){
+    window._mapaFiltroEstado='Todos';
+  }
+  _aplicarFiltrosMapa();
+}
+// Setea filtro de ESTADO (grupo mutuamente excluyente). Si se elige un estado
+// concreto (no "Todos") y el tipo estaba en "deliveries", cambiar tipo a "todos"
+// para que los pedidos del estado seleccionado sean visibles.
+function _mapaSetEstado(es){
+  window._mapaFiltroEstado=es||'Todos';
+  if(es&&es!=='Todos'&&window._mapaFiltroTipo==='deliveries'){
+    window._mapaFiltroTipo='todos';
+  }
+  _aplicarFiltrosMapa();
+}
 function _aplicarFiltrosMapa(){
   // Persistir filtros
   try{
@@ -11333,6 +11466,8 @@ async function _mapaCargar(map){
   if(!map||!$('ordersMap'))return;
   Object.values(window._mapMarkers).forEach(m=>m.remove());
   window._mapMarkers={};
+  // Si el filtro es "Solo Deliveries", no dibujar pedidos
+  if((window._mapaFiltroTipo||'todos')==='deliveries'){_mapaUpdateContadores();return;}
   _mapaUpdateContadores();
   const _mapaBase=['vendedor','proveedor','dropshipper'].includes(CU.rol)?getVisibleOrders():_ordersCache;
   // Sin filtro activo: ocultar Cancelado/Devuelto por defecto. Con filtro activo: mostrar solo los del filtro (incluso Cancelado/Devuelto)
@@ -11433,11 +11568,16 @@ function _mapaAddMarker(map,o,lat,lng,exact){
 }
 
 async function initOrdersLayer(map){
-  await _mapaCargar(map);
+  const _fTipoInit=window._mapaFiltroTipo||'todos';
+  if(_fTipoInit!=='deliveries')await _mapaCargar(map);
+  if(_fTipoInit==='deliveries'&&typeof _mapaCargarDlvs==='function')_mapaCargarDlvs(map);
   if(_ordersLayerInterval)clearInterval(_ordersLayerInterval);
   _ordersLayerInterval=setInterval(()=>{
-    _mapaCargar(map);
-    if(window._mapaShowDlvs)_mapaCargarDlvs(map);
+    const _fTipo=window._mapaFiltroTipo||'todos';
+    if(_fTipo!=='deliveries')_mapaCargar(map);
+    else{Object.values(window._mapMarkers||{}).forEach(m=>{try{m.remove();}catch(e){}});window._mapMarkers={};}
+    if(_fTipo!=='pedidos'&&window._mapaShowDlvs)_mapaCargarDlvs(map);
+    else if(_fTipo==='pedidos'){Object.values(window._dlvMapMarkers||{}).forEach(m=>{try{m.remove();}catch(e){}});window._dlvMapMarkers={};}
     _checkUrgentOrders();
   },60000);
 }
