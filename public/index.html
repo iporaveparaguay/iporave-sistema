@@ -8273,7 +8273,7 @@ PAGES.configuracion_delivery=async function(){
   const dlvs=(_usersCache||[]).filter(u=>u.rol==='delivery');
   if(!dlvs.length){
     $('ca').innerHTML=
-      '<div class="tc"><div class="th2"><span class="tt" style="display:inline-flex;align-items:center;gap:8px">'+SVG.truck+'Configuración del Delivery</span></div>'+
+      '<div class="tc"><div class="th2"><span class="tt" style="display:inline-flex;align-items:center;gap:8px">'+SVG.truck+'Configuración</span></div>'+
       '<div style="padding:60px;text-align:center;color:var(--text3)">'+
         '<div style="margin-bottom:12px;opacity:.4">'+SVG.truck+'</div>'+
         '<div style="font-weight:700;font-size:15px;margin-bottom:8px">Sin personal de delivery</div>'+
@@ -8293,7 +8293,7 @@ PAGES.configuracion_delivery=async function(){
   }).join('');
   $('ca').innerHTML=
     '<div class="tc">'+
-      '<div class="th2"><span class="tt" style="display:inline-flex;align-items:center;gap:8px">'+SVG.truck+'<span>Configuración del Delivery</span></span></div>'+
+      '<div class="th2"><span class="tt" style="display:inline-flex;align-items:center;gap:8px">'+SVG.truck+'<span>Configuración</span></span></div>'+
       '<div style="overflow-x:auto">'+
         '<table class="tbl"><thead><tr>'+
           '<th>Delivery</th><th>Método de pago</th><th></th>'+
