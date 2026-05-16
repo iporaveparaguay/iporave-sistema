@@ -55,6 +55,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 /* LOGIN */
 #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 55% 35%,#181b24 0%,#0b0d12 70%);}
+body.no-auth .topbar,body.no-auth .sidebar,body.no-auth .sidebarCollapseBtn,body.no-auth #menuBtn{display:none!important}
 .lcard{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);padding:48px 42px;width:100%;max-width:430px;box-shadow:var(--shadow);animation:fadeIn .4s ease;}
 .llogo h1{font-family:'Bebas Neue',sans-serif;font-size:46px;letter-spacing:4px;color:var(--accent);line-height:1;text-align:center; animation: slideInDown 0.8s ease-out forwards;}
 .llogo p{color:var(--text2);font-size:12px;margin-top:5px;letter-spacing:1.5px;text-transform:uppercase;text-align:center;margin-bottom:30px;}
@@ -2921,6 +2922,7 @@ async function doLogin(){
     await initSupabase();
     $('loginScreen').style.display='none';
     $('appScreen').classList.add('show');
+    document.body.classList.remove('no-auth');
     if(CU.foto_perfil){$('sAvatar').innerHTML='<img src="'+safeUrl(CU.foto_perfil)+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover">';}
     else{$('sAvatar').textContent=CU.nombre[0].toUpperCase();}
     $('sName').textContent=CU.nombre;
@@ -3163,6 +3165,7 @@ function doLogout(){
   updateConnUI(false);
   $('appScreen').classList.remove('show');
   $('loginScreen').style.display='';
+  document.body.classList.add('no-auth');
   $('loginUser').value='';$('loginPass').value='';
   const aib=$('aiBtn');if(aib)aib.style.display='none';
   const aip=$('aiPanel');if(aip){aip.classList.remove('open','maximized','minimized','fullscreen');}
