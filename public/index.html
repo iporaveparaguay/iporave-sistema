@@ -359,7 +359,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* BELL NOTIFICATIONS */
 .ntbell{position:relative;cursor:pointer;padding:6px 8px;border-radius:8px;transition:background .15s;display:flex;align-items:center;flex-shrink:0;}
 .ntbell:hover{background:var(--bg3);}
-.nbcount{position:absolute;top:1px;right:1px;background:var(--red);color:#fff;font-size:8px;font-weight:700;min-width:14px;height:14px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+.nbcount{position:absolute;top:1px;right:1px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:2px 4px;box-sizing:border-box;}
 #ntPanel{position:fixed;top:52px;right:12px;width:320px;max-height:440px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);box-shadow:var(--shadow);z-index:490;display:none;flex-direction:column;overflow:hidden;}
 #ntPanel.open{display:flex;}
 .ntp-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
@@ -709,6 +709,10 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
 [data-theme="light"] .userPagoRow{background:linear-gradient(180deg,#ffffff 0%,#f8f9fb 100%);box-shadow:0 1px 4px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.7);}
 [data-theme="light"] .mapBtn,[data-theme="light"] .filterBtn{background:linear-gradient(180deg,#ffffff 0%,#f3f4f6 100%);color:#1a1f2c;}
 [data-theme="light"] .filterBtn.active,[data-theme="light"] .mapBtn.active{background:linear-gradient(180deg,#f59e0b 0%,#d97706 100%);color:#fff;}
+/* D6 — Respetar preferencia de movimiento reducido (a11y) */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
 </style>
 </head>
 <body>
@@ -1385,19 +1389,21 @@ const DL = {
         this._ls('orders',supaDataMerged);
         let merged=supaDataMerged;
         if(filters){
-          if(filters.vendedorId)merged=merged.filter(o=>o.vendedorId===filters.vendedorId);
-          if(filters.deliveryId)merged=merged.filter(o=>o.deliveryId===filters.deliveryId);
-          if(filters.dropId)merged=merged.filter(o=>o.dropId===filters.dropId);
+          // G2 — String coercion en comparaciones de IDs
+          if(filters.vendedorId)merged=merged.filter(o=>String(o.vendedorId)===String(filters.vendedorId));
+          if(filters.deliveryId)merged=merged.filter(o=>String(o.deliveryId)===String(filters.deliveryId));
+          if(filters.dropId)merged=merged.filter(o=>String(o.dropId)===String(filters.dropId));
         }
         return merged;
       }
     }
     let orders=this._lg('orders')||[];
-    if(CU&&CU.rol==='admin')orders=orders.filter(o=>!o.created_by||o.created_by===CU.id);
+    if(CU&&CU.rol==='admin')orders=orders.filter(o=>!o.created_by||String(o.created_by)===String(CU.id));
     if(filters){
-      if(filters.vendedorId)orders=orders.filter(o=>o.vendedorId===filters.vendedorId);
-      if(filters.deliveryId)orders=orders.filter(o=>o.deliveryId===filters.deliveryId);
-      if(filters.dropId)orders=orders.filter(o=>o.dropId===filters.dropId);
+      // G2 — String coercion en comparaciones de IDs
+      if(filters.vendedorId)orders=orders.filter(o=>String(o.vendedorId)===String(filters.vendedorId));
+      if(filters.deliveryId)orders=orders.filter(o=>String(o.deliveryId)===String(filters.deliveryId));
+      if(filters.dropId)orders=orders.filter(o=>String(o.dropId)===String(filters.dropId));
     }
     return orders;
   },
@@ -2731,9 +2737,10 @@ async function sendAI(){
   if(isAdmin){
     const usersList=_usersCache.map(u=>`#${u.id} ${u.nombre} — rol: ${capRole(u.rol)}, usuario: ${u.username}${u.whatsapp?', WA: '+u.whatsapp:''}${u.vehiculo?', vehículo: '+u.vehiculo:''}${u.patente?', patente: '+u.patente:''}`).join('\n');
     const actividadPorUsuario=_usersCache.filter(u=>u.rol!=='admin').map(u=>{
-      const pedVendedor=visOrders.filter(o=>o.vendedorId===u.id);
-      const pedDrop=visOrders.filter(o=>o.dropId===u.id);
-      const pedDelivery=visOrders.filter(o=>o.deliveryId===u.id);
+      // G2 — String coercion en comparaciones de IDs
+      const pedVendedor=visOrders.filter(o=>String(o.vendedorId)===String(u.id));
+      const pedDrop=visOrders.filter(o=>String(o.dropId)===String(u.id));
+      const pedDelivery=visOrders.filter(o=>String(o.deliveryId)===String(u.id));
       const pedProveedor=visOrders.filter(o=>(o.proveedor||'').toLowerCase()===u.nombre.toLowerCase());
       const misPed=pedVendedor.length?pedVendedor:pedDrop.length?pedDrop:pedDelivery.length?pedDelivery:pedProveedor;
       const entregados=misPed.filter(o=>o.estado==='Entregado');
@@ -3572,9 +3579,10 @@ function getUser(id){return _usersCache.find(u=>u.id===id)||{nombre:'—',vehicu
 function getVisibleOrders(){
   const r=CU.rol;
   if(r==='admin'||r==='superadmin')return _ordersCache;
-  if(r==='vendedor')return _ordersCache.filter(o=>o.vendedorId===CU.id);
-  if(r==='dropshipper')return _ordersCache.filter(o=>o.dropId===CU.id);
-  if(r==='delivery')return _ordersCache.filter(o=>o.deliveryId===CU.id);
+  // G2 — String coercion en comparaciones de IDs
+  if(r==='vendedor')return _ordersCache.filter(o=>String(o.vendedorId)===String(CU.id));
+  if(r==='dropshipper')return _ordersCache.filter(o=>String(o.dropId)===String(CU.id));
+  if(r==='delivery')return _ordersCache.filter(o=>String(o.deliveryId)===String(CU.id));
   if(r==='cliente')return _ordersCache.filter(o=>o.cliente===CU.nombre);
   if(r==='proveedor')return _ordersCache.filter(o=>o.vendedorId===CU.id||o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
   return[];
@@ -4284,7 +4292,7 @@ PAGES.dashboard=async function(){
   }
 
   if(['admin','superadmin','vendedor'].includes(CU.rol)){
-    const mine=['admin','superadmin'].includes(CU.rol)?orders:orders.filter(o=>o.vendedorId===CU.id);
+    const mine=['admin','superadmin'].includes(CU.rol)?orders:orders.filter(o=>String(o.vendedorId)===String(CU.id));
     const ent=mine.filter(o=>o.estado==='Entregado');
     const ing=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
     const cos=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
@@ -4446,7 +4454,7 @@ PAGES.dashboard=async function(){
     }catch(e){console.warn('Estado financiero dashboard no-admin:',e.message);}
   }
   if(CU.rol==='delivery'){
-    const mine=orders.filter(o=>o.deliveryId===CU.id);
+    const mine=orders.filter(o=>String(o.deliveryId)===String(CU.id));
     const hoyO=mine.filter(o=>o.fecha===today());
     const cfg=getCfg();
     const u=getUser(CU.id);
@@ -4479,7 +4487,7 @@ PAGES.dashboard=async function(){
       '<span>'+used+' entregados</span><span>'+(used>=max?'🏆 Cupo completado!':(max-used)+' restantes')+'</span></div></div>';
   }
   if(CU.rol==='dropshipper'){
-    const mine=orders.filter(o=>o.dropId===CU.id);
+    const mine=orders.filter(o=>String(o.dropId)===String(CU.id));
     const ent=mine.filter(o=>o.estado==='Entregado');
     const act=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
@@ -4618,9 +4626,9 @@ PAGES.dashboard=async function(){
 
 function _renderCharts(){
   const mine=['admin','superadmin'].includes(CU.rol)?_ordersCache:
-    CU.rol==='dropshipper'?_ordersCache.filter(o=>o.dropId===CU.id):
-    CU.rol==='delivery'?_ordersCache.filter(o=>o.deliveryId===CU.id):
-    _ordersCache.filter(o=>o.vendedorId===CU.id);
+    CU.rol==='dropshipper'?_ordersCache.filter(o=>String(o.dropId)===String(CU.id)):
+    CU.rol==='delivery'?_ordersCache.filter(o=>String(o.deliveryId)===String(CU.id)):
+    _ordersCache.filter(o=>String(o.vendedorId)===String(CU.id));
   const dark=document.documentElement.getAttribute('data-theme')==='dark';
   const tc=dark?'#94a3b8':'#64748b';
   const gc=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
@@ -4864,9 +4872,9 @@ PAGES.entregas=function(){
     const _pushOk=Notification?.permission==='granted';
     if('PushManager' in window)_pushBtn='<button id="btnPushNotif" class="toggleBtn '+(_pushOk?'on':'off')+'" onclick="_togglePushNotif()"><span class="dot"></span>🔔 '+(_pushOk?'Notif ON':'Activar notif')+'</button>';
   }catch(e){}
-  $('tbActions').innerHTML=_pushBtn+'<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">🔄</button>';
-  const mis=_ordersCache.filter(o=>o.deliveryId===CU.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
-  const entHoy=_ordersCache.filter(o=>o.deliveryId===CU.id&&o.estado==='Entregado'&&o.fecha===today());
+  $('tbActions').innerHTML=_pushBtn+'<button class="btn btn-secondary btn-sm" onclick="_refreshDeliveries()" aria-label="Refrescar entregas" title="Refrescar">🔄</button>';
+  const mis=_ordersCache.filter(o=>String(o.deliveryId)===String(CU.id)&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
+  const entHoy=_ordersCache.filter(o=>String(o.deliveryId)===String(CU.id)&&o.estado==='Entregado'&&o.fecha===today());
   const renderedOrders=mis.concat(entHoy);
   _prepareOrderStateHighlights(renderedOrders);
   const cfg=getCfg();const u=getUser(CU.id);
@@ -8868,9 +8876,9 @@ function _renderPresForm(){
   c.innerHTML=pres.map((pr,i)=>
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border2)">'+
       '<input type="text" value="'+escHtml(pr.nombre||'')+'" onchange="window._presEdit['+i+'].nombre=this.value" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
-      '<input type="number" value="'+(pr.precio||0)+'" placeholder="Base" onchange="window._presEdit['+i+'].precio=parseFloat(this.value)||0" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
-      '<input type="number" value="'+(pr.precioVendedor||0)+'" placeholder="Vendedor" onchange="window._presEdit['+i+'].precioVendedor=parseFloat(this.value)||0" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
-      '<input type="number" value="'+(pr.precioProveedor||0)+'" placeholder="Proveedor" onchange="window._presEdit['+i+'].precioProveedor=parseFloat(this.value)||0" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
+      '<input type="number" min="0" value="'+(pr.precio||0)+'" placeholder="Base" onchange="var v=parseFloat(this.value)||0; if(v<0){pushNotif(\'Valor inválido (no puede ser negativo)\',\'e\'); this.value=0; v=0;} window._presEdit['+i+'].precio=v" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
+      '<input type="number" min="0" value="'+(pr.precioVendedor||0)+'" placeholder="Vendedor" onchange="var v=parseFloat(this.value)||0; if(v<0){pushNotif(\'Valor inválido (no puede ser negativo)\',\'e\'); this.value=0; v=0;} window._presEdit['+i+'].precioVendedor=v" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
+      '<input type="number" min="0" value="'+(pr.precioProveedor||0)+'" placeholder="Proveedor" onchange="var v=parseFloat(this.value)||0; if(v<0){pushNotif(\'Valor inválido (no puede ser negativo)\',\'e\'); this.value=0; v=0;} window._presEdit['+i+'].precioProveedor=v" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px">'+
       '<button onclick="window._presEdit.splice('+i+',1);_renderPresForm()" style="background:transparent;border:none;cursor:pointer;color:var(--red);font-size:16px;padding:0 4px">✕</button>'+
     '</div>'
   ).join('');
@@ -9307,6 +9315,17 @@ window._dbTimers={};
 function _dbSearch(key, value, fn, ms){
   if(window._dbTimers[key]) clearTimeout(window._dbTimers[key]);
   window._dbTimers[key]=setTimeout(()=>{ window._dbTimers[key]=null; fn(value); }, ms||220);
+}
+
+// B4 — Throttle para refresh de entregas (evita spam de clicks)
+window._lastRefresh=0;
+function _refreshDeliveries(){
+  if(Date.now()-window._lastRefresh<2000){
+    pushNotif('Esperá 2 segundos para refrescar de nuevo','w');
+    return;
+  }
+  window._lastRefresh=Date.now();
+  PAGES.entregas();
 }
 
 /* ─── VALIDACIÓN DE PERFIL POR ROL ─── */
@@ -11771,9 +11790,11 @@ PAGES.pagos=function(){
           :escHtml((u.nombre||'?')[0].toUpperCase());
         const saldoClass=saldo>0?'deuda':'ok';
         const saldoLabel=saldo>0?'Te debe':'Al día';
-        const btnPagado=saldo>0
-          ? '<button class="btnPagado" onclick="event.stopPropagation();abrirPagoCompleto(\''+escAttr(u.id)+'\')">✅ Pagado</button>'
-          : '';
+        const saldoPositivo=saldo>0;
+        const btnPagadoAttr=saldoPositivo?'':' disabled style="opacity:0.4;cursor:not-allowed" title="Sin saldo pendiente"';
+        const btnPagado=saldoPositivo
+          ? '<button class="btnPagado" onclick="event.stopPropagation();abrirPagoCompleto(\''+escAttr(u.id)+'\')"'+btnPagadoAttr+'>✅ Pagado</button>'
+          : '<button class="btnPagado"'+btnPagadoAttr+'>✅ Pagado</button>';
         const badgeAtRisk=atRisk?'<div class="atRiskBadge">⚠️ Antiguo</div>':'';
         const html='<div class="userPagoRow'+(atRisk?' atRisk':'')+'" onclick="abrirPagoUsuario(\''+escAttr(u.id)+'\')">'+
           badgeAtRisk+
@@ -11935,7 +11956,13 @@ PAGES.pagos=function(){
 };
 
 function openRegistrarPago(targetUserId,montoPreRellenado){
-  const u=(_usersCache||[]).find(x=>String(x.id)===String(targetUserId));
+  // B1 — Validar rol pagable antes de abrir modal
+  const target=(_usersCache||[]).find(x=>String(x.id)===String(targetUserId));
+  if(!target || !['vendedor','dropshipper','proveedor','delivery'].includes(target.rol)){
+    pushNotif('Solo se puede pagar a vendedor/dropshipper/proveedor/delivery','w');
+    return;
+  }
+  const u=target;
   const nombre=u?u.nombre:'usuario';
   const hoy=new Date().toISOString().slice(0,10);
   const saldoActual=calcularSaldoUsuario(targetUserId);

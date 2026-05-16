@@ -276,13 +276,22 @@ footer{
   .hero-status{font-size:26px;}
   #map{height:50vh;min-height:300px;}
 }
+/* D7 — Botones mobile con tamaño mínimo táctil (a11y 44px) */
+@media (max-width: 480px){
+  .dlv-actions{ gap:6px; }
+  .btn, .btn-call, .btn-wa { padding:10px 12px; min-height:44px; font-size:13px; }
+}
+/* D6 — Respetar preferencia de movimiento reducido (a11y) */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
 </style>
 </head>
 <body>
 
 <header>
   <div class="hdr-inner">
-    <img src="https://iporaveparaguay.com/logo.png" class="logo-img" id="logoImg"
+    <img src="https://iporaveparaguay.com/logo.png" class="logo-img" id="logoImg" alt="Logo Iporãve"
          onerror="this.outerHTML='<div class=\'logo-fallback\'>I</div>'">
     <div class="hdr-text">
       <div class="hdr-title">Iporãve</div>
@@ -490,8 +499,9 @@ function render(d){
         <div class="prod-list">`;
     productos.forEach(function(it){
       const foto=safeUrl(it.foto||it.imagen||it.image||'');
+      const nombreProd=esc(it.nombre||it.name||'producto');
       const thumb=foto
-        ?`<div class="prod-thumb"><img src="${esc(foto)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='📦'"></div>`
+        ?`<div class="prod-thumb"><img src="${esc(foto)}" alt="Imagen del producto: ${nombreProd}" loading="lazy" onerror="this.parentElement.innerHTML='📦'"></div>`
         :`<div class="prod-thumb">📦</div>`;
       const cant=it.cantidad||it.cant||1;
       const pr=it.precio?precio(it.precio*cant):'';
