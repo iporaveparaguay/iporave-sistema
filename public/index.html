@@ -259,11 +259,23 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .map-btn.btn-end{background:#0f766e;border-color:#0d9488;color:#fff;} .map-btn.btn-end:hover{background:#0d9488;}
 .map-btn.btn-start{background:#16a34a;border-color:#15803d;color:#fff;} .map-btn.btn-start:hover{background:#15803d;}
 .map-btn.btn-locate{background:rgba(14,165,233,.12);border-color:#0ea5e9;color:#0ea5e9;}  .map-btn.btn-locate:hover{background:rgba(14,165,233,.22);}
-.mapa-estilo-panel{position:absolute;top:10px;right:10px;z-index:999;display:flex;gap:3px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:4px;box-shadow:0 2px 10px rgba(0,0,0,.45);}
-.mapa-estilo-btn{width:34px;height:34px;border:none;border-radius:7px;font-size:16px;cursor:pointer;background:transparent;color:var(--text2);display:inline-flex;align-items:center;justify-content:center;transition:background .15s,color .15s;}
-.mapa-estilo-btn:hover{background:var(--bg4);color:var(--text);}
-.mapa-estilo-btn.active{background:var(--blue);color:#fff;}
-.mapa-locate-btn{position:absolute;bottom:36px;right:10px;z-index:999;width:38px;height:38px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box;}
+.mapa-estilo-panel{position:absolute;top:12px;right:12px;z-index:5;display:flex;flex-direction:column;gap:6px;background:transparent;border:none;padding:0;box-shadow:none;}
+.mapa-estilo-btn{width:36px;height:36px;border-radius:10px;background:rgba(20,22,28,0.85);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.18);transition:transform .15s var(--ease-out,ease-out), background .15s var(--ease-out,ease-out), border-color .15s var(--ease-out,ease-out), box-shadow .15s var(--ease-out,ease-out);padding:0;}
+.mapa-estilo-btn:hover{background:rgba(20,22,28,0.95);transform:translateY(-1px);border-color:var(--accent);box-shadow:0 6px 16px rgba(0,0,0,0.25), 0 0 0 1px rgba(245,166,35,0.2);}
+.mapa-estilo-btn.active{background:linear-gradient(180deg, var(--accent), #c47a1a);color:#fff;border-color:var(--accent);box-shadow:0 4px 12px rgba(245,166,35,0.35);}
+.mapa-estilo-btn svg{width:18px;height:18px;stroke-width:1.8;display:block;}
+:root[data-theme="light"] .mapa-estilo-btn,
+:root[data-theme="light-soft"] .mapa-estilo-btn{background:rgba(255,255,255,0.92);color:#1a1a1a;border:1px solid rgba(0,0,0,0.1);}
+:root[data-theme="light"] .mapa-estilo-btn:hover,
+:root[data-theme="light-soft"] .mapa-estilo-btn:hover{background:rgba(255,255,255,1);}
+:root[data-theme="light"] .mapa-estilo-btn.active,
+:root[data-theme="light-soft"] .mapa-estilo-btn.active{color:#fff;}
+.mapa-locate-btn{position:absolute;bottom:14px;right:12px;z-index:5;width:36px;height:36px;border-radius:10px;background:rgba(20,22,28,0.85);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.18);transition:transform .15s var(--ease-out,ease-out), background .15s var(--ease-out,ease-out), border-color .15s var(--ease-out,ease-out);}
+.mapa-locate-btn:hover{background:rgba(20,22,28,0.95);transform:translateY(-1px);border-color:var(--accent);box-shadow:0 6px 16px rgba(0,0,0,0.25), 0 0 0 1px rgba(245,166,35,0.2);}
+.mapa-locate-btn svg{width:18px;height:18px;stroke-width:1.8;}
+:root[data-theme="light"] .mapa-locate-btn,
+:root[data-theme="light-soft"] .mapa-locate-btn{background:rgba(255,255,255,0.92);color:#1a1a1a;border:1px solid rgba(0,0,0,0.1);}
+.mapa-estilo-fade #ordersMap{transition:opacity .2s ease;opacity:.0;}
 /* APP LAYOUT */
 #appScreen{display:none;min-height:100vh;}
 #appScreen.show{display:flex;}
@@ -401,6 +413,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .search-combo-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.15)}
 .search-combo-input::placeholder{color:var(--text3);opacity:.7}
 .search-combo-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text3);pointer-events:none}
+.search-combo-emoji{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;z-index:1;line-height:1}
 .search-combo-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;color:var(--text3);padding:4px;border-radius:6px;display:none}
 .search-combo-clear.show{display:flex;align-items:center;justify-content:center}
 .search-combo-clear:hover{background:var(--bg3);color:var(--text)}
@@ -2274,10 +2287,15 @@ function _rtRefreshOrders(){
 
         _ordersCache=await DL.getOrders();
         const cur=document.querySelector('.ni.active');
+        // FIX BUG mapa reset: si estamos en el mapa, NO mover la cámara en updates automáticos
+        // (realtime Supabase / polling 30s). Solo redibujar markers respetando zoom/pan del usuario.
+        const _enMapa=!!(cur && cur.id.replace('ni_','')==='mapa');
+        const _prevSkip=window._mapaSkipCameraMove===true;
+        if(_enMapa) window._mapaSkipCameraMove=true;
         if(cur){const pid=cur.id.replace('ni_','');if(['orders','entregas','mispedidos','dashboard','suministros','mapa','delivery'].includes(pid)&&PAGES[pid])PAGES[pid]();}
 
         // RESTAURAR filtros si estábamos en mapa
-        if(cur && cur.id.replace('ni_','')==='mapa'){
+        if(_enMapa){
           window._mapaFiltroEstado=savedFE;
           window._mapaFiltroTipo=savedFT;
           window._mapaFiltroZona=savedFZ;
@@ -2285,6 +2303,8 @@ function _rtRefreshOrders(){
           window._mapaFiltroDelivery=savedFD;
           window._mapaShowDlvs=savedSD;
           if(typeof _aplicarFiltrosMapa==='function')_aplicarFiltrosMapa();
+          // Liberar el flag tras 6s (geocoding async puede tardar ~1.1s por marker).
+          setTimeout(()=>{window._mapaSkipCameraMove=_prevSkip;},6000);
         }
 
         if(typeof updateNavBadges==='function')updateNavBadges();
@@ -11654,23 +11674,30 @@ function _mapaUpdateContadores(){
   const fTipo=window._mapaFiltroTipo||'todos';
   const totalAll=Object.values(counts).reduce((a,b)=>a+b,0);
 
+  // GRUPO UNIFICADO: un solo botón activo a la vez (ya sea estado o "soloDeliveries").
+  // El estado activo se deriva de _mapaFiltroEstado + _mapaFiltroTipo.
+  const filtroActivo=(fTipo==='deliveries')?'soloDeliveries':(
+    fEst==='Todos'?'todos':
+    fEst==='Pendiente'?'pendiente':
+    fEst==='Despachado'?'despachado':
+    (fEst==='En Ruta'||fEst==='En ruta')?'enRuta':
+    fEst==='Entregado'?'entregado':'todos'
+  );
   const btnsEstado=ESTADOS.map(es=>{
     const isAll=es==='Todos';
     let n=isAll?totalAll:(counts[es]||0);
     if(es==='En Ruta'&&!isAll)n=(counts['En Ruta']||0)+(counts['En ruta']||0);
-    const active=(fEst===es)||(es==='En Ruta'&&fEst==='En ruta');
+    const valKey=isAll?'todos':(es==='Pendiente'?'pendiente':es==='Despachado'?'despachado':es==='En Ruta'?'enRuta':'entregado');
+    const active=(filtroActivo===valKey);
     const dot=isAll?'':'<span class="dot" style="background:'+DOTS[es]+'"></span>';
-    return '<button class="mapBtn'+(active?' active':'')+'" data-grp="estado" data-val="'+es+'" '+
-      'onclick="_mapaSetEstado(\''+es+'\')">'+dot+es+' ('+n+')</button>';
+    return '<button class="mapBtn'+(active?' active':'')+'" id="btnFiltro_'+valKey+'" data-grp="filtro" data-val="'+valKey+'" '+
+      'onclick="_mapaSetFiltro(\''+valKey+'\')">'+dot+es+' ('+n+')</button>';
   }).join('');
 
+  // Solo Deliveries va en el MISMO grupo (mutuamente excluyente con los estados)
   const btnsTipo=
-    '<button class="mapBtn'+(fTipo==='todos'?' active':'')+'" data-grp="tipo" data-val="todos" '+
-      'onclick="_mapaSetTipo(&quot;todos&quot;)">🌐 Todos</button>'+
-    '<button class="mapBtn'+(fTipo==='deliveries'?' active':'')+'" data-grp="tipo" data-val="deliveries" '+
-      'onclick="_mapaSetTipo(&quot;deliveries&quot;)">🛵 Solo Deliveries</button>'+
-    '<button class="mapBtn'+(fTipo==='pedidos'?' active':'')+'" data-grp="tipo" data-val="pedidos" '+
-      'onclick="_mapaSetTipo(&quot;pedidos&quot;)">📍 Solo Pedidos</button>';
+    '<button class="mapBtn'+(filtroActivo==='soloDeliveries'?' active':'')+'" id="btnFiltro_soloDeliveries" data-grp="filtro" data-val="soloDeliveries" '+
+      'onclick="_mapaSetFiltro(&quot;soloDeliveries&quot;)">🛵 Solo Deliveries</button>';
 
   // Combobox custom premium para búsqueda de deliveries
   let dlvCurrentName='';
@@ -11704,7 +11731,7 @@ function _mapaUpdateContadores(){
     }
   }catch(e){}
 
-  el.innerHTML=btnsEstado+'<div class="sep"></div>'+btnsTipo+'<div class="sep"></div>'+dlvSel+zonaButtonsHtml;
+  el.innerHTML=btnsEstado+btnsTipo+'<div class="sep"></div>'+dlvSel+zonaButtonsHtml;
 
   // Cablear combobox custom de delivery
   try{_setupDlvSearchCombo();}catch(e){console.warn('dlvCombo setup',e);}
@@ -11806,6 +11833,26 @@ function _mapaSetTipo(t){
 // Setea filtro de ESTADO. NO modifica el tipo: los botones son independientes.
 function _mapaSetEstado(es){
   window._mapaFiltroEstado=es||'Todos';
+  _aplicarFiltrosMapa();
+}
+// FILTRO UNIFICADO: un solo grupo, un solo botón activo a la vez.
+// Valores: 'todos' | 'pendiente' | 'despachado' | 'enRuta' | 'entregado' | 'soloDeliveries'
+function _mapaSetFiltro(val){
+  const v=val||'todos';
+  if(v==='soloDeliveries'){
+    window._mapaFiltroTipo='deliveries';
+    window._mapaFiltroEstado='Todos';
+  }else{
+    window._mapaFiltroTipo='todos';
+    const map={'todos':'Todos','pendiente':'Pendiente','despachado':'Despachado','enRuta':'En Ruta','entregado':'Entregado'};
+    window._mapaFiltroEstado=map[v]||'Todos';
+  }
+  // Garantizar visualmente que solo UNO quede activo (defensa extra al render async)
+  try{
+    document.querySelectorAll('.mapBtn[data-grp="filtro"]').forEach(b=>b.classList.remove('active'));
+    const sel=document.getElementById('btnFiltro_'+v);
+    if(sel)sel.classList.add('active');
+  }catch(_){}
   _aplicarFiltrosMapa();
 }
 // Función central. SIEMPRE limpia AMBOS conjuntos y redibuja según tipo+estado.
@@ -12107,7 +12154,11 @@ function _mapaSetEstilo(tipo){
   const map=window._mapInstance;
   if(!map)return;
   localStorage.setItem('mapaEstilo',tipo);
-  map.setStyle(_MAPA_ESTILO_URLS[tipo]||_MAPA_ESTILO_URLS.oscuro);
+  const cont=document.getElementById('ordersMap');
+  if(cont){cont.style.transition='opacity .2s ease';cont.style.opacity='0';}
+  setTimeout(function(){
+    map.setStyle(_MAPA_ESTILO_URLS[tipo]||_MAPA_ESTILO_URLS.oscuro);
+  },200);
   ['oscuro','claro','satelite','relieve','navegacion'].forEach(t=>{
     const btn=$('btnMapa_'+t);
     if(btn){btn.classList.toggle('active',t===tipo);}
@@ -12116,6 +12167,7 @@ function _mapaSetEstilo(tipo){
   map.once('style.load',function(){
     _mapaCargar(map);
     if(esAdmin&&window._mapaShowDlvs)_mapaCargarDlvs(map);
+    if(cont){requestAnimationFrame(function(){cont.style.opacity='1';});}
   });
 }
 function _mapaLocateMe(){
@@ -12133,19 +12185,149 @@ function _mapaSelStyle(){
   return 'padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:12px;background:var(--card);color:var(--text1);cursor:pointer;max-width:160px';
 }
 function _mapaRenderSelects(){
-  const zs=$('mapaZonaSel');
-  if(zs){
-    const cur=window._mapaFiltroZona;
-    zs.innerHTML='<option value="">🌎 Todo Paraguay</option>'+
-      _zonasCache.map(z=>'<option value="'+z.id+'" '+(String(cur)===String(z.id)?'selected':'')+'>'+escHtml(z.nombre||'')+'</option>').join('');
+  // Combobox custom de Zona
+  try{
+    if(document.getElementById('mapaZonaCombo')){
+      _setupMapComboFilter({
+        containerId:'mapaZonaCombo',
+        placeholder:'Todo Paraguay',
+        emoji:'🌎',
+        defaultLabel:'Todo Paraguay',
+        getItems:function(){
+          return (window._zonasCache||[]).map(function(z){return {id:String(z.id),label:(z.nombre||'')};});
+        },
+        getCurrent:function(){return window._mapaFiltroZona;},
+        onSelect:function(item){
+          window._mapaFiltroZona=item&&item.id?item.id:null;
+          try{_aplicarFiltrosMapa();}catch(_){try{_mapaCargar(window._mapInstance);}catch(__){}}
+        }
+      });
+    }
+  }catch(e){console.warn('mapaZonaCombo setup',e);}
+  // Combobox custom de Vendedor/Usuario
+  try{
+    if(document.getElementById('mapaVendCombo')){
+      _setupMapComboFilter({
+        containerId:'mapaVendCombo',
+        placeholder:'Todos',
+        emoji:'👤',
+        defaultLabel:'Todos',
+        getItems:function(){
+          var vends=(window._usersCache||[]).filter(function(u){return ['vendedor','admin','superadmin','dropshipper','proveedor'].includes(u.rol);});
+          return vends.map(function(u){return {id:String(u.id),label:(u.nombre||u.email||('ID '+u.id))};});
+        },
+        getCurrent:function(){return window._mapaFiltroVend;},
+        onSelect:function(item){
+          window._mapaFiltroVend=item&&item.id?item.id:null;
+          try{_aplicarFiltrosMapa();}catch(_){try{_mapaCargar(window._mapInstance);}catch(__){}}
+        }
+      });
+    }
+  }catch(e){console.warn('mapaVendCombo setup',e);}
+}
+
+// Combobox custom generico para filtros del mapa (estilo Apple/Linear).
+// Reemplaza <select> nativos con un input + lista filtrable y estilizable.
+function _setupMapComboFilter(cfg){
+  var cont=document.getElementById(cfg.containerId);
+  if(!cont)return;
+  var emoji=cfg.emoji||'';
+  var placeholder=cfg.placeholder||'';
+  var defaultLabel=cfg.defaultLabel||placeholder;
+  var curId=cfg.getCurrent?cfg.getCurrent():null;
+  var initialLabel='';
+  if(curId){
+    var items0=cfg.getItems()||[];
+    for(var i=0;i<items0.length;i++){if(String(items0[i].id)===String(curId)){initialLabel=items0[i].label;break;}}
   }
-  const vs=$('mapaVendSel');
-  if(vs){
-    const cur=window._mapaFiltroVend;
-    const vends=_usersCache.filter(u=>['vendedor','admin','superadmin','dropshipper','proveedor'].includes(u.rol));
-    vs.innerHTML='<option value="">👤 Todos</option>'+
-      vends.map(u=>'<option value="'+u.id+'" '+(String(cur)===String(u.id)?'selected':'')+'>'+escHtml(u.nombre||'')+'</option>').join('');
-  }
+  var hasVal=!!initialLabel;
+  cont.innerHTML=
+    (emoji?'<span class="search-combo-emoji">'+escHtml(emoji)+'</span>':'')+
+    '<input type="text" class="search-combo-input" placeholder="'+escAttr(placeholder)+'" autocomplete="off" value="'+escAttr(initialLabel)+'">'+
+    '<button type="button" class="search-combo-clear'+(hasVal?' show':'')+'" aria-label="Limpiar">'+
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>'+
+    '</button>'+
+    '<ul class="search-combo-list"></ul>';
+  var input=cont.querySelector('.search-combo-input');
+  var list=cont.querySelector('.search-combo-list');
+  var clear=cont.querySelector('.search-combo-clear');
+  var activeIdx=-1;
+  var lastShown=[];
+  var render=function(q){
+    var items=cfg.getItems()||[];
+    var ql=(q||'').toLowerCase().trim();
+    var filtered=ql?items.filter(function(it){return (it.label||'').toLowerCase().includes(ql);}):items.slice();
+    var html='<li data-default="1" data-idx="0">'+(emoji?escHtml(emoji)+' ':'')+escHtml(defaultLabel)+'</li>';
+    html+=filtered.map(function(it,i){
+      return '<li data-id="'+escAttr(String(it.id))+'" data-name="'+escAttr(it.label||'')+'" data-idx="'+(i+1)+'">'+escHtml(it.label||'')+'</li>';
+    }).join('');
+    if(!filtered.length&&ql){
+      html+='<li class="empty">Sin coincidencias</li>';
+    }
+    list.innerHTML=html;
+    lastShown=Array.prototype.slice.call(list.querySelectorAll('li:not(.empty)'));
+    activeIdx=-1;
+  };
+  var open=function(){render(input.value);list.classList.add('open');};
+  var close=function(){list.classList.remove('open');activeIdx=-1;};
+  var selectLi=function(li){
+    if(!li||li.classList.contains('empty'))return;
+    if(li.getAttribute('data-default')==='1'){
+      input.value='';
+      clear.classList.remove('show');
+      close();
+      try{cfg.onSelect({id:null,label:defaultLabel});}catch(_){}
+      return;
+    }
+    var id=li.getAttribute('data-id');
+    var name=li.getAttribute('data-name');
+    input.value=name||'';
+    clear.classList.add('show');
+    close();
+    try{cfg.onSelect({id:id,label:name});}catch(_){}
+  };
+  input.addEventListener('focus',open);
+  input.addEventListener('input',function(){
+    clear.classList.toggle('show',!!input.value);
+    render(input.value);
+    list.classList.add('open');
+  });
+  list.addEventListener('mousedown',function(ev){
+    var li=ev.target.closest('li');
+    if(!li)return;
+    ev.preventDefault();
+    selectLi(li);
+  });
+  clear.addEventListener('mousedown',function(ev){
+    ev.preventDefault();
+    input.value='';
+    clear.classList.remove('show');
+    close();
+    try{cfg.onSelect({id:null,label:defaultLabel});}catch(_){}
+  });
+  input.addEventListener('keydown',function(ev){
+    if(ev.key==='ArrowDown'){
+      ev.preventDefault();
+      if(!list.classList.contains('open'))open();
+      if(!lastShown.length)return;
+      activeIdx=(activeIdx+1)%lastShown.length;
+      lastShown.forEach(function(li,i){li.classList.toggle('active',i===activeIdx);});
+      lastShown[activeIdx].scrollIntoView({block:'nearest'});
+    }else if(ev.key==='ArrowUp'){
+      ev.preventDefault();
+      if(!lastShown.length)return;
+      activeIdx=(activeIdx<=0?lastShown.length-1:activeIdx-1);
+      lastShown.forEach(function(li,i){li.classList.toggle('active',i===activeIdx);});
+      lastShown[activeIdx].scrollIntoView({block:'nearest'});
+    }else if(ev.key==='Enter'){
+      if(activeIdx>=0&&lastShown[activeIdx]){ev.preventDefault();selectLi(lastShown[activeIdx]);}
+    }else if(ev.key==='Escape'){
+      close();input.blur();
+    }
+  });
+  document.addEventListener('mousedown',function(ev){
+    if(!cont.contains(ev.target))close();
+  });
 }
 
 const _DLV_ROLE_COLORS={
@@ -12409,10 +12591,10 @@ PAGES.mapa=function(){
   if(esDelivery&&!window._mapaFiltroDelivery)window._mapaFiltroDelivery=String(CU.id);
   if(esLimitado&&!window._mapaFiltroVend)window._mapaFiltroVend=String(CU.id);
   $('tbTitle').textContent=esDelivery?'Mis pedidos — Mapa':'Mapa de Pedidos';
-  const zonaSel=!esDelivery?'<select id="mapaZonaSel" class="dropdown-premium" onchange="window._mapaFiltroZona=this.value||null;_mapaCargar(window._mapInstance)"><option value="">🌎 Todo Paraguay</option></select>':'';
+  const zonaSel=!esDelivery?'<div id="mapaZonaCombo" class="search-combo" style="min-width:200px"></div>':'';
   const vendSel=esDelivery
     ?''
-    :'<select id="mapaVendSel" class="dropdown-premium" onchange="window._mapaFiltroVend=this.value||null;_mapaCargar(window._mapInstance)"><option value="">👤 Todos</option></select>';
+    :'<div id="mapaVendCombo" class="search-combo" style="min-width:200px"></div>';
   const dlvBtn=esAdmin?'<button id="btnMapaDlvs" class="map-btn'+(window._mapaShowDlvs?' active':'')+'" onclick="_mapaToggleDlvs()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Deliverys</button>':'';
   const rutaBtn=esDelivery?'<button class="map-btn" onclick="_rutaOptima()" style="background:#7c3aed;border-color:#6d28d9;color:#fff"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v9h5v-5h4v5h5v-9"/></svg>Ruta óptima</button>':'';
   const turnoActivo=esDelivery&&CU.turno_activo;
@@ -12433,8 +12615,14 @@ PAGES.mapa=function(){
     _gpsLoopStart(misPedidos[0]||null);
   }
   const _mapaEstilo=localStorage.getItem('mapaEstilo')||'oscuro';
-  const _estilosInfo=[{id:'oscuro',e:'🌙',t:'Noche'},{id:'claro',e:'☀️',t:'Día'},{id:'satelite',e:'🛰️',t:'Satélite'},{id:'relieve',e:'🏔️',t:'Relieve'},{id:'navegacion',e:'🧭',t:'Navegación'}];
-  const estilosBtns=_estilosInfo.map(s=>'<button id="btnMapa_'+s.id+'" onclick="_mapaSetEstilo(\''+s.id+'\')" title="'+s.t+'" class="mapa-estilo-btn'+(s.id===_mapaEstilo?' active':'')+'" >'+s.e+'</button>').join('');
+  const _estilosInfo=[
+    {id:'oscuro',t:'Modo oscuro del mapa',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'},
+    {id:'claro',t:'Modo claro del mapa',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>'},
+    {id:'satelite',t:'Vista satélite',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>'},
+    {id:'relieve',t:'Mostrar relieve',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20l5.5-9 4 6 3-5L21 20H3z"/><circle cx="17" cy="6" r="1.5"/></svg>'},
+    {id:'navegacion',t:'Modo navegación',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="12,6 14.5,13 12,11.5 9.5,13"/></svg>'}
+  ];
+  const estilosBtns=_estilosInfo.map(s=>'<button id="btnMapa_'+s.id+'" onclick="_mapaSetEstilo(\''+s.id+'\')" title="'+s.t+'" aria-label="'+s.t+'" class="mapa-estilo-btn'+(s.id===_mapaEstilo?' active':'')+'">'+s.svg+'</button>').join('');
   $('ca').innerHTML=
     '<div id="mapaContadores" class="mapBar" style="margin-bottom:8px;border-radius:10px"></div>'+
     '<div style="position:relative">'+
@@ -12443,8 +12631,8 @@ PAGES.mapa=function(){
       '<div id="mapaEstiloBtns" class="mapa-estilo-panel">'+
         estilosBtns+
       '</div>'+
-      '<button onclick="_mapaLocateMe()" title="Mi ubicación" class="map-btn btn-locate mapa-locate-btn">'+
-        '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>'+
+      '<button onclick="_mapaLocateMe()" title="Centrar en mi ubicación" aria-label="Centrar en mi ubicación" class="mapa-locate-btn">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>'+
       '</button>'+
     '</div>'+
     '<div style="margin-top:5px;font-size:11px;color:var(--text3)">Pin lleno = GPS confirmado · semitransparente = dirección aproximada · Auto-actualiza cada 5 min (sin mover la cámara)</div>';
@@ -12469,9 +12657,9 @@ PAGES.mapa=function(){
   // Onboarding del mapa (formal). Solo se muestra una vez por usuario.
   try{ setTimeout(function(){
     if(!window.Onboard) return;
-    var filtroSel = document.getElementById('mapaVendSel') ? '#mapaVendSel' : (document.getElementById('btnMapaDlvs') ? '#btnMapaDlvs' : '#mapaContadores');
+    var filtroSel = document.getElementById('mapaVendCombo') ? '#mapaVendCombo' : (document.getElementById('btnMapaDlvs') ? '#btnMapaDlvs' : '#mapaContadores');
     Onboard.enqueue('page_mapa_tipo', filtroSel, 'Filtros de tipo. Permiten visualizar pedidos, repartidores o ambos según necesidad operativa.');
-    Onboard.enqueue('page_mapa_zona','#mapaZonaSel','Filtro por zona geográfica configurada en el sistema.');
+    Onboard.enqueue('page_mapa_zona','#mapaZonaCombo','Filtro por zona geográfica configurada en el sistema.');
     if(document.getElementById('btnMapaDlvs')){
       Onboard.enqueue('page_mapa_dlvs','#btnMapaDlvs','Activación de la capa de repartidores sobre el mapa. Muestra su posición actual.');
     }
