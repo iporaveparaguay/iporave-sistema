@@ -84,6 +84,43 @@ body.no-auth .topbar,body.no-auth .sidebar,body.no-auth .sidebarCollapseBtn,body
 .btn:hover{transform:translateY(-1px);box-shadow:0 3px 6px rgba(0,0,0,.15);}
 .btn:active{transform:translateY(0);box-shadow:0 1px 2px rgba(0,0,0,.1);}
 .btn-primary{background:var(--accent);color:#000;box-shadow:0 4px 14px rgba(245,166,35,.35);}.btn-primary:hover{background:var(--accent2);}
+/* Topbar icon buttons — profesional, moderno, premium */
+.topbar-icon-btn{
+  width:38px;height:38px;
+  border-radius:12px;
+  border:1px solid var(--border2);
+  background:linear-gradient(180deg,var(--bg2),var(--bg3));
+  color:var(--text);
+  cursor:pointer;
+  font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  margin-right:8px;
+  position:relative;
+  box-shadow:0 2px 8px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:all .25s cubic-bezier(.2,.8,.2,1);
+  overflow:hidden;
+}
+.topbar-icon-btn::before{
+  content:'';
+  position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%,rgba(245,166,35,.4) 0%,transparent 70%);
+  opacity:0;
+  transition:opacity .25s ease;
+}
+.topbar-icon-btn:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  transform:translateY(-1px);
+  box-shadow:0 4px 14px rgba(245,166,35,.25),inset 0 1px 0 rgba(255,255,255,.1);
+}
+.topbar-icon-btn:hover::before{opacity:.15;}
+.topbar-icon-btn:active{transform:translateY(0);box-shadow:0 1px 3px rgba(0,0,0,.2),inset 0 2px 4px rgba(0,0,0,.15);}
+.topbar-icon-btn svg{transition:transform .4s cubic-bezier(.2,.8,.2,1);}
+.topbar-icon-btn.spinning svg{animation:spinRefresh .9s linear infinite;}
+@keyframes spinRefresh{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.topbar-icon-btn.theme-btn{margin-right:10px;}
+
 .btn-secondary{background:linear-gradient(180deg,var(--bg2),var(--bg3))!important;color:#ffffff!important;border:1px solid var(--accent)!important;font-weight:700!important;text-shadow:0 1px 2px rgba(0,0,0,.4);box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.08);}
 .btn-secondary:hover{background:var(--accent)!important;color:#000!important;border-color:var(--accent)!important;transform:translateY(-1px);text-shadow:none;box-shadow:0 4px 14px rgba(245,166,35,.35);}
 .btn-secondary:active{transform:translateY(0);box-shadow:0 1px 3px rgba(0,0,0,.2),inset 0 2px 4px rgba(0,0,0,.15);}
@@ -868,8 +905,8 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
       </button>
       <span class="tbtitle" id="tbTitle">Dashboard</span>
       <div class="tbactions" id="tbActions"></div>
-      <button id="refreshBtn" type="button" onclick="_refreshActualPage()" style="width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:6px" title="Actualizar página" aria-label="Actualizar">🔄</button>
-      <button id="themeToggleBtn" type="button" onclick="toggleTheme()" style="width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:10px" title="Cambiar tema" aria-label="Cambiar tema"><span id="themeIcon">☀️</span></button>
+      <button id="refreshBtn" type="button" onclick="_refreshActualPage()" class="topbar-icon-btn" title="Actualizar página" aria-label="Actualizar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+      <button id="themeToggleBtn" type="button" onclick="toggleTheme()" class="topbar-icon-btn theme-btn" title="Cambiar tema" aria-label="Cambiar tema"><span id="themeIcon">☀️</span></button>
       <button id="codexNotifBell" type="button" onclick="_notifSessionToggle()" style="display:none;position:relative;width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:17px;align-items:center;justify-content:center;flex-shrink:0" aria-label="Notificaciones">🔔<span id="codexNotifBadge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:999px;background:#ef4444;color:#fff;font-size:10px;font-weight:900;align-items:center;justify-content:center;padding:0 3px"></span></button>
       <span class="offline-badge" id="offlineBadge">⚡ Sin conexión</span>
     </div>
@@ -13543,26 +13580,30 @@ function toggleSidebarCollapse(){
 (function _restoreSidebarState(){
   try{ if(localStorage.getItem('sidebarCollapsed')==='1'){ document.body.classList.add('sidebarCollapsed'); } }catch(_){ }
 })();
-function _refreshActualPage(){
+async function _refreshActualPage(){
   const btn = document.getElementById('refreshBtn');
-  if(btn){
-    btn.style.transform = 'rotate(360deg)';
-    btn.style.transition = 'transform 0.6s ease';
-    setTimeout(function(){
-      btn.style.transform = '';
-      btn.style.transition = '';
-    }, 700);
-  }
+  if(btn) btn.classList.add('spinning');
   try{
+    // Refrescar caches en paralelo
+    const tareas = [];
+    if(typeof refreshCache === 'function') tareas.push(Promise.resolve(refreshCache()));
+    if(typeof DL !== 'undefined'){
+      if(DL.getOrders) tareas.push(DL.getOrders().then(d=>{window._ordersCache=d}).catch(()=>{}));
+      if(DL.getUsers) tareas.push(DL.getUsers().then(d=>{window._usersCache=d}).catch(()=>{}));
+      if(DL.getPagos) tareas.push(DL.getPagos({}).then(d=>{window._pagosCache=d}).catch(()=>{}));
+    }
+    await Promise.allSettled(tareas);
     const activeEl = document.querySelector('.ni.active');
     const cur = activeEl && activeEl.id ? activeEl.id.replace('ni_','') : null;
     if(cur && typeof PAGES === 'object' && PAGES[cur]){
-      if(typeof refreshCache === 'function') refreshCache();
-      setTimeout(function(){ try{ PAGES[cur](); }catch(e){ console.warn('refresh page err',e); } }, 100);
+      try{ PAGES[cur](); }catch(e){ console.warn('refresh page err',e); }
       if(typeof pushNotif === 'function') pushNotif('🔄 Actualizado','ok');
+      // Mantener spinning visible mínimo 600ms para feedback
+      setTimeout(()=>{ if(btn) btn.classList.remove('spinning'); }, 600);
       return;
     }
   }catch(e){ console.warn('_refreshActualPage',e); }
+  if(btn) btn.classList.remove('spinning');
   location.reload();
 }
 function toggleTheme(){
