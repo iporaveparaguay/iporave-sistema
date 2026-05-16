@@ -4188,8 +4188,9 @@ function nav(page){
     const sm=document.getElementById('_sensitiveAuthModal');
     if(sm)sm.remove();
   }catch(_){}
-  // Cliente no debe acceder a páginas administrativas
-  if(CU&&CU.rol==='cliente'&&['usuarios','orders','zonas','config','setup','recaudacion','liquidacion','balance','analitica_admin','analitica_vend','analitica_drop','analitica_prov','cierre','estadisticas','mapa','suministros','pagos_prov','clientes_recurrentes','facturas_b2b','entregas','cupo','recaudacion_dlv'].includes(page)){
+  // Cliente no debe acceder a páginas administrativas (FIX 16: bloqueo defensivo por URL/nav directa)
+  if(CU&&CU.rol==='cliente'&&['usuarios','orders','zonas','zonasYTarifas','config','setup','setupSql','recaudacion','recaudacionDelivery','liquidacion','balance','analitica_admin','analitica_vend','analitica_drop','analitica_prov','analitica','cierre','cierreJornada','estadisticas','estadisticasAvanzadas','mapa','suministros','pagos_prov','pagos','clientes_recurrentes','facturas_b2b','boletasIVA','entregas','cupo','recaudacion_dlv'].includes(page)){
+    try{pushNotif('Acceso no permitido para su rol','w');}catch(_){}
     return nav('dashboard');
   }
   var bgWrap = document.getElementById('bgWrap');
@@ -4334,7 +4335,7 @@ function getVisibleOrders(){
   if(r==='dropshipper')return _ordersCache.filter(o=>String(o.dropId)===String(CU.id));
   if(r==='delivery')return _ordersCache.filter(o=>String(o.deliveryId)===String(CU.id));
   if(r==='cliente')return _ordersCache.filter(o=>o.cliente===CU.nombre);
-  if(r==='proveedor')return _ordersCache.filter(o=>o.vendedorId===CU.id||o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  if(r==='proveedor')return _ordersCache.filter(o=>String(o.proveedorId)===String(CU.id)||(o.proveedor||'').toLowerCase()===(CU.nombre||'').toLowerCase());
   return[];
 }
 function nextDocNum(){
@@ -7047,7 +7048,7 @@ PAGES.liquidacion=function(){
       '<div class="lrow"><span class="llbl">Premio 1–2 extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra12)+'</span></div>'+
       '<div class="lrow"><span class="llbl">Premio 3+ extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra3)+'</span></div>'+
     '</div>';
-  if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredLiquidacion){
+  if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredLiquidacion && CU && ['admin','superadmin'].includes(CU.rol)){
     window._onboardFiredLiquidacion = true;
     setTimeout(function(){
       try{
@@ -8772,7 +8773,7 @@ PAGES.usuarios=async function(){
         '</div>'+
       '</div></td></tr>'
     ).join('')+'</tbody></table></div></div>';
-    if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredUsuarios){
+    if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredUsuarios && CU && ['admin','superadmin'].includes(CU.rol)){
       window._onboardFiredUsuarios = true;
       setTimeout(function(){
         try{
@@ -8981,7 +8982,7 @@ PAGES.zonas=function(){
       '</div>'+
     '</div></td></tr>'
   ).join('')+'</tbody></table></div></div>';
-  if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredZonas){
+  if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredZonas && CU && ['admin','superadmin'].includes(CU.rol)){
     window._onboardFiredZonas = true;
     setTimeout(function(){
       try{
@@ -11098,7 +11099,7 @@ PAGES.config=function(){
     ):'')+
     '</div>';
   _cargarTemaActualEnConfig();
-  if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredConfig){
+  if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredConfig && CU && ['admin','superadmin'].includes(CU.rol)){
     window._onboardFiredConfig = true;
     setTimeout(function(){
       try{
