@@ -1214,6 +1214,7 @@ const DEF_USERS = [];
 const DEF_USERS_VER = 9;
 
 const WORKER_URL='https://iporave-api.iporaveparaguay.workers.dev';
+const VAPID_PUBLIC_KEY='BGsJSh2Ethpl-uNUqQu7HoE5J6Uaejeoe4eM0BW2_EkB_QLSkC3AwRcZ7koXfBrcOo0-V3EWWBpVZRyrKBS2p78';
 
 /* ══════════════════════════════════════════════════
    CONFIG DESDE SERVIDOR (sin claves en el código)
@@ -1531,7 +1532,7 @@ async function initSupabase(){
   const cfg=getCfg();
   if(!cfg.supabaseUrl||!cfg.supabaseKey)return false;
   try{
-    _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+    _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{storage:window.sessionStorage,persistSession:true,detectSessionInUrl:false,autoRefreshToken:true}});
     if(_sessionToken&&_refreshToken){
       await _supa.auth.setSession({access_token:_sessionToken,refresh_token:_refreshToken});
     }
@@ -1541,6 +1542,7 @@ async function initSupabase(){
         _refreshToken=session.refresh_token;
         sessionStorage.setItem('iporave_token',session.access_token);
         sessionStorage.setItem('iporave_refresh',session.refresh_token);
+        sessionStorage.setItem('iporave_token_expiry',String(Date.now()+3600000));
       }
     });
     const {error}=await _supa.from('pedidos').select('id').limit(1);
@@ -1572,6 +1574,21 @@ function updateConnUI(online){
 }
 
 /* DATA LAYER — fallback transparente */
+async function _fetchWithTimeout(url, opts, timeoutMs){
+  timeoutMs = timeoutMs || 10000;
+  const ctrl = new AbortController();
+  const userSignal = opts && opts.signal;
+  if(userSignal){
+    if(userSignal.aborted) ctrl.abort();
+    else userSignal.addEventListener('abort', () => ctrl.abort(), {once:true});
+  }
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try{
+    return await fetch(url, Object.assign({}, opts||{}, {signal: ctrl.signal}));
+  } finally {
+    clearTimeout(t);
+  }
+}
 const DL = {
   // LOCAL helpers
   _lg(k){try{return JSON.parse(localStorage.getItem('ipv5_'+k)||'null');}catch{return null;}},
@@ -1609,7 +1626,7 @@ const DL = {
     // Usar endpoint del servidor (service key) en lugar de anon key directamente
     if(_sessionToken){
       try{
-        const r=await fetch(WORKER_URL+'/api/get-users',{headers:{'Authorization':'Bearer '+_sessionToken}});
+        const r=await _fetchWithTimeout(WORKER_URL+'/api/get-users',{headers:{'Authorization':'Bearer '+_sessionToken}});
         if(r.ok){
           const json=await r.json();
           if(json.ok&&json.users){
@@ -1636,7 +1653,7 @@ const DL = {
     // 2. Si hay contraseña nueva — hashear en el servidor
     if(password&&!password.startsWith('$2')){
       try{
-        const res=await fetch(WORKER_URL+'/api/save-user',{
+        const res=await _fetchWithTimeout(WORKER_URL+'/api/save-user',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
           body:JSON.stringify({...uLocal,password})
@@ -1660,7 +1677,7 @@ const DL = {
     // Eliminar de Supabase via API (service key — anon key bloqueado por RLS)
     if(_sessionToken){
       try{
-        const rd=await fetch(WORKER_URL+'/api/delete-user',{
+        const rd=await _fetchWithTimeout(WORKER_URL+'/api/delete-user',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
           body:JSON.stringify({id})
@@ -3227,6 +3244,7 @@ async function doLogin(){
     _refreshToken=data.refresh_token||null;
     sessionStorage.setItem('iporave_token',data.token);
     if(data.refresh_token)sessionStorage.setItem('iporave_refresh',data.refresh_token);
+    sessionStorage.setItem('iporave_token_expiry',String(Date.now()+3600000));
     await loadServerConfig(_sessionToken);
     await initSupabase();
     $('loginScreen').style.display='none';
@@ -3298,7 +3316,7 @@ async function doResetPassword(){
   try{
     const cfg=getCfg();
     if(!_supa&&cfg.supabaseUrl&&cfg.supabaseKey){
-      _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+      _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{storage:window.sessionStorage,persistSession:true,detectSessionInUrl:false,autoRefreshToken:true}});
     }
     if(!_supa){showAlert('resetAlert','e','Error de conexión. Recargá la página.');if(btn)btn.textContent='Guardar nueva contraseña';return;}
     const{error}=await _supa.auth.updateUser({password:p});
@@ -3461,6 +3479,37 @@ function confirmLogout(){
     );
   }else if(confirm('¿Cerrar sesión?')){doLogout();}
 }
+function _cleanAllAppStorage(){
+  try{
+    const keys=Object.keys(localStorage);
+    keys.forEach(k=>{
+      if(k==='theme'||k==='iporave_tema_custom')return;
+      if(k.startsWith('ipv')||k.startsWith('iporave')||k.startsWith('AI_BTN')||k.startsWith('onboard_v1_')||k.startsWith('supabase.auth')){
+        localStorage.removeItem(k);
+      }
+    });
+    sessionStorage.clear();
+  }catch(_){}
+}
+async function _ensureFreshToken(){
+  try{
+    const expiry=parseInt(sessionStorage.getItem('iporave_token_expiry')||'0');
+    if(expiry&&Date.now()<expiry-60000)return true;
+    if(!_supa||!_supa.auth||typeof _supa.auth.refreshSession!=='function')return true;
+    const{data,error}=await _supa.auth.refreshSession();
+    if(error||!data||!data.session)throw new Error('refresh failed');
+    _sessionToken=data.session.access_token;
+    _refreshToken=data.session.refresh_token||_refreshToken;
+    sessionStorage.setItem('iporave_token',data.session.access_token);
+    if(data.session.refresh_token)sessionStorage.setItem('iporave_refresh',data.session.refresh_token);
+    sessionStorage.setItem('iporave_token_expiry',String(Date.now()+3600000));
+    return true;
+  }catch(e){
+    console.warn('Token refresh failed, logging out',e);
+    try{doLogout();}catch(_){ }
+    return false;
+  }
+}
 function doLogout(){
   if(_trackRefreshTimer){clearInterval(_trackRefreshTimer);_trackRefreshTimer=null;}
   ['users','usersVer','orders','zonas','cupos','jornadas','catalogo'].forEach(k => localStorage.removeItem('ipv5_' + k));
@@ -3473,6 +3522,7 @@ function doLogout(){
   _refreshToken=null;
   sessionStorage.removeItem('iporave_token');
   sessionStorage.removeItem('iporave_refresh');
+  sessionStorage.removeItem('iporave_token_expiry');
   if(_realtimeSub){try{_supa.removeChannel(_realtimeSub);}catch(e){} _realtimeSub=null;}
   if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
   if(window._ordersPolling){clearInterval(window._ordersPolling);window._ordersPolling=null;}
@@ -3490,6 +3540,7 @@ function doLogout(){
   const cbell=$('codexNotifBell');if(cbell){cbell.style.display='none';const cb=$('codexNotifBadge');if(cb)cb.style.display='none';}
   const cpanel=$('codexNotifPanel');if(cpanel)cpanel.remove();
   _aiHistory=[];
+  try{_cleanAllAppStorage();}catch(_){ }
 }
 
 /* ══════════════════════════════════════════════════
@@ -6551,7 +6602,7 @@ PAGES.liquidacion=function(){
     vendedores.map(v=>{
       const vO=ent.filter(o=>o.vendedorId===v.id);
       const gan=vO.reduce((a,b)=>a+ganVend(b),0);
-      return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px">🧑‍💼 '+v.nombre+'</div>'+
+      return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px">🧑‍💼 '+escHtml(v.nombre||'')+'</div>'+
         '<div class="lrow"><span class="llbl">Pedidos</span><span>'+vO.length+'</span></div>'+
         '<div class="lrow"><span class="llbl">Ventas brutas</span><span>'+fmt(vO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0))+'</span></div>'+
         '<div class="lrow"><span class="llbl">Ganancia (precio−costo−logística)</span><span style="color:var(--accent)">'+fmt(gan)+'</span></div></div>';
@@ -6559,7 +6610,7 @@ PAGES.liquidacion=function(){
     '<div class="stitle">Por Dropshipper</div>'+
     drops.map(d=>{
       const dO=ent.filter(o=>o.dropId===d.id);
-      return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px">🔗 '+d.nombre+'</div>'+
+      return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px">🔗 '+escHtml(d.nombre||'')+'</div>'+
         '<div class="lrow"><span class="llbl">Pedidos</span><span>'+dO.length+'</span></div>'+
         '<div class="lrow"><span class="llbl">Ventas brutas</span><span>'+fmt(dO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0))+'</span></div></div>';
     }).join('')+
@@ -6572,7 +6623,7 @@ PAGES.liquidacion=function(){
       const max=d.vehiculo==='auto'?cfg.cupoAuto:cfg.cupoMoto;
       return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:8px">'+
         (d.foto_perfil?'<img src="'+safeUrl(d.foto_perfil)+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover">':'')+
-        '🚴 '+d.nombre+
+        '🚴 '+escHtml(d.nombre||'')+
         (d.badge_confianza?' <span class="badge-confianza">🛡️ De Confianza</span>':'')+
         ' <span style="font-size:11px;font-weight:400;color:var(--text2)">'+(d.vehiculo||'moto')+' · cupo '+max+'/día</span>'+
         (d.calificacion_prom>0?'</div><div style="margin-bottom:6px">'+_renderStars(d.calificacion_prom)+' <span style="font-size:11px;color:var(--text2)">'+d.calificacion_prom.toFixed(1)+' ('+d.calificaciones_total+' reseñas)</span>':'')+'</div>'+
@@ -7405,7 +7456,7 @@ PAGES.estadisticas=function(){
         dlvStats.map((d,i)=>
           '<tr style="border-bottom:1px solid var(--border2)">'+
           '<td style="padding:8px 10px;color:var(--text2)">'+(i+1)+'</td>'+
-          '<td style="padding:8px 10px;font-weight:700">'+d.nombre+'</td>'+
+          '<td style="padding:8px 10px;font-weight:700">'+escHtml(d.nombre||'')+'</td>'+
           '<td style="padding:8px 10px;text-align:center;color:#4ade80;font-weight:700">'+d.ent+'</td>'+
           '<td style="padding:8px 10px;text-align:center">'+d.tot+'</td>'+
           '<td style="padding:8px 10px;text-align:center"><span style="background:'+(d.pct>=80?'#15803d':d.pct>=50?'#ca8a04':'#b91c1c')+';color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">'+d.pct+'%</span></td>'+
@@ -8033,7 +8084,7 @@ PAGES.clientes_recurrentes=function(){
     '<div class="sgrid">'+
       '<div class="sc ac"><div class="slabel">Clientes únicos</div><div class="sval">'+totalClientes+'</div></div>'+
       '<div class="sc gr"><div class="slabel">Repiten compra</div><div class="sval">'+recurrentes+'</div><div class="ssub">'+pctRec+'% del total</div></div>'+
-      (top?'<div class="sc bl"><div class="slabel">⭐ Más frecuente</div><div class="sval" style="font-size:14px;font-weight:700">'+top.nombre+'</div><div class="ssub">'+top.pedidos+' pedidos</div></div>':'')+''+
+      (top?'<div class="sc bl"><div class="slabel">⭐ Más frecuente</div><div class="sval" style="font-size:14px;font-weight:700">'+escHtml(top.nombre||'')+'</div><div class="ssub">'+top.pedidos+' pedidos</div></div>':'')+''+
     '</div>'+
     (lista.length===0?
       '<div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:64px;margin-bottom:16px">📦</div><div style="font-size:16px;font-weight:600;margin-bottom:6px">Sin pedidos registrados</div><div style="font-size:13px;color:var(--text3)">Aún no hay pedidos en el sistema.</div></div>':
@@ -8042,7 +8093,7 @@ PAGES.clientes_recurrentes=function(){
       '<th>Cliente</th><th style="text-align:center">Pedidos</th><th style="text-align:right">Total</th><th>Último pedido</th></tr></thead><tbody>'+
       lista.map(c=>
         '<tr>'+
-        '<td style="font-weight:600">'+c.nombre+'</td>'+
+        '<td style="font-weight:600">'+escHtml(c.nombre||'')+'</td>'+
         '<td style="text-align:center"><span style="background:'+(c.pedidos>2?'#15803d':c.pedidos>1?'#ca8a04':'#374151')+';color:#fff;padding:2px 9px;border-radius:10px;font-size:12px">'+c.pedidos+'</span></td>'+
         '<td style="text-align:right;font-weight:700;color:var(--green)">'+fmt(c.total)+'</td>'+
         '<td style="color:var(--text3);font-size:12px">'+( c.ultimo||'—')+'</td>'+
@@ -8124,7 +8175,7 @@ PAGES.analitica_admin=function(){
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">'+
           '<span style="font-size:15px;font-weight:700;color:var(--text3);min-width:20px">'+(i+1)+'</span>'+
           '<div style="flex:1;min-width:0">'+
-            '<div style="font-weight:700;font-size:13px">'+v.nombre+'<span style="font-size:10px;color:var(--text3);margin-left:4px">'+escHtml(capRole(v.rol))+'</span></div>'+
+            '<div style="font-weight:700;font-size:13px">'+escHtml(v.nombre||'')+'<span style="font-size:10px;color:var(--text3);margin-left:4px">'+escHtml(capRole(v.rol))+'</span></div>'+
             '<div style="font-size:11px;color:var(--text2)">'+v.n+' entregas · '+fmt(v.gan)+'</div>'+
           '</div></div>'
         ).join(''):'<div style="color:var(--text3);font-size:12px">Sin datos</div>')+
@@ -8155,7 +8206,7 @@ PAGES.analitica_admin=function(){
       rankDlv.map((d,i)=>
         '<tr style="border-bottom:1px solid var(--border2)">'+
         '<td style="padding:8px 12px;color:var(--text2)">'+(i+1)+'</td>'+
-        '<td style="padding:8px 12px;font-weight:700">'+d.nombre+'</td>'+
+        '<td style="padding:8px 12px;font-weight:700">'+escHtml(d.nombre||'')+'</td>'+
         '<td style="padding:8px 12px;text-align:center;color:#4ade80;font-weight:700">'+d.ent+'</td>'+
         '<td style="padding:8px 12px;text-align:center">'+d.tot+'</td>'+
         '<td style="padding:8px 12px;text-align:center"><span style="background:'+(d.pct>=80?'#15803d':d.pct>=50?'#ca8a04':'#b91c1c')+';color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">'+d.pct+'%</span></td>'+
@@ -8827,7 +8878,7 @@ function _renderProductoCard(p,canEdit,canOrder=false){
       p.presentaciones.map(pr=>{
         const rolPrice=_getPrecioRol(pr,CU.rol);
         return '<div class="prod-pres-chip">'+
-          '<div style="font-weight:700;font-size:11px">'+pr.nombre+'</div>'+
+          '<div style="font-weight:700;font-size:11px">'+escHtml(pr.nombre||'')+'</div>'+
           '<div style="color:var(--accent);font-size:11px">'+(rolPrice>0?fmt(rolPrice):'Sin precio')+'</div>'+
           (esAdmin?'<div style="font-size:9px;color:var(--text3)">V:'+fmtN(pr.precioVendedor||0)+' D:'+fmtN(pr.precioDropshipper||0)+' P:'+fmtN(pr.precioProveedor||0)+'</div>':'')+
           (canEdit?'<div style="display:flex;gap:3px;margin-top:3px">'+
@@ -11030,7 +11081,7 @@ async function main(){
       await loadServerConfig(null);
       const cfg=getCfg();
       if(cfg.supabaseUrl&&cfg.supabaseKey){
-        _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey);
+        _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{storage:window.sessionStorage,persistSession:true,detectSessionInUrl:false,autoRefreshToken:true}});
         await _supa.auth.setSession({access_token:_at,refresh_token:_rt||''});
       }
       showResetPanel();
@@ -11839,14 +11890,14 @@ function _mapaRenderSelects(){
   if(zs){
     const cur=window._mapaFiltroZona;
     zs.innerHTML='<option value="">🌎 Todo Paraguay</option>'+
-      _zonasCache.map(z=>'<option value="'+z.id+'" '+(String(cur)===String(z.id)?'selected':'')+'>'+z.nombre+'</option>').join('');
+      _zonasCache.map(z=>'<option value="'+z.id+'" '+(String(cur)===String(z.id)?'selected':'')+'>'+escHtml(z.nombre||'')+'</option>').join('');
   }
   const vs=$('mapaVendSel');
   if(vs){
     const cur=window._mapaFiltroVend;
     const vends=_usersCache.filter(u=>['vendedor','admin','superadmin','dropshipper','proveedor'].includes(u.rol));
     vs.innerHTML='<option value="">👤 Todos</option>'+
-      vends.map(u=>'<option value="'+u.id+'" '+(String(cur)===String(u.id)?'selected':'')+'>'+u.nombre+'</option>').join('');
+      vends.map(u=>'<option value="'+u.id+'" '+(String(cur)===String(u.id)?'selected':'')+'>'+escHtml(u.nombre||'')+'</option>').join('');
   }
 }
 
@@ -11969,6 +12020,42 @@ function _gpsLoopTick(){
     }
   },{enableHighAccuracy:true,timeout:8000,maximumAge:0});
 }
+let _gpsBannerTimer=null;
+function _gpsBannerEnsure(){
+  let el=document.getElementById('gpsConsentBanner');
+  if(el)return el;
+  el=document.createElement('div');
+  el.id='gpsConsentBanner';
+  el.style.cssText='display:none;position:fixed;top:64px;left:50%;transform:translateX(-50%);background:rgba(34,197,94,0.95);color:#fff;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:600;z-index:9000;gap:8px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+  el.innerHTML='<span>📍 Compartiendo ubicación</span> <span id="gpsConsentDur" style="opacity:.85;font-weight:500"></span> <button id="gpsConsentPause" type="button" style="background:rgba(0,0,0,.25);border:none;color:#fff;padding:4px 10px;border-radius:8px;cursor:pointer;font-weight:600;font-size:12px">Pausar</button>';
+  document.body.appendChild(el);
+  const btn=el.querySelector('#gpsConsentPause');
+  if(btn)btn.addEventListener('click',function(){
+    _gpsLoopStop();
+    if(typeof pushNotif==='function')pushNotif('Compartido de ubicación pausado','i');
+  });
+  return el;
+}
+function _gpsBannerShow(){
+  const el=_gpsBannerEnsure();
+  el.style.display='flex';
+  if(_gpsBannerTimer)clearInterval(_gpsBannerTimer);
+  const upd=function(){
+    const dur=document.getElementById('gpsConsentDur');
+    if(!dur)return;
+    const s=Math.max(0,Math.floor((Date.now()-_gpsLoopStartTime)/1000));
+    const mm=String(Math.floor(s/60)).padStart(2,'0');
+    const ss=String(s%60).padStart(2,'0');
+    dur.textContent=mm+':'+ss;
+  };
+  upd();
+  _gpsBannerTimer=setInterval(upd,1000);
+}
+function _gpsBannerHide(){
+  const el=document.getElementById('gpsConsentBanner');
+  if(el)el.style.display='none';
+  if(_gpsBannerTimer){clearInterval(_gpsBannerTimer);_gpsBannerTimer=null;}
+}
 function _gpsLoopStart(order){
   if(!navigator.geolocation){pushNotif('Este dispositivo no soporta GPS. No se enviará posición.','w');return;}
   _gpsLoopStop();
@@ -11976,10 +12063,14 @@ function _gpsLoopStart(order){
   _gpsLoopOrder=order;_gpsLoopStartTime=Date.now();_gpsLoopFast=true;
   _gpsLoopTick();
   _gpsLoopTimer=setInterval(_gpsLoopTick,5000);
+  try{_gpsBannerShow();}catch(_){ }
+  try{window.dispatchEvent(new CustomEvent('gpsActive',{detail:{order:order||null}}));}catch(_){ }
 }
 function _gpsLoopStop(){
   if(_gpsLoopTimer){clearInterval(_gpsLoopTimer);_gpsLoopTimer=null;}
   _gpsLoopOrder=null;
+  try{_gpsBannerHide();}catch(_){ }
+  try{window.dispatchEvent(new CustomEvent('gpsInactive'));}catch(_){ }
 }
 function verDeliveryEnMapa(deliveryId){
   const dlv=_usersCache.find(u=>u.id===deliveryId);
@@ -12134,10 +12225,9 @@ async function _activarPush(){
   if(perm!=='granted'){alert('Permiso denegado. Podés habilitarlo en Ajustes del celular → Notificaciones → iporave-sistema.');return;}
   try{
     const reg=await navigator.serviceWorker.ready;
-    const VAPID_KEY='BGsJSh2Ethpl-uNUqQu7HoE5J6Uaejeoe4eM0BW2_EkB_QLSkC3AwRcZ7koXfBrcOo0-V3EWWBpVZRyrKBS2p78';
     let sub=await reg.pushManager.getSubscription();
     if(!sub){
-      sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:VAPID_KEY});
+      sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:VAPID_PUBLIC_KEY});
     }
     const token=sessionStorage.getItem('iporave_token');
     const _resp=await fetch(WORKER_URL+'/api/push-subscribe',{
@@ -14034,7 +14124,6 @@ document.addEventListener('DOMContentLoaded',function(){
       const permission = await Notification.requestPermission();
       if(permission !== 'granted') return;
       try {
-        const VAPID_PUBLIC_KEY = 'BGsJSh2Ethpl-uNUqQu7HoE5J6Uaejeoe4eM0BW2_EkB_QLSkC3AwRcZ7koXfBrcOo0-V3EWWBpVZRyrKBS2p78';
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: VAPID_PUBLIC_KEY,
@@ -14519,6 +14608,22 @@ function toggleTheme(){
     applyScrollLock();
   }).observe(document.body, {childList:true, subtree:true});
 })();
+
+/* Global error handlers — protegido contra duplicados */
+if(!window._globalErrorHandlersInstalled){
+  window._globalErrorHandlersInstalled = true;
+  window.addEventListener('error', function(e){
+    try{ console.error('[GlobalError]', e.error || e.message, e.filename, e.lineno); }catch(_){ }
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    try{ console.error('[UnhandledRejection]', e.reason); }catch(_){ }
+    if(e.reason && typeof e.reason.message === 'string' && /NetworkError|Failed to fetch/i.test(e.reason.message)){
+      if(typeof pushNotif === 'function'){
+        try{ pushNotif('Sin conexión. Reintentando...', 'w'); }catch(_){ }
+      }
+    }
+  });
+}
 </script>
 </body>
 </html>

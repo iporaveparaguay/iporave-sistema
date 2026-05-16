@@ -1,14 +1,16 @@
 {
   "name": "Iporãve Connect",
   "short_name": "Iporãve",
-  "description": "Sistema logístico de entregas — Iporãve Paraguay",
-  "start_url": "/",
+  "description": "Sistema logístico integral para distribución, entregas y catálogo en Paraguay",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#0f1117",
   "theme_color": "#0f1117",
   "orientation": "portrait-primary",
-  "lang": "es",
+  "lang": "es-PY",
+  "dir": "ltr",
   "icons": [
     {
       "src": "icon-192.png",
@@ -23,5 +25,5 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["logistics", "business"]
+  "categories": ["business", "logistics", "productivity"]
 }
