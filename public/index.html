@@ -1303,6 +1303,12 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
   .topbar #menuBtn{margin-right:8px;}
   .topbar .tbactions{gap:8px;}
   .topbar .tbactions .topbar-icon-btn{width:38px;height:38px;}
+  /* Filtros mapa colapsables (mobile) */
+  #mapaContadores{position:relative;transition:max-height .25s var(--ease-out);max-height:300px;overflow:hidden;padding-right:42px;}
+  #mapaContadores.collapsed{max-height:42px;}
+  #mapaContadores.collapsed > *:not(.filtros-toggle){opacity:0;pointer-events:none;}
+  #mapaContadores.collapsed::after{content:"Mostrar filtros";position:absolute;top:50%;left:14px;transform:translateY(-50%);color:#fff;font-size:12px;font-weight:600;letter-spacing:.3px;opacity:.95;pointer-events:none;}
+  .filtros-toggle{position:absolute;top:6px;right:8px;width:28px;height:28px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;z-index:10;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;padding:0;opacity:1!important;pointer-events:auto!important;}
   /* (3) Filtros mapa: forzar wrap (sin scroll horizontal) */
   .mapBar{flex-wrap:wrap!important;overflow-x:visible!important;gap:6px;padding:8px 10px;}
   .mapBar .mapBtn,.mapBar .filterBtn{flex:0 0 auto;}
@@ -13142,6 +13148,18 @@ async function _geocodeAddr(addr){
 
 
 
+window._mapaFiltrosColapsados = window._mapaFiltrosColapsados || false;
+function _mapaToggleFiltros(){
+  window._mapaFiltrosColapsados = !window._mapaFiltrosColapsados;
+  const bar = document.getElementById('mapaContadores');
+  if(bar){
+    bar.classList.toggle('collapsed', window._mapaFiltrosColapsados);
+    const btn = bar.querySelector('.filtros-toggle');
+    if(btn) btn.innerHTML = window._mapaFiltrosColapsados ? '☰' : '✕';
+  }
+}
+window._mapaToggleFiltros = _mapaToggleFiltros;
+
 function _mapaUpdateContadores(){
   const el=$('mapaContadores');if(!el)return;
   const counts={};
@@ -13204,7 +13222,9 @@ function _mapaUpdateContadores(){
 
   // Fila secundaria de botones por zona eliminada: ya están en el dropdown #mapaZonaCombo (evita duplicación).
 
-  el.innerHTML=btnsEstado+btnsTipo+(dlvSel?'<div class="sep"></div>'+dlvSel:'');
+  var _toggleBtnHtml='<button type="button" class="filtros-toggle" onclick="_mapaToggleFiltros()" aria-label="Mostrar/ocultar filtros">'+(window._mapaFiltrosColapsados?'☰':'✕')+'</button>';
+  el.innerHTML=_toggleBtnHtml+btnsEstado+btnsTipo+(dlvSel?'<div class="sep"></div>'+dlvSel:'');
+  if(window._mapaFiltrosColapsados){el.classList.add('collapsed');}else{el.classList.remove('collapsed');}
 
   // Cablear combobox custom de delivery (solo si está en el DOM)
   if(!_esDeliveryRol){try{_setupDlvSearchCombo();}catch(e){console.warn('dlvCombo setup',e);}}
@@ -16482,6 +16502,31 @@ function toggleTheme(){
   function $on(el, ev, fn, opts){ if(el) el.addEventListener(ev, fn, opts||false); }
   function $off(el, ev, fn, opts){ if(el) el.removeEventListener(ev, fn, opts||false); }
 
+  function _ensureGlobalSkipBtn(){
+    if(document.getElementById('onboardGlobalSkip')) return;
+    var btn = document.createElement('button');
+    btn.id = 'onboardGlobalSkip';
+    btn.type = 'button';
+    btn.innerHTML = 'Omitir tutorial';
+    btn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:99998;background:rgba(20,22,28,0.92);color:#fff;border:1px solid rgba(255,255,255,0.15);padding:8px 14px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);';
+    btn.onclick = function(){
+      try{ if(typeof _toggleTutorial==='function') _toggleTutorial(false); }catch(_){}
+      try{
+        if(window.Onboard){
+          if(typeof window.Onboard._closeCurrent==='function') window.Onboard._closeCurrent();
+          window.Onboard._queue = [];
+        }
+      }catch(_){}
+      _removeGlobalSkipBtn();
+      try{ if(typeof pushNotif==='function') pushNotif('Tutorial desactivado. Reactivar en Configuración.', 'ok', null, 4000); }catch(_){}
+    };
+    document.body.appendChild(btn);
+  }
+  function _removeGlobalSkipBtn(){
+    var el = document.getElementById('onboardGlobalSkip');
+    if(el && el.parentNode) el.parentNode.removeChild(el);
+  }
+
   function markSeen(id){
     if(!id) return;
     try{ localStorage.setItem('onboard_v1_'+id, '1'); }catch(_){}
@@ -16508,6 +16553,8 @@ function toggleTheme(){
     });
     if(!skip && STATE.id) markSeen(STATE.id);
     STATE.target = null; STATE.id = null; STATE.targetSel = null; STATE.mensaje = null; STATE.opts = null;
+    // Si no hay nada en cola, quitar el botón global de omitir
+    if(!QUEUE.length){ try{ _removeGlobalSkipBtn(); }catch(_){} }
     // Disparar el siguiente de la cola con pausa de 400ms
     setTimeout(_drainQueue, 400);
   }
@@ -16668,6 +16715,8 @@ function toggleTheme(){
     document.body.appendChild(hole);
     document.body.appendChild(hand);
     document.body.appendChild(tip);
+    // Botón global "Omitir tutorial" visible mientras haya un coachmark activo
+    try{ _ensureGlobalSkipBtn(); }catch(_){}
     // forzar reflow para transición
     void overlay.offsetWidth;
     overlay.classList.add('show');
