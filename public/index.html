@@ -679,13 +679,45 @@ textarea::placeholder{
 .ai-avatar.thinking .ai-mic-led{animation:aiMicThink .5s ease-in-out infinite;}
 @keyframes aiMicThink{0%,100%{fill:#fbbf24;opacity:1}50%{fill:#f59e0b;opacity:0.6}}
 .ai-avatar .ai-headphone-l,.ai-avatar .ai-headphone-r{opacity:0.85;}
+/* MACAQUITO — figura humanoide del botón flotante */
+#aiBtn .aim-wrap{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
+#aiBtn .aim-svg{display:block;overflow:visible;filter:drop-shadow(0 2px 4px rgba(15,23,42,0.18));}
+#aiBtn .aim-figure{transform-origin:32px 58px;animation:aimBob 3.2s ease-in-out infinite;}
+#aiBtn .aim-arm-l{transform-origin:19.2px 28px;animation:aimArmL 2.4s ease-in-out infinite;}
+#aiBtn .aim-arm-r{transform-origin:44.8px 28px;animation:aimArmR 2.4s ease-in-out infinite;}
+#aiBtn .aim-leg-l{transform-origin:28px 43px;animation:aimLegL 2.4s ease-in-out infinite;}
+#aiBtn .aim-leg-r{transform-origin:36px 43px;animation:aimLegR 2.4s ease-in-out infinite;}
+#aiBtn .aim-head{transform-origin:32px 27px;animation:aimHead 4s ease-in-out infinite;}
+#aiBtn .aim-shadow{animation:aimShadow 3.2s ease-in-out infinite;transform-origin:32px 58px;}
+@keyframes aimBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.2px)}}
+@keyframes aimHead{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-2deg)}75%{transform:rotate(2deg)}}
+@keyframes aimArmL{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(6deg)}}
+@keyframes aimArmR{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-6deg)}}
+@keyframes aimLegL{0%,100%{transform:rotate(2deg)}50%{transform:rotate(-3deg)}}
+@keyframes aimLegR{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg)}}
+@keyframes aimShadow{0%,100%{transform:scaleX(1);opacity:0.18}50%{transform:scaleX(0.88);opacity:0.12}}
+#aiBtn:hover .aim-figure{animation-duration:1.4s}
+#aiBtn:hover .aim-arm-l{animation:aimArmWaveL .55s ease-in-out infinite}
+#aiBtn:hover .aim-arm-r{animation:aimArmWaveR .55s ease-in-out infinite}
+#aiBtn:hover .aim-leg-l,#aiBtn:hover .aim-leg-r{animation-duration:1.1s}
+#aiBtn:hover .aim-head{animation-duration:2s}
+@keyframes aimArmWaveL{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(22deg)}}
+@keyframes aimArmWaveR{0%,100%{transform:rotate(12deg)}50%{transform:rotate(-22deg)}}
+#aiBtn:active .aim-figure{animation:aimJump .35s ease-out 1}
+#aiBtn:active .aim-arm-l{animation:aimArmJumpL .35s ease-out 1}
+#aiBtn:active .aim-arm-r{animation:aimArmJumpR .35s ease-out 1}
+@keyframes aimJump{0%{transform:translateY(0)}40%{transform:translateY(-5px) scale(1.05)}100%{transform:translateY(0)}}
+@keyframes aimArmJumpL{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(-45deg)}}
+@keyframes aimArmJumpR{0%,100%{transform:rotate(4deg)}50%{transform:rotate(45deg)}}
 @media (prefers-reduced-motion: reduce){
-  .ai-avatar,.ai-avatar .ai-mic-led,.ai-avatar .ai-eye{animation:none!important;}
+  .ai-avatar,.ai-avatar .ai-mic-led,.ai-avatar .ai-eye,
+  #aiBtn .aim-figure,#aiBtn .aim-arm-l,#aiBtn .aim-arm-r,#aiBtn .aim-leg-l,#aiBtn .aim-leg-r,#aiBtn .aim-head,#aiBtn .aim-shadow,#aiBtn .aim-antenna,#aiBtn .aim-eye{animation:none!important;}
 }
-/* AI CHAT FLOATING */
-#aiBtn{position:fixed;bottom:24px;right:24px;z-index:500;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#000;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(245,166,35,.4);transition:transform .2s;touch-action:none;user-select:none;}
-#aiBtn:hover{transform:scale(1.1);}
-#aiBtn.dragging{transition:none!important;transform:scale(1.04);box-shadow:0 8px 28px rgba(245,166,35,.55);}
+/* AI CHAT FLOATING — botón blanco con borde sombreado */
+#aiBtn{position:fixed;bottom:24px;right:24px;z-index:500;width:56px;height:56px;border-radius:50%;background:#ffffff;color:#0f172a;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.08),0 8px 24px rgba(15,23,42,.18),inset 0 0 0 1px rgba(15,23,42,.06);transition:transform .2s ease,box-shadow .25s ease,background .25s ease;touch-action:none;user-select:none;}
+#aiBtn:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 4px 10px rgba(59,130,246,.18),0 14px 32px rgba(59,130,246,.28),inset 0 0 0 1px rgba(59,130,246,.35);}
+#aiBtn:active{transform:translateY(0) scale(0.96);transition-duration:.08s;}
+#aiBtn.dragging{transition:none!important;transform:scale(1.04);box-shadow:0 12px 36px rgba(59,130,246,.45),inset 0 0 0 1px rgba(59,130,246,.55);}
 .ai-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 3px;pointer-events:none;}
 #aiPanel{position:fixed;bottom:86px;right:24px;z-index:500;width:360px;max-height:520px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);box-shadow:var(--shadow);display:none;flex-direction:column;transition:width .2s,max-height .2s;}
 #aiPanel.open{display:flex !important;}
@@ -1667,7 +1699,7 @@ body.alta-visibilidad select{
     </div>
   </nav>
   <!-- AI CHAT — solo visible después del login -->
-  <div id="aiBtn" onpointerdown="startAIDrag(event)" title="Asistente IA" style="display:none"><span class="ai-avatar-wrap"><svg class="ai-avatar" width="28" height="28" viewBox="0 0 64 64" fill="none" aria-hidden="true"><defs><linearGradient id="aiGradBtn" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#5b21b6"/></linearGradient></defs><rect class="ai-body" x="14" y="16" width="36" height="36" rx="16" fill="url(#aiGradBtn)" stroke="rgba(255,255,255,0.25)" stroke-width="1"/><line x1="32" y1="16" x2="32" y2="10" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/><circle class="ai-antena" cx="32" cy="8" r="2.5" fill="#f5a623"/><circle class="ai-eye ai-eye-l" cx="24" cy="32" r="3" fill="#fff"/><circle class="ai-eye ai-eye-r" cx="40" cy="32" r="3" fill="#fff"/><path class="ai-mouth" d="M 24 42 Q 32 46 40 42" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/></svg></span></div>
+  <div id="aiBtn" onpointerdown="startAIDrag(event)" title="Asistente IA" style="display:none"><span class="ai-avatar-wrap aim-wrap"><svg class="aim-svg" width="32" height="32" viewBox="0 0 64 64" fill="none" aria-hidden="true"><defs><linearGradient id="aimBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1d4ed8"/></linearGradient><linearGradient id="aimHead" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#2563eb"/></linearGradient><radialGradient id="aimGlow" cx="0.5" cy="0.4"><stop offset="0%" stop-color="#dbeafe"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/></radialGradient></defs><ellipse cx="32" cy="58" rx="11" ry="1.4" fill="rgba(0,0,0,0.18)" class="aim-shadow"/><g class="aim-figure"><g class="aim-leg aim-leg-l"><rect x="26.2" y="42" width="3.6" height="13" rx="1.8" fill="url(#aimBody)"/><circle cx="28" cy="55" r="2.2" fill="#1e3a8a"/></g><g class="aim-leg aim-leg-r"><rect x="34.2" y="42" width="3.6" height="13" rx="1.8" fill="url(#aimBody)"/><circle cx="36" cy="55" r="2.2" fill="#1e3a8a"/></g><path d="M22 28 Q22 24 26 24 L38 24 Q42 24 42 28 L42 42 Q42 45 39 45 L25 45 Q22 45 22 42 Z" fill="url(#aimBody)" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/><g class="aim-arm aim-arm-l"><rect x="17.5" y="27" width="3.4" height="14" rx="1.7" fill="url(#aimBody)"/><circle cx="19.2" cy="41.5" r="2.2" fill="#60a5fa"/></g><g class="aim-arm aim-arm-r"><rect x="43.1" y="27" width="3.4" height="14" rx="1.7" fill="url(#aimBody)"/><circle cx="44.8" cy="41.5" r="2.2" fill="#60a5fa"/></g><g class="aim-head"><circle cx="32" cy="17" r="10" fill="url(#aimHead)" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/><circle cx="32" cy="14" r="9" fill="url(#aimGlow)" opacity="0.5"/><circle class="aim-eye aim-eye-l" cx="28.5" cy="17" r="1.5" fill="#0f172a"><animate attributeName="ry" values="1.5;1.5;0.15;1.5;1.5" dur="4.5s" repeatCount="indefinite" keyTimes="0;0.48;0.5;0.52;1"/></circle><circle class="aim-eye aim-eye-r" cx="35.5" cy="17" r="1.5" fill="#0f172a"><animate attributeName="ry" values="1.5;1.5;0.15;1.5;1.5" dur="4.5s" repeatCount="indefinite" keyTimes="0;0.48;0.5;0.52;1"/></circle><path d="M30 21 Q32 22.5 34 21" stroke="#0f172a" stroke-width="1.1" stroke-linecap="round" fill="none"/><line x1="32" y1="7" x2="32" y2="4" stroke="#f59e0b" stroke-width="1.4" stroke-linecap="round"/><circle class="aim-antenna" cx="32" cy="3" r="1.6" fill="#f59e0b"><animate attributeName="opacity" values="1;0.35;1" dur="1.6s" repeatCount="indefinite"/></circle></g></g></svg></span></div>
   <div id="aiPanel">
     <div class="ai-head">
       <div class="ai-head-title">
@@ -6486,9 +6518,9 @@ PAGES.orders=PAGES.mispedidos=function(){
     '<select id="fEst" onchange="filtrarReset()"><option value="">Todos los estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
     '<select id="fZona" onchange="filtrarReset()"><option value="">Todas las zonas</option>'+_zonasCache.map(z=>'<option value="'+z.id+'">'+escHtml(z.nombre||'')+'</option>').join('')+'</select>'+
     '<select id="fProv" onchange="filtrarReset()"><option value="">Todos los proveedores</option>'+[...new Set(getVisibleOrders().map(o=>o.proveedor).filter(Boolean))].map(p=>'<option value="'+escAttr(p)+'">'+escHtml(p)+'</option>').join('')+'</select>'+
-    '<input type="date" id="fFecha" onchange="filtrarReset()" title="Fecha exacta">'+
-    '<input type="date" id="fDesde" onchange="filtrarReset()" title="Desde">'+
-    '<input type="date" id="fHasta" onchange="filtrarReset()" title="Hasta">'+
+    '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Fecha exacta <input type="date" id="fFecha" onchange="filtrarReset()" title="Filtra pedidos de un día específico"></label>'+
+    '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Desde <input type="date" id="fDesde" onchange="filtrarReset()" title="Fecha inicio del rango"></label>'+
+    '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Hasta <input type="date" id="fHasta" onchange="filtrarReset()" title="Fecha fin del rango"></label>'+
     '<button class="btn btn-secondary" onclick="clearF()">Limpiar</button>'+
     '</div>'+
     '<div id="oContainer"></div>';
@@ -10669,14 +10701,19 @@ function openNuevoProducto(){
       _richEditorHTML('npDesc')+'</div>'+
     // PRECIOS
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Precios</span></div>'+
-    '<div class="fg"><label>Precio anterior (tachado) <span style="font-size:10px;color:var(--text3)">— el precio "antes" que aparece tachado</span></label><input type="number" id="npPrecioComp" placeholder="0" min="0"></div>'+
-    '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">💡 Los precios de venta (vendedor, dropshipper, proveedor) se cargan por presentación.</div>'+
-    // INVENTARIO
+    // FILA A: Stock + Precio anterior tachado (mitad cada uno)
     '<div class="frow">'+
       '<div class="fg"><label>Stock</label><input type="number" id="npStock" placeholder="0" min="0"></div>'+
-      (provs?'<div class="fg"><label>Proveedor</label><select id="npProv"><option value="">Sin asignar</option>'+provs+'</select></div>':'<input type="hidden" id="npProv" value="">')+
-      (vends?'<div class="fg"><label>Vendedor <span style="font-size:10px;color:var(--text3)">(opcional)</span></label><select id="npVendedor"><option value="">Sin asignar</option>'+vends+'</select></div>':'<input type="hidden" id="npVendedor" value="">')+
+      '<div class="fg"><label>Precio anterior (tachado) <span style="font-size:10px;color:var(--text3)">— precio "antes"</span></label><input type="number" id="npPrecioComp" placeholder="0" min="0"></div>'+
     '</div>'+
+    // FILA B: Proveedor + Vendedor (mitad cada uno)
+    ((provs||vends)?'<div class="frow">'+
+      (provs?'<div class="fg"><label>Proveedor</label><select id="npProv"><option value="">Sin asignar</option>'+provs+'</select></div>':'')+
+      (vends?'<div class="fg"><label>Vendedor <span style="font-size:10px;color:var(--text3)">(opcional)</span></label><select id="npVendedor"><option value="">Sin asignar</option>'+vends+'</select></div>':'')+
+    '</div>':'')+
+    (!provs?'<input type="hidden" id="npProv" value="">':'')+
+    (!vends?'<input type="hidden" id="npVendedor" value="">':'')+
+    '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">💡 Los precios de venta (vendedor, dropshipper, proveedor) se cargan por presentación.</div>'+
     // PRESENTACIONES
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;margin-top:4px">📦 Presentaciones y precios</div>'+
     _presFormHTML([])+
