@@ -6503,7 +6503,7 @@ function editOrder(id){
   const provOpts='<option value="">Sin proveedor</option>'+provs.map(d=>'<option value="'+d.id+'" '+(o.proveedorId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+'</option>').join('');
   const allSales=_usersCache.filter(u=>['vendedor','proveedor','dropshipper','administrador','superadmin'].includes(u.rol));
   const vendOpts='<option value="">Sin asignar</option>'+allSales.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+' ('+escHtml(capRole(d.rol))+')</option>').join('');
-  openA(SVG.pencil+' Editar pedido #'+id,
+  openA('Editar pedido #'+id,
     '<div class="stitle">Datos del cliente</div>'+
     '<div class="frow"><div class="fg"><label>Nombre cliente *</label><input type="text" id="eCli" value="'+escAttr(o.cliente)+'"></div>'+
     '<div class="fg"><label>Cédula</label><input type="text" id="eCed" value="'+escAttr(o.cedula)+'"></div></div>'+
@@ -10755,7 +10755,7 @@ function openPerfilUsuario(){
   const calStr=u.calificacion_prom>0
     ?_renderStars(u.calificacion_prom)+' <span style="color:var(--text2);font-size:12px">('+u.calificaciones_total+' reseñas)</span>'
     :'<span style="color:var(--text3);font-size:12px">Sin calificaciones aún</span>';
-  openA(SVG.user+' Mi Perfil — Iporãve Connect',
+  openA('Mi Perfil — Iporãve Connect',
     '<div style="display:flex;align-items:center;gap:16px;padding:16px 0 20px;border-bottom:1px solid var(--border);margin-bottom:18px">'+
     '<div style="position:relative;cursor:pointer" onclick="$(\'pfFotoFile\').click()">'+av+
     '<div style="position:absolute;bottom:0;right:0;background:var(--accent);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px">📷</div>'+
