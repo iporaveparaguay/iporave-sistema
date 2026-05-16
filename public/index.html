@@ -5084,10 +5084,15 @@ PAGES.dashboard=async function(){
   $('ca').innerHTML=html;
   _styleDashboardStats();
   if(['admin','superadmin','vendedor','dropshipper','delivery'].includes(CU.rol))_renderCharts();
-  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+  if(typeof Onboard !== 'undefined' && Onboard.enqueue){
     setTimeout(function(){
-      Onboard.showIfNew('page_dashboard_intro','#ca .sgrid .sc:first-child','Panel principal del sistema. Aquí encontrará el resumen operativo de su cuenta.',{position:'auto'});
-    },800);
+      try{
+        Onboard.enqueue('page_dashboard_intro','#ca .sgrid .sc:first-child','Panel principal del sistema. Aquí encontrará el resumen operativo de su cuenta.');
+        Onboard.enqueue('page_dashboard_card','#ca .sgrid .sc:nth-child(2), #ca .sgrid .sc:first-child','Tarjetas de resumen operativo. Visualice los indicadores clave de su cuenta en tiempo real.');
+        Onboard.enqueue('page_dashboard_chart','#ca canvas, #ca .sgrid .sc:nth-child(3)','Gráficas de evolución. Permiten analizar tendencias y rendimiento histórico.');
+        Onboard.enqueue('page_dashboard_nav','#sidebar .ni.active, .sidebar .ni.active, nav .ni.active','Navegación lateral. Acceda a las distintas secciones del sistema desde el menú principal.');
+      }catch(_){}
+    },1000);
   }
 };
 
@@ -5534,7 +5539,15 @@ PAGES.orders=PAGES.mispedidos=function(){
   if(wrap&&fbar&&wrap.parentNode!==fbar){fbar.insertBefore(wrap,fbar.firstChild);}
   else if(!wrap){_bgEnsureUI&&_bgEnsureUI();}
   filtrar();
-  try{ setTimeout(function(){ if(window.Onboard) Onboard.enqueue('orders_nuevo','#btnNuevoPedido','Inicia el flujo de creación de un nuevo pedido en el sistema.'); },400); }catch(_){}
+  try{ setTimeout(function(){
+    if(!window.Onboard) return;
+    Onboard.enqueue('page_orders_nuevo','#btnNuevoPedido','Generación de un nuevo pedido en el sistema.');
+    Onboard.enqueue('page_orders_buscador','#busquedaGlobal, #ca input[type="search"], #ca .search-combo-input','Búsqueda en el listado. Filtre pedidos por cliente, dirección o ID.');
+    Onboard.enqueue('page_orders_estado','#fEst','Filtros rápidos por estado del pedido. Permite enfocar la vista según el flujo operativo.');
+    Onboard.enqueue('page_orders_zona','#fZona','Filtro por zona geográfica. Acote el listado al área de cobertura deseada.');
+    Onboard.enqueue('page_orders_fecha','#fDesde, #fFecha','Filtros por rango de fechas. Permiten enfocar la vista en un período específico.');
+    Onboard.enqueue('page_orders_fila','#oContainer .tbl tbody tr:first-child, #oContainer .pedidos-row:first-child, #oContainer tr:first-child','Cada fila representa un pedido. Seleccione para acceder al detalle completo.');
+  },1000); }catch(_){}
 };
 function clearF(){['fEst','fZona','fProv','fFecha','fDesde','fHasta'].forEach(id=>{const e=$(id);if(e)e.value='';});const bg=document.getElementById('busquedaGlobal');if(bg)bg.value='';_pedidosShown=_pedidosPageSize;filtrar();}
 function _ordersFilteredFromUI(){
@@ -6630,10 +6643,14 @@ PAGES.balance=function(){
 /* ─── LIQUIDACION ─── */
 PAGES.liquidacion=function(){
   var _miLiqHook=function(){
-    if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+    if(typeof Onboard !== 'undefined' && Onboard.enqueue){
       setTimeout(function(){
-        Onboard.showIfNew('page_mi_liquidacion_intro','#ca .sc, #ca .lcard2','Resumen de sus comisiones y liquidaciones pendientes.',{position:'auto'});
-      },800);
+        try{
+          Onboard.enqueue('page_liq_resumen','#ca .lcard2:first-of-type, #ca .sc:first-child','Resumen consolidado del período. Incluye totales, comisiones y saldos.');
+          Onboard.enqueue('page_liq_filtro_fecha','#ca input[type="date"]','Filtro por rango de fechas. Acote la liquidación al período deseado.');
+          Onboard.enqueue('page_liq_pdf','#ca button[onclick*="printLiq"], #ca .btn-primary','Exportación del informe en PDF para archivar o compartir.');
+        }catch(_){}
+      },1000);
     }
   };
   if(CU.rol==='vendedor'){_liqVend();_miLiqHook();return;}
@@ -6711,10 +6728,15 @@ PAGES.liquidacion=function(){
       '<div class="lrow"><span class="llbl">Premio 1–2 extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra12)+'</span></div>'+
       '<div class="lrow"><span class="llbl">Premio 3+ extra/día</span><span style="color:var(--green)">'+fmt(cfg.premioExtra3)+'</span></div>'+
     '</div>';
-  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+  if(typeof Onboard !== 'undefined' && Onboard.enqueue){
     setTimeout(function(){
-      Onboard.showIfNew('page_liquidacion_intro','#ca .lcard2:first-of-type, #ca .stitle','Resumen consolidado de movimientos financieros del período seleccionado.',{position:'auto'});
-    },800);
+      try{
+        Onboard.enqueue('page_liquidacion_resumen','#ca .lcard2:first-of-type, #ca .stitle','Resumen consolidado de movimientos financieros del período seleccionado.');
+        Onboard.enqueue('page_liquidacion_proveedor','#ca .stitle + .lcard2, #ca .lcard2:nth-of-type(2)','Detalle por proveedor. Incluye pedidos entregados y total a pagar.');
+        Onboard.enqueue('page_liquidacion_neta','#ca .lcard2 .lrow:last-child, #ca .lrow:last-of-type','Indicador de ganancia neta. Refleja el resultado operativo del período.');
+        Onboard.enqueue('page_liquidacion_pdf','#ca button[onclick*="printLiq"]','Exportación del informe en PDF para archivar o compartir.');
+      }catch(_){}
+    },1000);
   }
 };
 
@@ -8352,10 +8374,15 @@ PAGES.usuarios=async function(){
         '</div>'+
       '</div></td></tr>'
     ).join('')+'</tbody></table></div></div>';
-    if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+    if(typeof Onboard !== 'undefined' && Onboard.enqueue){
       setTimeout(function(){
-        Onboard.showIfNew('page_usuarios_intro','#btnNuevoUsuario','Gestión completa de usuarios del sistema. Permite crear, editar y administrar roles.',{position:'auto'});
-      },800);
+        try{
+          Onboard.enqueue('page_usuarios_nuevo','#btnNuevoUsuario','Creación de un nuevo usuario en el sistema. Asigne rol, permisos y datos básicos.');
+          Onboard.enqueue('page_usuarios_buscador','#sharesSrch, #ca input[type="search"]','Búsqueda de usuarios por nombre, correo o rol.');
+          Onboard.enqueue('page_usuarios_fila','#ca .tbl tbody tr:first-child','Cada fila representa un usuario. Seleccione para editar permisos o suspender acceso.');
+          Onboard.enqueue('page_usuarios_acciones','#ca .tbl tbody tr:first-child .order-menu-btn','Menú de acciones por usuario. Permite editar o eliminar el registro.');
+        }catch(_){}
+      },1000);
     }
   });
 };
@@ -8555,10 +8582,14 @@ PAGES.zonas=function(){
       '</div>'+
     '</div></td></tr>'
   ).join('')+'</tbody></table></div></div>';
-  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+  if(typeof Onboard !== 'undefined' && Onboard.enqueue){
     setTimeout(function(){
-      Onboard.showIfNew('page_zonas_intro','#btnNuevaZona','Configuración de zonas operativas y tarifas asociadas para entregas.',{position:'auto'});
-    },800);
+      try{
+        Onboard.enqueue('page_zonas_nueva','#btnNuevaZona','Creación de una nueva zona operativa con tarifa de entrega configurable.');
+        Onboard.enqueue('page_zonas_lista','#ca .tbl tbody tr:first-child','Cada fila representa una zona geográfica de cobertura con su tarifa asociada.');
+        Onboard.enqueue('page_zonas_acciones','#ca .tbl tbody tr:first-child .order-menu-btn','Menú de acciones por zona. Permite editar la tarifa o eliminar la zona.');
+      }catch(_){}
+    },1000);
   }
 };
 function openNewZona(){
@@ -9061,10 +9092,15 @@ PAGES.catalogo=function(q=''){
     (lista.length?'<div class="prod-grid">'+lista.map(p=>_renderProductoCard(p,puedeEditar&&(p.owner_id||p.owner_user_id)===CU.id,puedeVender)).join('')+'</div>'
       :'<div style="text-align:center;padding:40px;color:var(--text3)">Sin resultados</div>')+
   '</div>';
-  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+  if(typeof Onboard !== 'undefined' && Onboard.enqueue){
     setTimeout(function(){
-      Onboard.showIfNew('page_catalogo_intro','#btnNuevoProducto, #ca .prod-grid .prod-card:first-child','Administración del catálogo de productos. Incluye presentaciones, precios y estados de publicación.',{position:'auto'});
-    },800);
+      try{
+        Onboard.enqueue('page_cat_nuevo','#btnNuevoProducto','Alta de un nuevo producto al catálogo.');
+        Onboard.enqueue('page_cat_buscador','#cpSearch, #ca input[type="search"]','Búsqueda de producto por nombre o código.');
+        Onboard.enqueue('page_cat_filtro','#ca select, #ca .filter-select, #ca .dropdown-premium','Filtros por categoría, estado o publicación pública.');
+        Onboard.enqueue('page_cat_producto','#ca .prod-grid .prod-card:first-child, #ca .prod-card:first-child','Cada tarjeta es un producto. Incluye foto, nombre, presentaciones, precios y acciones.');
+      }catch(_){}
+    },1000);
   }
 };
 
@@ -10601,10 +10637,14 @@ PAGES.config=function(){
     '</div>'+
     '</div>';
   _cargarTemaActualEnConfig();
-  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+  if(typeof Onboard !== 'undefined' && Onboard.enqueue){
     setTimeout(function(){
-      Onboard.showIfNew('page_config_intro','#ca .fg, #ca input, #ca select','Configuración general del sistema. Personalice la operativa según las necesidades de su negocio.',{position:'auto'});
-    },800);
+      try{
+        Onboard.enqueue('page_config_perfil','#ca .fg:first-of-type input, #ca input','Personalización de los datos generales de la cuenta y la empresa.');
+        Onboard.enqueue('page_config_tema','#themeToggle, #ca button[onclick*="_guardarTema"]','Modo visual del sistema. Alterna entre oscuro, claro y descanso visual.');
+        Onboard.enqueue('page_config_guardar','#ca .btn-primary','Guardado de la configuración seleccionada. Aplica los cambios al sistema.');
+      }catch(_){}
+    },1000);
   }
 };
 async function saveCfgAPIs(){
@@ -10791,10 +10831,13 @@ PAGES.mensajes=async function(){
       '</div></div>'
     ).join('')+
   '</div></div>';
-  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+  if(typeof Onboard !== 'undefined' && Onboard.enqueue){
     setTimeout(function(){
-      Onboard.showIfNew('page_mensajes_intro','#btnNuevoMensaje','Centro de comunicación interna del sistema.',{position:'auto'});
-    },800);
+      try{
+        Onboard.enqueue('page_mensajes_nuevo','#btnNuevoMensaje','Inicio de una nueva conversación interna.');
+        Onboard.enqueue('page_mensajes_lista','#ca .mc, #ca .mcard:first-child, #ca .tbl tbody tr:first-child','Cada elemento representa una conversación. Selecciónelo para acceder al hilo completo.');
+      }catch(_){}
+    },1000);
   }
 };
 
@@ -12409,10 +12452,16 @@ PAGES.mapa=function(){
   try{ setTimeout(function(){
     if(!window.Onboard) return;
     var filtroSel = document.getElementById('mapaVendSel') ? '#mapaVendSel' : (document.getElementById('btnMapaDlvs') ? '#btnMapaDlvs' : '#mapaContadores');
-    Onboard.enqueue('mapa_filtros', filtroSel, 'Filtros del mapa. Permiten visualizar pedidos, repartidores o ambos según necesidad operativa.');
-    if(document.getElementById('dlvSearchInput')){
-      Onboard.enqueue('mapa_buscador','#dlvSearchInput','Búsqueda de repartidor por nombre. La lista se filtra dinámicamente según el texto ingresado.');
+    Onboard.enqueue('page_mapa_tipo', filtroSel, 'Filtros de tipo. Permiten visualizar pedidos, repartidores o ambos según necesidad operativa.');
+    Onboard.enqueue('page_mapa_zona','#mapaZonaSel','Filtro por zona geográfica configurada en el sistema.');
+    if(document.getElementById('btnMapaDlvs')){
+      Onboard.enqueue('page_mapa_dlvs','#btnMapaDlvs','Activación de la capa de repartidores sobre el mapa. Muestra su posición actual.');
     }
+    if(document.getElementById('dlvSearchInput')){
+      Onboard.enqueue('page_mapa_buscador','#dlvSearchInput','Búsqueda de repartidor por nombre. La lista se filtra dinámicamente según el texto ingresado.');
+    }
+    Onboard.enqueue('page_mapa_auto','#mapaAutoUpdate','Auto-actualización del mapa cada 5 minutos. Desactive para mantener la vista estática mientras analiza.');
+    Onboard.enqueue('page_mapa_estilo','#mapaEstiloBtns .mapa-estilo-btn:first-child, .mapa-estilo-btn','Selector de estilo del mapa. Permite alternar entre vistas oscura, clara, satelital y otras.');
   }, 1200); }catch(_){}
 };
 
@@ -12902,7 +12951,13 @@ PAGES.pagos=function(){
         '</div>'+
         '<div id="pagosListaBox" class="pago-fade"></div>';
       _renderPagosLista();
-      try{ setTimeout(function(){ if(window.Onboard) Onboard.enqueue('pagos_primer_renglon','.userPagoRow:first-child','Cada fila representa una transacción. Selecciónela para revisar el detalle completo del pago.'); },500); }catch(_){}
+      try{ setTimeout(function(){
+        if(!window.Onboard) return;
+        Onboard.enqueue('page_pagos_buscador','#pagosSearchInput, #ca input[type="search"]','Búsqueda en el historial de pagos por usuario o monto.');
+        Onboard.enqueue('page_pagos_filtro_rol','.pagosFilterChips .chip:first-child, .pagosFilterChips button:first-child','Filtros por rol. Acote la vista a vendedores, dropshippers, proveedores o repartidores.');
+        Onboard.enqueue('page_pagos_fila','#pagosListaBox .userPagoRow:first-child, .userPagoRow:first-child','Cada registro representa un usuario con saldo pendiente. Selecciónelo para revisar el detalle.');
+        Onboard.enqueue('page_pagos_registrar','#ca button[onclick*="openRegistrarPago"], .userPagoRow:first-child .btn-sm','Registro de un nuevo pago en el sistema.');
+      },800); }catch(_){}
       return;
     }
 
@@ -13006,7 +13061,12 @@ PAGES.pagos=function(){
       '</tr></thead><tbody>'+
         (filasPagos.length?filasPagos.join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text3)">Sin pagos recibidos este mes</td></tr>')+
       '</tbody></table></div>';
-    try{ setTimeout(function(){ if(window.Onboard) Onboard.enqueue('pagos_primer_renglon','.userPagoRow:first-child','Cada fila representa una transacción. Selecciónela para revisar el detalle completo del pago.'); },500); }catch(_){}
+    try{ setTimeout(function(){
+      if(!window.Onboard) return;
+      Onboard.enqueue('page_pagos_user_resumen','#ca div[style*="lcard"], #ca .stitle','Resumen financiero personal del mes. Visualice lo ganado, cobrado y pendiente de cobro.');
+      Onboard.enqueue('page_pagos_user_fila','.userPagoRow:first-child','Cada fila representa una contraparte. Selecciónela para revisar el detalle completo del saldo.');
+      Onboard.enqueue('page_pagos_user_tabla','#ca .tbl tbody tr:first-child','Historial de pagos recibidos en el mes en curso. Incluye fecha, monto y método.');
+    },800); }catch(_){}
   })();
 };
 
@@ -13714,10 +13774,14 @@ PAGES.clientes_zonas = function(){
   });
   html += '</div></div>';
   $('ca').innerHTML = html;
-  if(typeof Onboard !== 'undefined' && Onboard.showIfNew){
+  if(typeof Onboard !== 'undefined' && Onboard.enqueue){
     setTimeout(function(){
-      Onboard.showIfNew('page_clientes_intro','#clientesBuscar','Base de datos de clientes. Visualice historial de pedidos y datos de contacto.',{position:'auto'});
-    },800);
+      try{
+        Onboard.enqueue('page_clientes_buscador','#clientesBuscar, #ca input[type="search"]','Búsqueda de clientes por nombre o teléfono.');
+        Onboard.enqueue('page_clientes_zona','#ca details:first-of-type summary, #ca .zona-header','Cada zona agrupa a los clientes correspondientes. Despliegue para ver el detalle.');
+        Onboard.enqueue('page_clientes_fila','#ca details:first-of-type div[onclick], #ca .tbl tbody tr:first-child','Cada registro representa un cliente. Acceda al historial de pedidos y datos de contacto.');
+      }catch(_){}
+    },1000);
   }
 };
 
