@@ -4656,6 +4656,7 @@ function doLogout(){
   const cbell=$('codexNotifBell');if(cbell){cbell.style.display='none';const cb=$('codexNotifBadge');if(cb)cb.style.display='none';}
   const cpanel=$('codexNotifPanel');if(cpanel)cpanel.remove();
   _aiHistory=[];
+  window._asistHistorial=[];
   try{_cleanAllAppStorage();}catch(_){ }
 }
 
@@ -8213,7 +8214,7 @@ function _liqDrop(){
     '<th>#</th><th>Fecha</th><th>Cliente</th><th>Producto</th>'+
     '<th class="col-hide">Venta</th><th class="col-hide">Costo</th>'+
     '<th>Ganancia</th></tr></thead><tbody>'+
-    ent.map(o=>{const g=ganVend(o);return '<tr>'+
+    ent.map(o=>{const g=(o.comision||0)*(o.qty||1);return '<tr>'+
       '<td style="color:var(--accent);font-size:11px">#'+o.id+'</td>'+
       '<td>'+fmtDate(o.fecha)+'</td><td>'+escHtml(o.cliente||'')+'</td><td>'+escHtml(o.producto||'')+'</td>'+
       '<td class="col-hide">'+fmt(o.precio*o.qty)+'</td>'+
@@ -9057,7 +9058,32 @@ PAGES.cierre=function(){
   $('ca').innerHTML=html;
 };
 async function ejecutarCierre(){
-  if(!confirm('¿Ejecutar cierre de jornada de hoy?'))return;
+  if(!isAdminLike(CU.rol)){pushNotif('Solo administradores pueden ejecutar el cierre.','e');return;}
+  const jornadas=DL._lg('jornadas')||[];
+  const yaExiste=jornadas.find(x=>x.fecha===today());
+  if(yaExiste){
+    openA('Cierre ya registrado',
+      '<div style="text-align:center;padding:8px 0 4px">'+
+        '<div style="font-size:36px;margin-bottom:8px">⚠️</div>'+
+        '<div style="font-size:15px;font-weight:700;color:var(--accent)">Ya existe un cierre para hoy ('+today()+')</div>'+
+        '<div style="font-size:12px;color:var(--text2);margin-top:6px">¿Deseas sobreescribir el cierre del día?</div>'+
+      '</div>',
+      '<button class="btn btn-secondary" onclick="closeA()" style="flex:1">Cancelar</button>'+
+      '<button class="btn btn-danger" onclick="closeA();_doEjecutarCierre()" style="flex:1">Sobreescribir</button>'
+    );
+    return;
+  }
+  openA('Ejecutar cierre de jornada',
+    '<div style="text-align:center;padding:8px 0 4px">'+
+      '<div style="font-size:36px;margin-bottom:8px">🗂️</div>'+
+      '<div style="font-size:15px;font-weight:700">¿Ejecutar cierre de jornada de hoy?</div>'+
+      '<div style="font-size:12px;color:var(--text2);margin-top:6px">Se registrará el resumen de pedidos del día '+today()+'</div>'+
+    '</div>',
+    '<button class="btn btn-secondary" onclick="closeA()" style="flex:1">Cancelar</button>'+
+    '<button class="btn btn-primary" onclick="closeA();_doEjecutarCierre()" style="flex:1">Ejecutar cierre</button>'
+  );
+}
+async function _doEjecutarCierre(){
   const orders=_ordersCache;
   const hoyO=orders.filter(o=>o.fecha===today());
   const ent=hoyO.filter(o=>o.estado==='Entregado');
@@ -9648,8 +9674,8 @@ PAGES.analitica_drop=function(){
   const act=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
   const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
   const vBruta=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
-  const totalComision=ent.reduce((a,b)=>a+(b.comision||0),0);
-  const comisionPendiente=act.reduce((a,b)=>a+(b.comision||0),0);
+  const totalComision=ent.reduce((a,b)=>a+(b.comision||0)*(b.qty||1),0);
+  const comisionPendiente=act.reduce((a,b)=>a+(b.comision||0)*(b.qty||1),0);
   const pctExito=mine.length?Math.round(ent.length/mine.length*100):0;
   const ticketProm=ent.length?Math.round(vBruta/ent.length):0;
   const now=new Date();const days30=[];const labels=[];
@@ -11014,7 +11040,7 @@ PAGES.catalogo=function(q=''){
     acciones+='<button class="btn btn-sm" onclick="verFeedMetaAds()" style="background:#1877f2;color:#fff;border:none;border-radius:6px;min-height:44px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600;touch-action:manipulation">'+SVG.megaphone+' Meta Ads</button>';
     acciones='<button class="btn btn-secondary btn-sm" onclick="PAGES.catalogo_todos()">'+SVG.listIcon+' Todos</button>'+acciones;
   }
-  acciones+='<button class="btn btn-secondary btn-sm" onclick="abrirScannerCatalogo()">'+SVG.camera+' Escanear</button>';
+  if(CU.rol!=='delivery')acciones+='<button class="btn btn-secondary btn-sm" onclick="abrirScannerCatalogo()">'+SVG.camera+' Escanear</button>';
   if(puedeEditar)acciones+='<button class="btn btn-sm" onclick="copiarLinkCatalogo()" style="background:var(--green,#16a34a);color:#fff;border:none;border-radius:6px;min-height:44px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600;touch-action:manipulation">'+SVG.link+' Mi link</button>';
   $('tbActions').innerHTML=acciones;
 
@@ -13813,7 +13839,8 @@ function _mapaUpdateContadores(){
     'En Ruta':'#fb923c',
     'Entregado':'#22c55e'
   };
-  const ESTADOS=['Todos','Pendiente','Despachado','En Ruta','Entregado'];
+  const _esDeliveryRolFiltro=(typeof CU!=='undefined'&&CU&&CU.rol==='delivery');
+  const ESTADOS=_esDeliveryRolFiltro?['Todos','Despachado']:['Todos','Pendiente','Despachado','En Ruta','Entregado'];
   const fEst=window._mapaFiltroEstado||'Todos';
   const fTipo=window._mapaFiltroTipo||'todos';
   const totalAll=Object.values(counts).reduce((a,b)=>a+b,0);
