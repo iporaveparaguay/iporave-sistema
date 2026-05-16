@@ -1094,14 +1094,25 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   :root{--mapa-offset:160px;}
   /* Topbar mapa: no wrappear, scroll horizontal si hace falta */
   .page-mapa #tbActions,.tbactions:has(.mapa-secundarios) #tbActions,#tbActions:has(.mapa-secundarios){
-    flex-wrap:nowrap;
+    flex-wrap:nowrap!important;
     overflow-x:auto;
     -webkit-overflow-scrolling:touch;
-    gap:4px;
+    gap:4px!important;
     padding-right:4px;
+    align-items:center;
+  }
+  /* Combos zona/vendedor: compactos en mobile */
+  .page-mapa .search-combo,.tbactions:has(.mapa-secundarios) .search-combo{
+    min-width:70px!important;
+    max-width:100px!important;
+    flex-shrink:0;
   }
   /* Botones del mapa más compactos en mobile */
-  .map-btn{padding:5px 8px!important;font-size:11px!important;gap:3px!important;}
+  .map-btn{padding:5px 8px!important;font-size:11px!important;gap:3px!important;flex-shrink:0;white-space:nowrap;}
+  /* Topbar title: solo una línea en mapa */
+  .page-mapa .tbtitle{font-size:12px;padding-bottom:4px;}
+  /* tbactions general: cuando hay botones del mapa, NO wrappear */
+  .tbactions:has(.map-btn){flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 }
 @media(max-width:600px){input,select,textarea{font-size:16px !important;}}
 /* En desktop: ocultar elementos que solo deben verse en mobile */
