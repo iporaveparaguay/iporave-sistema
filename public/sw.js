@@ -1,36 +1,53 @@
-const CACHE_NAME = 'iporave-v10';
+// Iporãve Service Worker — offline robusto para delivery en la calle
+// Estrategias:
+//  - App shell (HTML/CSS/JS/iconos): CacheFirst con revalidación
+//  - APIs (/api/): NetworkFirst con fallback a caché y respuesta offline
+//  - Supabase / Anthropic / Mapbox tiles: bypass salvo tiles ya cacheados
+//  - Push y notificationclick preservados
+//  - Background Sync: dispara mensaje a clientes para drenar cola offline
+
+const CACHE_VERSION = 'v11';
+const CACHE_STATIC = 'iporave-static-' + CACHE_VERSION;
+const CACHE_API = 'iporave-api-cache-v1';
+const CACHE_TILES = 'iporave-tiles-v1';
 const BASE = self.location.pathname.replace('/sw.js', '');
-const ASSETS = [
+
+const APP_SHELL = [
   BASE + '/',
   BASE + '/index.html',
-  'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;600&display=swap',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'
+  BASE + '/manifest.json',
+  BASE + '/icon-192.png',
+  BASE + '/icon-512.png'
 ];
 
 // Install — pre-cache app shell
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll([BASE + '/index.html']).catch(() => {});
-    })
+    caches.open(CACHE_STATIC).then(cache =>
+      cache.addAll(APP_SHELL).catch(() => {})
+    )
   );
   self.skipWaiting();
 });
 
-// Activate — delete old caches
+// Activate — limpiar caches antiguos
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k.startsWith('iporave-') &&
+                       k !== CACHE_STATIC &&
+                       k !== CACHE_API &&
+                       k !== CACHE_TILES)
+          .map(k => caches.delete(k))
+    ))
   );
   self.clients.claim();
 });
 
-// Push — mostrar notificación al delivery
+// Push — notificación al delivery
 self.addEventListener('push', event => {
   let data = { title: '📦 Iporãve', body: 'Nueva notificación', url: '/pedidos' };
-  try { data = Object.assign(data, event.data.json()); } catch {}
+  try { data = Object.assign(data, event.data.json()); } catch (_) {}
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
@@ -47,28 +64,101 @@ self.addEventListener('notificationclick', event => {
   event.waitUntil(clients.openWindow(url));
 });
 
-// Fetch — network first, fallback to cache
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  if (event.request.url.includes('supabase.co')) return;
-  if (event.request.url.includes('anthropic')) return;
-
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request).then(cached => {
-          if (cached) return cached;
-          if (event.request.mode === 'navigate') {
-            return caches.match(BASE + '/index.html');
-          }
-        });
-      })
-  );
+// Mensajes desde el cliente
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
+
+// Background Sync — notificar a los clientes para que drenen su cola offline
+self.addEventListener('sync', event => {
+  if (event.tag === 'sync-orders' || event.tag === 'iporave-sync') {
+    event.waitUntil(_notifyClientsToSync());
+  }
+});
+
+async function _notifyClientsToSync() {
+  const all = await self.clients.matchAll({ includeUncontrolled: true });
+  all.forEach(c => c.postMessage({ type: 'SYNC_OFFLINE_QUEUE' }));
+}
+
+// Fetch — estrategias por tipo de recurso
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+
+  // Bypass: Supabase / Anthropic (necesitan auth real-time)
+  if (url.hostname.includes('supabase.co')) return;
+  if (url.hostname.includes('anthropic')) return;
+
+  // Mapbox tiles — CacheFirst para mapa offline en la calle
+  if (url.hostname.includes('mapbox.com') ||
+      url.hostname.includes('tile.openstreetmap') ||
+      url.pathname.includes('/tiles/')) {
+    event.respondWith(_cacheFirst(req, CACHE_TILES));
+    return;
+  }
+
+  // APIs propias: NetworkFirst con fallback a caché y respuesta offline JSON
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(_networkFirstApi(req));
+    return;
+  }
+
+  // Navegación / HTML / app shell
+  if (req.mode === 'navigate' ||
+      url.pathname.endsWith('.html') ||
+      url.pathname === BASE + '/' ||
+      url.pathname === '/') {
+    event.respondWith(_staleWhileRevalidate(req, CACHE_STATIC, BASE + '/index.html'));
+    return;
+  }
+
+  // Resto (CSS/JS/imágenes/fuentes): stale-while-revalidate
+  event.respondWith(_staleWhileRevalidate(req, CACHE_STATIC, null));
+});
+
+async function _cacheFirst(req, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(req);
+  if (cached) return cached;
+  try {
+    const resp = await fetch(req);
+    if (resp && resp.status === 200) cache.put(req, resp.clone());
+    return resp;
+  } catch (_) {
+    return cached || new Response('', { status: 504 });
+  }
+}
+
+async function _networkFirstApi(req) {
+  try {
+    const resp = await fetch(req);
+    if (resp && resp.ok) {
+      const clone = resp.clone();
+      caches.open(CACHE_API).then(c => c.put(req, clone)).catch(() => {});
+    }
+    return resp;
+  } catch (_) {
+    const cached = await caches.match(req);
+    if (cached) return cached;
+    return new Response(
+      JSON.stringify({ error: 'offline', cached: false, queued: true }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+async function _staleWhileRevalidate(req, cacheName, fallbackUrl) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(req);
+  const fetchPromise = fetch(req).then(resp => {
+    if (resp && resp.status === 200) cache.put(req, resp.clone()).catch(() => {});
+    return resp;
+  }).catch(() => {
+    if (fallbackUrl) return caches.match(fallbackUrl);
+    return cached;
+  });
+  return cached || fetchPromise;
+}
