@@ -3206,7 +3206,7 @@ async function showDeliveryMap(containerId,orderAddr,gpsLat,gpsLng){
     const map=new mapboxgl.Map({container,style:'mapbox://styles/mapbox/dark-v11',center:[destLng,destLat],zoom:14});
     map.on('load',function(){
       const mkR=document.createElement('div');mkR.style.cssText='background:#ef4444;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px #ef4444';
-      new mapboxgl.Marker(mkR).setLngLat([destLng,destLat]).setPopup(new mapboxgl.Popup({offset:10}).setHTML('📦 Entrega: '+orderAddr)).addTo(map);
+      new mapboxgl.Marker(mkR).setLngLat([destLng,destLat]).setPopup(new mapboxgl.Popup({offset:10}).setHTML('📦 Entrega: '+escHtml(orderAddr||''))).addTo(map);
       if(gpsLat&&gpsLng){
         const dlvLat=parseFloat(gpsLat),dlvLng=parseFloat(gpsLng);
         const mkB=document.createElement('div');mkB.style.cssText='background:#38bdf8;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px #38bdf8';
@@ -10016,11 +10016,12 @@ PAGES.usuarios=async function(){
   _requireUserAuth(async function(){
     await refreshCache();
     $('tbActions').innerHTML='<button id="btnNuevoUsuario" class="btn btn-primary" onclick="openNewUser()">+ Nuevo usuario</button>';
-    $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Usuarios ('+_usersCache.length+')</span></div>'+
+    const _visibleUsers=(CU.rol==='admin')?_usersCache.filter(u=>String(u.created_by)===String(CU.id)):_usersCache;
+    $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Usuarios ('+_visibleUsers.length+')</span></div>'+
     '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
     '<th style="width:40%">Usuario</th><th style="text-align:center">Rol</th>'+
     '<th class="col-hide">Contacto</th><th class="col-hide">Calificación</th><th style="text-align:center">Acciones</th></tr></thead><tbody>'+
-    _usersCache.map(u=>{
+    _visibleUsers.map(u=>{
       const rolCls='brol brol-'+(u.rol||'cliente');
       const rolLabel=capRole(u.rol||'cliente');
       const initials=(u.nombre||'?').trim().split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
