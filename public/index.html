@@ -288,6 +288,12 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 :root[data-theme="light-soft"] .mapa-estilo-btn.active{background:linear-gradient(180deg, var(--accent), #c47a1a);color:#fff;border-color:var(--accent);box-shadow:0 4px 14px rgba(196,122,26,0.4), 0 0 0 2px rgba(196,122,26,0.15);}
 :root[data-theme="light"] .mapa-estilo-btn:hover:not(.active),
 :root[data-theme="light-soft"] .mapa-estilo-btn:hover:not(.active){background:rgba(255,255,255,0.98);border-color:rgba(196,122,26,0.4);color:#c47a1a;transform:translateY(-1px);}
+@media(max-width:639px){
+  .mapa-estilo-panel{flex-direction:row;flex-wrap:wrap;gap:4px;background:rgba(15,18,28,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:6px;top:auto;bottom:52px;right:12px;max-width:calc(5*36px + 4*4px + 12px);display:none;}
+  .mapa-estilo-panel.mobile-open{display:flex;}
+  .mapa-estilo-toggle{position:absolute;bottom:10px;right:12px;z-index:6;display:none;width:38px;height:38px;border-radius:10px;background:rgba(15,18,28,0.88);border:1px solid rgba(255,255,255,0.15);color:#fff;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+}
+@media(max-width:639px){.mapa-estilo-toggle{display:flex;}}
 :root[data-theme="light"] .mapa-locate-btn.active,
 :root[data-theme="light-soft"] .mapa-locate-btn.active{background:linear-gradient(180deg, var(--accent), #c47a1a);color:#fff;border-color:var(--accent);}
 .mapa-locate-btn{position:absolute;bottom:14px;right:12px;z-index:5;width:36px;height:36px;border-radius:10px;background:rgba(20,22,28,0.85);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.18);transition:transform .15s var(--ease-out,ease-out), background .15s var(--ease-out,ease-out), border-color .15s var(--ease-out,ease-out);}
@@ -14245,6 +14251,7 @@ function _rutaOptima(){
   openA('Ruta óptima',html,'<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>');
 }
 
+function _toggleEstiloPanel(){var p=$('mapaEstiloBtns');if(p)p.classList.toggle('mobile-open');}
 const _MAPA_ESTILO_URLS={oscuro:'mapbox://styles/mapbox/dark-v11',claro:'mapbox://styles/mapbox/streets-v12',satelite:'mapbox://styles/mapbox/satellite-streets-v12',relieve:'mapbox://styles/mapbox/outdoors-v12',navegacion:'mapbox://styles/mapbox/navigation-day-v1'};
 function _mapaSetEstilo(tipo){
   const map=window._mapInstance;
@@ -14259,6 +14266,7 @@ function _mapaSetEstilo(tipo){
     const btn=$('btnMapa_'+t);
     if(btn){btn.classList.toggle('active',t===tipo);}
   });
+  var _ep=$('mapaEstiloBtns');if(_ep&&window.innerWidth<640)_ep.classList.remove('mobile-open');
   const esAdmin=isAdminLike(CU.rol);
   map.once('style.load',function(){
     // Cambio de estilo del mapa es acción manual del usuario.
@@ -14781,7 +14789,8 @@ PAGES.mapa=function(){
     '<div id="mapaContadores" class="mapBar" style="margin-bottom:8px;border-radius:10px"></div>'+
     '<div style="position:relative">'+
       '<div id="ordersMap" style="height:calc(100vh - var(--mapa-offset,220px));min-height:320px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)"></div>'+
-      '<button onclick="nav(\'orders\')" style="display:none;position:absolute;top:58px;right:10px;z-index:999;font-weight:700;cursor:pointer" id="mapaBackBtn" class="map-btn">← Volver</button>'+
+      '<button onclick="nav(\'orders\')" style="display:none;position:absolute;top:10px;left:10px;z-index:999;font-weight:700;cursor:pointer" id="mapaBackBtn" class="map-btn">← Volver</button>'+
+      '<button class="mapa-estilo-toggle" id="mapaEstiloToggle" onclick="_toggleEstiloPanel()" title="Estilos del mapa" aria-label="Estilos del mapa"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>'+
       '<div id="mapaEstiloBtns" class="mapa-estilo-panel">'+
         estilosBtns+
       '</div>'+
