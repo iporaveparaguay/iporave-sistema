@@ -4036,7 +4036,7 @@ function _requireSensitiveAuth(callback) {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
   modal.innerHTML =
     '<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px 24px;width:min(360px,90vw);box-shadow:var(--shadow)">' +
-      '<div style="font-size:16px;font-weight:700;margin-bottom:6px">🔒 Zona restringida</div>' +
+      '<div style="font-size:16px;font-weight:700;margin-bottom:6px;display:inline-flex;align-items:center;gap:8px">'+SVG.lock+'<span>Zona restringida</span></div>' +
       '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">Esta sección requiere tu contraseña para continuar.</div>' +
       '<input id="_sensitiveAuthPwd" type="password" placeholder="Contraseña" autocomplete="off"' +
         ' style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;margin-bottom:12px">' +
@@ -4111,7 +4111,7 @@ function _requireUserAuth(callback) {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
   modal.innerHTML =
     '<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px 24px;width:min(360px,90vw);box-shadow:var(--shadow)">' +
-      '<div style="font-size:16px;font-weight:700;margin-bottom:6px">🔒 Gestión de usuarios</div>' +
+      '<div style="font-size:16px;font-weight:700;margin-bottom:6px;display:inline-flex;align-items:center;gap:8px">'+SVG.lock+'<span>Gestión de usuarios</span></div>' +
       '<div style="font-size:13px;color:var(--text2);margin-bottom:18px">Ingresá tu contraseña para acceder a esta sección.</div>' +
       '<input id="_userAuthPwd" type="password" placeholder="Contraseña" autocomplete="off"' +
         ' style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;margin-bottom:12px">' +
@@ -4720,7 +4720,8 @@ const SVG={
   creditCard:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',
   star:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
   salesperson:'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M7 22v-6l-2-1 2-4h10l2 4-2 1v6"/><line x1="12" y1="8" x2="12" y2="14"/></svg>',
-  scooter:'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M8 17h8M14 6h3l2 5v6"/><path d="M5 14V9h4l3 5"/></svg>',
+  scooter:'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="6" width="12.5" height="10" rx="1"/><path d="M14 9.5h4.5L21.5 12.5V16H14"/><circle cx="6" cy="18.5" r="2"/><circle cx="17.5" cy="18.5" r="2"/><line x1="14" y1="13" x2="21.5" y2="13"/></svg>',
+  lock:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="11" width="15" height="10" rx="2.2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor"/><line x1="12" y1="16.8" x2="12" y2="18" stroke-width="2"/></svg>',
   factory:'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 20 2 8 8 12 8 8 14 12 14 8 22 12 22 20 2 20"/><line x1="6" y1="16" x2="6" y2="18"/><line x1="11" y1="16" x2="11" y2="18"/><line x1="17" y1="16" x2="17" y2="18"/></svg>',
   handshake:'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 12 5 8 9 12 5 16 1 12"/><polyline points="15 12 19 8 23 12 19 16 15 12"/><line x1="9" y1="12" x2="15" y2="12"/></svg>',
   checkCircle:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
@@ -8105,7 +8106,7 @@ PAGES.recaudacion=function(){
     const tTar=dO.reduce((a,b)=>a+(_getZonaO(b).precio||0),0);
     const tExt=dO.reduce((a,b)=>a+(_getZonaO(b).extraDelivery||0),0);
     html+='<div class="tc" style="margin-bottom:18px">'+
-    '<div class="th2"><span class="tt">🚴 '+escHtml(d.nombre||'')+' <span style="font-size:11px;font-weight:400;color:var(--text2)">'+escHtml(d.vehiculo||'moto')+'</span></span></div>'+
+    '<div class="th2"><span class="tt" style="display:inline-flex;align-items:center;gap:8px">'+SVG.scooter+'<span>'+escHtml(d.nombre||'')+' <span style="font-size:11px;font-weight:400;color:var(--text2)">'+escHtml(d.vehiculo||'moto')+'</span></span></span></div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;padding:12px 15px;border-bottom:1px solid var(--border)">'+
     METODOS.map(m=>'<div style="text-align:center"><div style="font-size:18px">'+MICON[m]+'</div><div style="font-size:10px;color:var(--text2)">'+m+'</div><div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--green)">'+fmt(byM[m]||0)+'</div></div>').join('')+
     '</div>'+
@@ -10518,7 +10519,7 @@ function verFeedMetaAds(){
   const urlJSON=base+'?format=json';
   const urlCSV=base+'?format=csv';
   const urlUser=base+'?format=json&u='+encodeURIComponent(CU.username||'');
-  openC('📣 Feed de catálogo — Meta Ads / TikTok Ads',
+  openC(SVG.megaphone+' Feed de catálogo — Meta Ads / TikTok Ads',
     '<p style="color:var(--text2);font-size:13px;margin-bottom:16px">Usá estas URLs para importar tu catálogo en Meta Business Manager o TikTok Ads. Meta actualiza el feed automáticamente.</p>'+
     '<div style="margin-bottom:12px"><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px">Feed completo (todos los productos públicos)</label>'+
     '<div style="display:flex;gap:8px;margin-top:5px">'+
@@ -10811,7 +10812,7 @@ function openNuevoProducto(){
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;margin-top:4px">📦 Presentaciones y precios</div>'+
     _presFormHTML([])+
     // PUBLICAR
-    (isAdminLike(CU.rol)?'<div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="npPublicar"> Publicar en tienda pública</label></div>':'')+
+    (isAdminLike(CU.rol)?'<hr style="border:0;border-top:1px solid var(--border2);margin:18px 0 14px"><div class="fg" style="padding:4px 0"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:500"><input type="checkbox" id="npPublicar" style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"> <span>Publicar en tienda pública</span></label></div>':'')+
     '<div id="npAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveNuevoProducto()">Crear producto</button>',
@@ -10965,7 +10966,7 @@ async function editProducto(id){
     _renderPresentacionesEliminadas(p)+
     // COMPARTIR
     sharesHTML+
-    (isAdminLike(CU.rol)?'<div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="epPublicar" '+(p.publicar_tienda?'checked':'')+'>Publicar en tienda pública</label></div>':'')+
+    (isAdminLike(CU.rol)?'<hr style="border:0;border-top:1px solid var(--border2);margin:18px 0 14px"><div class="fg" style="padding:4px 0"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:500"><input type="checkbox" id="epPublicar" '+(p.publicar_tienda?'checked':'')+' style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"> <span>Publicar en tienda pública</span></label></div>':'')+
     '<div id="epAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveEditProducto('+id+')">Guardar</button>',
@@ -11151,14 +11152,28 @@ function _addPresForm(){
 function _presFormHTML(pres){
   return '<div style="margin-top:2px">'+
     '<div id="formPresLista"></div>'+
-    '<div style="margin-top:8px;background:var(--bg4);border-radius:8px;padding:10px">'+
-      '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px">+ Nueva presentación</div>'+
-      '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:end">'+
-        '<div><div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Nombre de la presentación</div><input type="text" id="fpNom" placeholder="Ej: 500ml, 1L, Docena" title="Nombre de esta presentación específica del producto" onkeydown="if(event.key===\'Enter\')_addPresForm()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;box-sizing:border-box"></div>'+
-        '<div><div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Precio base</div><input type="number" id="fpPrecio" placeholder="0" min="0" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;box-sizing:border-box"></div>'+
-        '<div><div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">P. vendedor</div><input type="number" id="fpPrecioV" placeholder="0" min="0" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;box-sizing:border-box"></div>'+
-        '<div><div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">P. proveedor</div><input type="number" id="fpPrecioP" placeholder="0" min="0" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;box-sizing:border-box"></div>'+
-        '<button class="btn btn-primary btn-sm" type="button" onclick="_addPresForm()" title="Agregar esta presentación a la lista" aria-label="Agregar presentación" style="height:32px;align-self:end">+ Agregar</button>'+
+    /* Título centrado ARRIBA del recuadro negro */
+    '<div style="margin-top:14px;text-align:center;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">+ Nueva presentación</div>'+
+    /* Recuadro negro con inputs (labels DEBAJO de cada input) */
+    '<div style="background:var(--bg4);border-radius:10px;padding:12px 14px">'+
+      '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:10px;align-items:start">'+
+        '<div>'+
+          '<input type="text" id="fpNom" placeholder="Ej: 500ml, 1L, Docena" title="Nombre de esta presentación específica del producto" onkeydown="if(event.key===\'Enter\')_addPresForm()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:7px 9px;color:var(--text);font-size:12px;box-sizing:border-box">'+
+          '<div style="font-size:10px;color:var(--text3);margin-top:5px;font-weight:500;padding-left:2px">Nombre presentación</div>'+
+        '</div>'+
+        '<div>'+
+          '<input type="number" id="fpPrecio" placeholder="0" min="0" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:7px 9px;color:var(--text);font-size:12px;box-sizing:border-box">'+
+          '<div style="font-size:10px;color:var(--text3);margin-top:5px;font-weight:500;padding-left:2px">Precio base</div>'+
+        '</div>'+
+        '<div>'+
+          '<input type="number" id="fpPrecioV" placeholder="0" min="0" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:7px 9px;color:var(--text);font-size:12px;box-sizing:border-box">'+
+          '<div style="font-size:10px;color:var(--text3);margin-top:5px;font-weight:500;padding-left:2px">P. vendedor</div>'+
+        '</div>'+
+        '<div>'+
+          '<input type="number" id="fpPrecioP" placeholder="0" min="0" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:7px 9px;color:var(--text);font-size:12px;box-sizing:border-box">'+
+          '<div style="font-size:10px;color:var(--text3);margin-top:5px;font-weight:500;padding-left:2px">P. proveedor</div>'+
+        '</div>'+
+        '<button class="btn btn-primary btn-sm" type="button" onclick="_addPresForm()" title="Agregar esta presentación a la lista" aria-label="Agregar presentación" style="height:32px">+ Agregar</button>'+
       '</div>'+
       '<input type="hidden" id="fpPrecioD" value="0">'+
     '</div>'+
@@ -14268,8 +14283,8 @@ function _mapaCargarDlvs(map){
     const statusDot=online
       ?'<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ade80;margin-right:4px;box-shadow:0 0 5px #4ade80"></span>'
       :'<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#6b7280;margin-right:4px"></span>';
-    // SVG persona en moto con casco — más expresivo, se entiende mejor que delivery
-    const dlvIconSvg='<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="transform:scale(0.9)"><circle cx="12" cy="5" r="2.5"/><path d="M12 7.5 L11 13 L13 13 L12 7.5"/><line x1="11" y1="13" x2="7" y2="14.5"/><rect x="13" y="11" width="4.5" height="5" rx="0.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><line x1="6" y1="18" x2="11" y2="13"/><line x1="14" y1="16" x2="18" y2="18"/></svg>';
+    // Camión de delivery — destaca mejor que la moto y se reconoce al instante
+    const dlvIconSvg='<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="transform:scale(0.92)"><rect x="1.5" y="6" width="12.5" height="10" rx="1"/><path d="M14 9.5h4.5L21.5 12.5V16H14"/><circle cx="6" cy="18.5" r="2" fill="#0f172a"/><circle cx="17.5" cy="18.5" r="2" fill="#0f172a"/><line x1="14" y1="13" x2="21.5" y2="13"/></svg>';
     el.innerHTML=
       '<div class="dlv-label" style="margin-bottom:5px">'+
         statusDot+escHtml(dlv.nombre)+(online?' 🟢':' ⚫')+
@@ -14288,7 +14303,7 @@ function _mapaCargarDlvs(map){
     }).join('')||'<div style="color:#64748b;font-size:11px;padding:4px 0">Sin pedidos activos</div>';
     const popupHtml=
       '<div style="min-width:230px;font-family:Arial;font-size:13px;color:#e2e8f0">'+
-      '<b style="color:#f1f5f9;font-size:14px">🛵 '+escHtml(dlv.nombre||'')+'</b><br>'+
+      '<b style="color:#f1f5f9;font-size:14px;display:inline-flex;align-items:center;gap:6px"><span style="display:inline-flex">'+SVG.scooter+'</span>'+escHtml(dlv.nombre||'')+'</b><br>'+
       '<span style="color:'+(online?'#4ade80':'#64748b')+';font-size:11px">'+posLabel+(online?' · últ: '+trackTime:'')+'</span>'+
       '<div style="margin-top:6px">'+pedidosHtml+'</div>'+
       '</div>';
