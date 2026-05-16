@@ -12055,7 +12055,7 @@ async function confirmarRegistroPago(targetUserId){
   const fecha=$('pagoFecha').value||new Date().toISOString().slice(0,10);
   try{
     const res=await DL.savePago({
-      pagado_por:CU.id,
+      pagado_por:CU.auth_id||CU.id,
       pagado_a:targetUserId,
       monto,metodo,referencia,nota,fecha
     });
