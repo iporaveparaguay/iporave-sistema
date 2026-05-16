@@ -1862,9 +1862,29 @@ function _rtRefreshOrders(){
   return new Promise((resolve)=>{
     _rtRefreshTimer=setTimeout(async()=>{
       try{
+        // GUARDAR filtros antes
+        const savedFE=window._mapaFiltroEstado;
+        const savedFT=window._mapaFiltroTipo;
+        const savedFZ=window._mapaFiltroZona;
+        const savedFV=window._mapaFiltroVend;
+        const savedFD=window._mapaFiltroDelivery;
+        const savedSD=window._mapaShowDlvs;
+
         _ordersCache=await DL.getOrders();
         const cur=document.querySelector('.ni.active');
         if(cur){const pid=cur.id.replace('ni_','');if(['orders','entregas','mispedidos','dashboard','suministros','mapa','delivery'].includes(pid)&&PAGES[pid])PAGES[pid]();}
+
+        // RESTAURAR filtros si estábamos en mapa
+        if(cur && cur.id.replace('ni_','')==='mapa'){
+          window._mapaFiltroEstado=savedFE;
+          window._mapaFiltroTipo=savedFT;
+          window._mapaFiltroZona=savedFZ;
+          window._mapaFiltroVend=savedFV;
+          window._mapaFiltroDelivery=savedFD;
+          window._mapaShowDlvs=savedSD;
+          if(typeof _aplicarFiltrosMapa==='function')_aplicarFiltrosMapa();
+        }
+
         if(typeof updateNavBadges==='function')updateNavBadges();
         resolve();
       }catch(e){resolve();}
@@ -10776,7 +10796,23 @@ function _mapaUpdateContadores(){
   }catch(e){}
   const dlvSel='<select class="mapBtn" onchange="window._mapaFiltroDelivery=this.value||null;_aplicarFiltrosMapa();">'+dlvOpts+'</select>';
 
-  el.innerHTML=btnsEstado+'<div class="sep"></div>'+btnsTipo+'<div class="sep"></div>'+dlvSel;
+  // Botones por zona (fila secundaria)
+  let zonaButtonsHtml='';
+  try{
+    if(window._zonasCache&&window._zonasCache.length){
+      const zonaSel=window._mapaFiltroZona;
+      zonaButtonsHtml='<div class="mapBar" style="border-top:1px solid var(--border)">';
+      zonaButtonsHtml+='<button class="mapBtn'+(!zonaSel?' active':'')+'" onclick="window._mapaFiltroZona=null;_aplicarFiltrosMapa()">🌎 Todas las zonas</button>';
+      window._zonasCache.forEach(function(z){
+        const isActive=String(zonaSel)===String(z.id);
+        const nom=(z.nombre||'').substring(0,16);
+        zonaButtonsHtml+='<button class="mapBtn'+(isActive?' active':'')+'" onclick="window._mapaFiltroZona='+z.id+';_aplicarFiltrosMapa()" title="'+escAttr(z.desc||'')+'">📍 '+escHtml(nom)+'</button>';
+      });
+      zonaButtonsHtml+='</div>';
+    }
+  }catch(e){}
+
+  el.innerHTML=btnsEstado+'<div class="sep"></div>'+btnsTipo+'<div class="sep"></div>'+dlvSel+zonaButtonsHtml;
 
   window._mapaFiltro=(fEst==='Todos')?null:fEst;
 }
@@ -10798,6 +10834,13 @@ function _aplicarFiltrosMapa(){
     window._mapaShowDlvs=false;
     if(window._mapInstance)_mapaCargar(window._mapInstance);
     return;
+  }
+  // CUANDO hay filtro por estado ACTIVO, OCULTAR deliveries
+  const hasEstadoFilter=window._mapaFiltroEstado&&window._mapaFiltroEstado!=='Todos';
+  if(hasEstadoFilter){
+    Object.values(window._dlvMapMarkers||{}).forEach(m=>{try{m.remove();}catch(e){}});
+    window._dlvMapMarkers={};
+    window._mapaShowDlvs=false;
   }
   if(window._mapInstance){
     _mapaCargar(window._mapInstance);
@@ -11014,6 +11057,17 @@ function _mapaRenderSelects(){
   }
 }
 
+const _DLV_ROLE_COLORS={
+  'moto':'#f59e0b',
+  'auto':'#3b82f6',
+  'bici':'#22c55e',
+  'pedestre':'#8b5cf6'
+};
+function _dlvColor(dlv){
+  const v=(dlv&&dlv.vehiculo?dlv.vehiculo:'').toLowerCase();
+  return _DLV_ROLE_COLORS[v]||'#06b6d4';
+}
+
 function _mapaCargarDlvs(map){
   Object.values(window._dlvMapMarkers).forEach(m=>m.remove());
   window._dlvMapMarkers={};
@@ -11034,7 +11088,7 @@ function _mapaCargarDlvs(map){
     // Pedidos activos del delivery
     const activos=_ordersCache.filter(o=>o.deliveryId===dlv.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     const trackTime=dlv.tracking_at?new Date(dlv.tracking_at).toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'}):'—';
-    const bg=online?'#0ea5e9':'#475569';
+    const bg=online?_dlvColor(dlv):'#475569';
     const borderCol=online?'rgba(255,255,255,.98)':'rgba(255,255,255,.6)';
     const el=document.createElement('div');
     el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer;z-index:9999';
