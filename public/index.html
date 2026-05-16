@@ -628,9 +628,15 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .userPagoRow .saldo.ok{color:#22c55e}
 .userPagoRow .saldo .label{font-size:10px;color:var(--text2);font-weight:600;display:block;text-transform:uppercase}
 .userPagoRow .acciones{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;width:100%}
-.btnPagado{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:linear-gradient(180deg,#16a34a 0%,#15803d 100%);color:#fff;border:1px solid #15803d;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 8px rgba(22,163,74,.3),inset 0 1px 0 rgba(255,255,255,.15);transition:all .15s ease}
+.btnPagado{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:linear-gradient(180deg,#16a34a 0%,#15803d 100%);color:#fff;border:1px solid #15803d;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 8px rgba(22,163,74,.3),inset 0 1px 0 rgba(255,255,255,.15);transition:all .15s ease;position:relative}
 .btnPagado:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(22,163,74,.4)}
 .btnPagado:active{transform:translateY(1px)}
+.btnPagado.alto{box-shadow:0 0 0 3px rgba(245,158,11,.4),0 3px 8px rgba(22,163,74,.3)}
+.btnPagado.urgente{animation:pulseUrg 1.5s infinite;box-shadow:0 0 0 0 rgba(239,68,68,.55),0 3px 8px rgba(22,163,74,.3)}
+@keyframes pulseUrg{
+  0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.55),0 3px 8px rgba(22,163,74,.3)}
+  50%{box-shadow:0 0 0 10px rgba(239,68,68,0),0 3px 8px rgba(22,163,74,.3)}
+}
 .pagoSaldoLive{margin-top:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;font-size:12px;line-height:1.7}
 .pagoSaldoLive .line{display:flex;justify-content:space-between;gap:12px}
 .pagoSaldoLive .line b{font-weight:800}
@@ -713,6 +719,20 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+/* THEME CUSTOMIZER */
+.theme-customizer{display:flex;flex-direction:column;gap:12px;margin:14px 0}
+.color-row{display:flex;align-items:center;gap:10px}
+.color-row label{flex:1;font-size:13px;color:var(--text)}
+.color-row input[type=color]{width:50px;height:34px;border-radius:8px;border:1px solid var(--border);cursor:pointer;background:transparent;padding:2px}
+.btn-icon{padding:7px 10px;font-size:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text)}
+.btn-icon:hover{background:var(--bg3)}
+.asist-msg{display:flex;animation:asistFadeIn .25s ease}
+@keyframes asistFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.asist-user{justify-content:flex-end}
+.asist-bot{justify-content:flex-start}
+.asist-bubble{max-width:80%;padding:11px 15px;border-radius:14px;font-size:14px;line-height:1.5}
+.asist-user .asist-bubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.asist-bot .asist-bubble{background:var(--bg2);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px}
 </style>
 </head>
 <body>
@@ -3178,7 +3198,10 @@ const NAV_CFG={
     {s:'Analítica',items:[
       {id:'analitica_admin',l:'Analítica Ecosistema',ic:'chart'},
     ]},
-    {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
+    {s:'Comunicación',items:[
+      {id:'mensajes',l:'Mensajes',ic:'chat'},
+      {id:'asistente',l:'🤖 Asistente IA',ic:'bot'},
+    ]},
   ],
   admin:[
     {s:'Principal',items:[
@@ -3201,7 +3224,10 @@ const NAV_CFG={
     {s:'Analítica',items:[
       {id:'analitica_admin',l:'Analítica Ecosistema',ic:'chart'},
     ]},
-    {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
+    {s:'Comunicación',items:[
+      {id:'mensajes',l:'Mensajes',ic:'chat'},
+      {id:'asistente',l:'🤖 Asistente IA',ic:'bot'},
+    ]},
   ],
   vendedor:[
     {s:'Mi Panel',items:[
@@ -3220,7 +3246,10 @@ const NAV_CFG={
       {id:'analitica_vend',l:'Mi Analítica',ic:'chart'},
       {id:'clientes_recurrentes',l:'👥 Clientes Recurrentes',ic:'users'},
     ]},
-    {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
+    {s:'Comunicación',items:[
+      {id:'mensajes',l:'Mensajes',ic:'chat'},
+      {id:'asistente',l:'🤖 Asistente IA',ic:'bot'},
+    ]},
   ],
   dropshipper:[
     {s:'Mi Panel',items:[
@@ -3238,7 +3267,10 @@ const NAV_CFG={
     {s:'Analítica',items:[
       {id:'analitica_drop',l:'Mi Analítica',ic:'chart'},
     ]},
-    {s:'Comunicación',items:[{id:'mensajes',l:'Mensajes',ic:'chat'}]},
+    {s:'Comunicación',items:[
+      {id:'mensajes',l:'Mensajes',ic:'chat'},
+      {id:'asistente',l:'🤖 Asistente IA',ic:'bot'},
+    ]},
   ],
   delivery:[
     {s:'Mi Panel',items:[
@@ -3249,6 +3281,7 @@ const NAV_CFG={
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
       {id:'pagos',l:'💰 Mis Pagos',ic:'dollar'},
       {id:'mensajes',l:'Mensajes',ic:'chat'},
+      {id:'asistente',l:'🤖 Asistente IA',ic:'bot'},
     ]},
     {s:'Analítica',items:[
       {id:'analitica_dlv',l:'📊 Mi Analítica',ic:'chart'},
@@ -3296,6 +3329,7 @@ const SVG={
   db:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
   chat:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
   chart:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>',
+  bot:'<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><circle cx="8.5" cy="14" r="1.2"/><circle cx="15.5" cy="14" r="1.2"/><line x1="12" y1="3" x2="12" y2="8"/><circle cx="12" cy="3" r="1"/></svg>',
 };
 const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'Liquidación',
   usuarios:'Usuarios',zonas:'Zonas y Tarifas',config:'Configuración',setup:'Setup / SQL',
@@ -3308,7 +3342,8 @@ const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'
   analitica_drop:'Mi Analítica',analitica_admin:'Analítica Ecosistema',
   analitica_dlv:'Mi Analítica',
   clientes_recurrentes:'Clientes recurrentes',
-  clientes_zonas:'Base de Clientes por Zona'};
+  clientes_zonas:'Base de Clientes por Zona',
+  asistente:'Asistente Inteligente'};
 
 /* ── SIDEBAR MOBILE ── */
 function toggleSidebar(){
@@ -3354,7 +3389,8 @@ const NAV_TIPS={
   suministros:'Mis suministros activos',
   pagos_prov:'Mis pagos como proveedor',
   pagos:'Pagos del sistema — ganado vs pagado',
-  clientes_recurrentes:'Mis clientes recurrentes'
+  clientes_recurrentes:'Mis clientes recurrentes',
+  asistente:'Asistente con acciones (cambiar estados, registrar pagos)'
 };
 function buildNav(){
   const groups=NAV_CFG[CU.rol]||[];
@@ -9454,6 +9490,23 @@ function openPerfilUsuario(){
       '<button id="pfPushBtn" class="toggleBtn '+(_ok?'on':'off')+'" onclick="_togglePushNotif()"><span class="dot"></span>🔔 '+(_ok?'Activadas':'Activar')+'</button>'+
       '</div></div>'
     );})():'')+
+    /* WhatsApp por estado de pedido (TAREA 1) */
+    (function(){
+      const _cfg=u.config_notif_wa||{};
+      const _d=(_cfg.despachado!==false);
+      const _r=(_cfg.enruta!==false);
+      return '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📱 WhatsApp por estado de pedido</div>'+
+        '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer">'+
+          '<input type="checkbox" id="prefWaDespachado"'+(_d?' checked':'')+' onchange="_savePrefWaDespachado(this.checked)" style="width:18px;height:18px;cursor:pointer">'+
+          '<span style="font-size:13px;color:var(--text2)">Recibir WhatsApp cuando despachen mi pedido</span>'+
+        '</label>'+
+        '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer">'+
+          '<input type="checkbox" id="prefWaEnRuta"'+(_r?' checked':'')+' onchange="_savePrefWaEnRuta(this.checked)" style="width:18px;height:18px;cursor:pointer">'+
+          '<span style="font-size:13px;color:var(--text2)">Recibir WhatsApp cuando esté En Ruta</span>'+
+        '</label>'+
+      '</div>';
+    })()+
     '</div>'+
     /* TAB 1 — Negocio */
     '<div class="ptab-content">'+
@@ -9969,7 +10022,47 @@ PAGES.config=function(){
       '<div id="cfgAlert"></div>'+
       '<button class="btn btn-primary" onclick="saveCfgMain()">Guardar parámetros</button>'+
     '</div>'+
+    '<div class="lcard2">'+
+      '<div class="stitle" style="margin-top:0">🎨 Personalización del tema</div>'+
+      '<p style="font-size:13px;color:var(--text2);margin:0 0 10px">Personalizá los colores del sistema. Los cambios se aplican al instante.</p>'+
+      '<div class="theme-customizer">'+
+        '<div class="color-row">'+
+          '<label>Color principal (accent)</label>'+
+          '<input type="color" id="cfgColorAccent" value="#f5a623">'+
+          '<button class="btn-icon" onclick="_eyedropper(\'accent\')" title="Tomar color de la pantalla">💧</button>'+
+          '<button class="btn-icon" onclick="_resetColor(\'accent\',\'#f5a623\')" title="Volver al default">↺</button>'+
+        '</div>'+
+        '<div class="color-row">'+
+          '<label>Color secundario</label>'+
+          '<input type="color" id="cfgColorAccent2" value="#e8891a">'+
+          '<button class="btn-icon" onclick="_eyedropper(\'accent2\')" title="Tomar color de la pantalla">💧</button>'+
+          '<button class="btn-icon" onclick="_resetColor(\'accent2\',\'#e8891a\')" title="Volver al default">↺</button>'+
+        '</div>'+
+        '<div class="color-row">'+
+          '<label>Fondo principal</label>'+
+          '<input type="color" id="cfgColorBg" value="#0b0d12">'+
+          '<button class="btn-icon" onclick="_eyedropper(\'bg\')" title="Tomar color de la pantalla">💧</button>'+
+          '<button class="btn-icon" onclick="_resetColor(\'bg\',\'#0b0d12\')" title="Volver al default">↺</button>'+
+        '</div>'+
+        '<div class="color-row">'+
+          '<label>Color de éxito</label>'+
+          '<input type="color" id="cfgColorGreen" value="#22c55e">'+
+          '<button class="btn-icon" onclick="_resetColor(\'green\',\'#22c55e\')" title="Volver al default">↺</button>'+
+        '</div>'+
+        '<div class="color-row">'+
+          '<label>Color de error</label>'+
+          '<input type="color" id="cfgColorRed" value="#ef4444">'+
+          '<button class="btn-icon" onclick="_resetColor(\'red\',\'#ef4444\')" title="Volver al default">↺</button>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">'+
+        '<button class="btn btn-primary" onclick="_guardarTema()">💾 Guardar tema</button>'+
+        '<button class="btn btn-secondary" onclick="_resetTema()">↺ Restaurar defaults</button>'+
+        '<button class="btn btn-secondary" onclick="_exportarTema()">📥 Exportar tema</button>'+
+      '</div>'+
+    '</div>'+
     '</div>';
+  _cargarTemaActualEnConfig();
 };
 async function saveCfgAPIs(){
   setCfg({
@@ -9995,6 +10088,100 @@ function saveCfgMain(){
   });
   showAlert('cfgAlert','s','✓ Configuración guardada correctamente');
 }
+/* ─── PERSONALIZACIÓN DEL TEMA (color picker + eyedropper) ─── */
+async function _eyedropper(colorKey){
+  if(!window.EyeDropper){
+    pushNotif('Tu navegador no soporta el eyedropper. Usá Chrome/Edge actualizado.','w');
+    return;
+  }
+  try{
+    const eyeDropper=new window.EyeDropper();
+    const result=await eyeDropper.open();
+    const input=document.getElementById('cfgColor'+colorKey.charAt(0).toUpperCase()+colorKey.slice(1));
+    if(input){
+      input.value=result.sRGBHex;
+      _aplicarColorVivo(colorKey,result.sRGBHex);
+    }
+  }catch(e){/* usuario canceló */}
+}
+function _aplicarColorVivo(key,value){
+  document.documentElement.style.setProperty('--'+key,value);
+}
+function _guardarTema(){
+  const tema={
+    accent:$('cfgColorAccent').value,
+    accent2:$('cfgColorAccent2').value,
+    bg:$('cfgColorBg').value,
+    green:$('cfgColorGreen').value,
+    red:$('cfgColorRed').value
+  };
+  try{
+    localStorage.setItem('iporave_tema_custom',JSON.stringify(tema));
+    _aplicarTemaCompleto(tema);
+    pushNotif('🎨 Tema guardado','ok');
+  }catch(e){
+    pushNotif('Error al guardar','e');
+  }
+}
+function _resetColor(key,defaultValue){
+  const input=document.getElementById('cfgColor'+key.charAt(0).toUpperCase()+key.slice(1));
+  if(input){
+    input.value=defaultValue;
+    document.documentElement.style.removeProperty('--'+key);
+  }
+}
+function _resetTema(){
+  if(!confirm('¿Restaurar todos los colores a los valores originales?'))return;
+  try{
+    localStorage.removeItem('iporave_tema_custom');
+    location.reload();
+  }catch(e){}
+}
+function _exportarTema(){
+  const tema={
+    accent:$('cfgColorAccent').value,
+    accent2:$('cfgColorAccent2').value,
+    bg:$('cfgColorBg').value,
+    green:$('cfgColorGreen').value,
+    red:$('cfgColorRed').value
+  };
+  const blob=new Blob([JSON.stringify(tema,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='iporave-tema-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function _aplicarTemaCompleto(tema){
+  if(!tema)return;
+  Object.entries(tema).forEach(([k,v])=>{
+    if(v)document.documentElement.style.setProperty('--'+k,v);
+  });
+}
+function _cargarTemaActualEnConfig(){
+  try{
+    const saved=localStorage.getItem('iporave_tema_custom');
+    if(saved){
+      const tema=JSON.parse(saved);
+      Object.entries(tema).forEach(([k,v])=>{
+        const input=document.getElementById('cfgColor'+k.charAt(0).toUpperCase()+k.slice(1));
+        if(input&&v)input.value=v;
+      });
+    }
+  }catch(e){}
+}
+(function _initTemaCustom(){
+  try{
+    const saved=localStorage.getItem('iporave_tema_custom');
+    if(saved){
+      const tema=JSON.parse(saved);
+      _aplicarTemaCompleto(tema);
+    }
+  }catch(e){}
+})();
 function resetAll(){
   if(!confirm('¿Resetear TODOS los datos al estado demo?'))return;
   ['users','usersVer','orders','zonas','cupos','jornadas'].forEach(k=>localStorage.removeItem('ipv5_'+k));
@@ -11494,6 +11681,9 @@ PAGES.perfil=function(){
   const zonasOpts=(_zonasCache||[]).map(z=>'<option value="'+escHtml(z.nombre||'')+'"'+((u.zona||'')===z.nombre?' selected':'')+'>'+escHtml(z.nombre||'')+'</option>').join('');
   const waOn=(u.notifWA!==false);
   const pushOn=(u.notifPush!==false);
+  const cfgWA=u.config_notif_wa||{};
+  const waDespOn=(cfgWA.despachado!==false);
+  const waRutaOn=(cfgWA.enruta!==false);
   $('ca').innerHTML=
     '<div style="max-width:780px;margin:0 auto;padding:8px">'+
       '<div style="margin-bottom:18px">'+
@@ -11527,6 +11717,17 @@ PAGES.perfil=function(){
           '<input type="checkbox" id="pfNotifPush"'+(pushOn?' checked':'')+' style="width:18px;height:18px;cursor:pointer">'+
           '<span style="color:var(--text);font-size:14px">Recibir notificaciones push del navegador</span>'+
         '</label>'+
+        '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">'+
+          '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">📱 WhatsApp por estado de pedido</div>'+
+          '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer">'+
+            '<input type="checkbox" id="prefWaDespachado"'+(waDespOn?' checked':'')+' onchange="_savePrefWaDespachado(this.checked)" style="width:18px;height:18px;cursor:pointer">'+
+            '<span style="color:var(--text2);font-size:13px">Avisarme cuando despachen mi pedido</span>'+
+          '</label>'+
+          '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer">'+
+            '<input type="checkbox" id="prefWaEnRuta"'+(waRutaOn?' checked':'')+' onchange="_savePrefWaEnRuta(this.checked)" style="width:18px;height:18px;cursor:pointer">'+
+            '<span style="color:var(--text2);font-size:13px">Avisarme cuando esté En Ruta</span>'+
+          '</label>'+
+        '</div>'+
       '</div>'+
 
       '<div style="display:flex;justify-content:flex-end;margin-top:18px">'+
@@ -11560,6 +11761,36 @@ async function guardarPerfilCliente(){
     const i=_usersCache.findIndex(x=>x.id==CU.id);
     if(i>=0)_usersCache[i]={..._usersCache[i],...actualizado};
     pushNotif('Perfil actualizado','ok');
+  }catch(e){
+    pushNotif('Error al guardar: '+(e.message||e),'e');
+  }
+}
+
+// ── Toggles de preferencias WhatsApp por estado (TAREA 1) ──
+async function _savePrefWaDespachado(val){
+  if(!CU)return;
+  const cfg=Object.assign({},CU.config_notif_wa||{});
+  cfg.despachado=!!val;
+  try{
+    await DL.saveUser({id:CU.id,config_notif_wa:cfg});
+    CU.config_notif_wa=cfg;
+    const i=_usersCache.findIndex(x=>x.id==CU.id);
+    if(i>=0)_usersCache[i].config_notif_wa=cfg;
+    pushNotif('Preferencia guardada','ok');
+  }catch(e){
+    pushNotif('Error al guardar: '+(e.message||e),'e');
+  }
+}
+async function _savePrefWaEnRuta(val){
+  if(!CU)return;
+  const cfg=Object.assign({},CU.config_notif_wa||{});
+  cfg.enruta=!!val;
+  try{
+    await DL.saveUser({id:CU.id,config_notif_wa:cfg});
+    CU.config_notif_wa=cfg;
+    const i=_usersCache.findIndex(x=>x.id==CU.id);
+    if(i>=0)_usersCache[i].config_notif_wa=cfg;
+    pushNotif('Preferencia guardada','ok');
   }catch(e){
     pushNotif('Error al guardar: '+(e.message||e),'e');
   }
@@ -11792,8 +12023,15 @@ PAGES.pagos=function(){
         const saldoLabel=saldo>0?'Te debe':'Al día';
         const saldoPositivo=saldo>0;
         const btnPagadoAttr=saldoPositivo?'':' disabled style="opacity:0.4;cursor:not-allowed" title="Sin saldo pendiente"';
+        // TAREA 4 — halo visual por nivel de saldo
+        let _btnHalo='';
+        let _btnLabel='✅ Pagado';
+        if(saldoPositivo){
+          if(saldo>5000000){ _btnHalo=' urgente'; _btnLabel='🔥 URGENTE — Pagado'; }
+          else if(saldo>1000000){ _btnHalo=' alto'; }
+        }
         const btnPagado=saldoPositivo
-          ? '<button class="btnPagado" onclick="event.stopPropagation();abrirPagoCompleto(\''+escAttr(u.id)+'\')"'+btnPagadoAttr+'>✅ Pagado</button>'
+          ? '<button class="btnPagado'+_btnHalo+'" onclick="event.stopPropagation();abrirPagoCompleto(\''+escAttr(u.id)+'\')"'+btnPagadoAttr+' title="Saldo: '+fmt(saldo)+'">'+_btnLabel+'</button>'
           : '<button class="btnPagado"'+btnPagadoAttr+'>✅ Pagado</button>';
         const badgeAtRisk=atRisk?'<div class="atRiskBadge">⚠️ Antiguo</div>':'';
         const html='<div class="userPagoRow'+(atRisk?' atRisk':'')+'" onclick="abrirPagoUsuario(\''+escAttr(u.id)+'\')">'+
@@ -12228,13 +12466,20 @@ function _renderPagoUsuarioContraparte(other){
       String(p.pagado_por)===String(other.id)&&
       (p.fecha||'').startsWith(mes)
     );
+    // Cargar comprobantes (visible para ambos lados — TAREA 2)
+    try{ await _cargarComprobantesDePagos(pagosDe.map(function(p){return p.id;})); }catch(_){ }
     const filasPag=pagosDe.map(p=>{
+      const tieneComp=(window._comprobantesCache&&window._comprobantesCache[p.id]&&window._comprobantesCache[p.id].length);
+      const compIcon=tieneComp
+        ? ' <button class="btn btn-icon" onclick="_verComprobante(\''+escAttr(p.id)+'\')" title="Ver comprobante" style="padding:2px 6px;font-size:14px">📎</button>'
+        : '';
       return '<tr>'+
         '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+'</td>'+
         '<td style="font-weight:800;color:#22c55e">'+fmt(p.monto)+'</td>'+
         '<td>'+escHtml(p.metodo||'—')+'</td>'+
         '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
         '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.nota||'')+'</td>'+
+        '<td>'+compIcon+'</td>'+
       '</tr>';
     }).join('');
 
@@ -12270,9 +12515,9 @@ function _renderPagoUsuarioContraparte(other){
       // Pagos recibidos desde esta contraparte
       '<div class="stitle">💵 Pagos recibidos de '+escHtml(other.nombre||'—')+' — '+mes+'</div>'+
       '<div style="overflow-x:auto;margin-bottom:16px"><table class="tbl"><thead><tr>'+
-        '<th>Fecha</th><th>Monto</th><th>Método</th><th>Ref</th><th>Nota</th>'+
+        '<th>Fecha</th><th>Monto</th><th>Método</th><th>Ref</th><th>Nota</th><th>📎</th>'+
       '</tr></thead><tbody>'+
-        (filasPag||'<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">Sin pagos recibidos de esta persona este mes</td></tr>')+
+        (filasPag||'<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:20px">Sin pagos recibidos de esta persona este mes</td></tr>')+
       '</tbody></table></div>';
   })();
 }
@@ -12341,38 +12586,51 @@ PAGES.pago_usuario=function(){
       '<button class="pagoPeriodTab '+(periodo===t[0]?'active':'')+'" onclick="_setPagoPeriodo(\''+t[0]+'\')">'+t[1]+'</button>'
     ).join('');
 
-    // Calendario mes actual
+    // Calendario navegable (TAREA 3)
     const hoy=new Date();
-    const primer=new Date(hoy.getFullYear(),hoy.getMonth(),1);
-    const ultimo=new Date(hoy.getFullYear(),hoy.getMonth()+1,0);
+    if(!window._pagoCalMes){
+      window._pagoCalMes=hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
+    }
+    const _calParts=window._pagoCalMes.split('-');
+    const _calYear=parseInt(_calParts[0],10);
+    const _calMonth=parseInt(_calParts[1],10)-1;
+    const primer=new Date(_calYear,_calMonth,1);
+    const ultimo=new Date(_calYear,_calMonth+1,0);
     const diasDelMes=ultimo.getDate();
     const pedsMesCount={};
-    (peds||[]).concat((orders||[]).filter(o=>{
+    (orders||[]).forEach(o=>{
       const d=new Date(o.fecha||o.created_at||0);
       const matchUser=user.rol==='vendedor'?String(o.vendedorId)===String(user.id)
         :user.rol==='dropshipper'?String(o.dropId)===String(user.id)
         :user.rol==='proveedor'?String(o.proveedorId)===String(user.id)
         :user.rol==='delivery'?String(o.deliveryId)===String(user.id):false;
-      return matchUser && d.getMonth()===hoy.getMonth() && d.getFullYear()===hoy.getFullYear();
-    })).forEach(o=>{
-      const d=new Date(o.fecha||o.created_at||0);
-      const k=d.getDate();
-      pedsMesCount[k]=(pedsMesCount[k]||0)+1;
+      if(matchUser && d.getMonth()===_calMonth && d.getFullYear()===_calYear){
+        const k=d.getDate();
+        pedsMesCount[k]=(pedsMesCount[k]||0)+1;
+      }
     });
     let calHtml='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px">';
-    const firstDow=primer.getDay()||7; // L=1..D=7
+    const firstDow=primer.getDay()||7;
     for(let i=1;i<firstDow;i++) calHtml+='<div></div>';
     const selDiaStr=window._pagoDiaSel?new Date(window._pagoDiaSel).toDateString():'';
     for(let d=1;d<=diasDelMes;d++){
-      const dDate=new Date(hoy.getFullYear(),hoy.getMonth(),d);
+      const dDate=new Date(_calYear,_calMonth,d);
       const hasOrders=pedsMesCount[d]>0;
       const isSel=periodo==='dia' && dDate.toDateString()===selDiaStr;
-      calHtml+='<div class="pagoCalDay '+(hasOrders?'has':'')+(isSel?' sel':'')+'" onclick="_selDiaPago(\''+dDate.toISOString().slice(0,10)+'\')">'+
+      const isoStr=_calYear+'-'+String(_calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      calHtml+='<div class="pagoCalDay '+(hasOrders?'has':'')+(isSel?' sel':'')+'" onclick="_selDiaPago(\''+isoStr+'\')" title="'+(hasOrders?pedsMesCount[d]+' pedido(s)':'Sin pedidos')+'">'+
         '<div>'+d+'</div>'+
         (hasOrders?'<div class="dot">•'+pedsMesCount[d]+'</div>':'')+
       '</div>';
     }
     calHtml+='</div>';
+    const _mesLabel=primer.toLocaleDateString('es-PY',{month:'long',year:'numeric'});
+    const _calNavHtml=
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px">'+
+        '<button class="btn btn-secondary btn-sm" onclick="_pagoCalNavMes(-1)" title="Mes anterior">←</button>'+
+        '<div style="font-size:13px;font-weight:800;text-transform:capitalize">'+escHtml(_mesLabel)+'</div>'+
+        '<button class="btn btn-secondary btn-sm" onclick="_pagoCalNavMes(1)" title="Mes siguiente">→</button>'+
+      '</div>';
 
     // Lista pedidos (con paginación si > 20)
     const PAGE_SIZE=20;
@@ -12434,9 +12692,14 @@ PAGES.pago_usuario=function(){
       return '<div class="metricTrend '+cls+'">'+t.flecha+' '+(t.diff>0?'+':'')+t.pct+'% vs '+lblPer+'</div>';
     }
 
-    // Lista pagos
+    // Lista pagos (con comprobantes — TAREA 2)
+    try{ await _cargarComprobantesDePagos(pagos.map(function(p){return p.id;})); }catch(_){ }
     const filasPag=pagos.map(p=>{
       const pagador=(_usersCache||[]).find(u=>String(u.id)===String(p.pagado_por));
+      const tieneComp=(window._comprobantesCache&&window._comprobantesCache[p.id]&&window._comprobantesCache[p.id].length);
+      const compIcon=tieneComp
+        ? ' <button class="btn btn-icon" onclick="_verComprobante(\''+escAttr(p.id)+'\')" title="Ver comprobante" style="padding:2px 6px;font-size:14px">📎</button>'
+        : '';
       return '<tr>'+
         '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+'</td>'+
         '<td style="font-weight:800;color:var(--green,#16a34a)">'+fmt(p.monto)+'</td>'+
@@ -12444,6 +12707,7 @@ PAGES.pago_usuario=function(){
         '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
         '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.nota||'')+'</td>'+
         '<td style="font-size:12px;color:var(--text2)">'+escHtml(pagador?pagador.nombre:'—')+'</td>'+
+        '<td>'+compIcon+'</td>'+
       '</tr>';
     }).join('');
 
@@ -12477,14 +12741,15 @@ PAGES.pago_usuario=function(){
         '<div class="sc ac"><div class="slabel">Cobrado</div><div class="sval">'+fmt(cobrado)+'</div>'+_trendBadge(trCob,false)+'</div>'+
         '<div class="sc re"><div class="slabel">Pendiente</div><div class="sval">'+fmt(pendientePeriodo)+'</div>'+_trendBadge(trPen,true)+'</div>'+
       '</div>'+
-      // Calendario
+      // Calendario navegable (TAREA 3)
       '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:16px">'+
-        '<div style="font-size:12px;font-weight:800;text-transform:uppercase;color:var(--text2);margin-bottom:4px">📅 Calendario — '+hoy.toLocaleDateString('es-PY',{month:'long',year:'numeric'})+'</div>'+
+        '<div style="font-size:12px;font-weight:800;text-transform:uppercase;color:var(--text2);margin-bottom:8px">📅 Calendario</div>'+
+        _calNavHtml+
         '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase;text-align:center;margin-top:8px">'+
           ['L','M','X','J','V','S','D'].map(x=>'<div>'+x+'</div>').join('')+
         '</div>'+
         calHtml+
-        (periodo==='dia'?'<div style="margin-top:8px;text-align:center"><button class="btn btn-secondary btn-sm" onclick="_clearDiaPago()">✕ Limpiar día seleccionado</button></div>':'')+
+        (periodo==='dia'?'<div style="margin-top:8px;text-align:center"><button class="btn btn-secondary btn-sm" onclick="_clearDiaPago()">✕ Limpiar selección</button></div>':'')+
       '</div>'+
       // Pedidos
       '<div class="stitle">📦 Pedidos del período</div>'+
@@ -12498,9 +12763,9 @@ PAGES.pago_usuario=function(){
       // Pagos
       '<div class="stitle">💵 Historial de pagos del período</div>'+
       '<div style="overflow-x:auto;margin-bottom:16px"><table class="tbl"><thead><tr>'+
-        '<th>Fecha</th><th>Monto</th><th>Método</th><th>Ref</th><th>Nota</th><th>Por</th>'+
+        '<th>Fecha</th><th>Monto</th><th>Método</th><th>Ref</th><th>Nota</th><th>Por</th><th>📎</th>'+
       '</tr></thead><tbody>'+
-        (filasPag||'<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:20px">Sin pagos en el período</td></tr>')+
+        (filasPag||'<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:20px">Sin pagos en el período</td></tr>')+
       '</tbody></table></div>'+
       // Acciones
       (esAdmin?'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:24px 0">'+
@@ -12634,6 +12899,200 @@ PAGES.clientes_zonas = function(){
   $('ca').innerHTML = html;
 };
 
+/* ── ASISTENTE IA AGENTIC ── */
+PAGES.asistente = function(){
+  const ca = $('ca');
+  ca.innerHTML = ''+
+    '<div style="display:flex;flex-direction:column;height:calc(100vh - 80px);max-width:800px;margin:0 auto">'+
+      '<div style="padding:16px;border-bottom:1px solid var(--border);background:var(--bg2);border-radius:14px 14px 0 0">'+
+        '<h2 style="margin:0;display:flex;align-items:center;gap:10px">'+
+          '<span style="font-size:24px">🤖</span>'+
+          '<span>Asistente Inteligente</span>'+
+          '<span style="font-size:11px;background:#10b981;color:#fff;padding:3px 8px;border-radius:6px;margin-left:auto">CON ACCIONES</span>'+
+        '</h2>'+
+        '<p style="font-size:12px;color:var(--text2);margin:6px 0 0">'+
+          'Podés pedirme acciones como "Poné el pedido 123 en ruta" o "Cuál es mi pedido más urgente"'+
+        '</p>'+
+      '</div>'+
+      '<div id="asistMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--bg)"></div>'+
+      '<div style="padding:14px;border-top:1px solid var(--border);background:var(--bg2);border-radius:0 0 14px 14px;display:flex;gap:8px">'+
+        '<input id="asistInput" type="text" placeholder="Escribí tu pedido..." style="flex:1;padding:11px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:14px;outline:none" onkeydown="if(event.key===\'Enter\')_asistEnviar()">'+
+        '<button class="btn btn-primary" onclick="_asistEnviar()" style="padding:11px 20px">▶</button>'+
+      '</div>'+
+    '</div>';
+
+  const cont = $('asistMessages');
+  const nombre = (typeof CU!=='undefined' && CU && CU.nombre) ? CU.nombre : '';
+  cont.innerHTML = ''+
+    '<div class="asist-msg asist-bot">'+
+      '<div class="asist-bubble">'+
+        '¡Hola '+escHtml(nombre)+'! Soy tu asistente. Puedo ayudarte a:'+
+        '<ul style="margin:8px 0;padding-left:20px">'+
+          '<li>Consultar tus pedidos</li>'+
+          '<li>Cambiar estados (con confirmación)</li>'+
+          '<li>Buscar clientes</li>'+
+          '<li>Ver métricas</li>'+
+        '</ul>'+
+        '¿En qué te ayudo?'+
+      '</div>'+
+    '</div>';
+  if(window._asistHistorial && window._asistHistorial.length){
+    _asistRender();
+  }
+};
+
+window._asistHistorial = window._asistHistorial || [];
+
+function _asistAgregarMsg(role, content){
+  window._asistHistorial.push({role:role, content:content});
+  _asistRender();
+}
+
+function _asistRender(){
+  const cont = $('asistMessages');
+  if(!cont) return;
+  const html = window._asistHistorial.map(function(m){
+    const isUser = m.role === 'user';
+    return ''+
+      '<div class="asist-msg '+(isUser?'asist-user':'asist-bot')+'">'+
+        '<div class="asist-bubble">'+escHtml(m.content)+'</div>'+
+      '</div>';
+  }).join('');
+  cont.innerHTML = html;
+  cont.scrollTop = cont.scrollHeight;
+}
+
+async function _asistEnviar(){
+  const input = $('asistInput');
+  if(!input) return;
+  const txt = (input.value||'').trim();
+  if(!txt) return;
+  input.value = '';
+
+  _asistAgregarMsg('user', txt);
+
+  const thinkingId = 'thinking_'+Date.now();
+  const cont = $('asistMessages');
+  if(cont){
+    cont.insertAdjacentHTML('beforeend',
+      '<div class="asist-msg asist-bot" id="'+thinkingId+'">'+
+        '<div class="asist-bubble" style="opacity:0.6">⏳ Pensando...</div>'+
+      '</div>'
+    );
+    cont.scrollTop = cont.scrollHeight;
+  }
+
+  try{
+    const resp = await fetch(WORKER_URL+'/api/asistente-agentic',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
+      body:JSON.stringify({messages: window._asistHistorial.map(function(m){return {role:m.role,content:m.content};})})
+    });
+    const data = await resp.json();
+
+    const th = document.getElementById(thinkingId);
+    if(th) th.remove();
+
+    if(!data.ok){
+      _asistAgregarMsg('assistant', '❌ Error: '+(data.error||'desconocido'));
+      return;
+    }
+
+    _asistAgregarMsg('assistant', data.response || '(sin respuesta)');
+
+    if(data.tools_executed && data.tools_executed.length){
+      for(const t of data.tools_executed){
+        if(t.result && t.result.requires_confirmation){
+          _asistMostrarConfirmacion(t.result);
+        }
+      }
+    }
+  }catch(e){
+    const th2 = document.getElementById(thinkingId);
+    if(th2) th2.remove();
+    _asistAgregarMsg('assistant', '❌ Error de conexión: '+e.message);
+  }
+}
+
+window._asistConfPending = window._asistConfPending || {};
+
+function _asistMostrarConfirmacion(req){
+  const cont = $('asistMessages');
+  if(!cont) return;
+  const id = 'conf_'+Date.now()+'_'+Math.floor(Math.random()*1000);
+  window._asistConfPending[id] = req;
+  cont.insertAdjacentHTML('beforeend',
+    '<div class="asist-msg asist-bot" id="'+id+'">'+
+      '<div class="asist-bubble" style="background:linear-gradient(135deg,#fef3c7,#fffbeb);border:2px solid #f59e0b;color:#1a1a1a">'+
+        '<div style="font-weight:700;margin-bottom:8px">⚠️ Confirmación requerida</div>'+
+        '<div style="margin-bottom:10px">'+escHtml(req.message||'¿Confirmás esta acción?')+'</div>'+
+        '<div style="display:flex;gap:8px">'+
+          '<button class="btn btn-primary" onclick="_asistConfirmar(\''+id+'\')">✅ Sí, confirmar</button>'+
+          '<button class="btn btn-secondary" onclick="_asistCancelarConfirmacion(\''+id+'\')">❌ Cancelar</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>'
+  );
+  cont.scrollTop = cont.scrollHeight;
+}
+
+async function _asistConfirmar(elemId){
+  const req = window._asistConfPending[elemId];
+  const el = document.getElementById(elemId);
+  if(el) el.remove();
+  if(!req){
+    _asistAgregarMsg('assistant', '❌ No encontré los datos de la confirmación.');
+    return;
+  }
+  delete window._asistConfPending[elemId];
+
+  const params = Object.assign({}, req.parameters||{}, {confirmado:true});
+  _asistAgregarMsg('user', 'Sí, confirmar');
+
+  const thinkingId = 'thinking_'+Date.now();
+  const cont = $('asistMessages');
+  if(cont){
+    cont.insertAdjacentHTML('beforeend',
+      '<div class="asist-msg asist-bot" id="'+thinkingId+'">'+
+        '<div class="asist-bubble" style="opacity:0.6">⏳ Ejecutando...</div>'+
+      '</div>'
+    );
+    cont.scrollTop = cont.scrollHeight;
+  }
+
+  try{
+    const msgs = window._asistHistorial.map(function(m){return {role:m.role,content:m.content};});
+    msgs.push({role:'user', content: 'Ejecutá '+req.action+' con estos parámetros confirmados: '+JSON.stringify(params)});
+    const resp = await fetch(WORKER_URL+'/api/asistente-agentic',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
+      body:JSON.stringify({messages: msgs})
+    });
+    const data = await resp.json();
+    const th = document.getElementById(thinkingId);
+    if(th) th.remove();
+    _asistAgregarMsg('assistant', (data && data.response) || 'OK');
+    if(data && data.tools_executed && data.tools_executed.length){
+      for(const t of data.tools_executed){
+        if(t.result && t.result.requires_confirmation){
+          _asistMostrarConfirmacion(t.result);
+        }
+      }
+    }
+  }catch(e){
+    const th2 = document.getElementById(thinkingId);
+    if(th2) th2.remove();
+    _asistAgregarMsg('assistant', '❌ Error: '+e.message);
+  }
+}
+
+function _asistCancelarConfirmacion(elemId){
+  const el = document.getElementById(elemId);
+  if(el) el.remove();
+  delete window._asistConfPending[elemId];
+  _asistAgregarMsg('assistant', 'OK, acción cancelada.');
+}
+
 function _filtrarClientesZonas(q){
   q = (q||'').toLowerCase().trim();
   document.querySelectorAll('.cliente-row').forEach(function(r){
@@ -12695,6 +13154,20 @@ function _selDiaPago(isoDate){
 function _clearDiaPago(){
   window._pagoDiaSel=null;
   window._pagoPeriodoActual='mes';
+  nav('pago_usuario');
+}
+// Navegación de meses en el calendario (TAREA 3)
+function _pagoCalNavMes(delta){
+  if(!window._pagoCalMes){
+    const _h=new Date();
+    window._pagoCalMes=_h.getFullYear()+'-'+String(_h.getMonth()+1).padStart(2,'0');
+  }
+  const _p=window._pagoCalMes.split('-');
+  let _y=parseInt(_p[0],10);
+  let _m=parseInt(_p[1],10)-1+(delta||0);
+  while(_m<0){ _m+=12; _y--; }
+  while(_m>11){ _m-=12; _y++; }
+  window._pagoCalMes=_y+'-'+String(_m+1).padStart(2,'0');
   nav('pago_usuario');
 }
 
