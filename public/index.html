@@ -8468,138 +8468,172 @@ function _boletaHTML(o){
   const emp=_getEmpresa();
   const zona=_getZonaO(o);
   const total=o.precio*o.qty;
-  const flete=zona.precio;
+  const flete=zona.precio||0;
   const totalFact=total+flete;
   const tasaNum=parseFloat(o.tipoIva)||0;
-  const iva=(o.tipoIva==='Exento'||tasaNum===0)?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
+  const esExento=(o.tipoIva==='Exento'||tasaNum===0);
+  const iva=esExento?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
   const base=totalFact-iva;
-  const _empNom=escHtml(emp.nombre||'IPORÃVE');
+  // Desglose oficial SET: tres columnas (Exentas / 5% / 10%)
+  const baseExenta=esExento?totalFact:0;
+  const base5=(tasaNum===5)?base:0;
+  const base10=(tasaNum===10)?base:0;
+  const iva5=(tasaNum===5)?iva:0;
+  const iva10=(tasaNum===10)?iva:0;
+  const _empNom=escHtml(emp.nombre||'Distribuidora Iporãve');
+  const _empRuc=escHtml(emp.ruc||EMPRESA.ruc||'80167603-7');
+  const _empDir=escHtml(emp.dir||EMPRESA.dir||'Villa Elisa, Paraguay');
+  const _empTel=escHtml(emp.tel||EMPRESA.tel||'');
+  const _empEmail=escHtml(emp.email||emp.correo||'');
+  const _empGiro=escHtml(emp.giro||emp.actividad||'Comercio al por menor');
+  const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'—');
+  const _vigDesde=escHtml(emp.timbradoDesde||'');
   const _empLogo=emp.logo
-    ?'<img src="'+safeUrl(emp.logo)+'" style="height:44px;object-fit:contain;display:block;margin:0 0 6px 0;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25))">'
-    :'';
-  const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'SIN TIMBRADO');
-  const _isPagada=(o.estado==='Entregado'&&o.metodoCobro);
-  const _isEntregada=(o.estado==='Entregado');
-  let _estadoBadge='';
-  if(_isPagada){
-    _estadoBadge='<div style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:7px 20px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 12px rgba(34,197,94,0.35)">&#10003; Pagado &middot; '+escHtml(String(o.metodoCobro).toUpperCase())+'</div>';
-  } else if(_isEntregada){
-    _estadoBadge='<div style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;padding:7px 20px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 12px rgba(59,130,246,0.35)">&#10003; Entregado</div>';
-  } else {
-    _estadoBadge='<div style="display:inline-block;background:linear-gradient(135deg,#fbbf24,#d97706);color:#fff;padding:7px 20px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 12px rgba(245,158,11,0.35)">&#9203; Pendiente</div>';
-  }
+    ?'<img src="'+safeUrl(emp.logo)+'" alt="Logo" style="height:50px;width:auto;object-fit:contain;display:block;margin:0 auto 10px">'
+    :'<div style="width:50px;height:50px;margin:0 auto 10px;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:700;font-size:20px">I</div>';
+  // Numeración tipo SET: 001-001-0000001
+  const _numDoc=escHtml(o.numDoc||o.boletaNum||('001-001-'+String(o.id||0).padStart(7,'0')));
+  // Condición venta
+  const _esContado=!!(o.metodoCobro||o.estado==='Entregado');
   const _vendObj=getUser(o.vendedorId);
   const _vendNom=(_vendObj&&_vendObj.nombre)?escHtml(_vendObj.nombre):'';
+  // Estado visual (sutil)
+  const _isPagada=(o.estado==='Entregado'&&o.metodoCobro);
+  const _isEntregada=(o.estado==='Entregado');
+  let _estadoTxt='', _estadoColor='', _estadoBg='';
+  if(_isPagada){_estadoTxt='PAGADO';_estadoColor='#15803d';_estadoBg='#f0fdf4';}
+  else if(_isEntregada){_estadoTxt='ENTREGADO';_estadoColor='#1d4ed8';_estadoBg='#eff6ff';}
+  else{_estadoTxt='PENDIENTE';_estadoColor='#a16207';_estadoBg='#fefce8';}
   const _printStyle=
     '<sty'+'le>'+
+    '.bol-set{font-family:Inter,-apple-system,"Segoe UI",Arial,sans-serif;color:#0f172a;line-height:1.45;font-variant-numeric:tabular-nums}'+
+    '.bol-set table{border-collapse:collapse}'+
+    '.bol-set .bcell{border:1px solid #1f2937;padding:6px 8px;font-size:11px;vertical-align:middle}'+
+    '.bol-set .bhead{background:#f1f5f9;font-weight:600;text-transform:uppercase;letter-spacing:.4px;font-size:9px;color:#0f172a;text-align:center}'+
+    '.bol-set .bnum{text-align:right;font-variant-numeric:tabular-nums}'+
+    '.bol-set .bctr{text-align:center}'+
     '@media print {'+
       '.boleta-wrap{background:#fff !important;padding:0 !important;min-height:auto !important}'+
-      '.boleta{box-shadow:none !important;border-radius:0 !important;border:none !important}'+
-      '.factura-iva-actions{display:none !important}'+
-      '@page{margin:14mm}'+
+      '.bol-set{box-shadow:none !important;border:1px solid #0f172a !important}'+
+      '.factura-iva-actions,.no-print{display:none !important}'+
+      '@page{size:A4;margin:12mm}'+
     '}'+
     '@media (max-width:640px){'+
-      '.boleta-wrap{padding:12px !important}'+
-      '.boleta{border-radius:12px !important}'+
-      '.boleta-pad{padding-left:18px !important;padding-right:18px !important}'+
-      '.boleta-meta-grid{grid-template-columns:1fr !important}'+
-      '.boleta-tot-grid{grid-template-columns:1fr !important}'+
+      '.boleta-wrap{padding:8px !important}'+
+      '.bol-set{font-size:11px !important}'+
+      '.bol-set-hdr{grid-template-columns:1fr !important}'+
+      '.bol-set-cli{grid-template-columns:1fr !important}'+
+      '.bol-set .bcell{padding:5px 6px;font-size:10px}'+
     '}'+
     '</sty'+'le>';
   return {zona,total,flete,totalFact,iva,base,
-    html:_printStyle+'<div class="boleta-wrap" style="background:#f5f5f5;padding:24px;min-height:100%">'+
-    '<div class="boleta" id="boletaDiv" style="max-width:780px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 12px 32px rgba(0,0,0,0.10);font-family:\'DM Sans\',\'Helvetica Neue\',\'Arial\',sans-serif;color:#1a1a1a;line-height:1.45">'+
-    /* === HEADER FRANJA NARANJA GRADIENT + CIRCULOS === */
-    '<div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:#fff;padding:26px 32px 22px;position:relative;overflow:hidden">'+
-      '<div style="position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:rgba(255,255,255,0.10);border-radius:50%;pointer-events:none"></div>'+
-      '<div style="position:absolute;bottom:-40px;left:-40px;width:130px;height:130px;background:rgba(255,255,255,0.06);border-radius:50%;pointer-events:none"></div>'+
-      '<div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">'+
-        '<div style="flex:1;min-width:180px">'+
-          _empLogo+
-          '<h1 style="margin:0 0 4px 0;font-size:24px;font-weight:800;letter-spacing:0.3px;color:#fff">'+_empNom+'</h1>'+
-          '<div style="font-size:11px;opacity:0.92;letter-spacing:1.5px;text-transform:uppercase;font-weight:600">Boleta de venta</div>'+
-        '</div>'+
-        '<div style="text-align:right">'+
-          '<div style="font-size:11px;opacity:0.85;letter-spacing:0.6px;text-transform:uppercase">N&deg; de boleta</div>'+
-          '<div style="font-size:18px;font-weight:800;letter-spacing:0.5px;font-family:\'JetBrains Mono\',monospace">'+escHtml(o.numDoc||o.boletaNum||'—')+'</div>'+
-          '<div style="font-size:11px;opacity:0.9;margin-top:2px">'+fmtDate(o.fecha)+'</div>'+
-        '</div>'+
+    html:_printStyle+'<div class="boleta-wrap" style="background:#f1f5f9;padding:24px 12px;min-height:100%">'+
+    '<div class="bol-set" id="boletaDiv" style="max-width:820px;margin:0 auto;background:#fff;border:1px solid #0f172a;padding:18px 22px">'+
+    /* ====== HEADER: 2 cajas (empresa | timbrado/factura) ====== */
+    '<div class="bol-set-hdr" style="display:grid;grid-template-columns:1.4fr 1fr;gap:0;border:1px solid #0f172a">'+
+      '<div style="padding:14px 16px;border-right:1px solid #0f172a;text-align:center">'+
+        _empLogo+
+        '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:3px;letter-spacing:.3px">'+_empNom+'</div>'+
+        '<div style="font-size:10px;color:#334155;line-height:1.5">'+_empDir+'</div>'+
+        (_empTel?'<div style="font-size:10px;color:#334155">TELÉF. '+_empTel+'</div>':'')+
+        '<div style="font-size:9px;color:#475569;margin-top:6px;text-transform:uppercase;letter-spacing:.4px">'+_empGiro+'</div>'+
+      '</div>'+
+      '<div style="padding:14px 16px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:3px">'+
+        '<div style="font-size:11px;font-weight:700;color:#0f172a">TIMBRADO N° '+_timb+'</div>'+
+        (_vigDesde?'<div style="font-size:10px;color:#475569">Fecha Inicio Vigencia: '+_vigDesde+'</div>':'')+
+        '<div style="font-size:11px;font-weight:700;color:#0f172a">RUC '+_empRuc+'</div>'+
+        '<div style="font-size:12px;font-weight:800;color:#0f172a;margin-top:4px;letter-spacing:.3px">FACTURA ELECTRÓNICA</div>'+
+        '<div style="font-size:14px;font-weight:800;color:#0f172a;font-family:\'JetBrains Mono\',monospace">'+_numDoc+'</div>'+
       '</div>'+
     '</div>'+
-    /* === BADGE DE ESTADO === */
-    '<div style="padding:18px 32px 0;text-align:center">'+_estadoBadge+'</div>'+
-    /* === META EMPRESA === */
-    '<div class="boleta-pad" style="padding:14px 32px 0;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:11px;color:#6b7280">'+
-      '<div>'+
-        (emp.ruc?'<span style="font-weight:600;color:#374151">RUC:</span> <span style="color:#111827">'+escHtml(emp.ruc)+'</span>&nbsp;&middot;&nbsp;':'')+
-        '<span style="font-weight:600;color:#374151">Timbrado:</span> <span style="font-family:\'JetBrains Mono\',monospace;color:#111827">'+_timb+'</span>'+
-      '</div>'+
-      '<div style="display:inline-block;font-size:9px;padding:3px 10px;border:1px solid #e5e7eb;border-radius:99px;background:#f9fafb;color:#666;font-weight:700;letter-spacing:0.8px">COMPROBANTE IVA V&Aacute;LIDO</div>'+
-    '</div>'+
-    /* === CARDS CLIENTE / ENTREGA === */
-    '<div class="boleta-pad boleta-meta-grid" style="margin:14px 32px 0;display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
-      '<div style="padding:14px 18px;background:#fef9f3;border-left:4px solid #f59e0b;border-radius:0 12px 12px 0">'+
-        '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;font-weight:700">Cliente</div>'+
-        '<div style="font-weight:700;font-size:14px;color:#1a1a1a;margin-bottom:2px">'+(escHtml(o.cliente||'')||'—')+'</div>'+
-        (o.razonSocial?'<div style="font-size:12px;color:#374151">'+escHtml(o.razonSocial)+'</div>':'')+
-        '<div style="font-size:11px;color:#666;margin-top:3px">CI: '+(escHtml(o.cedula||'')||'—')+(o.ruc?'&nbsp;&middot;&nbsp;RUC: '+escHtml(o.ruc):'')+'</div>'+
-        (o.telefono?'<div style="font-size:12px;color:#555;margin-top:2px">&#9742; '+escHtml(o.telefono)+'</div>':'')+
-      '</div>'+
-      '<div style="padding:14px 18px;background:#f0f7ff;border-left:4px solid #3b82f6;border-radius:0 12px 12px 0">'+
-        '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;font-weight:700">Entrega</div>'+
-        '<div style="font-weight:600;font-size:13px;color:#1a1a1a">'+(escHtml(o.direccion||'')||'—')+'</div>'+
-        '<div style="font-size:11px;color:#666;margin-top:3px">'+escHtml(zona.nombre||'')+(zona.tiempoEntrega?'&nbsp;&middot;&nbsp;'+escHtml(zona.tiempoEntrega):'')+'</div>'+
-        '<div style="font-size:11px;color:#374151;margin-top:4px"><span style="font-weight:600">Condici&oacute;n:</span> Contado&nbsp;&middot;&nbsp;<span style="font-weight:600">IVA:</span> '+escHtml(o.tipoIva||'10%')+'</div>'+
+    /* ====== DATOS TRANSACCIÓN / CLIENTE ====== */
+    '<div style="border:1px solid #0f172a;border-top:0;padding:10px 14px">'+
+      '<div class="bol-set-cli" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:11px">'+
+        '<div><b style="color:#0f172a">Fecha de emisión:</b> <span style="color:#1f2937">'+fmtDate(o.fecha)+'</span></div>'+
+        '<div><b style="color:#0f172a">Tipo de transacción:</b> <span style="color:#1f2937">Venta de mercadería</span></div>'+
+        '<div><b style="color:#0f172a">RUC/Documento de Identidad N°:</b> <span style="color:#1f2937">'+(escHtml(o.ruc||o.cedula||'—'))+'</span></div>'+
+        '<div><b style="color:#0f172a">Condición de venta:</b> Contado '+(_esContado?'<span style="display:inline-block;width:11px;height:11px;border:1.4px solid #0f172a;background:#0f172a;color:#fff;text-align:center;line-height:9px;font-size:9px;vertical-align:middle">✓</span>':'<span style="display:inline-block;width:11px;height:11px;border:1.4px solid #0f172a;vertical-align:middle"></span>')+'&nbsp;&nbsp;Crédito '+(!_esContado?'<span style="display:inline-block;width:11px;height:11px;border:1.4px solid #0f172a;background:#0f172a;color:#fff;text-align:center;line-height:9px;font-size:9px;vertical-align:middle">✓</span>':'<span style="display:inline-block;width:11px;height:11px;border:1.4px solid #0f172a;vertical-align:middle"></span>')+'</div>'+
+        '<div style="grid-column:1/-1"><b style="color:#0f172a">Nombre o Razón Social:</b> <span style="color:#1f2937">'+(escHtml(o.cliente||o.razonSocial||'—'))+'</span></div>'+
+        '<div style="grid-column:1/-1"><b style="color:#0f172a">Dirección:</b> <span style="color:#1f2937">'+(escHtml(o.direccion||'—'))+'</span></div>'+
+        (o.telefono?'<div><b style="color:#0f172a">Teléfono:</b> <span style="color:#1f2937">'+escHtml(o.telefono)+'</span></div>':'<div></div>')+
+        (o.email||o.correoCliente?'<div><b style="color:#0f172a">Correo Electrónico:</b> <span style="color:#1f2937">'+escHtml(o.email||o.correoCliente)+'</span></div>':'<div></div>')+
       '</div>'+
     '</div>'+
-    /* === TABLA ITEMS (thead negro) === */
-    '<div class="boleta-pad" style="padding:18px 32px 0;overflow-x:auto">'+
-      '<table style="width:100%;border-collapse:collapse;font-size:13px;border-radius:8px;overflow:hidden">'+
-        '<thead><tr style="background:#1a1a1a;color:#fff">'+
-          '<th style="padding:11px 12px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;width:60px">Cant.</th>'+
-          '<th style="padding:11px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Descripci&oacute;n</th>'+
-          '<th style="padding:11px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;width:110px">Precio</th>'+
-          '<th style="padding:11px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;width:120px">Subtotal</th>'+
-        '</tr></thead>'+
-        '<tbody>'+
-          '<tr style="border-bottom:1px solid #eee">'+
-            '<td style="padding:12px;text-align:center;color:#333;font-variant-numeric:tabular-nums">'+o.qty+'</td>'+
-            '<td style="padding:12px;color:#333">'+escHtml(o.producto||'')+(o.proveedor?'<br><span style="font-size:10px;color:#9ca3af">Prov: '+escHtml(o.proveedor)+'</span>':'')+'</td>'+
-            '<td style="padding:12px;text-align:right;color:#333;font-variant-numeric:tabular-nums">Gs. '+fmtN(o.precio)+'</td>'+
-            '<td style="padding:12px;text-align:right;font-weight:600;color:#1a1a1a;font-variant-numeric:tabular-nums">Gs. '+fmtN(o.precio*o.qty)+'</td>'+
-          '</tr>'+
-          (flete?
-          '<tr style="border-bottom:1px solid #eee">'+
-            '<td style="padding:10px 12px;text-align:center;color:#666;font-size:12px">1</td>'+
-            '<td style="padding:10px 12px;color:#666;font-size:12px">Flete &mdash; Zona '+escHtml(zona.nombre||'')+'</td>'+
-            '<td style="padding:10px 12px;text-align:right;color:#666;font-size:12px;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
-            '<td style="padding:10px 12px;text-align:right;color:#666;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
-          '</tr>':'')+
-        '</tbody>'+
-      '</table>'+
-    '</div>'+
-    /* === META INFERIOR + TOTALES === */
-    '<div class="boleta-pad boleta-tot-grid" style="padding:18px 32px 0;display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start">'+
-      '<div style="font-size:12px;color:#555">'+
-        (_vendNom?'<div style="margin-bottom:4px"><span style="font-weight:700;color:#1a1a1a">Vendedor:</span> '+_vendNom+'</div>':'')+
-        (o.metodoCobro?'<div style="margin-bottom:4px"><span style="font-weight:700;color:#1a1a1a">M&eacute;todo de cobro:</span> '+escHtml(o.metodoCobro)+'</div>':'')+
-        (o.estado==='Entregado'?'<div style="margin-top:6px;display:inline-block;background:#dcfce7;color:#15803d;font-weight:700;padding:5px 12px;border-radius:99px;font-size:10px;letter-spacing:0.6px">&#10003; ENTREGADO Y COBRADO</div>':'')+
-      '</div>'+
-      '<div style="padding:18px;background:linear-gradient(135deg,#fef9f3 0%,#fef3cd 100%);border-radius:12px;border:1px solid #fde68a">'+
-        '<div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;padding:3px 0"><span>Subtotal</span><span style="font-variant-numeric:tabular-nums;font-weight:600;color:#1a1a1a">Gs. '+fmtN(total)+'</span></div>'+
-        (flete?'<div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;padding:3px 0"><span>Flete</span><span style="font-variant-numeric:tabular-nums;font-weight:600;color:#1a1a1a">Gs. '+fmtN(flete)+'</span></div>':'')+
-        '<div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;padding:3px 0"><span>IVA '+escHtml(o.tipoIva||'10%')+' incluido</span><span style="font-variant-numeric:tabular-nums;font-weight:600;color:#1a1a1a">Gs. '+fmtN(iva)+'</span></div>'+
-        '<div style="border-top:2px solid #d97706;margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;align-items:baseline">'+
-          '<span style="font-size:14px;font-weight:800;color:#1a1a1a;letter-spacing:0.5px">TOTAL</span>'+
-          '<span style="font-size:22px;font-weight:800;color:#d97706;font-variant-numeric:tabular-nums">Gs. '+fmtN(totalFact)+'</span>'+
-        '</div>'+
-      '</div>'+
-    '</div>'+
-    /* === FOOTER === */
-    '<div style="margin-top:24px;padding:20px 32px 26px;border-top:1px dashed #ddd;text-align:center">'+
-      '<div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:6px">Gracias por su preferencia</div>'+
-      '<div style="font-size:10px;color:#888;letter-spacing:0.3px">'+_empNom+' &middot; Sistema Iporãve Connect &middot; iporaveparaguay.com</div>'+
-      '<div style="font-size:9px;color:#aaa;margin-top:4px">Timbrado: '+_timb+' &middot; Comprobante v&aacute;lido seg&uacute;n Ley N&deg; 125/91</div>'+
+    /* ====== TABLA DETALLE — formato SET ====== */
+    '<table style="width:100%;border-collapse:collapse;margin-top:0">'+
+      '<thead>'+
+        '<tr>'+
+          '<th class="bcell bhead" style="width:40px">COD.</th>'+
+          '<th class="bcell bhead" style="width:60px">CANTIDAD</th>'+
+          '<th class="bcell bhead">DESCRIPCIÓN</th>'+
+          '<th class="bcell bhead" style="width:90px">PRECIO UNITARIO<br>(INCLUIDO IMPUESTO)</th>'+
+          '<th class="bcell bhead" style="width:65px">DESCUENTO</th>'+
+          '<th class="bcell bhead" colspan="3">VALOR DE VENTA</th>'+
+        '</tr>'+
+        '<tr>'+
+          '<th class="bcell bhead" style="border-top:0"></th>'+
+          '<th class="bcell bhead" style="border-top:0"></th>'+
+          '<th class="bcell bhead" style="border-top:0"></th>'+
+          '<th class="bcell bhead" style="border-top:0"></th>'+
+          '<th class="bcell bhead" style="border-top:0"></th>'+
+          '<th class="bcell bhead" style="width:70px">EXENTAS</th>'+
+          '<th class="bcell bhead" style="width:65px">5%</th>'+
+          '<th class="bcell bhead" style="width:80px">10%</th>'+
+        '</tr>'+
+      '</thead>'+
+      '<tbody>'+
+        '<tr>'+
+          '<td class="bcell bctr">'+escHtml(o.codigo||(o.id||''))+'</td>'+
+          '<td class="bcell bctr">'+o.qty+'</td>'+
+          '<td class="bcell">'+escHtml(o.producto||'')+(o.proveedor?'<div style="font-size:9px;color:#64748b">Prov. '+escHtml(o.proveedor)+'</div>':'')+'</td>'+
+          '<td class="bcell bnum">'+fmtN(o.precio)+'</td>'+
+          '<td class="bcell bnum">0</td>'+
+          '<td class="bcell bnum">'+(esExento?fmtN(total):'0')+'</td>'+
+          '<td class="bcell bnum">'+(tasaNum===5?fmtN(total):'0')+'</td>'+
+          '<td class="bcell bnum">'+(tasaNum===10?fmtN(total):'0')+'</td>'+
+        '</tr>'+
+        (flete?
+        '<tr>'+
+          '<td class="bcell bctr">—</td>'+
+          '<td class="bcell bctr">1</td>'+
+          '<td class="bcell">Servicio de flete'+(zona.nombre?' — Zona '+escHtml(zona.nombre):'')+'</td>'+
+          '<td class="bcell bnum">'+fmtN(flete)+'</td>'+
+          '<td class="bcell bnum">0</td>'+
+          '<td class="bcell bnum">0</td>'+
+          '<td class="bcell bnum">0</td>'+
+          '<td class="bcell bnum">'+fmtN(flete)+'</td>'+
+        '</tr>':'')+
+        /* SUBTOTAL */
+        '<tr>'+
+          '<td class="bcell bhead" colspan="5" style="text-align:right">SUBTOTAL:</td>'+
+          '<td class="bcell bnum">'+fmtN(baseExenta)+'</td>'+
+          '<td class="bcell bnum">'+fmtN(tasaNum===5?total+flete:0)+'</td>'+
+          '<td class="bcell bnum">'+fmtN(tasaNum===10?total+flete:0)+'</td>'+
+        '</tr>'+
+        /* TOTAL OPERACIÓN */
+        '<tr>'+
+          '<td class="bcell bhead" colspan="5" style="text-align:right;background:#e2e8f0">TOTAL DE LA OPERACIÓN:</td>'+
+          '<td class="bcell bnum" colspan="3" style="background:#e2e8f0;font-weight:800;font-size:13px">'+fmtN(totalFact)+'</td>'+
+        '</tr>'+
+        /* LIQUIDACIÓN IVA */
+        '<tr>'+
+          '<td class="bcell bhead" style="text-align:left">LIQUIDACIÓN IVA:</td>'+
+          '<td class="bcell bnum">(5%)</td>'+
+          '<td class="bcell bnum">'+fmtN(iva5)+'</td>'+
+          '<td class="bcell bnum">(10%)</td>'+
+          '<td class="bcell bnum">'+fmtN(iva10)+'</td>'+
+          '<td class="bcell bhead" colspan="2" style="text-align:right">TOTAL IVA:</td>'+
+          '<td class="bcell bnum" style="font-weight:700">'+fmtN(iva)+'</td>'+
+        '</tr>'+
+      '</tbody>'+
+    '</table>'+
+    /* ====== FOOTER LEGAL ====== */
+    '<div style="border:1px solid #0f172a;border-top:0;padding:14px 16px;font-size:10px;color:#334155;line-height:1.55">'+
+      '<div style="text-align:center;font-weight:700;color:#0f172a;margin-bottom:6px;font-size:10px">ESTE DOCUMENTO ES UNA REPRESENTACIÓN GRÁFICA DE UN DOCUMENTO ELECTRÓNICO (XML)</div>'+
+      '<div style="font-weight:700;color:#0f172a;margin-bottom:3px">Información de interés del facturador electrónico emisor.</div>'+
+      'Si su documento electrónico presenta algún error, podrá solicitar dentro de las 72 horas siguientes de la emisión del presente documento, la cancelación del mismo y la generación de un nuevo comprobante.'+
+      (_estadoTxt!=='PENDIENTE'?'<div style="margin-top:8px;text-align:right"><span style="display:inline-block;font-size:9px;font-weight:700;padding:3px 9px;border-radius:3px;background:'+_estadoBg+';color:'+_estadoColor+';letter-spacing:.8px">'+_estadoTxt+'</span></div>':'')+
+      (_vendNom?'<div style="margin-top:6px;font-size:9px;color:#64748b">Vendedor: '+_vendNom+'</div>':'')+
     '</div>'+
     '</div>'+
     '</div>'};
