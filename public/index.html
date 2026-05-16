@@ -485,12 +485,13 @@ body:not(:has(#appScreen.show)) .overlay-sidebar{display:none!important;visibili
 .ai-input textarea:focus{border-color:var(--accent);}
 .ai-input textarea.at-max{overflow-y:auto;}
 /* NOTIFICATIONS */
-#notifArea{position:fixed;bottom:24px;right:16px;top:auto;z-index:600;display:flex;flex-direction:column-reverse;gap:8px;width:320px;max-height:calc(100vh - 100px);overflow:hidden;pointer-events:none;}
-#notifArea > .notif{pointer-events:auto;}
-.notif{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 14px;font-size:12px;box-shadow:var(--shadow);animation:notifIn .3s ease;border-left:3px solid var(--accent);}
+#notifArea{position:fixed;top:14px;right:190px;bottom:auto;z-index:480;display:flex;flex-direction:column;gap:8px;width:260px;max-width:calc(100vw - 210px);max-height:calc(100vh - 80px);overflow:visible;pointer-events:none;}
+#notifArea > .notif{pointer-events:auto;position:relative;}
+.notif{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 12px;font-size:12px;box-shadow:var(--shadow);animation:notifIn .28s ease;border-left:3px solid var(--accent);}
+.notif::after{content:"";position:absolute;top:12px;right:-6px;width:10px;height:10px;background:var(--bg2);border-right:1px solid var(--border2);border-top:1px solid var(--border2);transform:rotate(45deg);}
 .notif.notif-s{border-left-color:var(--green);}
 .notif.notif-e{border-left-color:var(--red);}
-@keyframes notifIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+@keyframes notifIn{from{opacity:0;transform:translateX(28px);}to{opacity:1;transform:translateX(0);}}
 /* CODE BLOCK */
 .code-block{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);overflow-x:auto;line-height:1.6;white-space:pre;}
 /* BELL NOTIFICATIONS */
@@ -681,7 +682,8 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   #aiPanel{width:calc(100vw - 24px);right:12px;bottom:80px;}
   #aiPanel.maximized{width:calc(100vw - 24px);max-height:80vh;}
   #aiBtn{bottom:16px;right:16px;width:46px;height:46px;font-size:19px;}
-  #notifArea{width:calc(100vw - 32px);left:16px;right:16px;bottom:80px;top:auto;max-height:calc(100vh - 160px);}
+  #notifArea{width:auto;left:12px;right:12px;top:64px;bottom:auto;max-width:none;max-height:calc(100vh - 100px);}
+  #notifArea .notif::after{display:none;}
   #ntPanel{width:calc(100vw - 24px);right:12px;top:52px;}
   .lcard{padding:28px 20px;}
   .ldemo{font-size:10px;}
@@ -2420,8 +2422,13 @@ window.addEventListener('pointermove',function(e){
     const btn=$('aiBtn');if(!btn)return;
     const dx=e.clientX-_aiDragState.startX,dy=e.clientY-_aiDragState.startY;
     if(Math.abs(dx)+Math.abs(dy)>5)_aiDragState.moved=true;
-    _applyAIBtnPosition({left:_aiDragState.left+dx,top:_aiDragState.top+dy});
-    _positionAIPanel();
+    // Solo reposicionar si pasó el umbral de 5px. Mover el botón bajo el
+    // dedo en sub-pixel jitter rompe el click sintético del navegador.
+    if(_aiDragState.moved){
+      _applyAIBtnPosition({left:_aiDragState.left+dx,top:_aiDragState.top+dy});
+      _positionAIPanel();
+    }
+    if(window._dragDebug)console.log('[aiBtn] move dx=',dx,'dy=',dy,'moved=',_aiDragState.moved);
   });
 });
 window.addEventListener('pointerup',function(e){
@@ -3088,11 +3095,12 @@ async function doLogin(){
     await refreshCache();
     _actualizarBadgePerfil();
     nav('dashboard');
+    // Delay >=800ms para que topbar (botón refresh) + campana (_notifSessionInit) terminen de renderizar
     try{ setTimeout(function(){
       if(!window.Onboard) return;
       Onboard.showIfNew('topbar_bell','#codexNotifBell','Acá ves tus notificaciones');
-      setTimeout(function(){ Onboard.showIfNew('topbar_refresh','#refreshBtn','Si algo no se ve actualizado, apretá acá'); },300);
-    },1500); }catch(_){}
+      setTimeout(function(){ Onboard.showIfNew('topbar_refresh','#refreshBtn','Si algo no se ve actualizado, apretá acá'); }, 4000);
+    }, 1500); }catch(_){}
     _checkUrgentOrders();
     initRealtime();
     if(window._ordersPolling)clearInterval(window._ordersPolling);
@@ -6509,6 +6517,7 @@ PAGES.liquidacion=function(){
     var r=btn.getBoundingClientRect();
     _stbDragState={id:e.pointerId,startX:e.clientX,startY:e.clientY,left:r.left,top:r.top,moved:false};
     try{btn.setPointerCapture(e.pointerId);}catch(_){}
+    if(window._dragDebug)console.log('[scrollTopBtn] pointerdown id=',e.pointerId,'x=',e.clientX,'y=',e.clientY);
   });
   window.addEventListener('pointermove',function(e){
     if(!_stbDragState)return;
@@ -6519,6 +6528,7 @@ PAGES.liquidacion=function(){
       var dx=e.clientX-_stbDragState.startX,dy=e.clientY-_stbDragState.startY;
       if(Math.abs(dx)+Math.abs(dy)>5)_stbDragState.moved=true;
       if(_stbDragState.moved)_stbApplyPos(_stbDragState.left+dx,_stbDragState.top+dy);
+      if(window._dragDebug)console.log('[scrollTopBtn] move dx=',dx,'dy=',dy,'moved=',_stbDragState.moved);
     });
   });
   window.addEventListener('pointerup',function(e){
@@ -6529,10 +6539,21 @@ PAGES.liquidacion=function(){
       _stbDragSuppressClick=true;
       setTimeout(function(){_stbDragSuppressClick=false;},300);
     }
+    if(window._dragDebug)console.log('[scrollTopBtn] pointerup wasMoved=',wasMoved);
     _stbDragState=null;
   });
-  /* Reset posición temporal al cambiar de página/menú (#ca se re-renderiza) */
-  var _caResetObs=new MutationObserver(function(){if(_stbTempPos)_stbResetPos();});
+  /* Reset posición temporal al cambiar de página/menú (#ca se re-renderiza)
+     OJO: NO resetear mientras el usuario está arrastrando, ni inmediatamente
+     después del drag (300ms gracia), porque un MutationObserver disparado por
+     repaint borraría la posición que el user acaba de elegir. */
+  var _stbLastDragEnd=0;
+  var _stbOrigApplyPos=_stbApplyPos;
+  _stbApplyPos=function(l,t){_stbOrigApplyPos(l,t);_stbLastDragEnd=Date.now();};
+  var _caResetObs=new MutationObserver(function(){
+    if(_stbDragState)return; // arrastrando ahora mismo
+    if(Date.now()-_stbLastDragEnd<600)return; // gracia post-drag
+    if(_stbTempPos)_stbResetPos();
+  });
   var _caForObs=document.getElementById('ca');
   if(_caForObs)_caResetObs.observe(_caForObs,{childList:true});
   function _onScroll(){
@@ -13898,7 +13919,21 @@ async function _refreshActualPage(){
     const activeEl = document.querySelector('.ni.active');
     const cur = activeEl && activeEl.id ? activeEl.id.replace('ni_','') : null;
     if(cur && typeof PAGES === 'object' && PAGES[cur]){
-      try{ PAGES[cur](); }catch(e){ console.warn('refresh page err',e); }
+      try{
+        // Página de mapa: en vez de re-renderizar todo (recrea Mapbox),
+        // recargar markers/deliveries/contadores sobre la instancia existente.
+        if(cur === 'mapa' && window._mapInstance && typeof _mapaCargar === 'function'){
+          try{ _mapaCargar(window._mapInstance); }catch(e){ console.warn('refresh mapa _mapaCargar',e); }
+          if(window._mapaShowDlvs && typeof _mapaCargarDlvs === 'function'){
+            try{ _mapaCargarDlvs(window._mapInstance); }catch(e){ console.warn('refresh mapa _mapaCargarDlvs',e); }
+          }
+          if(typeof _mapaRenderSelects === 'function'){
+            try{ _mapaRenderSelects(); }catch(_){}
+          }
+        } else {
+          PAGES[cur]();
+        }
+      }catch(e){ console.warn('refresh page err',e); }
       if(typeof pushNotif === 'function') pushNotif('🔄 Actualizado','ok');
       // Mantener spinning visible mínimo 600ms para feedback
       setTimeout(()=>{ if(btn) btn.classList.remove('spinning'); }, 600);
@@ -14055,13 +14090,35 @@ function toggleTheme(){
     tip.setAttribute('data-arrow', arrow);
   }
 
+  function _dbg(){ if(window._onboardDebug){ try{ console.log.apply(console, ['[Onboard]'].concat([].slice.call(arguments))); }catch(_){ } } }
+
+  function _isVisible(el){
+    if(!el) return false;
+    var r = el.getBoundingClientRect();
+    if(!(r.width > 0 && r.height > 0)) return false;
+    var cs = (window.getComputedStyle ? getComputedStyle(el) : null);
+    if(cs && (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity||'1') === 0)) return false;
+    return true;
+  }
+
   function show(targetSel, mensaje, opts){
     opts = opts || {};
     // si ya hay uno activo, cerrarlo sin marcar (no es la misma instancia)
     if(STATE.active) destroy();
 
     var target = (typeof targetSel === 'string') ? document.querySelector(targetSel) : targetSel;
-    if(!target){ return false; }
+    if(!target || !_isVisible(target)){
+      // Retry: el target puede no haberse renderizado todavía o aún estar oculto
+      var tries = (opts._retry|0);
+      if(tries < 3){
+        opts._retry = tries + 1;
+        _dbg('target no listo, reintento', opts._retry, 'sel=', targetSel);
+        setTimeout(function(){ show(targetSel, mensaje, opts); }, 500);
+        return false;
+      }
+      _dbg('bail: target no existe/no visible tras 3 reintentos sel=', targetSel);
+      return false;
+    }
 
     STATE.active = true;
     STATE.target = target;
@@ -14118,14 +14175,27 @@ function toggleTheme(){
   }
 
   function showIfNew(id, targetSel, mensaje, opts){
-    if(!id) return false;
-    if(wasSeen(id)) return false;
+    _dbg('showIfNew llamado id=', id, 'sel=', targetSel);
+    if(!id){ _dbg('bail: sin id'); return false; }
+    if(wasSeen(id)){ _dbg('bail: ya visto (localStorage onboard_v1_'+id+')'); return false; }
     opts = opts || {};
     opts.id = id;
     return show(targetSel, mensaje, opts);
   }
 
-  window.Onboard = { show: show, showIfNew: showIfNew, _markSeen: markSeen, _wasSeen: wasSeen, _destroy: destroy };
+  function reset(){
+    var removed = [];
+    try{
+      for(var i = localStorage.length - 1; i >= 0; i--){
+        var k = localStorage.key(i);
+        if(k && k.indexOf('onboard_v1_') === 0){ localStorage.removeItem(k); removed.push(k); }
+      }
+    }catch(_){}
+    try{ console.log('[Onboard] reset OK — claves eliminadas:', removed); }catch(_){}
+    return removed;
+  }
+
+  window.Onboard = { show: show, showIfNew: showIfNew, reset: reset, _markSeen: markSeen, _wasSeen: wasSeen, _destroy: destroy };
 })();
 </script>
 </body>
