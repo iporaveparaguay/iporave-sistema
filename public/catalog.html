@@ -399,16 +399,22 @@ function fmt(n){return Number(n||0).toLocaleString('es-PY',{minimumFractionDigit
 let _toastTimer=null;
 function showToast(msg,ms=2800){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');if(_toastTimer)clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>{t.classList.remove('show');_toastTimer=null;},ms);}
 
-// Saneado HTML básico — solo permite b, i, br, p, ul, li, strong, em
+// Saneado HTML estricto — solo permite tags seguros SIN atributos (sin onclick/onerror/etc.)
 function sanitizeHtml(raw){
   if(!raw) return '';
-  // Solo permitir etiquetas seguras
-  const allowed = ['b','i','br','p','ul','li','strong','em'];
-  // Reemplazar todo tag no permitido con texto plano
-  return raw.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, function(match, tag){
-    if(allowed.indexOf(tag.toLowerCase()) !== -1) return match;
-    return '';
+  const allowed = ['b','i','br','p','ul','li','strong','em','span'];
+  let cleaned = String(raw).replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, function(match, tag){
+    const t = tag.toLowerCase();
+    if(allowed.indexOf(t) === -1) return '';
+    // Si es tag permitido, quitar TODOS los atributos (event handlers, onclick, style, etc.)
+    if(match.startsWith('</')) return '</' + t + '>';
+    return '<' + t + '>';
   });
+  // Quitar comentarios HTML (pueden esconder código)
+  cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
+  // Quitar javascript: en cualquier lado
+  cleaned = cleaned.replace(/javascript:/gi, '');
+  return cleaned;
 }
 
 // ─── CARRITO ─────────────────────────────────────────────────
