@@ -370,6 +370,48 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .ranking-row:nth-child(6){animation-delay:300ms}
 .ranking-row:nth-child(7){animation-delay:360ms}
 .ranking-row:nth-child(8){animation-delay:420ms}
+/* Ranking — scroll si lista larga */
+.ranking-list{max-height:480px;overflow-y:auto;padding-right:2px;}
+.ranking-list::-webkit-scrollbar{width:6px;}
+.ranking-list::-webkit-scrollbar-track{background:transparent;}
+.ranking-list::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px;opacity:.6;}
+.ranking-list::-webkit-scrollbar-thumb:hover{background:var(--accent);opacity:1;}
+/* Stats premium — evitar re-animar en re-render (flag JS aplica .no-anim) */
+.est-page.no-anim .sgrid .sc,
+.est-page.no-anim .sgrid .sc .sval,
+.est-page.no-anim .sc::after,
+.est-page.no-anim .ranking-row,
+.est-page.no-anim .ranking-row .rank-bar{animation:none !important;}
+.est-page.no-anim .ranking-row .rank-bar{transform:scaleX(1) !important;}
+/* Mobile 320-480px — compactar ranking y stat cards */
+@media (max-width: 480px){
+  .ranking-row{padding:8px 10px !important;gap:8px !important;font-size:12px !important;}
+  .ranking-row .rank-pos{width:22px !important;height:22px !important;font-size:11px !important;}
+  .ranking-row .rank-name{font-size:12px !important;}
+  .ranking-row .rank-value{font-size:13px !important;}
+  .ranking-row .rank-meta{font-size:10px !important;}
+  .ranking-row .rank-pct{font-size:10px !important;padding:2px 6px !important;margin-left:4px !important;}
+  .est-page .sc{padding:14px 16px !important;}
+  .est-page .sc .sval{font-size:24px !important;}
+}
+/* Reduced motion — anular animaciones para usuarios sensibles */
+@media (prefers-reduced-motion: reduce){
+  .sgrid .sc,
+  .sgrid .sc .sval,
+  .sc::after,
+  .ranking-row,
+  .ranking-row .rank-bar,
+  .stat-premium-card,
+  .stat-premium-card::before{animation:none !important;transition:none !important;}
+  .ranking-row .rank-bar{transform:scaleX(1) !important;}
+}
+/* Contraste medallas en temas claros — texto legible */
+:root[data-theme="light"] .ranking-row:nth-child(2) .rank-pos,
+:root[data-theme="light-soft"] .ranking-row:nth-child(2) .rank-pos{color:#1a1a1a;text-shadow:0 1px 0 rgba(255,255,255,.5);}
+:root[data-theme="light"] .ranking-row:nth-child(1) .rank-pos,
+:root[data-theme="light-soft"] .ranking-row:nth-child(1) .rank-pos,
+:root[data-theme="light"] .ranking-row:nth-child(3) .rank-pos,
+:root[data-theme="light-soft"] .ranking-row:nth-child(3) .rank-pos{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35);}
 /* TABLES */
 .tc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;overflow-y:hidden;margin-bottom:18px;border-left:3px solid var(--accent);}
 .th2{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
@@ -1133,6 +1175,125 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
 .pedido-grupo-arrow{font-size:11px;color:var(--text3);transition:transform .2s var(--ease-out)}
 .pedido-grupo[open] .pedido-grupo-arrow{transform:rotate(180deg)}
 .pedido-grupo-list{padding:0 14px 14px 14px;display:flex;flex-direction:column;gap:8px}
+/* ============================================================
+   MOBILE RESPONSIVE FIXES — auditoria 2026-05-16
+   Sin romper desktop. Todo dentro de @media max-width.
+   ============================================================ */
+@media(max-width:768px){
+  /* (1) Topbar: separar menuBtn de tbactions con margin-right + gap mas amplio */
+  .topbar #menuBtn{margin-right:8px;}
+  .topbar .tbactions{gap:8px;}
+  .topbar .tbactions .topbar-icon-btn{width:38px;height:38px;}
+  /* (3) Filtros mapa: forzar wrap (sin scroll horizontal) */
+  .mapBar{flex-wrap:wrap!important;overflow-x:visible!important;gap:6px;padding:8px 10px;}
+  .mapBar .mapBtn,.mapBar .filterBtn{flex:0 0 auto;}
+  /* (4) Combobox mapa al lado: ancho full si esta debajo de mapBar */
+  .mapBar #mapaZonaCombo,.mapBar #mapaVendCombo{flex:1 1 100%;max-width:100%;width:100%;}
+  /* (5) Cards estadisticas: ya en 2col por defecto en mobile (linea 802) - refuerzo con auto-fit */
+  .sgrid{grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr))!important;}
+  /* (6) Boleta mas compacta y items con scroll */
+  .boleta{padding:16px 14px!important;}
+  .boleta table,.boleta .bt{overflow-x:auto;display:block;}
+  /* (7) Modal mbox: 96vw exacto */
+  .mbox{width:96vw!important;max-width:96vw!important;}
+  .mhead{padding:12px 14px;}
+  .mhead h3,.mhead .mtitle{font-size:15px;}
+  /* (9) Pedido grupo accordion: padding y font mas compactos */
+  .pedido-grupo-header{padding:10px 12px;}
+  .pedido-grupo-fecha{font-size:13px;}
+  .pedido-grupo-count{font-size:11px;}
+  .pedido-grupo-list{padding:0 10px 10px;}
+  /* (10) Tablas: si una .tbl no esta dentro de .tbl-wrap/.tc, forzar scroll */
+  .tbl{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;}
+  /* (11) Touch targets: agrandar .mapa-estilo-btn a 42x42 */
+  .mapa-estilo-btn{width:42px;height:42px;}
+  .mapa-estilo-btn svg{width:20px;height:20px;}
+  /* Touch target minimo en botones chicos */
+  .mapBtn,.filterBtn{min-height:36px;}
+  /* (12) Inputs sin zoom iOS - refuerzo */
+  input[type="text"],input[type="email"],input[type="password"],input[type="number"],
+  input[type="tel"],input[type="search"],input[type="date"],input[type="time"],
+  textarea,select{font-size:16px!important;}
+}
+@media(max-width:480px){
+  /* (3) Reducir font filtros a 11px */
+  .mapBtn,.filterBtn{font-size:11px!important;padding:5px 8px!important;}
+  /* (5) Cards estadisticas 1 columna en <480 */
+  .sgrid{grid-template-columns:1fr!important;gap:8px;}
+  .sval{font-size:20px;}
+  /* (6) Boleta padding aun mas reducido */
+  .boleta{padding:14px 10px!important;font-size:11px;}
+  /* (7) Modal mbox cabecera */
+  .mhead h3,.mhead .mtitle{font-size:14px;}
+  /* (9) Pedido grupo: aun mas compacto */
+  .pedido-grupo-header{padding:10px;font-size:12px;}
+}
+/* === DELIVERY OUTDOOR UI (alta legibilidad bajo sol fuerte) === */
+body[data-rol="delivery"]{
+  --text:#000;--text2:#1a1a1a;--text3:#444;
+  --bg:#fff;--bg2:#f7f7f7;--bg3:#e8e8e8;
+  --accent:#d97706;--accent2:#b45309;
+  --border:#bdbdbd;
+}
+body[data-rol="delivery"] .btn,
+body[data-rol="delivery"] button.btn{
+  min-height:48px;font-size:15px;font-weight:700;letter-spacing:.3px;
+}
+body[data-rol="delivery"] .btn-success{
+  background:#16a34a;border:3px solid #15803d;color:#fff;
+  font-size:16px;font-weight:800;min-height:56px;letter-spacing:.5px;
+}
+body[data-rol="delivery"] .btn-danger{
+  background:#dc2626;border:3px solid #991b1b;color:#fff;
+  font-size:16px;font-weight:800;min-height:56px;
+}
+body[data-rol="delivery"] input,
+body[data-rol="delivery"] textarea,
+body[data-rol="delivery"] select{
+  font-size:16px;min-height:44px;border-width:2px;
+}
+body[data-rol="delivery"] .card,
+body[data-rol="delivery"] .pedido-card{
+  border-width:2px;font-size:15px;
+}
+body[data-rol="delivery"] .badge,
+body[data-rol="delivery"] .estado-chip{
+  font-weight:800;font-size:13px;letter-spacing:.4px;
+}
+body[data-rol="delivery"] .leaflet-marker-icon.dlv-pin,
+body[data-rol="delivery"] .pin-dlv{
+  filter:drop-shadow(0 0 6px rgba(217,119,6,.9));
+}
+body[data-rol="delivery"] .pin-dlv::after,
+body[data-rol="delivery"] .leaflet-marker-icon.dlv-pin::after{
+  content:"";position:absolute;inset:-8px;border-radius:50%;
+  border:3px solid #d97706;animation:dlvPulse 1.6s ease-out infinite;
+}
+@keyframes dlvPulse{
+  0%{transform:scale(.8);opacity:.9}
+  100%{transform:scale(1.8);opacity:0}
+}
+/* Modo alta visibilidad — togglable */
+body.alta-visibilidad{filter:contrast(1.15) saturate(1.1);}
+body.alta-visibilidad *{font-weight:600 !important;}
+body.alta-visibilidad .btn{
+  border-width:3px;font-size:17px;min-height:56px;
+}
+body.alta-visibilidad .btn-success,
+body.alta-visibilidad .btn-danger{
+  font-size:18px;min-height:60px;
+}
+body.alta-visibilidad input,
+body.alta-visibilidad textarea,
+body.alta-visibilidad select{
+  font-size:17px !important;min-height:48px;border-width:3px !important;
+}
+.toggle-altavis-row{
+  display:flex;align-items:center;gap:10px;padding:12px;border:2px solid var(--border);
+  border-radius:10px;margin:10px 0;background:var(--bg2);
+}
+.toggle-altavis-row input[type="checkbox"]{width:22px;height:22px;cursor:pointer;}
+.toggle-altavis-row label{font-size:15px;font-weight:600;cursor:pointer;flex:1;}
 </style>
 </head>
 <body class="no-auth">
@@ -3384,6 +3545,8 @@ async function doLogin(){
       return;
     }
     CU=data.user;
+    try{document.body.setAttribute('data-rol',(CU&&CU.rol)||'');}catch(_){}
+    try{if(CU&&CU.rol==='delivery'&&localStorage.getItem('iporave_altavis')==='1')document.body.classList.add('alta-visibilidad');}catch(_){}
     _sessionToken=data.token;
     _refreshToken=data.refresh_token||null;
     sessionStorage.setItem('iporave_token',data.token);
@@ -3673,6 +3836,7 @@ function doLogout(){
   if(_sensitiveUnlockTimer){clearTimeout(_sensitiveUnlockTimer);_sensitiveUnlockTimer=null;}
   _clearSensitiveCfg();
   if(_supa)_supa.auth.signOut().catch(()=>{});
+  try{document.body.removeAttribute('data-rol');document.body.classList.remove('alta-visibilidad');}catch(_){}
   CU=null;
   _sessionToken=null;
   _refreshToken=null;
@@ -4034,6 +4198,8 @@ function nav(page){
   }
   document.querySelectorAll('.ni').forEach(el=>el.classList.remove('active'));
   const n=$('ni_'+page);if(n)n.classList.add('active');
+  // Reset flag de animación de Estadísticas al salir de la página (próxima entrada anima de nuevo)
+  if(page!=='estadisticas'){try{window._estadisticasAnimated=false;}catch(_){}}
   $('tbTitle').textContent=PT[page]||page;
   $('tbActions').innerHTML='';
   $('ca').classList.remove('mc-page');
@@ -7416,7 +7582,10 @@ function _boletaHTML(o){
   const _badgeText  = _pagada ? 'PAGADA' : 'PENDIENTE';
   const _fivaCss =
     '<style>'+
-    '.factura-iva{max-width:780px;margin:0 auto;padding:32px 40px;background:#fff;color:#1a1a1a;font-family:"DM Sans","Helvetica Neue",system-ui,sans-serif;font-size:13px;line-height:1.55;border:1px solid #e5e5e5;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.05)}'+
+    '.factura-iva-wrap{padding:24px;background:transparent;min-height:100%}'+
+    '.factura-iva{max-width:780px;margin:0 auto;padding:32px 40px;background:#fff !important;color:#1a1a1a !important;font-family:"DM Sans","Helvetica Neue",system-ui,sans-serif;font-size:13px;line-height:1.55;border:1px solid #e5e5e5;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15)}'+
+    '.factura-iva *{color:inherit}'+
+    '.factura-iva-actions{display:flex;gap:8px;margin:0 auto 16px;justify-content:flex-end;max-width:780px}'+
     '.factura-iva-header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:20px;border-bottom:2px solid #1a1a1a;margin-bottom:24px}'+
     '.factura-iva-empresa{flex:1;min-width:0}'+
     '.factura-iva-empresa h1{margin:0 0 4px 0;font-size:22px;font-weight:800;letter-spacing:0.2px;color:#1a1a1a}'+
@@ -7452,12 +7621,34 @@ function _boletaHTML(o){
     '.factura-iva-footer .sistema{margin-top:6px;font-size:10px;color:#999}'+
     '.factura-iva-footer .legal{margin-top:4px;font-size:9px;color:#aaa}'+
     '@media print{'+
-      '.factura-iva{border:none;box-shadow:none;padding:0;max-width:none;border-radius:0}'+
+      'body *{visibility:hidden}'+
+      '.factura-iva-wrap,.factura-iva-wrap *{visibility:visible}'+
+      '.factura-iva-wrap{position:absolute;left:0;top:0;width:100%;padding:0;background:#fff}'+
+      '.factura-iva{border:none !important;box-shadow:none !important;padding:0 !important;max-width:none !important;border-radius:0 !important;margin:0 !important}'+
       '.factura-iva-tabla thead{display:table-header-group}'+
+      '.factura-iva-tabla tr,.factura-iva-tabla td,.factura-iva-tabla th{page-break-inside:avoid}'+
+      '.factura-iva-actions{display:none !important}'+
+      '@page{margin:14mm}'+
+    '}'+
+    '@media (max-width:640px){'+
+      '.factura-iva-wrap{padding:12px}'+
+      '.factura-iva{padding:18px 16px !important;font-size:12px !important;max-width:100% !important}'+
+      '.factura-iva-header{flex-direction:column !important;gap:12px !important}'+
+      '.factura-iva-meta{text-align:left !important;min-width:0 !important}'+
+      '.factura-iva-empresa h1{font-size:18px}'+
+      '.factura-iva-tabla{font-size:11px !important}'+
+      '.factura-iva-tabla th,.factura-iva-tabla td{padding:6px 4px !important}'+
+      '.factura-iva-totales table{min-width:100% !important}'+
+      '.factura-iva-totales tr.total td{font-size:15px}'+
     '}'+
     '</style>';
   return {zona,total,flete,totalFact,iva,base,
     html: _fivaCss +
+    '<div class="factura-iva-wrap">'+
+    '<div class="factura-iva-actions">'+
+      '<button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button>'+
+      '<button class="btn btn-primary" onclick="printBoleta('+(o.id||0)+')">⬇️ Descargar PDF</button>'+
+    '</div>'+
     '<div class="factura-iva boleta" id="boletaDiv">'+
     /* === HEADER === */
     '<div class="factura-iva-header">'+
@@ -7540,6 +7731,7 @@ function _boletaHTML(o){
       (o.metodoCobro?'<div>Cobrado vía '+escHtml(o.metodoCobro)+'</div>':'')+
       '<div class="sistema">Iporãve Connect · iporaveparaguay.com</div>'+
       '<div class="legal">'+_empNom+(_timb?' · Timbrado '+_timb:'')+' · Comprobante válido según Ley N° 125/91</div>'+
+    '</div>'+
     '</div>'+
     '</div>'};
 }
@@ -7709,7 +7901,10 @@ PAGES.estadisticas=function(){
     return{nombre:z.nombre,tot,ent};
   }).filter(x=>x.tot>0).sort((a,b)=>b.tot-a.tot).slice(0,8);
 
+  const _estAnimCls=window._estadisticasAnimated?' no-anim':'';
+  window._estadisticasAnimated=true;
   $('ca').innerHTML=
+    '<div class="est-page'+_estAnimCls+'">'+
     '<div class="sgrid">'+
       '<div class="sc ac"><div class="slabel">Total pedidos</div><div class="sval">'+orders.length+'</div></div>'+
       '<div class="sc gr"><div class="slabel">% Éxito entrega</div><div class="sval">'+pct+'%</div><div class="ssub">'+entregados.length+' entregados</div></div>'+
@@ -7759,6 +7954,7 @@ PAGES.estadisticas=function(){
         })()+
         '</div>'
       :'<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Sin datos de delivery aún</div>')+
+    '</div>'+
     '</div>';
 
   setTimeout(()=>{
@@ -10891,6 +11087,15 @@ PAGES.config=function(){
         '<button class="btn btn-secondary" onclick="_exportarTema()">📥 Exportar tema</button>'+
       '</div>'+
     '</div>'+
+    ((CU&&CU.rol==='delivery')?(
+      '<div class="cfg-block" style="margin-top:16px">'+
+        '<h4 style="margin:0 0 8px 0">Modo alta visibilidad</h4>'+
+        '<div class="toggle-altavis-row">'+
+          '<input type="checkbox" id="altaVisibilidad" '+(localStorage.getItem('iporave_altavis')==='1'?'checked':'')+' onchange="toggleAltaVisibilidad(this.checked)">'+
+          '<label for="altaVisibilidad">Modo alta visibilidad (para uso bajo sol fuerte). Aumenta contraste, bold y tamaños.</label>'+
+        '</div>'+
+      '</div>'
+    ):'')+
     '</div>';
   _cargarTemaActualEnConfig();
   if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredConfig){
@@ -10946,6 +11151,12 @@ async function _eyedropper(colorKey){
 }
 function _aplicarColorVivo(key,value){
   document.documentElement.style.setProperty('--'+key,value);
+}
+function toggleAltaVisibilidad(on){
+  try{
+    if(on){document.body.classList.add('alta-visibilidad');localStorage.setItem('iporave_altavis','1');}
+    else{document.body.classList.remove('alta-visibilidad');localStorage.removeItem('iporave_altavis');}
+  }catch(_){}
 }
 function _guardarTema(){
   const tema={
