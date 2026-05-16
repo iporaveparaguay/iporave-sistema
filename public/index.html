@@ -479,6 +479,14 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .ptab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .ptab-content{display:none;}.ptab-content.active{display:block;}
 .resena-foto{width:72px;height:72px;object-fit:cover;border-radius:8px;cursor:pointer;}
+.logo-upload{border:2px dashed var(--border2);border-radius:12px;padding:24px 18px;text-align:center;cursor:pointer;transition:border-color .15s var(--ease-out),background .15s var(--ease-out);}
+.logo-upload:hover{border-color:var(--accent);background:rgba(245,166,35,0.04);}
+.logo-upload-icon{width:48px;height:48px;margin:0 auto 8px;color:var(--text3);display:flex;align-items:center;justify-content:center;}
+.logo-upload-title{font-weight:600;font-size:14px;color:var(--text);margin-bottom:2px;}
+.logo-upload-hint{font-size:11px;color:var(--text3);}
+.stars-display{display:inline-flex;gap:2px;vertical-align:middle;}
+.stars-display .star-full,.stars-display .star-half,.stars-display .star-empty{display:inline-flex;line-height:0;}
+.stars-display .star-empty{color:#4b5563;opacity:.5;}
 .resena-card{background:var(--bg3);border-radius:var(--radius);padding:12px;margin-bottom:10px;}
 .savatar img{width:32px;height:32px;border-radius:50%;object-fit:cover;}
 .mbody img{max-width:100%;height:auto;}
@@ -654,14 +662,15 @@ textarea::placeholder{
 .map-placeholder{height:180px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--text3);}
 /* AI AVATAR ANIMADO — estilo Pixar/Wall-E baby */
 .ai-avatar-wrap{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
-.ai-avatar{display:inline-block;vertical-align:middle;animation:aiFloat 3s ease-in-out infinite;overflow:visible;filter:drop-shadow(0 3px 6px rgba(59,130,246,0.25));}
-@keyframes aiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
-.ai-avatar .ai-antena-dot{animation:aiAntenaPulse 2.5s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
-@keyframes aiAntenaPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(1.25)}}
-.ai-avatar.thinking .ai-antena-dot{animation:aiThink .6s ease-in-out infinite;}
-@keyframes aiThink{0%,100%{transform:scale(.8);opacity:.6}50%{transform:scale(1.55);opacity:1}}
+.ai-avatar{display:inline-block;vertical-align:middle;animation:aiFloat 3s ease-in-out infinite;overflow:visible;filter:drop-shadow(0 4px 8px rgba(217,119,6,0.25));}
+@keyframes aiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.ai-avatar .ai-mic-led{animation:aiMicLed 2s ease-in-out infinite;}
+@keyframes aiMicLed{0%,100%{opacity:1;fill:#10b981}50%{opacity:0.4;fill:#34d399}}
+.ai-avatar.thinking .ai-mic-led{animation:aiMicThink .5s ease-in-out infinite;}
+@keyframes aiMicThink{0%,100%{fill:#fbbf24;opacity:1}50%{fill:#f59e0b;opacity:0.6}}
+.ai-avatar .ai-headphone-l,.ai-avatar .ai-headphone-r{opacity:0.85;}
 @media (prefers-reduced-motion: reduce){
-  .ai-avatar,.ai-avatar .ai-antena-dot,.ai-avatar .ai-eye{animation:none!important;}
+  .ai-avatar,.ai-avatar .ai-mic-led,.ai-avatar .ai-eye{animation:none!important;}
 }
 /* AI CHAT FLOATING */
 #aiBtn{position:fixed;bottom:24px;right:24px;z-index:500;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#000;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(245,166,35,.4);transition:transform .2s;touch-action:none;user-select:none;}
@@ -1684,7 +1693,7 @@ const ESTADOS = ['Pendiente','Despachado','En Ruta','Entregado','Cancelado',
   'No contesta 1°','No contesta 2°','No contesta 3°','Reprogramado','Devuelto'];
 const ESTADOS_REQ_OBS = new Set(['Cancelado','No contesta 1°','No contesta 2°','No contesta 3°','Devuelto']);
 const METODOS = ['Efectivo','QR','POS','Transferencia'];
-const MICON = {Efectivo:'💵',QR:'📱',POS:'💳',Transferencia:'🏦'};
+const MICON = {Efectivo:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',QR:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/></svg>',POS:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',Transferencia:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="2 10 12 3 22 10 2 10"/><line x1="4" y1="10" x2="4" y2="20"/><line x1="20" y1="10" x2="20" y2="20"/><line x1="2" y1="20" x2="22" y2="20"/></svg>'};
 const EMPRESA = {nombre:'Distribuidora Industrial Iporãve',ruc:'80123456-7',dir:'Villa Elisa, Paraguay',tel:'0981-XXXXXX',web:'iporaveparaguay.com',ig:'@iporaveparaguay',timbrado:'11223344'};
 
 /* ══════════════════════════════════════════════════
@@ -4327,6 +4336,14 @@ const SVG={
   home:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
   shoppingCart:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>',
   shoppingBag:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
+  imagePlus:'<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  starOutline:'<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  starFull:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  starHalf:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="halfStarGrad"><stop offset="50%" stop-color="#f59e0b"/><stop offset="50%" stop-color="transparent"/></linearGradient></defs><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="url(#halfStarGrad)"/></svg>',
+  banknote:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>',
+  qrCode:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/></svg>',
+  bank:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="2 10 12 3 22 10 2 10"/><line x1="4" y1="10" x2="4" y2="20"/><line x1="9" y1="10" x2="9" y2="20"/><line x1="15" y1="10" x2="15" y2="20"/><line x1="20" y1="10" x2="20" y2="20"/><line x1="2" y1="20" x2="22" y2="20"/></svg>',
+  mapPin:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
 };
 const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'Liquidación',
   usuarios:'Usuarios',zonas:'Zonas y Tarifas',config:'Configuración',setup:'Setup / SQL',
@@ -5143,25 +5160,27 @@ function _styleDashboardStats(){
   const ca=$('ca');if(!ca)return;
   const grid=ca.querySelector('.sgrid');if(!grid)return;
   Array.from(grid.querySelectorAll('.sc')).forEach(card=>{
-    const label=(card.querySelector('.slabel')||{}).textContent||'';
-    const value=(card.querySelector('.sval')||{}).textContent||'';
-    const sub=(card.querySelector('.ssub')||{}).textContent||'';
-    const l=label.toLowerCase();
-    let icon='📋',color='var(--accent)';
-    if(l.includes('entregado')){icon='✅';color='var(--green)';}
-    else if(l.includes('tr')||l.includes('camino')||l.includes('asignado')||l.includes('total')){icon=l.includes('tr')||l.includes('camino')?'🚴':'📋';color='var(--blue)';}
-    if(l.includes('pendiente')){icon='⏳';color='#f59e0b';}
-    if(l.includes('cancelado')||l.includes('dev')){icon='❌';color='var(--red)';}
-    if(l.includes('ganancia')||l.includes('recaudado')){icon='💰';color='var(--green)';}
-    if(l.includes('comisi')){icon='💎';color='#8b5cf6';}
-    if(l.includes('cupo')){icon='🏆';color='var(--accent)';}
-    if(l.includes('pedido')&&l.includes('mis')){icon='💎';color='var(--accent)';}
-    if(l.includes('orden')||l.includes('órden')){icon='📦';color='var(--accent)';}
+    // Preservar HTML (incluye SVG ya inyectado). NO usar textContent que destruye los SVG.
+    const slabelEl=card.querySelector('.slabel');
+    const svalEl=card.querySelector('.sval');
+    const ssubEl=card.querySelector('.ssub');
+    if(!slabelEl||!svalEl)return;
+    const labelHTML=slabelEl.innerHTML||'';
+    const labelText=(slabelEl.textContent||'').toLowerCase();
+    const valueHTML=svalEl.innerHTML||'';
+    const subHTML=ssubEl?ssubEl.innerHTML:'';
+    let color='var(--accent)';
+    if(labelText.includes('entregado'))color='var(--green)';
+    else if(labelText.includes('tr')||labelText.includes('camino')||labelText.includes('asignado'))color='var(--blue)';
+    if(labelText.includes('pendiente'))color='#f59e0b';
+    if(labelText.includes('cancelado')||labelText.includes('dev'))color='var(--red)';
+    if(labelText.includes('ganancia')||labelText.includes('recaudado'))color='var(--green)';
+    if(labelText.includes('comisi'))color='#8b5cf6';
     card.setAttribute('style','border-top:3px solid '+color+';display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:16px 10px;min-height:118px;gap:0');
-    card.innerHTML='<div style="font-size:1.6rem;opacity:.7;line-height:1;margin-bottom:4px">'+icon+'</div>'+
-      '<div class="sval" style="font-size:2.4rem;font-weight:900;letter-spacing:-1px;line-height:1;color:'+color+';max-width:100%;overflow-wrap:anywhere">'+value+'</div>'+
-      '<div class="slabel" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-top:4px">'+label+'</div>'+
-      (sub?'<div class="ssub" style="font-size:12px;color:var(--text3);margin-top:2px">'+sub+'</div>':'');
+    card.innerHTML=
+      '<div class="slabel" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);display:inline-flex;align-items:center;justify-content:center;gap:4px;margin-bottom:6px">'+labelHTML+'</div>'+
+      '<div class="sval" style="font-size:2.4rem;font-weight:900;letter-spacing:-1px;line-height:1;color:'+color+';max-width:100%;overflow-wrap:anywhere">'+valueHTML+'</div>'+
+      (subHTML?'<div class="ssub" style="font-size:12px;color:var(--text3);margin-top:2px">'+subHTML+'</div>':'');
   });
 }
 
@@ -5660,14 +5679,14 @@ PAGES.dashboard=async function(){
         '<div style="background:var(--card);border-radius:16px;padding:18px 18px 12px;box-shadow:0 4px 20px rgba(0,0,0,.10);grid-column:1/-1;border-top:3px solid transparent;background-image:linear-gradient(var(--card),var(--card)),linear-gradient(90deg,#22c55e,#6366f1);background-origin:border-box;background-clip:padding-box,border-box">'+
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'+
             '<div>'+
-              '<div style="font-size:14px;font-weight:800;color:var(--text)">📈 Actividad — últimos 14 días</div>'+
+              '<div style="font-size:14px;font-weight:800;color:var(--text);display:inline-flex;align-items:center;gap:6px">'+SVG.trendingUp+'<span>Actividad — últimos 14 días</span></div>'+
               '<div style="font-size:11px;color:var(--text3);margin-top:2px">Pedidos recibidos vs. entregados</div>'+
             '</div>'+
           '</div>'+
           '<canvas id="chartLinea" height="80"></canvas>'+
         '</div>'+
         '<div style="background:var(--card);border-radius:16px;padding:18px 18px 10px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid #f59e0b">'+
-          '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">🥧 Estados</div>'+
+          '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px;display:inline-flex;align-items:center;gap:6px">'+SVG.target+'<span>Estados</span></div>'+
           '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">Distribución de pedidos</div>'+
           '<canvas id="chartDona" height="170" style="filter:drop-shadow(0 0 8px rgba(249,115,22,0.4))"></canvas>'+
         '</div>'+
@@ -6137,8 +6156,8 @@ PAGES.orders=PAGES.mispedidos=function(){
     (canCreate?'<button id="btnNuevoPedido" class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="openCSV()">↑ CSV</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportCSV()">↓ CSV</button>':'')+
-    (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="DL.exportBackup()">💾 Backup</button>':'')+
-    (['superadmin','vendedor'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportarCSV()" title="Exportar pedidos a CSV">📥 Exportar CSV</button>':'')+
+    (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="DL.exportBackup()" style="display:inline-flex;align-items:center;gap:6px">'+SVG.db+'<span>Backup</span></button>':'')+
+    (['superadmin','vendedor'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportarCSV()" title="Exportar pedidos a CSV" style="display:inline-flex;align-items:center;gap:6px">'+SVG.arrowDown+'<span>Exportar CSV</span></button>':'')+
     '<button class="btn btn-secondary" onclick="exportOrdersCSV()" title="Exportar a Excel">'+SVG.fileSpreadsheet+' Excel</button>'+
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">'+SVG.printer+' PDF</button>';
   $('ca').innerHTML=
@@ -7230,12 +7249,12 @@ PAGES.balance=function(){
   const kpiHtml=
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'+
       '<div style="background:linear-gradient(135deg,#16a34a,#22c55e);border-radius:14px;padding:18px 16px;color:white;text-align:center;box-shadow:0 4px 16px rgba(22,163,74,0.35)">'+
-        '<div style="font-size:10px;opacity:0.85;text-transform:uppercase;letter-spacing:1px;font-weight:700">✅ Cobrado</div>'+
+        '<div style="font-size:10px;opacity:0.85;text-transform:uppercase;letter-spacing:1px;font-weight:700;display:inline-flex;align-items:center;gap:4px;justify-content:center">'+SVG.checkCircle+'<span>Cobrado</span></div>'+
         '<div style="font-size:22px;font-weight:800;margin-top:6px;letter-spacing:-0.5px">'+fmt(cobradoMes)+'</div>'+
         '<div style="font-size:11px;opacity:0.75;margin-top:4px">'+entMes.length+' pedido'+(entMes.length!==1?'s':'')+' entregado'+(entMes.length!==1?'s':'')+'</div>'+
       '</div>'+
       '<div style="background:linear-gradient(135deg,#d97706,#f59e0b);border-radius:14px;padding:18px 16px;color:white;text-align:center;box-shadow:0 4px 16px rgba(217,119,6,0.35)">'+
-        '<div style="font-size:10px;opacity:0.85;text-transform:uppercase;letter-spacing:1px;font-weight:700">⏳ Pendiente</div>'+
+        '<div style="font-size:10px;opacity:0.85;text-transform:uppercase;letter-spacing:1px;font-weight:700;display:inline-flex;align-items:center;gap:4px;justify-content:center">'+SVG.clock+'<span>Pendiente</span></div>'+
         '<div style="font-size:22px;font-weight:800;margin-top:6px;letter-spacing:-0.5px">'+fmt(pendienteMes)+'</div>'+
         '<div style="font-size:11px;opacity:0.75;margin-top:4px">'+pendMes.length+' pedido'+(pendMes.length!==1?'s':'')+' en curso</div>'+
       '</div>'+
@@ -7925,105 +7944,134 @@ function _boletaHTML(o){
   const tasaNum=parseFloat(o.tipoIva)||0;
   const iva=(o.tipoIva==='Exento'||tasaNum===0)?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
   const base=totalFact-iva;
-  const _empColor=emp.colorPrimario||'#f5a623';
-  const _empSec=emp.colorSecundario||'#1f2937';
   const _empNom=escHtml(emp.nombre||'IPORÃVE');
   const _empLogo=emp.logo
-    ?'<img src="'+safeUrl(emp.logo)+'" style="height:42px;object-fit:contain;display:block;margin:0 auto 8px auto">'
+    ?'<img src="'+safeUrl(emp.logo)+'" style="height:44px;object-fit:contain;display:block;margin:0 0 6px 0;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25))">'
     :'';
   const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'SIN TIMBRADO');
-  const _estadoBadge=(o.estado==='Entregado'&&o.metodoCobro)
-    ?'<div style="text-align:center;margin:0 0 12px 0"><div style="display:inline-block;background:#d4f4dd;color:#0d7344;padding:5px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase">&#10003; '+escHtml(String(o.estado).toUpperCase())+' &middot; '+escHtml(String(o.metodoCobro).toUpperCase())+'</div></div>'
-    :(o.estado==='Entregado'
-      ?'<div style="text-align:center;margin:0 0 12px 0"><div style="display:inline-block;background:#d4f4dd;color:#0d7344;padding:5px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase">&#10003; ENTREGADO</div></div>'
-      :'<div style="text-align:center;margin:0 0 12px 0"><div style="display:inline-block;background:#fef3cd;color:#854d0e;padding:5px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase">&#9203; PENDIENTE</div></div>');
+  const _isPagada=(o.estado==='Entregado'&&o.metodoCobro);
+  const _isEntregada=(o.estado==='Entregado');
+  let _estadoBadge='';
+  if(_isPagada){
+    _estadoBadge='<div style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:7px 20px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 12px rgba(34,197,94,0.35)">&#10003; Pagado &middot; '+escHtml(String(o.metodoCobro).toUpperCase())+'</div>';
+  } else if(_isEntregada){
+    _estadoBadge='<div style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;padding:7px 20px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 12px rgba(59,130,246,0.35)">&#10003; Entregado</div>';
+  } else {
+    _estadoBadge='<div style="display:inline-block;background:linear-gradient(135deg,#fbbf24,#d97706);color:#fff;padding:7px 20px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 4px 12px rgba(245,158,11,0.35)">&#9203; Pendiente</div>';
+  }
+  const _vendObj=getUser(o.vendedorId);
+  const _vendNom=(_vendObj&&_vendObj.nombre)?escHtml(_vendObj.nombre):'';
+  const _printStyle=
+    '<sty'+'le>'+
+    '@media print {'+
+      '.boleta-wrap{background:#fff !important;padding:0 !important;min-height:auto !important}'+
+      '.boleta{box-shadow:none !important;border-radius:0 !important;border:none !important}'+
+      '.factura-iva-actions{display:none !important}'+
+      '@page{margin:14mm}'+
+    '}'+
+    '@media (max-width:640px){'+
+      '.boleta-wrap{padding:12px !important}'+
+      '.boleta{border-radius:12px !important}'+
+      '.boleta-pad{padding-left:18px !important;padding-right:18px !important}'+
+      '.boleta-meta-grid{grid-template-columns:1fr !important}'+
+      '.boleta-tot-grid{grid-template-columns:1fr !important}'+
+    '}'+
+    '</sty'+'le>';
   return {zona,total,flete,totalFact,iva,base,
-    html:'<div class="boleta" id="boletaDiv" style="font-family:\'Helvetica Neue\',\'Arial\',sans-serif;color:#111827;background:#fff;line-height:1.45;border:1px solid #000;box-shadow:0 2px 8px rgba(0,0,0,0.15);padding:24px;max-width:800px;margin:0 auto">'+
-    /* === HEADER SOBRIO (sin fondo naranja) === */
-    '<div style="text-align:center;padding:14px 0 10px 0;border-bottom:2px solid #1a1a1a;margin-bottom:16px">'+
-      _empLogo+
-      '<h1 style="margin:0;font-size:22px;font-weight:800;color:#1a1a1a;letter-spacing:0.3px;font-family:\'DM Sans\',\'Helvetica Neue\',sans-serif">'+_empNom+'</h1>'+
-      '<div style="margin-top:4px;font-size:11px;color:#666;letter-spacing:1.5px;text-transform:uppercase;font-weight:600">Boleta de venta</div>'+
-    '</div>'+
-    /* === META DATOS DOCUMENTO === */
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:14px;font-size:11px;color:#6b7280">'+
-      '<div style="flex:1;min-width:0">'+
-        (emp.ruc?'<div>RUC: <span style="color:#111827;font-weight:600">'+escHtml(emp.ruc)+'</span></div>':'')+
-        (emp.dir?'<div>'+escHtml(emp.dir)+'</div>':'')+
-        '<div>'+
-          (emp.tel?'Tel: '+escHtml(emp.tel):'')+
-          ((emp.tel&&emp.email)?' &nbsp;&middot;&nbsp; ':'')+
-          (emp.email?escHtml(emp.email):'')+
-          (((emp.tel||emp.email)&&emp.web)?' &nbsp;&middot;&nbsp; ':'')+
-          (emp.web?escHtml(emp.web):'')+
+    html:_printStyle+'<div class="boleta-wrap" style="background:#f5f5f5;padding:24px;min-height:100%">'+
+    '<div class="boleta" id="boletaDiv" style="max-width:780px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 12px 32px rgba(0,0,0,0.10);font-family:\'DM Sans\',\'Helvetica Neue\',\'Arial\',sans-serif;color:#1a1a1a;line-height:1.45">'+
+    /* === HEADER FRANJA NARANJA GRADIENT + CIRCULOS === */
+    '<div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:#fff;padding:26px 32px 22px;position:relative;overflow:hidden">'+
+      '<div style="position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:rgba(255,255,255,0.10);border-radius:50%;pointer-events:none"></div>'+
+      '<div style="position:absolute;bottom:-40px;left:-40px;width:130px;height:130px;background:rgba(255,255,255,0.06);border-radius:50%;pointer-events:none"></div>'+
+      '<div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">'+
+        '<div style="flex:1;min-width:180px">'+
+          _empLogo+
+          '<h1 style="margin:0 0 4px 0;font-size:24px;font-weight:800;letter-spacing:0.3px;color:#fff">'+_empNom+'</h1>'+
+          '<div style="font-size:11px;opacity:0.92;letter-spacing:1.5px;text-transform:uppercase;font-weight:600">Boleta de venta</div>'+
         '</div>'+
-      '</div>'+
-      '<div style="text-align:right;flex-shrink:0">'+
-        '<div><span style="font-weight:600;color:'+_empSec+'">N&deg; doc:</span> <span style="font-family:\'JetBrains Mono\',monospace;color:#111827">'+escHtml(o.numDoc||o.boletaNum||'')+'</span></div>'+
-        '<div><span style="font-weight:600;color:'+_empSec+'">Fecha:</span> <span style="color:#111827">'+fmtDate(o.fecha)+'</span></div>'+
-        '<div><span style="font-weight:600;color:'+_empSec+'">Timbrado:</span> <span style="font-family:\'JetBrains Mono\',monospace;color:#111827">'+_timb+'</span></div>'+
-        '<div style="margin-top:6px;display:inline-block;font-size:9px;padding:3px 8px;border:1px solid #ddd;border-radius:4px;background:#f5f5f5;color:#666;font-weight:600;letter-spacing:0.5px">COMPROBANTE IVA V&Aacute;LIDO</div>'+
-      '</div>'+
-    '</div>'+
-    _estadoBadge+
-    /* === CLIENTE / ENTREGA === */
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:18px;font-size:11px">'+
-      '<div>'+
-        '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Cliente / Comprador</div>'+
-        '<div style="font-weight:700;font-size:13px;color:'+_empSec+'">'+escHtml(o.cliente||'')+'</div>'+
-        (o.razonSocial?'<div style="color:#374151">'+escHtml(o.razonSocial)+'</div>':'')+
-        '<div style="color:#6b7280;margin-top:2px">CI: '+(escHtml(o.cedula||'')||'&mdash;')+(o.ruc?' &middot; RUC: '+escHtml(o.ruc||''):'')+'</div>'+
-        '<div style="color:#6b7280">'+(escHtml(o.telefono||'')||'&mdash;')+'</div>'+
-      '</div>'+
-      '<div>'+
-        '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Entrega</div>'+
-        '<div style="color:#111827">'+escHtml(o.direccion||'')+'</div>'+
-        '<div style="color:#6b7280;margin-top:2px">'+escHtml(zona.nombre||'')+(zona.tiempoEntrega?' &middot; '+escHtml(zona.tiempoEntrega):'')+'</div>'+
-        '<div style="margin-top:6px;color:#374151"><span style="font-weight:600">Condici&oacute;n:</span> Contado &nbsp;&middot;&nbsp; <span style="font-weight:600">IVA:</span> '+escHtml(o.tipoIva||'10%')+'</div>'+
-      '</div>'+
-    '</div>'+
-    /* === TABLA ITEMS === */
-    '<div class="bt-wrap" style="margin-bottom:14px;overflow-x:auto"><table class="bt" style="width:100%;border-collapse:collapse;border-top:3px solid '+_empSec+';border-bottom:3px solid '+_empSec+'">'+
-      '<thead><tr style="background:#f9fafb">'+
-        '<th style="padding:8px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:60px">Cant.</th>'+
-        '<th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb">Descripci&oacute;n</th>'+
-        '<th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:110px">Precio unit.</th>'+
-        '<th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:120px">Total</th>'+
-      '</tr></thead>'+
-      '<tbody>'+
-        '<tr>'+
-          '<td style="padding:8px;text-align:center;font-size:12px;color:#111827;border-bottom:1px solid #f3f4f6">'+o.qty+'</td>'+
-          '<td style="padding:8px;font-size:12px;color:#111827;border-bottom:1px solid #f3f4f6">'+escHtml(o.producto||'')+(o.proveedor?'<br><span style="font-size:10px;color:#9ca3af">Prov: '+escHtml(o.proveedor)+'</span>':'')+'</td>'+
-          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-variant-numeric:tabular-nums;border-bottom:1px solid #f3f4f6">Gs. '+fmtN(o.precio)+'</td>'+
-          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-weight:600;font-variant-numeric:tabular-nums;border-bottom:1px solid #f3f4f6">Gs. '+fmtN(o.precio*o.qty)+'</td>'+
-        '</tr>'+
-        '<tr>'+
-          '<td style="padding:8px;text-align:center;font-size:12px;color:#111827">1</td>'+
-          '<td style="padding:8px;font-size:12px;color:#111827">Flete &mdash; Zona '+escHtml(zona.nombre||'')+'</td>'+
-          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
-          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-weight:600;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
-        '</tr>'+
-      '</tbody></table></div>'+
-    /* === META + TOTALES === */
-    '<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;margin-top:14px;font-size:11px;align-items:start">'+
-      '<div>'+
-        (getUser(o.vendedorId)?.nombre?'<div style="color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">Vendedor:</span> '+escHtml(getUser(o.vendedorId).nombre)+'</div>':'')+
-        (o.metodoCobro?'<div style="color:#6b7280;margin-top:2px"><span style="font-weight:600;color:'+_empSec+'">Cobrado:</span> '+escHtml(o.metodoCobro||'')+'</div>':'')+
-        (o.estado==='Entregado'?'<div style="margin-top:8px;display:inline-block;background:#dcfce7;color:#15803d;font-weight:700;padding:4px 10px;border-radius:4px;font-size:10px;letter-spacing:0.5px">&#10003; ENTREGADO Y COBRADO</div>':'')+
-      '</div>'+
-      '<div style="background:#f9fafb;border-radius:6px;padding:12px 14px">'+
-        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:4px"><span>Base imponible:</span><span style="font-variant-numeric:tabular-nums;color:#111827">Gs. '+fmtN(base)+'</span></div>'+
-        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:8px"><span>IVA '+escHtml(o.tipoIva||'10%')+' incluido:</span><span style="font-variant-numeric:tabular-nums;color:#111827">Gs. '+fmtN(iva)+'</span></div>'+
-        '<div style="display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid '+_empSec+';padding-top:8px;margin-top:4px">'+
-          '<span style="font-weight:700;color:'+_empSec+';font-size:13px;letter-spacing:0.5px">TOTAL</span>'+
-          '<span style="font-weight:700;font-size:18px;color:'+_empColor+';font-variant-numeric:tabular-nums">Gs. '+fmtN(totalFact)+'</span>'+
+        '<div style="text-align:right">'+
+          '<div style="font-size:11px;opacity:0.85;letter-spacing:0.6px;text-transform:uppercase">N&deg; de boleta</div>'+
+          '<div style="font-size:18px;font-weight:800;letter-spacing:0.5px;font-family:\'JetBrains Mono\',monospace">'+escHtml(o.numDoc||o.boletaNum||'—')+'</div>'+
+          '<div style="font-size:11px;opacity:0.9;margin-top:2px">'+fmtDate(o.fecha)+'</div>'+
         '</div>'+
       '</div>'+
     '</div>'+
-    /* === FOOTER (sin duplicar contacto: ya esta en el header) === */
-    '<div style="margin-top:24px;padding-top:14px;border-top:1px solid #e5e7eb;text-align:center">'+
-      '<div style="font-style:italic;color:#64748b;font-size:13px;margin-bottom:6px">Gracias por su preferencia</div>'+
-      '<div style="font-size:9px;color:#9ca3af">'+_empNom+(_timb?' &middot; Timbrado: '+_timb:'')+' &middot; Comprobante v&aacute;lido seg&uacute;n Ley N&deg; 125/91</div>'+
+    /* === BADGE DE ESTADO === */
+    '<div style="padding:18px 32px 0;text-align:center">'+_estadoBadge+'</div>'+
+    /* === META EMPRESA === */
+    '<div class="boleta-pad" style="padding:14px 32px 0;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:11px;color:#6b7280">'+
+      '<div>'+
+        (emp.ruc?'<span style="font-weight:600;color:#374151">RUC:</span> <span style="color:#111827">'+escHtml(emp.ruc)+'</span>&nbsp;&middot;&nbsp;':'')+
+        '<span style="font-weight:600;color:#374151">Timbrado:</span> <span style="font-family:\'JetBrains Mono\',monospace;color:#111827">'+_timb+'</span>'+
+      '</div>'+
+      '<div style="display:inline-block;font-size:9px;padding:3px 10px;border:1px solid #e5e7eb;border-radius:99px;background:#f9fafb;color:#666;font-weight:700;letter-spacing:0.8px">COMPROBANTE IVA V&Aacute;LIDO</div>'+
+    '</div>'+
+    /* === CARDS CLIENTE / ENTREGA === */
+    '<div class="boleta-pad boleta-meta-grid" style="margin:14px 32px 0;display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
+      '<div style="padding:14px 18px;background:#fef9f3;border-left:4px solid #f59e0b;border-radius:0 12px 12px 0">'+
+        '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;font-weight:700">Cliente</div>'+
+        '<div style="font-weight:700;font-size:14px;color:#1a1a1a;margin-bottom:2px">'+(escHtml(o.cliente||'')||'—')+'</div>'+
+        (o.razonSocial?'<div style="font-size:12px;color:#374151">'+escHtml(o.razonSocial)+'</div>':'')+
+        '<div style="font-size:11px;color:#666;margin-top:3px">CI: '+(escHtml(o.cedula||'')||'—')+(o.ruc?'&nbsp;&middot;&nbsp;RUC: '+escHtml(o.ruc):'')+'</div>'+
+        (o.telefono?'<div style="font-size:12px;color:#555;margin-top:2px">&#9742; '+escHtml(o.telefono)+'</div>':'')+
+      '</div>'+
+      '<div style="padding:14px 18px;background:#f0f7ff;border-left:4px solid #3b82f6;border-radius:0 12px 12px 0">'+
+        '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;font-weight:700">Entrega</div>'+
+        '<div style="font-weight:600;font-size:13px;color:#1a1a1a">'+(escHtml(o.direccion||'')||'—')+'</div>'+
+        '<div style="font-size:11px;color:#666;margin-top:3px">'+escHtml(zona.nombre||'')+(zona.tiempoEntrega?'&nbsp;&middot;&nbsp;'+escHtml(zona.tiempoEntrega):'')+'</div>'+
+        '<div style="font-size:11px;color:#374151;margin-top:4px"><span style="font-weight:600">Condici&oacute;n:</span> Contado&nbsp;&middot;&nbsp;<span style="font-weight:600">IVA:</span> '+escHtml(o.tipoIva||'10%')+'</div>'+
+      '</div>'+
+    '</div>'+
+    /* === TABLA ITEMS (thead negro) === */
+    '<div class="boleta-pad" style="padding:18px 32px 0;overflow-x:auto">'+
+      '<table style="width:100%;border-collapse:collapse;font-size:13px;border-radius:8px;overflow:hidden">'+
+        '<thead><tr style="background:#1a1a1a;color:#fff">'+
+          '<th style="padding:11px 12px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;width:60px">Cant.</th>'+
+          '<th style="padding:11px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Descripci&oacute;n</th>'+
+          '<th style="padding:11px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;width:110px">Precio</th>'+
+          '<th style="padding:11px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;width:120px">Subtotal</th>'+
+        '</tr></thead>'+
+        '<tbody>'+
+          '<tr style="border-bottom:1px solid #eee">'+
+            '<td style="padding:12px;text-align:center;color:#333;font-variant-numeric:tabular-nums">'+o.qty+'</td>'+
+            '<td style="padding:12px;color:#333">'+escHtml(o.producto||'')+(o.proveedor?'<br><span style="font-size:10px;color:#9ca3af">Prov: '+escHtml(o.proveedor)+'</span>':'')+'</td>'+
+            '<td style="padding:12px;text-align:right;color:#333;font-variant-numeric:tabular-nums">Gs. '+fmtN(o.precio)+'</td>'+
+            '<td style="padding:12px;text-align:right;font-weight:600;color:#1a1a1a;font-variant-numeric:tabular-nums">Gs. '+fmtN(o.precio*o.qty)+'</td>'+
+          '</tr>'+
+          (flete?
+          '<tr style="border-bottom:1px solid #eee">'+
+            '<td style="padding:10px 12px;text-align:center;color:#666;font-size:12px">1</td>'+
+            '<td style="padding:10px 12px;color:#666;font-size:12px">Flete &mdash; Zona '+escHtml(zona.nombre||'')+'</td>'+
+            '<td style="padding:10px 12px;text-align:right;color:#666;font-size:12px;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
+            '<td style="padding:10px 12px;text-align:right;color:#666;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
+          '</tr>':'')+
+        '</tbody>'+
+      '</table>'+
+    '</div>'+
+    /* === META INFERIOR + TOTALES === */
+    '<div class="boleta-pad boleta-tot-grid" style="padding:18px 32px 0;display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start">'+
+      '<div style="font-size:12px;color:#555">'+
+        (_vendNom?'<div style="margin-bottom:4px"><span style="font-weight:700;color:#1a1a1a">Vendedor:</span> '+_vendNom+'</div>':'')+
+        (o.metodoCobro?'<div style="margin-bottom:4px"><span style="font-weight:700;color:#1a1a1a">M&eacute;todo de cobro:</span> '+escHtml(o.metodoCobro)+'</div>':'')+
+        (o.estado==='Entregado'?'<div style="margin-top:6px;display:inline-block;background:#dcfce7;color:#15803d;font-weight:700;padding:5px 12px;border-radius:99px;font-size:10px;letter-spacing:0.6px">&#10003; ENTREGADO Y COBRADO</div>':'')+
+      '</div>'+
+      '<div style="padding:18px;background:linear-gradient(135deg,#fef9f3 0%,#fef3cd 100%);border-radius:12px;border:1px solid #fde68a">'+
+        '<div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;padding:3px 0"><span>Subtotal</span><span style="font-variant-numeric:tabular-nums;font-weight:600;color:#1a1a1a">Gs. '+fmtN(total)+'</span></div>'+
+        (flete?'<div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;padding:3px 0"><span>Flete</span><span style="font-variant-numeric:tabular-nums;font-weight:600;color:#1a1a1a">Gs. '+fmtN(flete)+'</span></div>':'')+
+        '<div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;padding:3px 0"><span>IVA '+escHtml(o.tipoIva||'10%')+' incluido</span><span style="font-variant-numeric:tabular-nums;font-weight:600;color:#1a1a1a">Gs. '+fmtN(iva)+'</span></div>'+
+        '<div style="border-top:2px solid #d97706;margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;align-items:baseline">'+
+          '<span style="font-size:14px;font-weight:800;color:#1a1a1a;letter-spacing:0.5px">TOTAL</span>'+
+          '<span style="font-size:22px;font-weight:800;color:#d97706;font-variant-numeric:tabular-nums">Gs. '+fmtN(totalFact)+'</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    /* === FOOTER === */
+    '<div style="margin-top:24px;padding:20px 32px 26px;border-top:1px dashed #ddd;text-align:center">'+
+      '<div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:6px">Gracias por su preferencia</div>'+
+      '<div style="font-size:10px;color:#888;letter-spacing:0.3px">'+_empNom+' &middot; Sistema Iporãve Connect &middot; iporaveparaguay.com</div>'+
+      '<div style="font-size:9px;color:#aaa;margin-top:4px">Timbrado: '+_timb+' &middot; Comprobante v&aacute;lido seg&uacute;n Ley N&deg; 125/91</div>'+
+    '</div>'+
     '</div>'+
     '</div>'};
 }
@@ -8385,24 +8433,24 @@ PAGES.estadisticas=function(){
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px">'+
       '<div style="background:var(--card);border-radius:16px;padding:18px 18px 12px;box-shadow:0 4px 20px rgba(0,0,0,.10);grid-column:1/-1;border-top:3px solid transparent;background-image:linear-gradient(var(--card),var(--card)),linear-gradient(90deg,#3b82f6,#22c55e);background-origin:border-box;background-clip:padding-box,border-box">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
-          '<div><div style="font-size:14px;font-weight:800;color:var(--text)">📈 Pedidos — últimos 30 días</div>'+
+          '<div><div style="font-size:14px;font-weight:800;color:var(--text);display:inline-flex;align-items:center;gap:6px">'+SVG.trendingUp+'<span>Pedidos — últimos 30 días</span></div>'+
           '<div style="font-size:11px;color:var(--text3);margin-top:2px">Pedidos totales vs. entregados por día</div></div>'+
         '</div>'+
         '<canvas id="estLinea" height="75"></canvas>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:16px;padding:18px 18px 10px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid #22c55e">'+
-        '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">🛵 Ranking Deliverys</div>'+
+        '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px;display:inline-flex;align-items:center;gap:6px">'+SVG.scooter+'<span>Ranking Deliverys</span></div>'+
         '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">Entregados vs. asignados</div>'+
         '<canvas id="estDlv" height="190"></canvas>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:16px;padding:18px 18px 10px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid #f59e0b">'+
-        '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">🌎 Pedidos por zona</div>'+
+        '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px;display:inline-flex;align-items:center;gap:6px">'+SVG.map+'<span>Pedidos por zona</span></div>'+
         '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">Zonas más activas</div>'+
         '<canvas id="estZona" height="190"></canvas>'+
       '</div>'+
     '</div>'+
     '<div style="background:var(--card);border-radius:12px;padding:16px;margin-top:14px">'+
-      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px">🏆 Ranking de deliverys</div>'+
+      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;display:inline-flex;align-items:center;gap:6px">'+SVG.trophy+'<span>Ranking de deliverys</span></div>'+
       (dlvStats.length?
         '<div class="ranking-list">'+
         (function(){
@@ -8630,7 +8678,7 @@ PAGES.analitica_prov=function(){
       '</div>'+
     '</div>'+
     '<div style="background:var(--card);border-radius:16px;padding:18px 18px 12px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid transparent;background-image:linear-gradient(var(--card),var(--card)),linear-gradient(90deg,#22c55e,#3b82f6);background-origin:border-box;background-clip:padding-box,border-box">'+
-      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px">📈 Actividad — últimos 30 días</div>'+
+      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px;display:inline-flex;align-items:center;gap:6px">'+SVG.trendingUp+'<span>Actividad — últimos 30 días</span></div>'+
       '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Pedidos enviados vs. entregados</div>'+
       (days30.some(d=>pedByDay[d]>0)
         ?'<canvas id="apLinea" height="75"></canvas>'
@@ -8758,11 +8806,11 @@ PAGES.analitica_vend=function(periodo){
         '<div style="font-size:17px;font-weight:800;color:#ef4444">'+fmt(vCosto)+'</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #3b82f6">'+
-        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">🚚 Logística</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px;display:inline-flex;align-items:center;gap:4px">'+SVG.truck+'<span>Logística</span></div>'+
         '<div style="font-size:17px;font-weight:800;color:#3b82f6">'+fmt(vLog)+'</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--accent)">'+
-        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">✨ Ganancia neta</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px;display:inline-flex;align-items:center;gap:4px">'+SVG.trendingUp+'<span>Ganancia neta</span></div>'+
         '<div style="font-size:17px;font-weight:800;color:var(--accent)">'+fmt(vGan)+'</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--purple)">'+
@@ -8914,7 +8962,7 @@ PAGES.analitica_drop=function(){
       '</div>'+
     '</div>'+
     '<div style="background:var(--card);border-radius:16px;padding:18px 18px 12px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.10);border-top:3px solid transparent;background-image:linear-gradient(var(--card),var(--card)),linear-gradient(90deg,#6366f1,#a855f7);background-origin:border-box;background-clip:padding-box,border-box">'+
-      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px">📈 Actividad — últimos 30 días</div>'+
+      '<div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px;display:inline-flex;align-items:center;gap:6px">'+SVG.trendingUp+'<span>Actividad — últimos 30 días</span></div>'+
       '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Pedidos dropshipping por día</div>'+
       '<canvas id="adLinea" height="75"></canvas>'+
     '</div>'+
@@ -9108,25 +9156,25 @@ PAGES.analitica_admin=function(){
     '<div class="stitle"><span style="display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Flujo Financiero — pedidos entregados</span></span></div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:16px">'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #22c55e">'+
-        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">💵 Ingresos brutos</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px;display:inline-flex;align-items:center;gap:4px">'+SVG.dollar+'<span>Ingresos brutos</span></div>'+
         '<div style="font-size:17px;font-weight:800;color:#22c55e">'+fmt(tIng)+'</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #ef4444">'+
-        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">📦 Costo proveedores</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px;display:inline-flex;align-items:center;gap:4px">'+SVG.pkg+'<span>Costo proveedores</span></div>'+
         '<div style="font-size:17px;font-weight:800;color:#ef4444">'+fmt(tCos)+'</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #3b82f6">'+
-        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">🚚 Logística</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px;display:inline-flex;align-items:center;gap:4px">'+SVG.truck+'<span>Logística</span></div>'+
         '<div style="font-size:17px;font-weight:800;color:#3b82f6">'+fmt(tLog)+'</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--accent)">'+
-        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">✨ Ganancia neta</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:3px;display:inline-flex;align-items:center;gap:4px">'+SVG.trendingUp+'<span>Ganancia neta</span></div>'+
         '<div style="font-size:17px;font-weight:800;color:var(--accent)">'+fmt(tGan)+'</div>'+
         '<div style="font-size:11px;color:var(--text3)">'+margen+'% margen</div>'+
       '</div>'+
     '</div>'+
     '<div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px">'+
-      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 Ingresos vs Ganancia — últimos 30 días</div>'+
+      '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;display:inline-flex;align-items:center;gap:6px">'+SVG.trendingUp+'<span>Ingresos vs Ganancia — últimos 30 días</span></div>'+
       '<canvas id="aaLinea" height="80"></canvas>'+
     '</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'+
@@ -9153,7 +9201,7 @@ PAGES.analitica_admin=function(){
         ).join(''):'<div style="color:var(--text3);font-size:12px">Sin datos</div>')+
       '</div>'+
     '</div>'+
-    '<div class="stitle">🚴 Ranking Delivery</div>'+
+    '<div class="stitle" style="display:inline-flex;align-items:center;gap:6px">'+SVG.scooter+'<span>Ranking Delivery</span></div>'+
     (rankDlv.length?
       '<div style="overflow-x:auto;background:var(--card);border-radius:12px;padding:4px;margin-bottom:14px">'+
       '<table style="width:100%;border-collapse:collapse;font-size:13px">'+
@@ -11036,6 +11084,20 @@ function _renderStars(n){
   const full=Math.round(n||0);
   return'<span class="star-disp">'+[1,2,3,4,5].map(i=>'<span style="color:'+(i<=full?'#f59e0b':'#4b5563')+';font-size:14px">★</span>').join('')+'</span>';
 }
+function _renderEstrellas(puntaje){
+  const p=Number(puntaje)||0;
+  const full=Math.floor(p);
+  const frac=p-full;
+  const half=(frac>=0.25 && frac<=0.75);
+  const fullCount=half?full:Math.round(p);
+  const empty=5-fullCount-(half?1:0);
+  let html='<div class="stars-display">';
+  for(let i=0;i<fullCount;i++) html+='<span class="star-full">'+SVG.starFull+'</span>';
+  if(half) html+='<span class="star-half">'+SVG.starHalf+'</span>';
+  for(let i=0;i<empty;i++) html+='<span class="star-empty">'+SVG.starOutline.replace('width="48" height="48"','width="16" height="16"')+'</span>';
+  html+='</div>';
+  return html;
+}
 function _ptab(n){
   document.querySelectorAll('.ptab').forEach((t,i)=>t.classList.toggle('active',i===n));
   document.querySelectorAll('.ptab-content').forEach((c,i)=>c.classList.toggle('active',i===n));
@@ -11123,12 +11185,22 @@ function openPerfilUsuario(){
     '</div>'+
     /* TAB 1 — Negocio */
     '<div class="ptab-content">'+
-    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'+
-    '<div id="pfLogoPreview" style="width:64px;height:64px;border-radius:10px;background:var(--bg3);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer" onclick="$(\'pfLogoFile\').click()">'+
-    (u.logo?'<img src="'+safeUrl(u.logo)+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:24px">🏢</span>')+
-    '</div><input type="file" id="pfLogoFile" accept="image/*" style="display:none" onchange="subirLogoPerfil(this)">'+
-    '<div><button class="btn btn-secondary btn-sm" onclick="$(\'pfLogoFile\').click()">📷 Subir logo</button>'+
-    '<div style="font-size:10px;color:var(--text3);margin-top:4px">Aparece en tickets, guías y PDFs</div></div></div>'+
+    '<div style="margin-bottom:14px">'+
+    (u.logo
+      ?'<div style="display:flex;align-items:center;gap:12px">'+
+        '<div id="pfLogoPreview" style="width:64px;height:64px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer" onclick="$(\'pfLogoFile\').click()">'+
+          '<img src="'+safeUrl(u.logo)+'" style="width:100%;height:100%;object-fit:cover">'+
+        '</div>'+
+        '<div><button class="btn btn-secondary btn-sm" onclick="$(\'pfLogoFile\').click()">'+SVG.camera+' Cambiar logo</button>'+
+        '<div style="font-size:10px;color:var(--text3);margin-top:4px">Aparece en tickets, guías y PDFs</div></div>'+
+      '</div>'
+      :'<div id="pfLogoPreview" class="logo-upload" onclick="$(\'pfLogoFile\').click()">'+
+        '<div class="logo-upload-icon">'+SVG.imagePlus+'</div>'+
+        '<div class="logo-upload-title">Subir logo</div>'+
+        '<div class="logo-upload-hint">PNG o JPG · Máx 2MB · Aparece en tickets, guías y PDFs</div>'+
+      '</div>')+
+    '<input type="file" id="pfLogoFile" accept="image/*" style="display:none" onchange="subirLogoPerfil(this)">'+
+    '</div>'+
     '<div class="fg"><label>Nombre comercial / Empresa</label><input type="text" id="pfNomCom" value="'+escAttr(u.nombre_comercial)+'" placeholder="Distribuidora Iporãve E.A.S."></div>'+
     '<div class="frow"><div class="fg"><label>RUC</label><input type="text" id="pfRuc" value="'+escAttr(u.ruc)+'" placeholder="80012345-6"></div>'+
     '<div class="fg"><label>Sitio web</label><input type="text" id="pfWeb" value="'+escAttr(u.web)+'" placeholder="www.empresa.com.py"></div></div>'+
@@ -11167,7 +11239,7 @@ function openPerfilUsuario(){
     '<div style="font-size:11px;color:var(--text2)">💡 Estos datos aparecen cuando un cliente quiere transferirte el pago. Verificá que sean correctos.</div></div>'+
     '</div>'+
     /* TAB 4 — Reseñas */
-    '<div class="ptab-content"><div id="pfResenas"><div style="text-align:center;padding:30px;color:var(--text3)"><div style="font-size:28px">⭐</div><div style="margin-top:8px;font-size:13px">Cargando reseñas...</div></div></div></div>'+
+    '<div class="ptab-content"><div id="pfResenas"><div style="text-align:center;padding:30px;color:var(--text3)"><div style="display:inline-flex;color:var(--text3);opacity:.3">'+SVG.starOutline+'</div><div style="margin-top:8px;font-size:13px">Cargando reseñas...</div></div></div></div>'+
     '<div id="pfAlert" style="margin-top:8px"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button> '+
     '<button class="btn btn-primary" onclick="guardarPerfilUsuario()">💾 Guardar perfil</button>',
@@ -11269,7 +11341,7 @@ async function _cargarResenasEnPerfil(userId){
     const res=await fetch(WORKER_URL+'/api/calificaciones?para_id='+userId,{headers:{'Authorization':'Bearer '+(_sessionToken||'')}});
     const d=await res.json();
     if(!d.ok||!d.calificaciones?.length){
-      cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)"><div style="font-size:32px">⭐</div><div style="margin-top:10px;font-size:13px">Aún no tenés reseñas.<br><span style="font-size:11px">Aparecerán cuando alguien te califique.</span></div></div>';
+      cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)"><div style="display:inline-flex;color:var(--text3);opacity:.3">'+SVG.starOutline+'</div><div style="margin-top:10px;font-size:13px">Aún no tenés reseñas.<br><span style="font-size:11px">Aparecerán cuando alguien te califique.</span></div></div>';
       return;
     }
     cont.innerHTML=
@@ -13582,7 +13654,7 @@ function _mapaCargarDlvs(map){
       ?'<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ade80;margin-right:4px;box-shadow:0 0 5px #4ade80"></span>'
       :'<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#6b7280;margin-right:4px"></span>';
     // SVG persona en moto con casco — más expresivo, se entiende mejor que delivery
-    const dlvIconSvg='<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="2.5"/><path d="M12 8.5v3"/><path d="M9 11h6"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 18l3-6.5h2L17 18"/></svg>';
+    const dlvIconSvg='<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="transform:scale(0.9)"><circle cx="12" cy="5" r="2.5"/><path d="M12 7.5 L11 13 L13 13 L12 7.5"/><line x1="11" y1="13" x2="7" y2="14.5"/><rect x="13" y="11" width="4.5" height="5" rx="0.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><line x1="6" y1="18" x2="11" y2="13"/><line x1="14" y1="16" x2="18" y2="18"/></svg>';
     el.innerHTML=
       '<div class="dlv-label" style="margin-bottom:5px">'+
         statusDot+escHtml(dlv.nombre)+(online?' 🟢':' ⚫')+
@@ -14375,9 +14447,9 @@ PAGES.pagos=function(){
       const chip=(id,label)=>'<button class="pagosChip'+(f.rol===id?' active':'')+'" onclick="_setPagosRolFiltro(\''+id+'\')">'+label+'</button>';
 
       $('ca').innerHTML=
-        '<div class="stitle" style="margin-top:0">💵 Pagos del sistema — '+mes+'</div>'+
+        '<div class="stitle" style="margin-top:0;display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Pagos del sistema — '+mes+'</span></div>'+
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
-          '<button class="btn btn-secondary btn-sm" onclick="exportarTodosSaldosCSV()">📥 Exportar saldos a CSV</button>'+
+          '<button class="btn btn-secondary btn-sm" onclick="exportarTodosSaldosCSV()" style="display:inline-flex;align-items:center;gap:6px">'+SVG.arrowDown+'<span>Exportar saldos a CSV</span></button>'+
           '<button class="btn btn-secondary btn-sm" onclick="imprimirBalanceGeneral()">'+SVG.printer+' Imprimir balance general</button>'+
         '</div>'+
         '<div class="sgrid" style="margin-bottom:14px">'+
@@ -15092,7 +15164,7 @@ PAGES.pago_usuario=function(){
       pagerHtml+
       '<div style="height:8px"></div>'+
       // Pagos
-      '<div class="stitle">💵 Historial de pagos del período</div>'+
+      '<div class="stitle" style="display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Historial de pagos del período</span></div>'+
       '<div style="overflow-x:auto;margin-bottom:16px"><table class="tbl"><thead><tr>'+
         '<th>Fecha</th><th>Monto</th><th>Método</th><th>Ref</th><th>Nota</th><th>Por</th><th>📎</th>'+
       '</tr></thead><tbody>'+
@@ -15187,7 +15259,7 @@ PAGES.clientes_zonas = function(){
   const zonas = Object.entries(clientesPorZona).sort((a,b) => b[1].size - a[1].size);
   let html = '<div style="padding:18px">';
   html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">';
-  html += '<h2 style="margin:0;font-size:20px;font-weight:900">👥 Base de Datos de Clientes</h2>';
+  html += '<h2 style="margin:0;font-size:20px;font-weight:900;display:inline-flex;align-items:center;gap:8px">'+SVG.users+'<span>Base de Datos de Clientes</span></h2>';
   html += '<button class="btn btn-secondary" onclick="exportarClientesZonasCSV()">'+SVG.fileSpreadsheet+' Exportar CSV</button>';
   html += '</div>';
   html += '<input type="search" id="clientesBuscar" placeholder="Buscar cliente..." class="pagosSearchInput" style="margin-bottom:14px;width:100%" oninput="_filtrarClientesZonas(this.value)">';
@@ -15201,7 +15273,7 @@ PAGES.clientes_zonas = function(){
     const clientes = Array.from(clientesMap.values()).sort((a,b) => b.pedidos - a.pedidos);
     html += '<details class="zona-clientes" open>';
     html += '<summary style="padding:12px 14px;background:var(--bg2);border-radius:10px;cursor:pointer;font-weight:800;display:flex;justify-content:space-between;align-items:center">';
-    html += '<span>📍 '+escHtml(zonaNombre)+'</span>';
+    html += '<span style="display:inline-flex;align-items:center;gap:6px">'+SVG.mapPin+'<span>'+escHtml(zonaNombre)+'</span></span>';
     html += '<span style="font-size:11px;color:var(--text2)">'+clientes.length+' clientes</span>';
     html += '</summary>';
     html += '<div style="padding:8px 0">';
@@ -15210,7 +15282,7 @@ PAGES.clientes_zonas = function(){
       html += '<div class="cliente-row" data-search="'+escAttr((c.nombre+' '+c.telefono).toLowerCase())+'">';
       html += '<div style="flex:1;min-width:0">';
       html += '<div style="font-weight:700;font-size:13px">'+escHtml(c.nombre)+'</div>';
-      html += '<div style="font-size:11px;color:var(--text2)">📞 '+escHtml(c.telefono)+' · 📍 '+escHtml((c.direccion||'').substring(0,40))+'</div>';
+      html += '<div style="font-size:11px;color:var(--text2);display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap">'+SVG.phone+'<span>'+escHtml(c.telefono)+'</span><span> · </span>'+SVG.mapPin+'<span>'+escHtml((c.direccion||'').substring(0,40))+'</span></div>';
       html += '</div>';
       html += '<div style="text-align:right;font-size:11px">';
       html += '<div><b>'+c.pedidos+'</b> pedidos</div>';
@@ -15246,26 +15318,35 @@ function _aiAvatarSvg(size){
   var id = 'aiG_'+Math.floor(Math.random()*1e9);
   return '<svg class="ai-avatar" width="'+s+'" height="'+s+'" viewBox="0 0 64 64" fill="none" aria-hidden="true">'+
     '<defs>'+
-      '<linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient>'+
-      '<radialGradient id="'+id+'_glow" cx="0.5" cy="0.4"><stop offset="0%" stop-color="#fde68a"/><stop offset="100%" stop-color="#f59e0b"/></radialGradient>'+
+      '<linearGradient id="'+id+'_bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></linearGradient>'+
+      '<linearGradient id="'+id+'_skin" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fcd9b6"/><stop offset="100%" stop-color="#f4a967"/></linearGradient>'+
+      '<radialGradient id="'+id+'_glow" cx="0.5" cy="0.4"><stop offset="0%" stop-color="#fef3c7"/><stop offset="100%" stop-color="#fbbf24"/></radialGradient>'+
     '</defs>'+
-    '<ellipse cx="32" cy="56" rx="18" ry="2.5" fill="rgba(0,0,0,0.15)"/>'+
-    '<path d="M 32 12 Q 30 7 27 6" stroke="url(#'+id+')" stroke-width="2.2" stroke-linecap="round" fill="none"/>'+
-    '<circle class="ai-antena-dot" cx="26.5" cy="5.5" r="2.8" fill="url(#'+id+'_glow)"/>'+
-    '<rect x="14" y="14" width="36" height="38" rx="18" fill="url(#'+id+')"/>'+
-    '<ellipse cx="32" cy="22" rx="14" ry="6" fill="rgba(255,255,255,0.18)"/>'+
-    '<path d="M 18 28 Q 18 24 22 24 L 42 24 Q 46 24 46 28 L 46 38 Q 46 42 42 42 L 22 42 Q 18 42 18 38 Z" fill="rgba(0,0,0,0.32)"/>'+
-    '<circle class="ai-eye ai-eye-l" cx="26" cy="33" r="3" fill="#fff">'+
-      '<animate attributeName="r" values="3;3;0.5;3;3" dur="4s" repeatCount="indefinite" keyTimes="0;0.46;0.5;0.54;1"/>'+
+    '<ellipse cx="32" cy="58" rx="18" ry="2.5" fill="rgba(0,0,0,0.15)"/>'+
+    '<circle cx="32" cy="32" r="28" fill="url(#'+id+'_bg)"/>'+
+    '<ellipse cx="32" cy="20" rx="20" ry="8" fill="rgba(255,255,255,0.18)"/>'+
+    '<circle cx="32" cy="28" r="14" fill="url(#'+id+'_skin)"/>'+
+    '<path d="M 18 24 Q 18 14 32 14 Q 46 14 46 24 L 46 26 Q 40 22 32 22 Q 24 22 18 26 Z" fill="#3f2f1f"/>'+
+    '<path d="M 19 26 Q 19 17 32 17 Q 45 17 45 26" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>'+
+    '<ellipse cx="18" cy="28" rx="3.5" ry="5" fill="#1a1a1a"/>'+
+    '<ellipse cx="46" cy="28" rx="3.5" ry="5" fill="#1a1a1a"/>'+
+    '<ellipse cx="18.5" cy="28" rx="2.5" ry="3.5" fill="url(#'+id+'_glow)" class="ai-headphone-l"/>'+
+    '<ellipse cx="45.5" cy="28" rx="2.5" ry="3.5" fill="url(#'+id+'_glow)" class="ai-headphone-r"/>'+
+    '<circle class="ai-eye ai-eye-l" cx="27" cy="30" r="1.6" fill="#1a1a1a">'+
+      '<animate attributeName="ry" values="1.6;1.6;0.2;1.6;1.6" dur="4s" repeatCount="indefinite" keyTimes="0;0.47;0.5;0.53;1"/>'+
     '</circle>'+
-    '<circle class="ai-eye ai-eye-r" cx="38" cy="33" r="3" fill="#fff">'+
-      '<animate attributeName="r" values="3;3;0.5;3;3" dur="4s" repeatCount="indefinite" keyTimes="0;0.46;0.5;0.54;1"/>'+
+    '<circle class="ai-eye ai-eye-r" cx="37" cy="30" r="1.6" fill="#1a1a1a">'+
+      '<animate attributeName="ry" values="1.6;1.6;0.2;1.6;1.6" dur="4s" repeatCount="indefinite" keyTimes="0;0.47;0.5;0.53;1"/>'+
     '</circle>'+
-    '<circle cx="27" cy="32" r="0.9" fill="rgba(96,165,250,0.9)"/>'+
-    '<circle cx="39" cy="32" r="0.9" fill="rgba(96,165,250,0.9)"/>'+
-    '<path d="M 14 36 Q 10 38 9 42" stroke="url(#'+id+')" stroke-width="2.5" stroke-linecap="round" fill="none"/>'+
-    '<path d="M 50 36 Q 54 38 55 42" stroke="url(#'+id+')" stroke-width="2.5" stroke-linecap="round" fill="none"/>'+
-    '<circle cx="32" cy="48" r="1.5" fill="#fbbf24"/>'+
+    '<path d="M 26 35 Q 32 39 38 35" stroke="#7c2d12" stroke-width="1.5" stroke-linecap="round" fill="none"/>'+
+    '<circle cx="22" cy="33" r="2" fill="#f87171" opacity="0.4"/>'+
+    '<circle cx="42" cy="33" r="2" fill="#f87171" opacity="0.4"/>'+
+    '<path d="M 18 30 Q 22 36 28 38" stroke="#1a1a1a" stroke-width="1.2" stroke-linecap="round" fill="none"/>'+
+    '<circle cx="28" cy="38" r="1.5" fill="#1a1a1a"/>'+
+    '<circle class="ai-mic-led" cx="28" cy="38" r="0.6" fill="#10b981"/>'+
+    '<path d="M 22 45 Q 32 42 42 45 L 42 56 L 22 56 Z" fill="#fff"/>'+
+    '<path d="M 24 47 L 32 50 L 40 47" stroke="#d97706" stroke-width="1.5" fill="none"/>'+
+    '<circle cx="32" cy="52" r="1.5" fill="url(#'+id+'_bg)"/>'+
   '</svg>';
 }
 function _aiAvatarThinking(on){
