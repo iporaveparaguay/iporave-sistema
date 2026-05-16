@@ -734,10 +734,13 @@ textarea::placeholder{
   #aiBtn .aim-figure,#aiBtn .aim-arm-l,#aiBtn .aim-arm-r,#aiBtn .aim-leg-l,#aiBtn .aim-leg-r,#aiBtn .aim-head,#aiBtn .aim-shadow,#aiBtn .aim-antenna,#aiBtn .aim-eye{animation:none!important;}
 }
 /* AI CHAT FLOATING — botón blanco con borde sombreado */
-#aiBtn{position:fixed;bottom:24px;right:24px;z-index:500;width:56px;height:56px;border-radius:50%;background:#ffffff;color:#0f172a;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.08),0 8px 24px rgba(15,23,42,.18),inset 0 0 0 1px rgba(15,23,42,.06);transition:transform .2s ease,box-shadow .25s ease,background .25s ease;touch-action:none;user-select:none;}
-#aiBtn:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 4px 10px rgba(59,130,246,.18),0 14px 32px rgba(59,130,246,.28),inset 0 0 0 1px rgba(59,130,246,.35);}
+#aiBtn{position:fixed;bottom:24px;right:24px;z-index:500;width:56px;height:56px;border-radius:50%;background:#ffffff;color:#0f172a;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(15,23,42,.12),0 8px 24px rgba(15,23,42,.18),0 0 0 1px rgba(15,23,42,.06),0 0 0 2px rgba(59,130,246,.18),0 0 14px rgba(59,130,246,.18);transition:transform .2s ease,box-shadow .25s ease,background .25s ease;touch-action:none;user-select:none;}
+#aiBtn:hover{transform:translateY(-3px) scale(1.08);box-shadow:0 4px 10px rgba(59,130,246,.22),0 14px 32px rgba(59,130,246,.32),0 0 0 2px rgba(59,130,246,.55),0 0 22px rgba(59,130,246,.4),0 0 40px rgba(59,130,246,.18);}
 #aiBtn:active{transform:translateY(0) scale(0.96);transition-duration:.08s;}
-#aiBtn.dragging{transition:none!important;transform:scale(1.04);box-shadow:0 12px 36px rgba(59,130,246,.45),inset 0 0 0 1px rgba(59,130,246,.55);}
+#aiBtn.dragging{transition:none!important;transform:scale(1.04);box-shadow:0 12px 36px rgba(59,130,246,.45),0 0 0 2px rgba(59,130,246,.65),0 0 32px rgba(59,130,246,.4);}
+/* modo claro: glow azul más visible por defecto */
+[data-theme="light"] #aiBtn,[data-theme="light-soft"] #aiBtn{background:#fff;color:#1a1f2c;box-shadow:0 2px 8px rgba(59,130,246,.22),0 8px 24px rgba(59,130,246,.18),0 0 0 2px rgba(59,130,246,.35),0 0 18px rgba(59,130,246,.25);}
+[data-theme="light"] #aiBtn:hover,[data-theme="light-soft"] #aiBtn:hover{box-shadow:0 4px 12px rgba(59,130,246,.35),0 12px 32px rgba(59,130,246,.28),0 0 0 2.5px rgba(59,130,246,.7),0 0 28px rgba(59,130,246,.5),0 0 50px rgba(59,130,246,.2);}
 .ai-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 3px;pointer-events:none;}
 #aiPanel{position:fixed;bottom:86px;right:24px;z-index:500;width:360px;max-height:520px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);box-shadow:var(--shadow);display:none;flex-direction:column;transition:width .2s,max-height .2s;}
 #aiPanel.open{display:flex !important;}
