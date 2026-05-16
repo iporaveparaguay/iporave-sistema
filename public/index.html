@@ -4372,19 +4372,42 @@ PAGES.dashboard=async function(){
       }catch(e){console.warn('Estado financiero dashboard:',e.message);}
     }
   }
-  // ── Saldo pendiente (rol pagable no-admin) ──
+  // ── Estado Financiero (rol pagable no-admin) ──
   if(['vendedor','dropshipper','proveedor','delivery'].includes(CU.rol)){
     try{
-      if(!window._pagosCache){ try{ window._pagosCache=await DL.getPagos({pagado_a:CU.id}); }catch(_){ } }
-      const miSaldo=calcularSaldoUsuario(CU.id);
-      html+='<div style="margin-top:14px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'+
-        '<div>'+
-          '<div style="font-size:11px;color:var(--text2);text-transform:uppercase;font-weight:700">💰 Tu saldo pendiente</div>'+
-          '<div style="font-size:22px;font-weight:900;color:'+(miSaldo>0?'#22c55e':'var(--text2)')+'">'+fmt(miSaldo)+'</div>'+
+      if(!window._pagosCache){ try{ window._pagosCache=await DL.getPagos({}); }catch(_){ } }
+      const yoUser=(_usersCache||[]).find(u=>String(u.id)===String(CU.id))||CU;
+      const mesAct=mesActual();
+      // Mes actual
+      const ganadoMes=_ganadoPorUsuarioMes(yoUser,_ordersCache||[]);
+      const cobradoMes=((window._pagosCache)||[]).filter(p=>String(p.pagado_a)===String(CU.id)&&(p.fecha||'').startsWith(mesAct))
+        .reduce((a,p)=>a+Number(p.monto||0),0);
+      const pendiente=Math.max(0,ganadoMes-cobradoMes);
+      // Mes anterior — total cobrado
+      const dPrev=new Date(); dPrev.setMonth(dPrev.getMonth()-1);
+      const mesPrev=dPrev.toISOString().slice(0,7);
+      const cobradoPrev=((window._pagosCache)||[]).filter(p=>String(p.pagado_a)===String(CU.id)&&(p.fecha||'').startsWith(mesPrev))
+        .reduce((a,p)=>a+Number(p.monto||0),0);
+
+      html+='<div style="margin-top:14px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:all .15s ease;box-shadow:0 4px 12px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.04)" onclick="nav(\'pagos\')" onmouseover="this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.transform=\'\'">'+
+        '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px">💼 Tu Estado Financiero — '+mesAct+'</div>'+
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px">'+
+          '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
+            '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">✅ Cobrado</div>'+
+            '<div style="font-size:18px;font-weight:900;color:#22c55e">'+fmt(cobradoMes)+'</div>'+
+          '</div>'+
+          '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
+            '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">⚠️ Pendiente (te deben)</div>'+
+            '<div style="font-size:18px;font-weight:900;color:'+(pendiente>0?'#ef4444':'#22c55e')+'">'+fmt(pendiente)+'</div>'+
+          '</div>'+
+          '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
+            '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">🏆 Mes anterior</div>'+
+            '<div style="font-size:18px;font-weight:900;color:var(--accent)">'+fmt(cobradoPrev)+'</div>'+
+          '</div>'+
         '</div>'+
-        '<button class="btn btn-primary btn-sm" onclick="nav(\'pagos\')">Ver detalle →</button>'+
+        '<div style="text-align:right;margin-top:10px"><span style="font-size:12px;color:var(--accent);font-weight:700">Ver detalle →</span></div>'+
       '</div>';
-    }catch(e){console.warn('Saldo pendiente dashboard:',e.message);}
+    }catch(e){console.warn('Estado financiero dashboard no-admin:',e.message);}
   }
   if(CU.rol==='delivery'){
     const mine=orders.filter(o=>o.deliveryId===CU.id);
@@ -11523,6 +11546,91 @@ function _avatarColorByRol(rol){
   return c[rol]||'#6b7280';
 }
 
+/* ──────────────────────────────────────────────────────────
+   _calcularContrapartes(userId, userRol)
+   Devuelve array de usuarios con quienes el user dado tiene
+   movimientos financieros (pedidos o pagos).
+   Estructura: [{ userId, nombre, rol, ganado, pagado, saldo }]
+────────────────────────────────────────────────────────── */
+function _calcularContrapartes(userId, userRol){
+  const orders=_ordersCache||[];
+  const users=_usersCache||[];
+  const pagos=(window._pagosCache)||[];
+  const mes=mesActual();
+  const acc={}; // key: counterpartId -> {nombre, rol, ganado, pagado}
+
+  function _addCp(cpId, gan){
+    if(!cpId) return;
+    const k=String(cpId);
+    const u=users.find(x=>String(x.id)===k);
+    if(!u) return;
+    if(!acc[k]) acc[k]={userId:k,nombre:u.nombre||'—',rol:u.rol,ganado:0,pagado:0};
+    acc[k].ganado+=Math.round(Number(gan)||0);
+  }
+
+  // Buscar admin/superadmin principal (primer admin activo encontrado)
+  const adminUser=users.find(u=>(u.rol==='admin'||u.rol==='superadmin')&&u.activo!==false)
+    ||users.find(u=>u.rol==='admin'||u.rol==='superadmin');
+  const adminId=adminUser?String(adminUser.id):null;
+
+  // Iterar pedidos entregados del mes para detectar contrapartes según rol
+  const ordsMes=orders.filter(o=>o.estado==='Entregado'&&(o.fecha||'').startsWith(mes));
+
+  if(userRol==='vendedor'){
+    ordsMes.filter(o=>String(o.vendedorId)===String(userId)).forEach(o=>{
+      const gan=ganVend(o);
+      if(o.dropId){
+        // Si hay dropshipper, la contraparte que paga al vendedor es el admin igualmente
+        // pero también mostrar el dropshipper como relación (sin saldo directo, gan=0 mostrar info)
+        _addCp(adminId,gan);
+        // registrar dropshipper como contraparte de relación (informativa)
+        if(o.dropId && String(o.dropId)!==String(userId)) _addCp(o.dropId,0);
+      } else {
+        _addCp(adminId,gan);
+      }
+    });
+  } else if(userRol==='dropshipper'){
+    ordsMes.filter(o=>String(o.dropId)===String(userId)).forEach(o=>{
+      const gan=(o.comision||0)*(o.qty||1);
+      _addCp(adminId,gan);
+      if(o.vendedorId && String(o.vendedorId)!==String(userId)) _addCp(o.vendedorId,0);
+    });
+  } else if(userRol==='proveedor'){
+    ordsMes.filter(o=>String(o.proveedorId)===String(userId)).forEach(o=>{
+      const gan=(o.costo||0)*(o.qty||1);
+      _addCp(adminId,gan);
+    });
+  } else if(userRol==='delivery'){
+    // Sueldo + premios pagados por admin
+    try{
+      const u=users.find(x=>String(x.id)===String(userId));
+      if(u){
+        const ganMes=_ganadoPorUsuarioMes(u,orders);
+        _addCp(adminId,ganMes);
+      }
+    }catch(_){}
+  }
+
+  // Sumar pagos recibidos por este usuario (mes), agrupados por pagado_por
+  pagos.filter(p=>String(p.pagado_a)===String(userId)&&(p.fecha||'').startsWith(mes)).forEach(p=>{
+    const k=String(p.pagado_por||adminId||'');
+    if(!k) return;
+    const u=users.find(x=>String(x.id)===k);
+    if(!u) return;
+    if(!acc[k]) acc[k]={userId:k,nombre:u.nombre||'—',rol:u.rol,ganado:0,pagado:0};
+    acc[k].pagado+=Number(p.monto||0);
+  });
+
+  return Object.values(acc).map(x=>({
+    userId:x.userId,
+    nombre:x.nombre,
+    rol:x.rol,
+    ganado:Math.round(x.ganado),
+    pagado:Math.round(x.pagado),
+    saldo:Math.max(0,Math.round(x.ganado-x.pagado))
+  })).sort((a,b)=>b.saldo-a.saldo);
+}
+
 // Estado de filtros admin pagos
 window._pagosFiltro=window._pagosFiltro||{q:'',rol:'todos',orden:'saldo_desc'};
 
@@ -11640,6 +11748,10 @@ PAGES.pagos=function(){
 
       $('ca').innerHTML=
         '<div class="stitle" style="margin-top:0">💵 Pagos del sistema — '+mes+'</div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
+          '<button class="btn btn-secondary btn-sm" onclick="exportarTodosSaldosCSV()">📥 Exportar saldos a CSV</button>'+
+          '<button class="btn btn-secondary btn-sm" onclick="imprimirBalanceGeneral()">🖨️ Imprimir balance general</button>'+
+        '</div>'+
         '<div class="sgrid" style="margin-bottom:14px">'+
           '<div class="sc gr"><div class="slabel">Total ganado mes</div><div class="sval">'+fmt(totalGanado)+'</div></div>'+
           '<div class="sc bl"><div class="slabel">Total pagado</div><div class="sval">'+fmt(totalPagado)+'</div></div>'+
@@ -11666,44 +11778,105 @@ PAGES.pagos=function(){
       return;
     }
 
+    // ─────────────────────────────────────────────
     // Vista usuario (vendedor/dropshipper/proveedor/delivery)
+    // Contraparte view: muestra SU lado del balance.
+    // ─────────────────────────────────────────────
     const yo=(users||[]).find(u=>String(u.id)===String(CU.id))||CU;
     const ganado=_ganadoPorUsuarioMes(yo,orders);
-    const misPagos=await DL.getPagos({pagado_a:CU.id});
+    // Asegurar caché global de pagos para que _calcularContrapartes funcione
+    try{
+      if(!window._pagosCache) window._pagosCache=await DL.getPagos({});
+    }catch(_){ window._pagosCache=window._pagosCache||[]; }
+    const misPagos=((window._pagosCache)||[]).filter(p=>String(p.pagado_a)===String(CU.id));
     const misPagosMes=misPagos.filter(p=>(p.fecha||'').startsWith(mes));
     const cobrado=misPagosMes.reduce((a,p)=>a+(Number(p.monto)||0),0);
-    const saldo=ganado-cobrado;
-    const colorSaldo=saldo>0?'var(--red,#ef4444)':'var(--green,#16a34a)';
+    const saldo=Math.max(0,ganado-cobrado);
     // Cargar comprobantes de los pagos del mes
     try{ await _cargarComprobantesDePagos(misPagosMes.map(function(p){return p.id;})); }catch(_){ }
+
+    // Contrapartes financieras
+    const contrapartes=_calcularContrapartes(CU.id,CU.rol);
+
+    const saludo=(yo.nombre||'').split(' ')[0]||yo.nombre||'';
+
+    // Header card 3D estilo userPagoRow
+    const headerHtml=
+      '<div style="background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05);padding:20px 22px;margin-bottom:16px">'+
+        '<div style="font-size:13px;color:var(--text2);font-weight:700">👋 Hola '+escHtml(saludo)+'</div>'+
+        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px">💼 Tu Estado Financiero — '+mes+'</div>'+
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px">'+
+          '<div style="text-align:center;padding:12px;background:var(--bg3);border-radius:12px">'+
+            '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">💰 Ganado mes</div>'+
+            '<div style="font-size:20px;font-weight:900;color:var(--accent)">'+fmt(ganado)+'</div>'+
+          '</div>'+
+          '<div style="text-align:center;padding:12px;background:var(--bg3);border-radius:12px">'+
+            '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">✅ Cobrado mes</div>'+
+            '<div style="font-size:20px;font-weight:900;color:#22c55e">'+fmt(cobrado)+'</div>'+
+          '</div>'+
+          '<div style="text-align:center;padding:12px;background:var(--bg3);border-radius:12px">'+
+            '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">⚠️ Te deben</div>'+
+            '<div style="font-size:20px;font-weight:900;color:'+(saldo>0?'#ef4444':'#22c55e')+'">'+fmt(saldo)+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+
+    // Filas de contrapartes
+    const filasCp=contrapartes.map(cp=>{
+      const avatarColor=_avatarColorByRol(cp.rol);
+      const avatarStyle=avatarColor.startsWith('linear-gradient')
+        ?'background:'+avatarColor
+        :'background:linear-gradient(135deg,'+avatarColor+', '+avatarColor+'cc)';
+      const uObj=(users||[]).find(x=>String(x.id)===String(cp.userId));
+      const avatarInner=(uObj&&uObj.foto_perfil)
+        ?'<img src="'+safeUrl(uObj.foto_perfil)+'" alt="">'
+        :escHtml((cp.nombre||'?')[0].toUpperCase());
+      const saldoClass=cp.saldo>0?'deuda':'ok';
+      const saldoLabel=cp.saldo>0?'Te debe':'Al día';
+      return '<div class="userPagoRow" onclick="abrirPagoUsuario(\''+escAttr(cp.userId)+'\')">'+
+        '<div class="avatar" style="'+avatarStyle+'">'+avatarInner+'</div>'+
+        '<div class="info">'+
+          '<div class="nombre">'+escHtml(cp.nombre)+'</div>'+
+          '<div class="rol">'+escHtml(capRole(cp.rol))+'</div>'+
+          '<div style="font-size:11px;margin-top:4px"><span style="color:#22c55e">✅ Te pagó: '+fmt(cp.pagado)+'</span> · <span style="color:'+(cp.saldo>0?'#ef4444':'var(--text2)')+'">⚠️ Te debe: '+fmt(cp.saldo)+'</span></div>'+
+        '</div>'+
+        '<div class="saldo '+saldoClass+'">'+
+          '<span class="label">'+saldoLabel+'</span>'+
+          fmt(cp.saldo)+
+        '</div>'+
+        '<div class="acciones">'+
+          '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();abrirPagoUsuario(\''+escAttr(cp.userId)+'\')">📋 Ver detalle</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+    // Tabla pagos recibidos del mes
     const filasPagos=misPagosMes.map(p=>{
       const pagador=(users||[]).find(u=>String(u.id)===String(p.pagado_por));
       const tieneComp=(window._comprobantesCache&&window._comprobantesCache[p.id]&&window._comprobantesCache[p.id].length);
       const compIcon=tieneComp
-        ? ' <button class="btn btn-icon" onclick="_verComprobante(\''+escAttr(p.id)+'\')" title="Ver comprobante" style="padding:2px 6px;font-size:14px">📎</button>'
+        ? ' <button class="btn btn-icon" onclick="event.stopPropagation();_verComprobante(\''+escAttr(p.id)+'\')" title="Ver comprobante" style="padding:2px 6px;font-size:14px">📎</button>'
         : '';
       return '<tr>'+
-        '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+compIcon+'</td>'+
-        '<td style="font-weight:700;color:var(--green)">'+fmt(p.monto)+'</td>'+
+        '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+'</td>'+
+        '<td style="font-size:12px;color:var(--text2)">'+escHtml(pagador?pagador.nombre:'—')+'</td>'+
+        '<td style="font-weight:700;color:#22c55e">'+fmt(p.monto)+'</td>'+
         '<td>'+escHtml(p.metodo||'—')+'</td>'+
         '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
-        '<td style="font-size:12px;color:var(--text2)">'+escHtml(pagador?pagador.nombre:'—')+'</td>'+
+        '<td>'+compIcon+'</td>'+
       '</tr>';
     });
+
     $('ca').innerHTML=
-      '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px">'+
-        '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">Te deben</div>'+
-        '<div style="font-size:32px;font-weight:800;color:'+colorSaldo+'">'+fmt(Math.max(0,saldo))+'</div>'+
-        '<div style="display:flex;gap:24px;margin-top:14px;flex-wrap:wrap">'+
-          '<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Ganado este mes</div><div style="font-weight:700;color:var(--green)">'+fmt(ganado)+'</div></div>'+
-          '<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Cobrado este mes</div><div style="font-weight:700;color:var(--text)">'+fmt(cobrado)+'</div></div>'+
-        '</div>'+
-      '</div>'+
+      headerHtml+
+      '<div class="stitle">🤝 Tus contrapartes — '+mes+'</div>'+
+      (filasCp||'<div style="text-align:center;padding:30px;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px">Sin movimientos financieros este mes</div>')+
+      '<div style="height:10px"></div>'+
       '<div class="stitle">📋 Pagos recibidos — '+mes+'</div>'+
       '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
-        '<th>Fecha</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Pagado por</th>'+
+        '<th>Fecha</th><th>De quién</th><th>Monto</th><th>Método</th><th>Referencia</th><th>📎</th>'+
       '</tr></thead><tbody>'+
-        (filasPagos.length?filasPagos.join(''):'<tr><td colspan="5" style="text-align:center;color:var(--text3)">Sin pagos recibidos este mes</td></tr>')+
+        (filasPagos.length?filasPagos.join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text3)">Sin pagos recibidos este mes</td></tr>')+
       '</tbody></table></div>';
   })();
 };
@@ -11943,12 +12116,88 @@ function _pagoUsuarioRangoFecha(periodo,refDate){
   return {ini,fin};
 }
 
+/* ──────────────────────────────────────────────
+   _renderPagoUsuarioContraparte
+   Vista para visitantes NO admin: muestra el balance
+   entre CU (el visitante) y la contraparte `other`.
+──────────────────────────────────────────────── */
+function _renderPagoUsuarioContraparte(other){
+  $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">Cargando balance...</div>';
+  (async()=>{
+    try{ if(!window._pagosCache) window._pagosCache=await DL.getPagos({}); }catch(_){ window._pagosCache=window._pagosCache||[]; }
+    const mes=mesActual();
+    // Buscar la contraparte específica desde la perspectiva de CU
+    const cps=_calcularContrapartes(CU.id,CU.rol);
+    const cp=cps.find(x=>String(x.userId)===String(other.id))
+      ||{userId:other.id,nombre:other.nombre,rol:other.rol,ganado:0,pagado:0,saldo:0};
+
+    // Lista pagos recibidos por CU desde other (mes)
+    const pagosDe=((window._pagosCache)||[]).filter(p=>
+      String(p.pagado_a)===String(CU.id)&&
+      String(p.pagado_por)===String(other.id)&&
+      (p.fecha||'').startsWith(mes)
+    );
+    const filasPag=pagosDe.map(p=>{
+      return '<tr>'+
+        '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+'</td>'+
+        '<td style="font-weight:800;color:#22c55e">'+fmt(p.monto)+'</td>'+
+        '<td>'+escHtml(p.metodo||'—')+'</td>'+
+        '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
+        '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.nota||'')+'</td>'+
+      '</tr>';
+    }).join('');
+
+    const avatarColorU=_avatarColorByRol(other.rol);
+    const avatarStyleU=avatarColorU.startsWith('linear-gradient')
+      ?'background:'+avatarColorU
+      :'background:linear-gradient(135deg,'+avatarColorU+', '+avatarColorU+'cc)';
+    const avatarInner=other.foto_perfil
+      ?'<img src="'+safeUrl(other.foto_perfil)+'" alt="" style="width:100%;height:100%;object-fit:cover">'
+      :escHtml((other.nombre||'?')[0].toUpperCase());
+
+    $('ca').innerHTML=
+      '<button class="btnVolver" style="margin-bottom:12px" onclick="nav(\'pagos\')"><span class="arrow">←</span> Volver a Pagos</button>'+
+      // Header con la contraparte
+      '<div style="background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">'+
+        '<div style="width:64px;height:64px;border-radius:50%;'+avatarStyleU+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;overflow:hidden;flex-shrink:0">'+avatarInner+'</div>'+
+        '<div style="flex:1;min-width:200px">'+
+          '<div style="font-size:11px;color:var(--text2);text-transform:uppercase">Balance entre vos y</div>'+
+          '<div style="font-size:20px;font-weight:900">'+escHtml(other.nombre||'—')+'</div>'+
+          '<div style="font-size:13px;color:var(--text2)">'+escHtml(capRole(other.rol))+'</div>'+
+        '</div>'+
+        '<div style="text-align:right">'+
+          '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700">Te debe (mes)</div>'+
+          '<div style="font-size:28px;font-weight:900;color:'+(cp.saldo>0?'#ef4444':'#22c55e')+'">'+fmt(cp.saldo)+'</div>'+
+        '</div>'+
+      '</div>'+
+      // Métricas
+      '<div class="sgrid" style="margin-bottom:14px">'+
+        '<div class="sc gr"><div class="slabel">💰 Ganaste con esta relación</div><div class="sval">'+fmt(cp.ganado)+'</div></div>'+
+        '<div class="sc ac"><div class="slabel">✅ Te pagó este mes</div><div class="sval">'+fmt(cp.pagado)+'</div></div>'+
+        '<div class="sc '+(cp.saldo>0?'re':'gr')+'"><div class="slabel">⚠️ Saldo pendiente</div><div class="sval">'+fmt(cp.saldo)+'</div></div>'+
+      '</div>'+
+      // Pagos recibidos desde esta contraparte
+      '<div class="stitle">💵 Pagos recibidos de '+escHtml(other.nombre||'—')+' — '+mes+'</div>'+
+      '<div style="overflow-x:auto;margin-bottom:16px"><table class="tbl"><thead><tr>'+
+        '<th>Fecha</th><th>Monto</th><th>Método</th><th>Ref</th><th>Nota</th>'+
+      '</tr></thead><tbody>'+
+        (filasPag||'<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">Sin pagos recibidos de esta persona este mes</td></tr>')+
+      '</tbody></table></div>';
+  })();
+}
+
 PAGES.pago_usuario=function(){
   const userId=window._pagoUsuarioActual;
   if(!userId){ nav('pagos'); return; }
   const user=(_usersCache||[]).find(u=>String(u.id)===String(userId));
   if(!user){ pushNotif('Usuario no encontrado','e'); nav('pagos'); return; }
   if(!window._pagoPeriodoActual) window._pagoPeriodoActual='mes';
+
+  // Si el visitante NO es admin/superadmin → vista contraparte
+  const esAdminVisit=CU.rol==='admin'||CU.rol==='superadmin';
+  if(!esAdminVisit){
+    return _renderPagoUsuarioContraparte(user);
+  }
 
   $('ca').innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">Cargando estado financiero...</div>';
 
@@ -12166,7 +12415,9 @@ PAGES.pago_usuario=function(){
       (esAdmin?'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:24px 0">'+
         '<button class="btn btn-primary" onclick="openRegistrarPago(\''+escAttr(user.id)+'\')">💵 Pago Parcial</button>'+
         '<button class="btnPagado" onclick="abrirPagoCompleto(\''+escAttr(user.id)+'\')">✅ Marcar Pagado</button>'+
-        '<button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button>'+
+        '<button class="btn btn-secondary" onclick="imprimirEstadoCuenta(\''+escAttr(user.id)+'\',\''+periodo+'\')">🖨️ Imprimir</button>'+
+        '<button class="btn btn-secondary" onclick="exportarEstadoPDF(\''+escAttr(user.id)+'\',\''+periodo+'\')">📥 Exportar PDF</button>'+
+        '<button class="btn btn-secondary" onclick="exportarEstadoCSV(\''+escAttr(user.id)+'\',\''+periodo+'\')">📊 Exportar CSV</button>'+
       '</div>':'');
   })();
 };
@@ -12188,6 +12439,327 @@ function _clearDiaPago(){
   window._pagoDiaSel=null;
   window._pagoPeriodoActual='mes';
   nav('pago_usuario');
+}
+
+/* ══════════════════════════════════════════════════
+   EXPORTACIÓN ESTADO FINANCIERO — Bloque 4
+   Imprimir / PDF / CSV (por usuario y global)
+══════════════════════════════════════════════════ */
+function _periodoLabel(p){
+  return {hoy:'Hoy',semana:'Esta semana',mes:'Este mes',ano:'Este año',dia:'Día seleccionado'}[p]||'Mes';
+}
+function _csvEscape(v){
+  if(v===null||v===undefined) return '';
+  const s=String(v).replace(/"/g,'""');
+  return '"'+s+'"';
+}
+function _descargarBlob(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function _datosEstadoUsuario(userId,periodo){
+  const user=(_usersCache||[]).find(u=>String(u.id)===String(userId));
+  if(!user) return null;
+  const {ini,fin}=_pagoUsuarioRangoFecha(periodo);
+  const enRango=(fs)=>{ if(!fs) return false; const d=new Date(fs); return d>=ini && d<=fin; };
+  const orders=_ordersCache||[];
+  const peds=orders.filter(o=>{
+    const m=user.rol==='vendedor'?String(o.vendedorId)===String(user.id)
+      :user.rol==='dropshipper'?String(o.dropId)===String(user.id)
+      :user.rol==='proveedor'?String(o.proveedorId)===String(user.id)
+      :user.rol==='delivery'?String(o.deliveryId)===String(user.id):false;
+    return m && enRango(o.fecha||o.created_at);
+  });
+  function ganDeOrden(o){
+    if(user.rol==='vendedor') return ganVend(o);
+    if(user.rol==='dropshipper') return (o.comision||0)*(o.qty||1);
+    if(user.rol==='proveedor') return (o.costo||0)*(o.qty||1);
+    return 0;
+  }
+  const pedsEnt=peds.filter(o=>o.estado==='Entregado');
+  const ganado=pedsEnt.reduce((a,o)=>a+ganDeOrden(o),0);
+  const pagos=((window._pagosCache)||[]).filter(p=>String(p.pagado_a)===String(userId)&&enRango(p.fecha));
+  const cobrado=pagos.reduce((a,p)=>a+Number(p.monto||0),0);
+  const saldoVivo=(typeof calcularSaldoUsuario==='function')?calcularSaldoUsuario(userId):Math.max(0,ganado-cobrado);
+  return {user,peds,pedsEnt,pagos,ganado,cobrado,saldoVivo,pendientePeriodo:Math.max(0,ganado-cobrado),ini,fin,ganDeOrden};
+}
+
+function _htmlEstadoCuentaImprimible(userId,periodo){
+  const d=_datosEstadoUsuario(userId,periodo);
+  if(!d) return '<p>Usuario no encontrado</p>';
+  const {user,pedsEnt,pagos,ganado,cobrado,saldoVivo,pendientePeriodo,ini,fin,ganDeOrden}=d;
+  const fmtFecha=(dt)=>(dt instanceof Date?dt:new Date(dt)).toLocaleDateString('es-PY');
+  const fmtMoney=(n)=>'Gs. '+(Number(n)||0).toLocaleString('es-PY');
+  const filasPed=pedsEnt.map(o=>{
+    const cli=(_usersCache||[]).find(u=>String(u.id)===String(o.clienteId));
+    const cliNombre=cli?cli.nombre:(o.cliente||'—');
+    return '<tr>'+
+      '<td>'+escHtml((o.fecha||'').slice(0,10))+'</td>'+
+      '<td>'+escHtml(cliNombre)+'</td>'+
+      '<td>'+escHtml(o.estado||'—')+'</td>'+
+      '<td style="text-align:right">'+fmtMoney((o.precio||0)*(o.qty||1))+'</td>'+
+      '<td style="text-align:right">'+fmtMoney(ganDeOrden(o))+'</td>'+
+    '</tr>';
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:#666">Sin pedidos entregados en el período</td></tr>';
+  const filasPag=pagos.map(p=>{
+    const pagador=(_usersCache||[]).find(u=>String(u.id)===String(p.pagado_por));
+    return '<tr>'+
+      '<td>'+escHtml(p.fecha||'')+'</td>'+
+      '<td style="text-align:right">'+fmtMoney(p.monto)+'</td>'+
+      '<td>'+escHtml(p.metodo||'—')+'</td>'+
+      '<td>'+escHtml(p.referencia||'—')+'</td>'+
+      '<td>'+escHtml(p.nota||'')+'</td>'+
+      '<td>'+escHtml(pagador?pagador.nombre:'—')+'</td>'+
+    '</tr>';
+  }).join('')||'<tr><td colspan="6" style="text-align:center;color:#666">Sin pagos en el período</td></tr>';
+  const css='<style>'+
+    '*{box-sizing:border-box}'+
+    'body{font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;color:#111;background:#fff;padding:24px;margin:0;font-size:11px}'+
+    '.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #f5a623;padding-bottom:12px}'+
+    '.logo{font-size:22px;font-weight:900;color:#f5a623;letter-spacing:1px}'+
+    '.brand{font-size:11px;color:#555}'+
+    '.meta{font-size:10px;color:#444;text-align:right;line-height:1.5}'+
+    'h1{font-size:18px;margin:0 0 4px 0;color:#1f2937}'+
+    'h2{color:#1f2937;border-left:4px solid #f5a623;padding-left:10px;font-size:13px;margin:18px 0 8px 0}'+
+    '.userBox{background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px 16px;margin-bottom:14px}'+
+    '.userBox .nombre{font-size:16px;font-weight:800;color:#111}'+
+    '.userBox .rol{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.5px}'+
+    '.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 18px 0}'+
+    '.metric{border:1px solid #e5e7eb;border-radius:6px;padding:10px;background:#fff}'+
+    '.metric .l{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px}'+
+    '.metric .v{font-size:14px;font-weight:800;color:#111;margin-top:2px}'+
+    'table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:10px}'+
+    'th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}'+
+    'th{background:#f3f4f6;font-weight:700;text-transform:uppercase;font-size:9px;letter-spacing:.4px}'+
+    '.footer{margin-top:24px;border-top:1px solid #e5e7eb;padding-top:10px;font-size:9px;color:#777;display:flex;justify-content:space-between}'+
+    '@media print{body{padding:1cm;font-size:10px}.no-print{display:none}}'+
+    '@page{margin:1cm}'+
+  '</style>';
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Estado de Cuenta — '+escHtml(user.nombre||'Usuario')+'</title>'+css+'</head><body>'+
+    '<div class="header">'+
+      '<div><div class="logo">IPORÃVE</div><div class="brand">Sistema de Gestión</div></div>'+
+      '<div class="meta">'+
+        '<div><b>Estado de Cuenta</b></div>'+
+        '<div>Período: '+_periodoLabel(periodo)+'</div>'+
+        '<div>'+fmtFecha(ini)+' — '+fmtFecha(fin)+'</div>'+
+        '<div>Emitido: '+new Date().toLocaleString('es-PY')+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="userBox">'+
+      '<div class="nombre">'+escHtml(user.nombre||'—')+'</div>'+
+      '<div class="rol">'+escHtml((typeof capRole==='function'?capRole(user.rol):user.rol)||'')+' · ID: '+escHtml(String(user.id))+'</div>'+
+    '</div>'+
+    '<h2>Resumen del Período</h2>'+
+    '<div class="metrics">'+
+      '<div class="metric"><div class="l">Pedidos entregados</div><div class="v">'+pedsEnt.length+'</div></div>'+
+      '<div class="metric"><div class="l">Ganado</div><div class="v">'+fmtMoney(ganado)+'</div></div>'+
+      '<div class="metric"><div class="l">Cobrado</div><div class="v">'+fmtMoney(cobrado)+'</div></div>'+
+      '<div class="metric"><div class="l">Pendiente período</div><div class="v">'+fmtMoney(pendientePeriodo)+'</div></div>'+
+    '</div>'+
+    '<div class="metric" style="margin-bottom:18px"><div class="l">Saldo vivo actual (mes en curso)</div><div class="v" style="font-size:18px;color:'+(saldoVivo>0?'#b91c1c':'#15803d')+'">'+fmtMoney(saldoVivo)+'</div></div>'+
+    '<h2>Pedidos del período</h2>'+
+    '<table><thead><tr><th>Fecha</th><th>Cliente</th><th>Estado</th><th style="text-align:right">Total</th><th style="text-align:right">Ganancia</th></tr></thead><tbody>'+filasPed+'</tbody></table>'+
+    '<h2>Pagos recibidos del período</h2>'+
+    '<table><thead><tr><th>Fecha</th><th style="text-align:right">Monto</th><th>Método</th><th>Referencia</th><th>Nota</th><th>Pagado por</th></tr></thead><tbody>'+filasPag+'</tbody></table>'+
+    '<div class="footer">'+
+      '<div>Generado por Iporãve Sistema</div>'+
+      '<div>'+new Date().toLocaleString('es-PY')+'</div>'+
+    '</div>'+
+  '</body></html>';
+}
+
+function imprimirEstadoCuenta(userId,periodo){
+  periodo=periodo||window._pagoPeriodoActual||'mes';
+  const html=_htmlEstadoCuentaImprimible(userId,periodo);
+  const w=window.open('','_blank');
+  if(!w){ if(typeof pushNotif==='function') pushNotif('Bloqueador de pop-ups activo','w'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(_){ } },500);
+}
+
+async function _ensureHtml2pdf(){
+  if(window.html2pdf) return true;
+  return new Promise((resolve)=>{
+    const s=document.createElement('scr'+'ipt');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    s.onload=()=>resolve(true);
+    s.onerror=()=>resolve(false);
+    document.head.appendChild(s);
+  });
+}
+
+async function exportarEstadoPDF(userId,periodo){
+  periodo=periodo||window._pagoPeriodoActual||'mes';
+  const user=(_usersCache||[]).find(u=>String(u.id)===String(userId));
+  const nombre=(user&&user.nombre||'usuario').replace(/\s+/g,'_');
+  if(typeof pushNotif==='function') pushNotif('Generando PDF...','i');
+  const ok=await _ensureHtml2pdf();
+  const html=_htmlEstadoCuentaImprimible(userId,periodo);
+  if(ok && window.html2pdf){
+    const cont=document.createElement('div');
+    cont.style.position='fixed';
+    cont.style.left='-10000px';
+    cont.style.top='0';
+    cont.style.width='800px';
+    cont.innerHTML=html;
+    document.body.appendChild(cont);
+    try{
+      await window.html2pdf().from(cont).set({
+        filename:'estado-cuenta-'+nombre+'-'+periodo+'.pdf',
+        margin:[10,10,10,10],
+        html2canvas:{scale:2,useCORS:true},
+        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+      }).save();
+      if(typeof pushNotif==='function') pushNotif('PDF generado','s');
+    }catch(e){
+      if(typeof pushNotif==='function') pushNotif('Error PDF, usando impresión','w');
+      imprimirEstadoCuenta(userId,periodo);
+    }finally{
+      document.body.removeChild(cont);
+    }
+  } else {
+    // Fallback: abrir ventana de impresión (usuario elige "Guardar como PDF")
+    if(typeof pushNotif==='function') pushNotif('Lib PDF no disponible, usá "Guardar como PDF" en el diálogo','w');
+    imprimirEstadoCuenta(userId,periodo);
+  }
+}
+
+function exportarEstadoCSV(userId,periodo){
+  periodo=periodo||window._pagoPeriodoActual||'mes';
+  const d=_datosEstadoUsuario(userId,periodo);
+  if(!d){ if(typeof pushNotif==='function') pushNotif('Usuario no encontrado','e'); return; }
+  const {user,pedsEnt,pagos,ganado,cobrado,saldoVivo,pendientePeriodo,ini,fin,ganDeOrden}=d;
+  const fmtFecha=(dt)=>(dt instanceof Date?dt:new Date(dt)).toLocaleDateString('es-PY');
+  const esc=_csvEscape;
+  let csv='﻿'; // BOM para Excel
+  csv+='ESTADO DE CUENTA - '+(user.nombre||'Usuario')+'\n';
+  csv+='Rol,'+esc(user.rol||'')+'\n';
+  csv+='ID,'+esc(user.id)+'\n';
+  csv+='Periodo,'+esc(_periodoLabel(periodo))+'\n';
+  csv+='Desde,'+esc(fmtFecha(ini))+'\n';
+  csv+='Hasta,'+esc(fmtFecha(fin))+'\n';
+  csv+='Emitido,'+esc(new Date().toLocaleString('es-PY'))+'\n';
+  csv+='\n';
+  csv+='RESUMEN\n';
+  csv+='Pedidos entregados,'+pedsEnt.length+'\n';
+  csv+='Ganado,'+ganado+'\n';
+  csv+='Cobrado,'+cobrado+'\n';
+  csv+='Pendiente periodo,'+pendientePeriodo+'\n';
+  csv+='Saldo vivo (mes en curso),'+saldoVivo+'\n';
+  csv+='\n';
+  csv+='PEDIDOS DEL PERIODO\n';
+  csv+='Fecha,Cliente,Estado,Cantidad,Precio Unit,Total,Mi ganancia\n';
+  pedsEnt.forEach(o=>{
+    const cli=(_usersCache||[]).find(u=>String(u.id)===String(o.clienteId));
+    const cliNombre=cli?cli.nombre:(o.cliente||'');
+    csv+=[esc((o.fecha||'').slice(0,10)),esc(cliNombre),esc(o.estado||''),esc(o.qty||1),esc(o.precio||0),esc((o.precio||0)*(o.qty||1)),esc(ganDeOrden(o))].join(',')+'\n';
+  });
+  csv+='\n';
+  csv+='PAGOS RECIBIDOS DEL PERIODO\n';
+  csv+='Fecha,Monto,Metodo,Referencia,Nota,Pagado por\n';
+  pagos.forEach(p=>{
+    const pagador=(_usersCache||[]).find(u=>String(u.id)===String(p.pagado_por));
+    csv+=[esc(p.fecha||''),esc(p.monto||0),esc(p.metodo||''),esc(p.referencia||''),esc(p.nota||''),esc(pagador?pagador.nombre:'')].join(',')+'\n';
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const nombre=(user.nombre||'usuario').replace(/\s+/g,'_');
+  _descargarBlob(blob,'estado-cuenta-'+nombre+'-'+periodo+'.csv');
+  if(typeof pushNotif==='function') pushNotif('CSV exportado','s');
+}
+
+/* ── EXPORTACIÓN GLOBAL (PAGES.pagos admin) ── */
+function exportarTodosSaldosCSV(){
+  const rolesPagables=['vendedor','dropshipper','proveedor','delivery'];
+  const usuarios=(_usersCache||[]).filter(u=>rolesPagables.includes(u.rol)&&u.activo!==false);
+  const orders=_ordersCache||[];
+  const pagosAll=window._pagosCache||[];
+  const mes=(typeof mesActual==='function')?mesActual():new Date().toISOString().slice(0,7);
+  const esc=_csvEscape;
+  let csv='﻿';
+  csv+='BALANCE GENERAL - '+mes+'\n';
+  csv+='Emitido,'+esc(new Date().toLocaleString('es-PY'))+'\n\n';
+  csv+='Nombre,Rol,Ganado del mes,Pagado del mes,Saldo pendiente\n';
+  let tg=0,tp=0,ts=0;
+  usuarios.forEach(u=>{
+    const ganado=_ganadoPorUsuarioMes(u,orders);
+    const pagado=pagosAll.filter(p=>String(p.pagado_a)===String(u.id)&&(p.fecha||'').startsWith(mes))
+      .reduce((a,b)=>a+Number(b.monto||0),0);
+    const saldo=Math.max(0,ganado-pagado);
+    tg+=ganado;tp+=pagado;ts+=saldo;
+    csv+=[esc(u.nombre||''),esc(u.rol||''),esc(ganado),esc(pagado),esc(saldo)].join(',')+'\n';
+  });
+  csv+='\nTOTALES,,'+tg+','+tp+','+ts+'\n';
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  _descargarBlob(blob,'balance-general-'+mes+'.csv');
+  if(typeof pushNotif==='function') pushNotif('Balance exportado a CSV','s');
+}
+
+function imprimirBalanceGeneral(){
+  const rolesPagables=['vendedor','dropshipper','proveedor','delivery'];
+  const usuarios=(_usersCache||[]).filter(u=>rolesPagables.includes(u.rol)&&u.activo!==false);
+  const orders=_ordersCache||[];
+  const pagosAll=window._pagosCache||[];
+  const mes=(typeof mesActual==='function')?mesActual():new Date().toISOString().slice(0,7);
+  const fmtMoney=(n)=>'Gs. '+(Number(n)||0).toLocaleString('es-PY');
+  let tg=0,tp=0,ts=0;
+  const filas=usuarios.map(u=>{
+    const ganado=_ganadoPorUsuarioMes(u,orders);
+    const pagado=pagosAll.filter(p=>String(p.pagado_a)===String(u.id)&&(p.fecha||'').startsWith(mes))
+      .reduce((a,b)=>a+Number(b.monto||0),0);
+    const saldo=Math.max(0,ganado-pagado);
+    tg+=ganado;tp+=pagado;ts+=saldo;
+    return '<tr>'+
+      '<td>'+escHtml(u.nombre||'—')+'</td>'+
+      '<td>'+escHtml((typeof capRole==='function'?capRole(u.rol):u.rol)||'')+'</td>'+
+      '<td style="text-align:right">'+fmtMoney(ganado)+'</td>'+
+      '<td style="text-align:right">'+fmtMoney(pagado)+'</td>'+
+      '<td style="text-align:right;font-weight:700;color:'+(saldo>0?'#b91c1c':'#15803d')+'">'+fmtMoney(saldo)+'</td>'+
+    '</tr>';
+  }).join('');
+  const css='<style>'+
+    'body{font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;color:#111;background:#fff;padding:24px;margin:0;font-size:11px}'+
+    '.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #f5a623;padding-bottom:12px}'+
+    '.logo{font-size:22px;font-weight:900;color:#f5a623}'+
+    'h1{font-size:18px;margin:0 0 4px 0}'+
+    'h2{color:#1f2937;border-left:4px solid #f5a623;padding-left:10px;font-size:13px;margin:18px 0 8px 0}'+
+    'table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:10px}'+
+    'th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}'+
+    'th{background:#f3f4f6;font-weight:700;text-transform:uppercase;font-size:9px}'+
+    'tfoot td{background:#f9fafb;font-weight:800}'+
+    '.footer{margin-top:24px;border-top:1px solid #e5e7eb;padding-top:10px;font-size:9px;color:#777}'+
+    '@media print{body{padding:1cm}}'+
+    '@page{margin:1cm}'+
+  '</style>';
+  const html='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Balance General — '+mes+'</title>'+css+'</head><body>'+
+    '<div class="header">'+
+      '<div><div class="logo">IPORÃVE</div><div>Balance General</div></div>'+
+      '<div style="text-align:right;font-size:10px;color:#444">'+
+        '<div>Mes: <b>'+mes+'</b></div>'+
+        '<div>Emitido: '+new Date().toLocaleString('es-PY')+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<h2>Saldos por usuario</h2>'+
+    '<table><thead><tr><th>Nombre</th><th>Rol</th><th style="text-align:right">Ganado</th><th style="text-align:right">Pagado</th><th style="text-align:right">Saldo</th></tr></thead>'+
+    '<tbody>'+(filas||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>')+'</tbody>'+
+    '<tfoot><tr><td colspan="2">TOTALES</td><td style="text-align:right">'+fmtMoney(tg)+'</td><td style="text-align:right">'+fmtMoney(tp)+'</td><td style="text-align:right">'+fmtMoney(ts)+'</td></tr></tfoot>'+
+    '</table>'+
+    '<div class="footer">Generado por Iporãve Sistema · '+new Date().toLocaleString('es-PY')+'</div>'+
+  '</body></html>';
+  const w=window.open('','_blank');
+  if(!w){ if(typeof pushNotif==='function') pushNotif('Bloqueador de pop-ups activo','w'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(_){ } },500);
 }
 
 document.addEventListener('DOMContentLoaded',function(){
