@@ -55,7 +55,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 /* LOGIN */
 #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 55% 35%,#181b24 0%,#0b0d12 70%);}
-body.no-auth .topbar,body.no-auth .sidebar,body.no-auth .sidebarCollapseBtn,body.no-auth #menuBtn{display:none!important}
+body.no-auth .topbar,body.no-auth .sidebar,body.no-auth .sidebarCollapseBtn,body.no-auth #menuBtn,body.no-auth .main>.topbar,body.no-auth .overlay-sidebar,body.no-auth #appScreen .topbar,body.no-auth #appScreen .sidebar,body.no-auth #sidebarOverlay,body.no-auth #aiBtn,body.no-auth #aiPanel,body.no-auth #codexNotifBell,body.no-auth #codexNotifPanel{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+/* Doble guardia: si #appScreen NO está visible (login/perfil inicial), ocultar SIEMPRE flechita y hamburger, sin depender de body.no-auth */
+body:not(:has(#appScreen.show)) .sidebarCollapseBtn,
+body:not(:has(#appScreen.show)) #menuBtn,
+body:not(:has(#appScreen.show)) .sidebar,
+body:not(:has(#appScreen.show)) .topbar,
+body:not(:has(#appScreen.show)) #sidebarOverlay,
+body:not(:has(#appScreen.show)) .overlay-sidebar{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 .lcard{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);padding:48px 42px;width:100%;max-width:430px;box-shadow:var(--shadow);animation:fadeIn .4s ease;}
 .llogo h1{font-family:'Bebas Neue',sans-serif;font-size:46px;letter-spacing:4px;color:var(--accent);line-height:1;text-align:center; animation: slideInDown 0.8s ease-out forwards;}
 .llogo p{color:var(--text2);font-size:12px;margin-top:5px;letter-spacing:1.5px;text-transform:uppercase;text-align:center;margin-bottom:30px;}
@@ -84,42 +91,110 @@ body.no-auth .topbar,body.no-auth .sidebar,body.no-auth .sidebarCollapseBtn,body
 .btn:hover{transform:translateY(-1px);box-shadow:0 3px 6px rgba(0,0,0,.15);}
 .btn:active{transform:translateY(0);box-shadow:0 1px 2px rgba(0,0,0,.1);}
 .btn-primary{background:var(--accent);color:#000;box-shadow:0 4px 14px rgba(245,166,35,.35);}.btn-primary:hover{background:var(--accent2);}
-/* Topbar icon buttons — profesional, moderno, premium */
+/* Topbar icon buttons — Premium nivel Apple/Linear */
 .topbar-icon-btn{
-  width:38px;height:38px;
-  border-radius:12px;
-  border:1px solid var(--border2);
-  background:linear-gradient(180deg,var(--bg2),var(--bg3));
+  width:40px;height:40px;
+  border-radius:14px;
+  border:1px solid transparent;
+  background:rgba(255,255,255,0.04);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
   color:var(--text);
   cursor:pointer;
-  font-size:15px;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;
   margin-right:8px;
   position:relative;
-  box-shadow:0 2px 8px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.06);
-  transition:all .25s cubic-bezier(.2,.8,.2,1);
+  font-size:16px;
+  transition:all .25s cubic-bezier(.4,0,.2,1);
   overflow:hidden;
+  box-shadow:0 1px 2px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.05);
 }
 .topbar-icon-btn::before{
   content:'';
   position:absolute;inset:0;
-  background:radial-gradient(circle at 50% 50%,rgba(245,166,35,.4) 0%,transparent 70%);
+  background:linear-gradient(135deg,rgba(245,166,35,.22),rgba(245,166,35,0));
   opacity:0;
-  transition:opacity .25s ease;
+  transition:opacity .3s ease;
+  pointer-events:none;
+}
+.topbar-icon-btn::after{
+  content:'';
+  position:absolute;inset:0;
+  border-radius:14px;
+  padding:1px;
+  background:linear-gradient(135deg,rgba(245,166,35,.6),rgba(245,166,35,0));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  opacity:0;
+  transition:opacity .3s ease;
+  pointer-events:none;
 }
 .topbar-icon-btn:hover{
-  border-color:var(--accent);
-  color:var(--accent);
+  background:rgba(245,166,35,.08);
   transform:translateY(-1px);
-  box-shadow:0 4px 14px rgba(245,166,35,.25),inset 0 1px 0 rgba(255,255,255,.1);
+  box-shadow:0 4px 16px rgba(245,166,35,.15),0 1px 3px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.08);
 }
-.topbar-icon-btn:hover::before{opacity:.15;}
-.topbar-icon-btn:active{transform:translateY(0);box-shadow:0 1px 3px rgba(0,0,0,.2),inset 0 2px 4px rgba(0,0,0,.15);}
-.topbar-icon-btn svg{transition:transform .4s cubic-bezier(.2,.8,.2,1);}
-.topbar-icon-btn.spinning svg{animation:spinRefresh .9s linear infinite;}
-@keyframes spinRefresh{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-.topbar-icon-btn.theme-btn{margin-right:10px;}
+.topbar-icon-btn:hover::before{opacity:1;}
+.topbar-icon-btn:hover::after{opacity:1;}
+.topbar-icon-btn:active{
+  transform:translateY(0);
+  box-shadow:0 1px 2px rgba(0,0,0,.1),inset 0 2px 6px rgba(0,0,0,.12);
+}
+.topbar-icon-btn svg{
+  width:18px;height:18px;
+  stroke:currentColor;
+  transition:transform .4s cubic-bezier(.4,0,.2,1),color .25s ease;
+}
+.topbar-icon-btn:hover svg{
+  color:var(--accent);
+  transform:scale(1.08);
+}
+.topbar-icon-btn.spinning{
+  background:rgba(245,166,35,.08);
+  border-color:rgba(245,166,35,.2);
+}
+.topbar-icon-btn.spinning svg{
+  animation:premiumSpin 1.1s cubic-bezier(.5,0,.5,1) infinite;
+  color:var(--accent);
+}
+@keyframes premiumSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.topbar-icon-btn.theme-btn span{
+  font-size:18px;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));
+  transition:transform .25s ease;
+  display:inline-block;
+}
+.topbar-icon-btn.theme-btn:hover span{
+  transform:rotate(-15deg) scale(1.1);
+}
+[data-theme="light"] .topbar-icon-btn{
+  background:rgba(0,0,0,.04);
+  box-shadow:0 1px 2px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.5);
+}
+[data-theme="light"] .topbar-icon-btn:hover{
+  background:rgba(245,166,35,.1);
+}
+#codexNotifBadge{
+  position:absolute;
+  top:-5px;right:-5px;
+  min-width:18px;height:18px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  color:#fff;
+  font-size:10px;
+  font-weight:800;
+  display:none;
+  align-items:center;justify-content:center;
+  padding:0 4px;
+  box-shadow:0 2px 6px rgba(239,68,68,.4),0 0 0 2px var(--bg);
+  animation:badgePulse 2s ease-in-out infinite;
+}
+@keyframes badgePulse{
+  0%,100%{box-shadow:0 2px 6px rgba(239,68,68,.4),0 0 0 2px var(--bg)}
+  50%{box-shadow:0 2px 12px rgba(239,68,68,.7),0 0 0 2px var(--bg)}
+}
 
 .btn-secondary{background:linear-gradient(180deg,var(--bg2),var(--bg3))!important;color:#ffffff!important;border:1px solid var(--accent)!important;font-weight:700!important;text-shadow:0 1px 2px rgba(0,0,0,.4);box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.08);}
 .btn-secondary:hover{background:var(--accent)!important;color:#000!important;border-color:var(--accent)!important;transform:translateY(-1px);text-shadow:none;box-shadow:0 4px 14px rgba(245,166,35,.35);}
@@ -219,7 +294,7 @@ body.no-auth .topbar,body.no-auth .sidebar,body.no-auth .sidebarCollapseBtn,body
 .bn1{background:rgba(168,85,247,.14);color:var(--purple);}
 .bn2{background:rgba(168,85,247,.2);color:#c084fc;}
 .bn3{background:rgba(168,85,247,.28);color:#d8b4fe;}
-.bprov{background:rgba(245,166,35,.14);color:var(--accent);}
+.bprov{background:rgba(184,84,31,.22);color:#e0a070;border:1px solid rgba(184,84,31,.5);}
 .brp{background:rgba(251,191,36,.13);color:#fbbf24;}
 .bret{background:rgba(239,68,68,.2);color:#fca5a5;}
 /* MODALS */
@@ -391,7 +466,8 @@ body.no-auth .topbar,body.no-auth .sidebar,body.no-auth .sidebarCollapseBtn,body
 .ai-input textarea:focus{border-color:var(--accent);}
 .ai-input textarea.at-max{overflow-y:auto;}
 /* NOTIFICATIONS */
-#notifArea{position:fixed;top:16px;right:16px;z-index:600;display:flex;flex-direction:column;gap:8px;width:320px;}
+#notifArea{position:fixed;bottom:24px;right:16px;top:auto;z-index:600;display:flex;flex-direction:column-reverse;gap:8px;width:320px;max-height:calc(100vh - 100px);overflow:hidden;pointer-events:none;}
+#notifArea > .notif{pointer-events:auto;}
 .notif{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 14px;font-size:12px;box-shadow:var(--shadow);animation:notifIn .3s ease;border-left:3px solid var(--accent);}
 .notif.notif-s{border-left-color:var(--green);}
 .notif.notif-e{border-left-color:var(--red);}
@@ -586,7 +662,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   #aiPanel{width:calc(100vw - 24px);right:12px;bottom:80px;}
   #aiPanel.maximized{width:calc(100vw - 24px);max-height:80vh;}
   #aiBtn{bottom:16px;right:16px;width:46px;height:46px;font-size:19px;}
-  #notifArea{width:calc(100vw - 32px);left:16px;right:16px;}
+  #notifArea{width:calc(100vw - 32px);left:16px;right:16px;bottom:80px;top:auto;max-height:calc(100vh - 160px);}
   #ntPanel{width:calc(100vw - 24px);right:12px;top:52px;}
   .lcard{padding:28px 20px;}
   .ldemo{font-size:10px;}
@@ -659,8 +735,8 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 /* Renglón de usuario en Pagos — 3D clickeable */
 .userPagoRow{display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;box-shadow:0 3px 10px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.04);cursor:pointer;transition:all .15s ease;margin-bottom:10px;flex-wrap:wrap}
 .userPagoRow:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06)}
-.userPagoRow:active{transform:translateY(1px);box-shadow:0 1px 4px rgba(0,0,0,.2),inset 0 2px 6px rgba(0,0,0,.15)}
-.userPagoRow .avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#d97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px;flex-shrink:0;overflow:hidden}
+.userPagoRow:active{transform:translateY(1px) scale(.998);box-shadow:0 1px 2px rgba(0,0,0,.3),inset 0 0 0 rgba(255,255,255,0);transition:transform .08s ease,box-shadow .12s ease}
+.userPagoRow .avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#d97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px;flex-shrink:0;overflow:hidden;border:2px solid rgba(0,0,0,0.45);box-shadow:0 0 0 1px rgba(255,255,255,0.05) inset}
 .userPagoRow .avatar img{width:100%;height:100%;object-fit:cover}
 .userPagoRow .info{flex:1;min-width:140px}
 .userPagoRow .nombre{font-size:15px;font-weight:800;color:var(--text)}
@@ -777,9 +853,26 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
 .asist-bubble{max-width:80%;padding:11px 15px;border-radius:14px;font-size:14px;line-height:1.5}
 .asist-user .asist-bubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px}
 .asist-bot .asist-bubble{background:var(--bg2);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px}
+/* ── Onboard (coachmarks) ── */
+#onboardOverlay{position:fixed;inset:0;z-index:99980;pointer-events:auto;background:rgba(0,0,0,0.45);transition:opacity .25s ease;opacity:0}
+#onboardOverlay.show{opacity:1}
+#onboardHole{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.55), 0 0 0 3px var(--accent), 0 0 30px rgba(245,166,35,.55);pointer-events:none;z-index:99981;transition:all .2s ease}
+#onboardHand{position:fixed;font-size:34px;line-height:1;z-index:99983;pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.55));animation:onboardBounce 1.2s ease-in-out infinite;user-select:none}
+@keyframes onboardBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+#onboardTip{position:fixed;background:var(--bg2);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;max-width:240px;color:var(--text);font-size:13px;line-height:1.45;box-shadow:0 8px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(245,166,35,.18);z-index:99984;pointer-events:auto;animation:onboardTipIn .22s ease}
+#onboardTip .onboardTipTitle{font-weight:700;color:var(--accent);font-size:12px;letter-spacing:.3px;text-transform:uppercase;margin-bottom:4px}
+#onboardTip .onboardTipSkip{display:block;margin-top:8px;font-size:11px;color:var(--text3);text-align:right;cursor:pointer}
+#onboardTip .onboardTipSkip:hover{color:var(--accent)}
+#onboardTip::before{content:"";position:absolute;width:12px;height:12px;background:var(--bg2);border-left:1px solid var(--accent);border-top:1px solid var(--accent);transform:rotate(45deg)}
+#onboardTip[data-arrow="top"]::before{top:-7px;left:24px}
+#onboardTip[data-arrow="bottom"]::before{bottom:-7px;left:24px;transform:rotate(225deg)}
+#onboardTip[data-arrow="left"]::before{left:-7px;top:20px;transform:rotate(-45deg)}
+#onboardTip[data-arrow="right"]::before{right:-7px;top:20px;transform:rotate(135deg)}
+@keyframes onboardTipIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media (max-width:600px){#onboardTip{max-width:84vw}}
 </style>
 </head>
-<body>
+<body class="no-auth">
 
 <!-- SIDEBAR OVERLAY (mobile) -->
 <div id="sideOverlay" onclick="closeSidebar()"></div>
@@ -907,7 +1000,7 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
       <div class="tbactions" id="tbActions"></div>
       <button id="refreshBtn" type="button" onclick="_refreshActualPage()" class="topbar-icon-btn" title="Actualizar página" aria-label="Actualizar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
       <button id="themeToggleBtn" type="button" onclick="toggleTheme()" class="topbar-icon-btn theme-btn" title="Cambiar tema" aria-label="Cambiar tema"><span id="themeIcon">☀️</span></button>
-      <button id="codexNotifBell" type="button" onclick="_notifSessionToggle()" style="display:none;position:relative;width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:17px;align-items:center;justify-content:center;flex-shrink:0" aria-label="Notificaciones">🔔<span id="codexNotifBadge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:999px;background:#ef4444;color:#fff;font-size:10px;font-weight:900;align-items:center;justify-content:center;padding:0 3px"></span></button>
+      <button id="codexNotifBell" type="button" onclick="_notifSessionToggle()" class="topbar-icon-btn" style="display:none" aria-label="Notificaciones"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="codexNotifBadge"></span></button>
       <span class="offline-badge" id="offlineBadge">⚡ Sin conexión</span>
     </div>
     <div class="ca" id="ca"></div>
@@ -2976,6 +3069,11 @@ async function doLogin(){
     await refreshCache();
     _actualizarBadgePerfil();
     nav('dashboard');
+    try{ setTimeout(function(){
+      if(!window.Onboard) return;
+      Onboard.showIfNew('topbar_bell','#codexNotifBell','Acá ves tus notificaciones');
+      setTimeout(function(){ Onboard.showIfNew('topbar_refresh','#refreshBtn','Si algo no se ve actualizado, apretá acá'); },300);
+    },1500); }catch(_){}
     _checkUrgentOrders();
     initRealtime();
     if(window._ordersPolling)clearInterval(window._ordersPolling);
@@ -5127,7 +5225,7 @@ PAGES.orders=PAGES.mispedidos=function(){
   _pedidosShown=_pedidosPageSize;
   const canCreate=['admin','superadmin','vendedor','proveedor','dropshipper'].includes(CU.rol);
   $('tbActions').innerHTML=
-    (canCreate?'<button class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
+    (canCreate?'<button id="btnNuevoPedido" class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="openCSV()">↑ CSV</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportCSV()">↓ CSV</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="DL.exportBackup()">💾 Backup</button>':'')+
@@ -5150,6 +5248,7 @@ PAGES.orders=PAGES.mispedidos=function(){
   if(wrap&&fbar&&wrap.parentNode!==fbar){fbar.insertBefore(wrap,fbar.firstChild);}
   else if(!wrap){_bgEnsureUI&&_bgEnsureUI();}
   filtrar();
+  try{ setTimeout(function(){ if(window.Onboard) Onboard.showIfNew('orders_nuevo','#btnNuevoPedido','Acá creás un pedido nuevo'); },400); }catch(_){}
 };
 function clearF(){['fEst','fZona','fProv','fFecha','fDesde','fHasta'].forEach(id=>{const e=$(id);if(e)e.value='';});const bg=document.getElementById('busquedaGlobal');if(bg)bg.value='';_pedidosShown=_pedidosPageSize;filtrar();}
 function _ordersFilteredFromUI(){
@@ -6342,6 +6441,7 @@ PAGES.liquidacion=function(){
     'transition:opacity .2s,transform .2s;opacity:0;transform:translateY(8px);'
   );
   btn.addEventListener('click',function(){
+    if(_stbDragSuppressClick)return;
     var ca=document.getElementById('ca');
     var main=document.querySelector('.main')||document.querySelector('main');
     /* elegir el contenedor que realmente tiene scroll activo */
@@ -6358,6 +6458,64 @@ PAGES.liquidacion=function(){
     }
   });
   document.body.appendChild(btn);
+  /* ── DRAG TEMPORAL (mouse + touch via Pointer Events) ──
+     Posición arrastrada vive solo en memoria (_stbTempPos).
+     Se resetea al ocultarse el botón o al cambiar de página/menú. */
+  btn.style.touchAction='none';
+  btn.style.userSelect='none';
+  var _stbDragState=null;
+  var _stbDragSuppressClick=false;
+  var _stbTempPos=null;
+  var _stbDragRAF=null;
+  function _stbClamp(n,mn,mx){return Math.max(mn,Math.min(mx,n));}
+  function _stbApplyPos(left,top){
+    var size=btn.offsetWidth||44;
+    left=_stbClamp(left,8,window.innerWidth-size-8);
+    top=_stbClamp(top,8,window.innerHeight-size-8);
+    btn.style.left=left+'px';
+    btn.style.top=top+'px';
+    btn.style.right='auto';
+    btn.style.bottom='auto';
+    _stbTempPos={left:left,top:top};
+  }
+  function _stbResetPos(){
+    _stbTempPos=null;
+    btn.style.left='';
+    btn.style.top='';
+    btn.style.right='16px';
+    btn.style.bottom='130px';
+  }
+  btn.addEventListener('pointerdown',function(e){
+    if(!e||e.button>0)return;
+    var r=btn.getBoundingClientRect();
+    _stbDragState={id:e.pointerId,startX:e.clientX,startY:e.clientY,left:r.left,top:r.top,moved:false};
+    try{btn.setPointerCapture(e.pointerId);}catch(_){}
+  });
+  window.addEventListener('pointermove',function(e){
+    if(!_stbDragState)return;
+    if(_stbDragRAF)return;
+    _stbDragRAF=requestAnimationFrame(function(){
+      _stbDragRAF=null;
+      if(!_stbDragState)return;
+      var dx=e.clientX-_stbDragState.startX,dy=e.clientY-_stbDragState.startY;
+      if(Math.abs(dx)+Math.abs(dy)>5)_stbDragState.moved=true;
+      if(_stbDragState.moved)_stbApplyPos(_stbDragState.left+dx,_stbDragState.top+dy);
+    });
+  });
+  window.addEventListener('pointerup',function(e){
+    if(!_stbDragState)return;
+    var wasMoved=_stbDragState.moved;
+    try{btn.releasePointerCapture(_stbDragState.id);}catch(_){}
+    if(wasMoved){
+      _stbDragSuppressClick=true;
+      setTimeout(function(){_stbDragSuppressClick=false;},300);
+    }
+    _stbDragState=null;
+  });
+  /* Reset posición temporal al cambiar de página/menú (#ca se re-renderiza) */
+  var _caResetObs=new MutationObserver(function(){if(_stbTempPos)_stbResetPos();});
+  var _caForObs=document.getElementById('ca');
+  if(_caForObs)_caResetObs.observe(_caForObs,{childList:true});
   function _onScroll(){
     var ca=document.getElementById('ca');
     var main=document.querySelector('.main')||document.querySelector('main');
@@ -6370,7 +6528,7 @@ PAGES.liquidacion=function(){
       setTimeout(function(){btn.style.opacity='1';btn.style.transform='translateY(0)';},10);
     }else{
       btn.style.opacity='0';btn.style.transform='translateY(8px)';
-      setTimeout(function(){if(btn.style.opacity==='0')btn.style.display='none';},220);
+      setTimeout(function(){if(btn.style.opacity==='0'){btn.style.display='none';_stbResetPos();}},220);
     }
   }
   /* escuchar scroll en el contenedor principal y en window */
@@ -10694,6 +10852,8 @@ async function main(){
   if(await _initCatalogoPublico())return;
   _sessionToken=sessionStorage.getItem('iporave_token')||null;
   _refreshToken=sessionStorage.getItem('iporave_refresh')||null;
+  // Si no hay token al iniciar, asegurar clase no-auth (oculta topbar/sidebar)
+  if(!_sessionToken){document.body.classList.add('no-auth');}
   await loadServerConfig(_sessionToken);
   DL._initLocal();
   // Cargar cola pendiente del localStorage
@@ -11889,11 +12049,11 @@ function calcularSaldoUsuario(userId){
   return Math.max(0,ganado-pagado);
 }
 
-// Helper color de avatar por rol
+// Helper color de avatar por rol — paleta OSCURA para diferenciar de botones de acción (que usan --accent naranja brillante)
 function _avatarColorByRol(rol){
-  const c={vendedor:'#f59e0b',dropshipper:'#8b5cf6',proveedor:'#3b82f6',delivery:'#22c55e',admin:'#ef4444',cliente:'#6b7280'};
-  if(rol==='superadmin') return 'linear-gradient(135deg,#fbbf24,#f59e0b 50%,#b45309)';
-  return c[rol]||'#6b7280';
+  const c={vendedor:'#b8541f',dropshipper:'#5b21b6',proveedor:'#1d4ed8',delivery:'#0d7344',admin:'#991b1b',cliente:'#374151'};
+  if(rol==='superadmin') return 'linear-gradient(135deg,#b45309,#92400e 50%,#78350f)';
+  return c[rol]||'#374151';
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -12134,6 +12294,7 @@ PAGES.pagos=function(){
         '</div>'+
         '<div id="pagosListaBox" class="pago-fade"></div>';
       _renderPagosLista();
+      try{ setTimeout(function(){ if(window.Onboard) Onboard.showIfNew('pagos_primer_renglon','.userPagoRow','Apretá un renglón para ver el detalle del pago'); },500); }catch(_){}
       return;
     }
 
@@ -12237,6 +12398,7 @@ PAGES.pagos=function(){
       '</tr></thead><tbody>'+
         (filasPagos.length?filasPagos.join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text3)">Sin pagos recibidos este mes</td></tr>')+
       '</tbody></table></div>';
+    try{ setTimeout(function(){ if(window.Onboard) Onboard.showIfNew('pagos_primer_renglon','.userPagoRow','Apretá un renglón para ver el detalle del pago'); },500); }catch(_){}
   })();
 };
 
@@ -12542,7 +12704,7 @@ function _renderPagoUsuarioContraparte(other){
       '<button class="btnVolver" style="margin-bottom:12px" onclick="nav(\'pagos\')"><span class="arrow">←</span> Volver a Pagos</button>'+
       // Header con la contraparte
       '<div style="background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">'+
-        '<div style="width:64px;height:64px;border-radius:50%;'+avatarStyleU+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;overflow:hidden;flex-shrink:0">'+avatarInner+'</div>'+
+        '<div style="width:64px;height:64px;border-radius:50%;'+avatarStyleU+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;overflow:hidden;flex-shrink:0;border:2px solid rgba(0,0,0,0.45);box-shadow:0 0 0 1px rgba(255,255,255,0.05) inset">'+avatarInner+'</div>'+
         '<div style="flex:1;min-width:200px">'+
           '<div style="font-size:11px;color:var(--text2);text-transform:uppercase">Balance entre vos y</div>'+
           '<div style="font-size:20px;font-weight:900">'+escHtml(other.nombre||'—')+'</div>'+
@@ -12769,7 +12931,7 @@ PAGES.pago_usuario=function(){
       '<button class="btnVolver" style="margin-bottom:12px" onclick="nav(\'pagos\')"><span class="arrow">←</span> Volver a Pagos</button>'+
       // Header
       '<div style="background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">'+
-        '<div style="width:64px;height:64px;border-radius:50%;'+avatarStyleU+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;overflow:hidden;flex-shrink:0">'+avatarInner+'</div>'+
+        '<div style="width:64px;height:64px;border-radius:50%;'+avatarStyleU+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;overflow:hidden;flex-shrink:0;border:2px solid rgba(0,0,0,0.45);box-shadow:0 0 0 1px rgba(255,255,255,0.05) inset">'+avatarInner+'</div>'+
         '<div style="flex:1;min-width:200px">'+
           '<div style="font-size:20px;font-weight:900">'+escHtml(user.nombre||'—')+'</div>'+
           '<div style="font-size:13px;color:var(--text2)">'+escHtml(capRole(user.rol))+'</div>'+
@@ -13626,6 +13788,204 @@ function toggleTheme(){
       document.documentElement.setAttribute('data-theme', 'dark');
     }
   }catch(_){ }
+})();
+</script>
+<script>
+  // Doble protección: asegurar que body tenga 'no-auth' al inicio si no hay sesión válida
+  (function(){
+    try{
+      var hasSession = false;
+      // 1) Verificar token de Iporave en sessionStorage
+      try{
+        var t = sessionStorage.getItem('iporave_token');
+        if(t && t !== 'null' && t.length > 10) hasSession = true;
+      }catch(_e){}
+      // 2) Verificar localStorage de Supabase (sb-*-auth-token)
+      if(!hasSession){
+        try{
+          for(var i = 0; i < localStorage.length; i++){
+            var key = localStorage.key(i);
+            if(key && key.indexOf('-auth-token') !== -1){
+              var val = localStorage.getItem(key);
+              if(val && val !== 'null' && val.length > 10){ hasSession = true; break; }
+            }
+          }
+        }catch(_e2){}
+      }
+      if(!hasSession){
+        document.body.classList.add('no-auth');
+      }
+    }catch(e){}
+  })();
+
+/* ══════════════════════════════════════════════════════════════════
+   Onboard — tutorial tipo coachmarks (manito + tooltip + overlay)
+   API:
+     Onboard.show(targetSel, mensaje, opts?)          -> muestra siempre
+     Onboard.showIfNew(id, targetSel, mensaje, opts?) -> solo 1 vez/usuario (localStorage)
+   Storage key: onboard_v1_<id>
+══════════════════════════════════════════════════════════════════ */
+(function(){
+  var STATE = { active:false, target:null, id:null, timer:null, raf:null,
+                onResize:null, onScroll:null, onKey:null, onDocClick:null, onTargetClick:null };
+
+  function $on(el, ev, fn, opts){ if(el) el.addEventListener(ev, fn, opts||false); }
+  function $off(el, ev, fn, opts){ if(el) el.removeEventListener(ev, fn, opts||false); }
+
+  function markSeen(id){
+    if(!id) return;
+    try{ localStorage.setItem('onboard_v1_'+id, '1'); }catch(_){}
+  }
+  function wasSeen(id){
+    if(!id) return false;
+    try{ return localStorage.getItem('onboard_v1_'+id) === '1'; }catch(_){ return false; }
+  }
+
+  function destroy(skip){
+    if(!STATE.active) return;
+    STATE.active = false;
+    if(STATE.timer){ clearTimeout(STATE.timer); STATE.timer=null; }
+    if(STATE.raf){ cancelAnimationFrame(STATE.raf); STATE.raf=null; }
+    $off(window, 'resize', STATE.onResize);
+    $off(window, 'scroll', STATE.onScroll, true);
+    $off(document, 'keydown', STATE.onKey);
+    $off(document, 'mousedown', STATE.onDocClick, true);
+    $off(document, 'touchstart', STATE.onDocClick, true);
+    if(STATE.target) $off(STATE.target, 'click', STATE.onTargetClick, true);
+    ['onboardOverlay','onboardHole','onboardHand','onboardTip'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && el.parentNode) el.parentNode.removeChild(el);
+    });
+    if(STATE.id) markSeen(STATE.id);
+    STATE.target = null; STATE.id = null;
+  }
+
+  function inViewport(rect){
+    return rect && rect.width > 0 && rect.height > 0 &&
+      rect.bottom > 0 && rect.right > 0 &&
+      rect.top < (window.innerHeight||0) && rect.left < (window.innerWidth||0);
+  }
+
+  function position(){
+    if(!STATE.active || !STATE.target) return;
+    var r = STATE.target.getBoundingClientRect();
+    if(!inViewport(r)){
+      // Si target no está visible, ocultamos elementos (sin destruir) hasta que vuelva
+      var els = ['onboardHole','onboardHand','onboardTip'].map(function(id){ return document.getElementById(id); });
+      els.forEach(function(el){ if(el) el.style.display='none'; });
+      return;
+    }
+    var hole = document.getElementById('onboardHole');
+    var hand = document.getElementById('onboardHand');
+    var tip  = document.getElementById('onboardTip');
+    if(!hole || !hand || !tip) return;
+    [hole,hand,tip].forEach(function(el){ el.style.display=''; });
+
+    var pad = 6;
+    hole.style.left   = (r.left - pad) + 'px';
+    hole.style.top    = (r.top  - pad) + 'px';
+    hole.style.width  = (r.width  + pad*2) + 'px';
+    hole.style.height = (r.height + pad*2) + 'px';
+
+    // Manito: apuntando desde arriba al elemento por defecto
+    var W = window.innerWidth, H = window.innerHeight;
+    var handW = 34, handH = 36;
+    var preferAbove = r.top > (handH + 60);
+    var handLeft, handTop, tipLeft, tipTop, arrow;
+    if(preferAbove){
+      handLeft = Math.min(W - handW - 6, Math.max(6, r.left + r.width/2 - handW/2));
+      handTop  = Math.max(6, r.top - handH - 4);
+      tipLeft  = Math.min(W - 250, Math.max(6, r.left + r.width/2 - 110));
+      tipTop   = Math.max(6, handTop - 90);
+      arrow    = 'bottom';
+      // si no entra arriba, lo ponemos debajo
+      if(tipTop < 6){ preferAbove = false; }
+    }
+    if(!preferAbove){
+      handLeft = Math.min(W - handW - 6, Math.max(6, r.left + r.width/2 - handW/2));
+      handTop  = Math.min(H - handH - 6, r.bottom + 4);
+      tipLeft  = Math.min(W - 250, Math.max(6, r.left + r.width/2 - 110));
+      tipTop   = Math.min(H - 100, handTop + handH + 6);
+      arrow    = 'top';
+    }
+    hand.style.left = handLeft + 'px';
+    hand.style.top  = handTop  + 'px';
+    tip.style.left  = tipLeft  + 'px';
+    tip.style.top   = tipTop   + 'px';
+    tip.setAttribute('data-arrow', arrow);
+  }
+
+  function show(targetSel, mensaje, opts){
+    opts = opts || {};
+    // si ya hay uno activo, cerrarlo sin marcar (no es la misma instancia)
+    if(STATE.active) destroy();
+
+    var target = (typeof targetSel === 'string') ? document.querySelector(targetSel) : targetSel;
+    if(!target){ return false; }
+
+    STATE.active = true;
+    STATE.target = target;
+    STATE.id = opts.id || null;
+
+    var overlay = document.createElement('div'); overlay.id='onboardOverlay';
+    var hole    = document.createElement('div'); hole.id='onboardHole';
+    var hand    = document.createElement('div'); hand.id='onboardHand'; hand.textContent='👆';
+    var tip     = document.createElement('div'); tip.id='onboardTip';
+    var title   = (opts.title) ? '<div class="onboardTipTitle">'+String(opts.title)+'</div>' : '';
+    tip.innerHTML = title +
+      '<div>'+ String(mensaje||'') +'</div>' +
+      '<div class="onboardTipSkip" data-skip="1">Saltar (Esc)</div>';
+    document.body.appendChild(overlay);
+    document.body.appendChild(hole);
+    document.body.appendChild(hand);
+    document.body.appendChild(tip);
+    // forzar reflow para transición
+    void overlay.offsetWidth;
+    overlay.classList.add('show');
+
+    position();
+
+    // auto-dismiss
+    var timeoutMs = (typeof opts.timeout === 'number') ? opts.timeout : 8000;
+    if(timeoutMs > 0) STATE.timer = setTimeout(function(){ destroy(); }, timeoutMs);
+
+    // listeners
+    STATE.onResize = function(){ if(STATE.raf) cancelAnimationFrame(STATE.raf); STATE.raf = requestAnimationFrame(position); };
+    STATE.onScroll = function(){ if(STATE.raf) cancelAnimationFrame(STATE.raf); STATE.raf = requestAnimationFrame(position); };
+    STATE.onKey    = function(e){ if(e.key === 'Escape' || e.keyCode === 27){ destroy(); } };
+    STATE.onTargetClick = function(){ destroy(); };
+    STATE.onDocClick = function(e){
+      if(tip.contains(e.target)){
+        if(e.target && e.target.getAttribute && e.target.getAttribute('data-skip')==='1'){ destroy(); }
+        return; // click dentro del tooltip (no skip) no cierra
+      }
+      if(target.contains(e.target)){
+        // dejar pasar el click al target, marcar como visto
+        destroy();
+        return;
+      }
+      // click fuera → skip
+      destroy();
+    };
+
+    $on(window, 'resize', STATE.onResize);
+    $on(window, 'scroll', STATE.onScroll, true);
+    $on(document, 'keydown', STATE.onKey);
+    $on(document, 'mousedown', STATE.onDocClick, true);
+    $on(document, 'touchstart', STATE.onDocClick, true);
+    $on(target, 'click', STATE.onTargetClick, true);
+    return true;
+  }
+
+  function showIfNew(id, targetSel, mensaje, opts){
+    if(!id) return false;
+    if(wasSeen(id)) return false;
+    opts = opts || {};
+    opts.id = id;
+    return show(targetSel, mensaje, opts);
+  }
+
+  window.Onboard = { show: show, showIfNew: showIfNew, _markSeen: markSeen, _wasSeen: wasSeen, _destroy: destroy };
 })();
 </script>
 </body>
