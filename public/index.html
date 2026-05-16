@@ -3623,7 +3623,7 @@ const AI_TOOL_EXEC={
     if(args.cliente)orders=orders.filter(o=>o.cliente&&o.cliente.toLowerCase().includes(args.cliente.toLowerCase()));
     orders=orders.slice(0,args.limite||10);
     if(!orders.length)return'No se encontraron pedidos con esos filtros.';
-    return orders.map(o=>`#${o.id} | ${o.fecha} | ${o.cliente} | ${o.producto} | ${o.estado} | Gs. ${(o.precio*o.qty).toLocaleString('es-PY')}`).join('\n');
+    return orders.map(o=>`#${o.id} | ${o.fecha} | ${o.cliente} | ${o.producto} | ${o.estado} | Gs. ${((o.precio||0)*(o.qty||1)).toLocaleString('es-PY')}`).join('\n');
   },
   async crear_pedido(args){
     if(!['admin','superadmin','vendedor','proveedor','dropshipper'].includes(CU.rol))return'Sin permisos para crear pedidos.';
@@ -6934,7 +6934,7 @@ function renderTable(orders,title,showActs,highlightChanges){
     '<td class="col-hide"><div>'+escHtml(o.producto||'')+'</div><div style="font-size:11px;color:var(--text2)">x'+o.qty+'</div></td>'+
     '<td class="col-hide" style="font-size:12px;color:var(--text2)">'+escHtml(o.proveedor||'—')+'</td>'+
     '<td class="col-hide" style="font-size:12px">'+escHtml(_getZonaO(o).nombre||'')+'</td>'+
-    '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--green)">'+fmt(o.precio*o.qty)+'</td>'+
+    '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--green)">'+fmt((o.precio||0)*(o.qty||1))+'</td>'+
     '<td class="col-hide">'+bE(o.estado)+'</td>'+
     (showActs?'<td style="white-space:nowrap"><div class="order-menu-wrap">'+
       '<button class="order-menu-btn" onclick="_toggleOrderMenu(event,'+o.id+')" title="Acciones">⋮</button>'+
@@ -7184,8 +7184,8 @@ function viewOrder(id){
     '<div>'+
       '<div style="margin-bottom:10px"><div class="slabel">Producto x Qty</div><div style="font-weight:600">'+escHtml(o.producto||'')+' x'+o.qty+'</div></div>'+
       '<div style="margin-bottom:10px"><div class="slabel">Proveedor</div><div>'+escHtml(o.proveedor||'—')+'</div></div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Precio venta</div><div style="color:var(--green)">'+fmt(o.precio*o.qty)+'</div></div>'+
-      (['admin','vendedor'].includes(CU.rol)?'<div style="margin-bottom:10px"><div class="slabel">Costo proveedor</div><div style="color:var(--red)">'+fmt(o.costo*o.qty)+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Precio venta</div><div style="color:var(--green)">'+fmt((o.precio||0)*(o.qty||1))+'</div></div>'+
+      (['admin','vendedor'].includes(CU.rol)?'<div style="margin-bottom:10px"><div class="slabel">Costo proveedor</div><div style="color:var(--red)">'+fmt((o.costo||0)*(o.qty||1))+'</div></div>'+
       '<div style="margin-bottom:10px"><div class="slabel">Logística</div><div style="color:var(--blue)">'+fmt(zona.precio)+'</div></div>'+
       '<div style="margin-bottom:10px"><div class="slabel">Ganancia vendedor</div><div style="color:var(--accent);font-weight:700">'+fmt(gan)+'</div></div>':'')+
     '</div></div>'+
@@ -7445,7 +7445,7 @@ async function _ejecutarConfirmDlv(){
   if(estado==='Despachado'){if(!_esDelivery)waDespachado(o);}
   if(estado==='En Ruta'){if(!_esDelivery)waEnRuta(o);notifEnRutaAdmin(o);_gpsLoopStart(o);}
   if(_esDelivery&&['Despachado','En Ruta','Entregado'].includes(estado))pushNotif('Mensaje enviado al cliente','ok');
-  if(['Cancelado','Devuelto'].includes(estado))_gpsLoopStop();
+  if(['Cancelado','Devuelto','Reprogramado'].includes(estado))_gpsLoopStop();
   if(estado.startsWith('No contesta'))waNoContesta(o);
   await DL.saveOrder(o);
   await refreshCache();
@@ -7807,7 +7807,7 @@ PAGES.balance=function(){
   ent.forEach(o=>{
     const d=o.fecha||today();
     if(!byDate[d])byDate[d]={ing:0,cos:0,tar:0,gan:0,n:0};
-    byDate[d].ing+=o.precio*o.qty;byDate[d].cos+=o.costo*o.qty;
+    byDate[d].ing+=(o.precio||0)*(o.qty||1);byDate[d].cos+=(o.costo||0)*(o.qty||1);
     byDate[d].tar+=_getZonaO(o).precio;byDate[d].gan+=ganVend(o);byDate[d].n++;
   });
   const totalEntregados=ent.length;
@@ -7910,7 +7910,7 @@ PAGES.liquidacion=function(){
   const ent=orders.filter(o=>o.estado==='Entregado');
   const cfg=getCfg();
   const provMap={};
-  ent.forEach(o=>{const p=o.proveedor||'Sin proveedor';if(!provMap[p])provMap[p]={n:0,total:0};provMap[p].n++;provMap[p].total+=o.costo*o.qty;});
+  ent.forEach(o=>{const p=o.proveedor||'Sin proveedor';if(!provMap[p])provMap[p]={n:0,total:0};provMap[p].n++;provMap[p].total+=(o.costo||0)*(o.qty||1);});
   const vendedores=_usersCache.filter(u=>u.rol==='vendedor');
   const drops=_usersCache.filter(u=>u.rol==='dropshipper');
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
@@ -8185,8 +8185,8 @@ function _liqVend(){
     ent.map(o=>{const g=ganVend(o);return '<tr>'+
       '<td style="color:var(--accent);font-size:11px">#'+o.id+'</td>'+
       '<td>'+fmtDate(o.fecha)+'</td><td>'+escHtml(o.cliente||'')+'</td><td>'+escHtml(o.producto||'')+'</td>'+
-      '<td class="col-hide">'+fmt(o.precio*o.qty)+'</td>'+
-      '<td class="col-hide" style="color:var(--red)">'+fmt(o.costo*o.qty)+'</td>'+
+      '<td class="col-hide">'+fmt((o.precio||0)*(o.qty||1))+'</td>'+
+      '<td class="col-hide" style="color:var(--red)">'+fmt((o.costo||0)*(o.qty||1))+'</td>'+
       '<td class="col-hide" style="color:var(--blue)">'+fmt(_getZonaO(o).precio)+'</td>'+
       '<td style="color:'+(g>=0?'var(--green)':'var(--red)')+'">'+fmt(g)+'</td>'+
     '</tr>';}).join('')+'</tbody></table></div>':
@@ -8226,8 +8226,8 @@ function _liqDrop(){
     ent.map(o=>{const g=(o.comision||0)*(o.qty||1);return '<tr>'+
       '<td style="color:var(--accent);font-size:11px">#'+o.id+'</td>'+
       '<td>'+fmtDate(o.fecha)+'</td><td>'+escHtml(o.cliente||'')+'</td><td>'+escHtml(o.producto||'')+'</td>'+
-      '<td class="col-hide">'+fmt(o.precio*o.qty)+'</td>'+
-      '<td class="col-hide" style="color:var(--red)">'+fmt(o.costo*o.qty)+'</td>'+
+      '<td class="col-hide">'+fmt((o.precio||0)*(o.qty||1))+'</td>'+
+      '<td class="col-hide" style="color:var(--red)">'+fmt((o.costo||0)*(o.qty||1))+'</td>'+
       '<td style="color:'+(g>=0?'var(--green)':'var(--red)')+'">'+fmt(g)+'</td>'+
     '</tr>';}).join('')+'</tbody></table></div>':
     '<div style="text-align:center;padding:32px;color:var(--text3)">Sin pedidos entregados todavía</div>');
@@ -8261,7 +8261,7 @@ function _liqProv(){
       '<td>'+fmtDate(o.fecha)+'</td><td>'+escHtml(o.cliente||'')+'</td><td>'+escHtml(o.producto||'')+'</td>'+
       '<td style="text-align:center">'+o.qty+'</td>'+
       '<td>'+fmt(o.costo)+'</td>'+
-      '<td style="color:var(--accent);font-weight:700">'+fmt(o.costo*o.qty)+'</td>'+
+      '<td style="color:var(--accent);font-weight:700">'+fmt((o.costo||0)*(o.qty||1))+'</td>'+
     '</tr>').join('')+'</tbody></table></div>':
     '<div style="text-align:center;padding:32px;color:var(--text3)">Sin pedidos entregados todavía</div>');
 }
@@ -8303,7 +8303,7 @@ PAGES.recaudacion=function(){
       '<td>'+(o.metodoCobro?'<span class="badge be">'+MICON[o.metodoCobro]+' '+escHtml(o.metodoCobro)+'</span>':'—')+'</td>'+
       '<td class="col-hide" style="color:var(--blue);font-size:12px">'+fmt(_getZonaO(o).precio)+'</td>'+
       '<td class="col-hide" style="color:var(--purple);font-size:12px">'+((_getZonaO(o).extraDelivery||0)>0?fmt(_getZonaO(o).extraDelivery):'—')+'</td>'+
-      '<td style="color:var(--green);font-size:12px">'+fmt(o.precio*o.qty)+'</td>'+
+      '<td style="color:var(--green);font-size:12px">'+fmt((o.precio||0)*(o.qty||1))+'</td>'+
       '<td>'+(o.fotoEntrega?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--red)">✗</span>')+'</td>'+
     '</tr>').join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text3)">Sin entregas</td></tr>')+
     '</tbody></table></div></div>';
@@ -8625,7 +8625,7 @@ function filtrarBoletas(){
   '<th>Cliente</th><th>Producto</th><th>Total</th>'+
   '<th class="col-hide">IVA</th><th>Estado</th><th></th></tr></thead><tbody>'+
   orders.map(o=>{
-    const t=o.precio*o.qty;
+    const t=(o.precio||0)*(o.qty||1);
     const tasaNum=parseFloat(o.tipoIva)||0;
     const iva=(o.tipoIva==='Exento'||tasaNum===0)?0:Math.round(t/((100+tasaNum)/tasaNum));
     return '<tr>'+
@@ -8643,7 +8643,7 @@ function filtrarBoletas(){
 function _boletaHTML(o){
   const emp=_getEmpresa();
   const zona=_getZonaO(o);
-  const total=o.precio*o.qty;
+  const total=(o.precio||0)*(o.qty||1);
   const flete=zona.precio||0;
   const totalFact=total+flete;
   const tasaNum=parseFloat(o.tipoIva)||0;
@@ -8819,7 +8819,7 @@ function _boletaHTML(o){
 function _boletaHTML_legacy_unused(o){
   const emp=_getEmpresa();
   const zona=_getZonaO(o);
-  const total=o.precio*o.qty;
+  const total=(o.precio||0)*(o.qty||1);
   const flete=zona.precio;
   const totalFact=total+flete;
   const tasaNum=parseFloat(o.tipoIva)||0;
@@ -8960,7 +8960,7 @@ function _boletaHTML_legacy_unused(o){
           '<td class="desc">'+escHtml(o.producto||'')+(o.proveedor?'<br><small>Prov: '+escHtml(o.proveedor)+'</small>':'')+'</td>'+
           '<td>Gs. '+fmtN(o.precio)+'</td>'+
           '<td>'+escHtml(o.tipoIva||'10%')+'</td>'+
-          '<td><b>Gs. '+fmtN(o.precio*o.qty)+'</b></td>'+
+          '<td><b>Gs. '+fmtN((o.precio||0)*(o.qty||1))+'</b></td>'+
         '</tr>'+
         '<tr>'+
           '<td>1</td>'+
@@ -10453,11 +10453,13 @@ async function saveEditZona(id){
   // Persistir en segundo plano
   DL.saveZona(z);
 }
-async function delZona(id){
-  if(!confirm('¿Eliminar esta zona?'))return;
+function _doDelZona(id){
   _zonasCache=_zonasCache.filter(z=>z.id!==id);
   PAGES.zonas();
   DL.deleteZona(id);
+}
+async function delZona(id){
+  openA('Eliminar zona','<div style="padding:8px 4px">¿Eliminar esta zona?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doDelZona('+id+')">Eliminar</button>');
 }
 
 /* ─── CATÁLOGO DE PRODUCTOS ─── */
@@ -11408,13 +11410,15 @@ async function saveEditProducto(id){
   pushNotif('Producto actualizado','s');
   DL.saveProducto(p);
 }
-async function delProducto(id){
-  const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
-  if(!confirm('¿Eliminar "'+p.nombre+'" y todas sus presentaciones?'))return;
+function _doDelProducto(id){
   _catalogoCache=_catalogoCache.filter(x=>x.id!==id);
   PAGES.catalogo();
   pushNotif('Producto eliminado','w');
   DL.deleteProducto(id);
+}
+async function delProducto(id){
+  const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
+  openA('Eliminar producto','<div style="padding:8px 4px">¿Eliminar "<b>'+p.nombre+'</b>" y todas sus presentaciones?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doDelProducto('+id+')">Eliminar</button>');
 }
 
 /* ─── EDITOR DE DESCRIPCIÓN ENRIQUECIDA ─── */
@@ -11780,7 +11784,7 @@ function exportOrdersPDF(){
   const totL=orders.reduce((a,o)=>a+_getZonaO(o).precio,0);
   const gan=totV-totC-totL;
   const filas=orders.map((o,i)=>{
-    const z=_getZonaO(o);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const g=tv-cp-z.precio;
+    const z=_getZonaO(o);const tv=(o.precio||0)*(o.qty||1);const cp=(o.costo||0)*(o.qty||1);const g=tv-cp-z.precio;
     const ec={'Entregado':'#16a34a','Cancelado':'#dc2626','Pendiente':'#d97706'}[o.estado]||'#6b7280';
     return'<tr style="background:'+(i%2?'#f8fafc':'#fff')+'">'
       +'<td style="color:#94a3b8;font-size:11px">'+o.id+'</td>'
@@ -11901,7 +11905,7 @@ function exportOrdersCSV(){
     'Notas'
   ];
   const rows=orders.map(o=>{
-    const z=_getZonaO(o);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const log=z.precio||0;const gan=tv-cp-log;
+    const z=_getZonaO(o);const tv=(o.precio||0)*(o.qty||1);const cp=(o.costo||0)*(o.qty||1);const log=z.precio||0;const gan=tv-cp-log;
     return[
       o.id,o.fecha,o.boletaNum||'',o.estado,o.metodoCobro||'',
       o.cliente,o.cedula||'',o.telefono||'',o.direccion||'',z.nombre||'',
@@ -11934,7 +11938,7 @@ function exportBalanceCSV(){
     'Metodo Cobro'
   ];
   const rows=orders.map(o=>{
-    const z=_getZonaO(o);const tv=o.precio*o.qty;const cp=o.costo*o.qty;const cl=z.precio||0;const gan=tv-cp-cl;
+    const z=_getZonaO(o);const tv=(o.precio||0)*(o.qty||1);const cp=(o.costo||0)*(o.qty||1);const cl=z.precio||0;const gan=tv-cp-cl;
     return[
       o.id,o.fecha,o.boletaNum||'',
       o.cliente,z.nombre||'',
@@ -13770,8 +13774,7 @@ async function notifEntregaAdmin(o){
     });
   }catch(e){console.warn('notifEntregaAdmin:',e.message);}
 }
-async function aprobarDispositivo(id){
-  if(!confirm('¿Autorizar este dispositivo?'))return;
+async function _doAprobarDispositivo(id){
   const r=await fetch(WORKER_URL+'/api/aprobar-dispositivo',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
@@ -13781,8 +13784,10 @@ async function aprobarDispositivo(id){
   if(d.ok){pushNotif('Dispositivo autorizado correctamente','s');PAGES.dashboard();}
   else showAlert&&showAlert('','e',d.error||'Error');
 }
-async function rechazarDispositivo(id){
-  if(!confirm('¿Rechazar y eliminar este dispositivo?'))return;
+async function aprobarDispositivo(id){
+  openA('Autorizar dispositivo','<div style="padding:8px 4px">¿Autorizar este dispositivo?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doAprobarDispositivo('+id+')">Autorizar</button>');
+}
+async function _doRechazarDispositivo(id){
   const r=await fetch(WORKER_URL+'/api/rechazar-dispositivo',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+_sessionToken},
@@ -13791,6 +13796,9 @@ async function rechazarDispositivo(id){
   const d=await r.json();
   if(d.ok){pushNotif('Dispositivo rechazado','w');PAGES.dashboard();}
   else showAlert&&showAlert('','e',d.error||'Error');
+}
+async function rechazarDispositivo(id){
+  openA('Rechazar dispositivo','<div style="padding:8px 4px">¿Rechazar y eliminar este dispositivo?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doRechazarDispositivo('+id+')">Rechazar</button>');
 }
 
 /* ─── MAPA EN TIEMPO REAL ─────────────────────────────────────────────────── */
@@ -14837,10 +14845,8 @@ function _mapaToggleDlvs(){
   else{Object.values(window._dlvMapMarkers).forEach(m=>m.remove());window._dlvMapMarkers={};}
 }
 
-async function _mapaCambiarEstado(id,nuevoEstado){
+async function _doMapaCambiarEstado(id,nuevoEstado){
   const o=_ordersCache.find(x=>x.id===id);if(!o)return;
-  if(o.estado==='Entregado'){pushNotif('El pedido ya está Entregado y no se puede modificar','e');return;}
-  if(!confirm('¿Cambiar pedido #'+id+' a "'+nuevoEstado+'"?'))return;
   o.historial=o.historial||[];
   o.historial.push({estado:nuevoEstado,usuario:CU.nombre,fecha:nowStr(),obs:'Cambio desde mapa'});
   o.estado=nuevoEstado;
@@ -14855,6 +14861,11 @@ async function _mapaCambiarEstado(id,nuevoEstado){
     waEnRuta(o);
     setTimeout(()=>navegarPedido(id),300);
   }
+}
+async function _mapaCambiarEstado(id,nuevoEstado){
+  const o=_ordersCache.find(x=>x.id===id);if(!o)return;
+  if(o.estado==='Entregado'){pushNotif('El pedido ya está Entregado y no se puede modificar','e');return;}
+  openA('Cambiar estado','<div style="padding:8px 4px">¿Cambiar pedido <b>#'+id+'</b> a "<b>'+nuevoEstado+'</b>"?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doMapaCambiarEstado('+id+',''+nuevoEstado+'')" >Confirmar</button>');
 }
 
 async function _toggleTurnoConfirmado(){
@@ -15742,24 +15753,10 @@ function abrirPagoUsuario(targetUserId){
   nav('pago_usuario');
 }
 
-async function confirmarRegistroPago(targetUserId){
-  // Prevenir doble click — deshabilitar botón mientras procesa
+async function _doRegistrarPagoForzado(targetUserId){
   const btn=document.querySelector('[onclick*="confirmarRegistroPago"]');
-  if(btn&&btn.disabled)return; // ya está procesando
   if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.textContent='⏳ Guardando...';}
   const monto=parseFloat($('pagoMonto').value)||0;
-  if(monto<=0){
-    pushNotif('El monto debe ser mayor a 0','e');
-    if(btn){btn.disabled=false;btn.style.opacity='';btn.textContent='💾 Registrar';}
-    return;
-  }
-  const saldoActual=calcularSaldoUsuario(targetUserId);
-  if(monto>saldoActual){
-    if(!confirm('Estás registrando un pago de '+fmt(monto)+' cuando el saldo es '+fmt(saldoActual)+'. ¿Continuar?')){
-      if(btn){btn.disabled=false;btn.style.opacity='';btn.textContent='💾 Registrar';}
-      return;
-    }
-  }
   const metodo=$('pagoMetodo').value;
   const referencia=$('pagoRef').value.trim();
   const nota=$('pagoNota').value.trim();
@@ -15827,6 +15824,22 @@ async function confirmarRegistroPago(targetUserId){
     pushNotif('Error al registrar: '+(err.message||'desconocido'),'e');
     if(btn){btn.disabled=false;btn.style.opacity='';btn.textContent='💾 Registrar';}
   }
+}
+async function confirmarRegistroPago(targetUserId){
+  // Prevenir doble click — deshabilitar botón mientras procesa
+  const btn=document.querySelector('[onclick*="confirmarRegistroPago"]');
+  if(btn&&btn.disabled)return;
+  const monto=parseFloat($('pagoMonto').value)||0;
+  if(monto<=0){
+    pushNotif('El monto debe ser mayor a 0','e');
+    return;
+  }
+  const saldoActual=calcularSaldoUsuario(targetUserId);
+  if(monto>saldoActual){
+    openA('Pago mayor al saldo','<div style="padding:8px 4px">Estás registrando un pago de <b>'+fmt(monto)+'</b> cuando el saldo es <b>'+fmt(saldoActual)+'</b>. ¿Continuar?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doRegistrarPagoForzado('+targetUserId+')">Sí, registrar</button>');
+    return;
+  }
+  _doRegistrarPagoForzado(targetUserId);
 }
 
 /* ── Comprobantes de pago (TAREA 3) ───────────────────────────── */
