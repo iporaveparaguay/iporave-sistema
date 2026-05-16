@@ -2804,6 +2804,7 @@ const DL = {
       direccion:o.direccion,zona_id:o.zona,proveedor:o.proveedor,producto:o.producto,
       qty:o.qty,precio:o.precio,costo:o.costo,estado:o.estado,
       comision:o.comision||0,proveedor_id:o.proveedorId||null,
+      cliente_id:o.clienteId||null,
       vendedor_id:o.vendedorId,drop_id:o.dropId,delivery_id:o.deliveryId,
       metodo_cobro:o.metodoCobro,foto_entrega:o.fotoEntrega,
       gps_lat:o.gpsLat,gps_lng:o.gpsLng,sitio:o.sitio||null,notas:o.notas,
@@ -2822,6 +2823,7 @@ const DL = {
       direccion:r.direccion,zona:r.zona_id,proveedor:r.proveedor,producto:r.producto,
       qty:r.qty,precio:r.precio,costo:r.costo,estado:r.estado,
       comision:r.comision||0,proveedorId:r.proveedor_id||null,
+      clienteId:r.cliente_id||null,
       vendedorId:r.vendedor_id,dropId:r.drop_id,deliveryId:r.delivery_id,
       metodoCobro:r.metodo_cobro,fotoEntrega:r.foto_entrega,
       gpsLat:r.gps_lat,gpsLng:r.gps_lng,sitio:r.sitio||null,notas:r.notas,
@@ -2894,7 +2896,7 @@ function initRealtime(){
         const esDrop=rol==='dropshipper'&&String(r.drop_id)===String(CU?.id);
         const esDlv=rol==='delivery'&&String(r.delivery_id)===String(CU?.id);
         const esProv=rol==='proveedor'&&String(r.proveedor_id)===String(CU?.id);
-        const esCli=rol==='cliente'&&(r.cliente||'')===(CU?.nombre||'');
+        const esCli=rol==='cliente'&&(r.cliente_id?String(r.cliente_id)===String(CU?.id):(r.cliente||'')===(CU?.nombre||''));
         const esRelevante=esAdm||esVend||esDrop||esDlv||esProv||esCli;
         if(!esRelevante)return;
         // Mensaje diferenciado por estado y por quién es el destinatario
@@ -5358,7 +5360,7 @@ function nextDocNum(){
   window._bgBuscar=_bgBuscar;
   window._bgEnsureUI=_bgEnsureUI;
 
-  setTimeout(_bgEnsureUI,0);
+  // bgWrap se inicializa al entrar a orders/mispedidos (evita que quede pegado al body)
 })();
 
 /* ══════════════════════════════════════════════════
@@ -7460,6 +7462,7 @@ PAGES.neworder=function(){openNewOrder();nav('orders');};
 function openNewOrder(){
   const drops=_usersCache.filter(u=>u.rol==='dropshipper');
   const dlvs=_usersCache.filter(u=>u.rol==='delivery');
+  const provs=_usersCache.filter(u=>u.rol==='proveedor');
   openB('Nuevo Pedido',
     '<div class="stitle">Datos del cliente</div>'+
     (isAdminLike(CU.rol)?'<div class="fg"><label>👤 ¿De quién es este pedido?</label>'+
@@ -7489,7 +7492,7 @@ function openNewOrder(){
     '<div id="nGpsStatus" style="font-size:11px;color:var(--text3);margin-top:3px"></div>'+
     '</div>'+
     '<div class="stitle">Producto y proveedor</div>'+
-    '<div class="frow"><div class="fg"><label>Proveedor *</label><input type="text" id="nProv"></div>'+
+    '<div class="frow"><div class="fg"><label>Proveedor *</label><select id="nProv"><option value="">Sin proveedor</option>'+provs.map(p=>'<option value="'+p.id+'">'+escHtml(p.nombre||'')+'</option>').join('')+'</select></div>'+
     '<div class="fg"><label>Producto *</label>'+
     '<div style="display:flex;gap:6px;align-items:flex-start">'+
     '<textarea id="nProd" rows="3" placeholder="Escribí el producto o elegí del catálogo →" style="flex:1;min-width:0;width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px;resize:vertical;min-height:60px;max-height:120px;box-sizing:border-box;font-family:inherit"></textarea>'+
@@ -7739,7 +7742,10 @@ function calcNT(){
   if($('cGan')){$('cGan').textContent=fmt(gan);$('cGan').style.color=gan>=0?'var(--accent)':'var(--red)';}
 }
 async function saveNewOrder(){
-  const cli=gv('nCli').trim(),prod=gv('nProd').trim(),prov=gv('nProv').trim();
+  const cli=gv('nCli').trim(),prod=gv('nProd').trim();
+  const provId=parseInt(gv('nProv'))||null;
+  const provObj=provId?_usersCache.find(u=>u.id===provId):null;
+  const prov=provObj?provObj.nombre||'':'';
   const precio=parseFloat(gv('nPrec')),costo=parseFloat(gv('nCost'));
   const zonaVal=gv('nZona');
   const esManual=zonaVal==='manual';
@@ -7773,7 +7779,7 @@ async function saveNewOrder(){
   const o={
     id:newId,fecha:gv('nFecha')||today(),cliente:cli,cedula:gv('nCed'),
     telefono:gv('nTel'),direccion:gv('nDir'),zona,zonaCustomNombre,zonaCustomPrecio,
-    proveedor:prov,producto:prod,
+    proveedor:prov,proveedorId:provId,producto:prod,
     qty:parseInt(gv('nQty'))||1,precio,costo,estado:estadoInicial,
     vendedorId:vendedorIdSel,created_by:CU.id,
     dropId:dropIdSel,deliveryId:parseInt(gv('nDlv'))||null,
@@ -10499,7 +10505,7 @@ function crearPedidoDesdeProducto(id){
     openNewOrder();
     setTimeout(()=>{
       const ep=$('nProd');if(ep)ep.value=p.nombre;
-      const epProv=$('nProv');if(epProv&&p.proveedorNombre)epProv.value=p.proveedorNombre;
+      const epProv=$('nProv');if(epProv&&p.proveedorNombre){const _pm=_usersCache.find(u=>u.rol==='proveedor'&&(u.nombre||'')===p.proveedorNombre);if(_pm)epProv.value=_pm.id;}
       if(p.presentaciones&&p.presentaciones.length){
         const pr=p.presentaciones[0];
         const ep2=$('nPrec');if(ep2)ep2.value=_getPrecioRol(pr,CU.rol)||pr.precio||0;
