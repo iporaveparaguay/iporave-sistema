@@ -1,4 +1,58 @@
-# RELEVO CLAUDE — 2026-05-15 (ACTUALIZADO POST-OLEADA 2)
+# RELEVO CLAUDE — 2026-05-15 (ACTUALIZADO POST-BLOQUE-1.5)
+
+## 🆕 SESIÓN EXTENDIDA — Lo que se agregó después del primer relevo
+
+### Bloque 1 — Estado Financiero MVP (commit `bfab4dd`)
+- DL.savePago, DL.getPagos con tabla pagos
+- Renglones 3D clickeables con avatar coloreado por rol
+- Doble botón: 💵 Registrar Pago / ✅ Pagado
+- Modal con autocálculo en vivo del saldo restante
+- PAGES.pago_usuario página dedicada con tabs período, métricas, calendario, paginación
+- Card "💼 Estado Financiero" en dashboard
+
+### Bloque 1.5 — Polish (commit `ae073d6`)
+- Búsqueda + filtros por rol + ordenamiento
+- Cuentas "at risk" (saldo > 0 y 30+ días sin actividad)
+- Métricas avanzadas: días promedio pagar, vs mes pasado, Top 3
+- Animaciones fadeInUp, indicadores de tendencia
+- Paginación 20 items
+- Botón Volver con flecha animada
+
+### Fixes QA Audit aplicados
+- Race condition en confirmarRegistroPago (botón disable)
+- División por cero en _actualizarSaldoLive
+- track.html: MAPBOX_TOKEN validation + typeof checks
+- catalog.html: showToast clearTimeout, WA placeholder check, cantidad > 0, swap min/max
+
+### Worker comprobantes (deploy `0f94ee15`)
+- `/api/comprobantes/upload` — sube archivo a R2 + registra en tabla
+- `/api/comprobantes/list?pago_id=X` — lista comprobantes del pago
+- `/api/comprobantes/delete?id=X` — borra
+- SQL `pagos_comprobantes.sql` ya corrido en Supabase
+
+### En curso (agentes en paralelo)
+- Codex Bloque 2 — UI comprobantes en frontend
+- Worker — endpoint Gemini 2.5 Pro + Cron Monitor 15 min
+- Análisis de bugs del mapa (read-only)
+
+### Pendientes nuevos identificados por el usuario
+- Bugs del mapa: 3A "Solo Deliveries" muestra pedidos, 3B reset automático, 3C filtros de estado muestran delivery, 3D color por delivery, 3E botones de zona
+- Boletas: 13A espaciado, 13B calendario
+- Sidebar: 14A flechita colapsable
+- Cierre jornada: 14B botón 3D centrado (✅ hecho)
+- Toggle alertas: 14C diseño 3D + funcional (✅ hecho)
+- Limpieza menú: 15A Balance vs Estadísticas (verificado: son diferentes)
+- Multi-rol del mismo usuario (ítem 36 reformulado: NO multi-tenant, sino multi-cuenta del mismo dueño)
+- Base de datos de clientes por zona (ítem 37 nuevo)
+- Estado financiero escalable por permisos de plan (ítem 4N nuevo)
+
+### Investigación pendiente
+- Gemini 3.1 Pro vía Vertex AI (CONFIRMADO disponible — requires service account JSON)
+- ChatGPT API key situation (usuario investiga)
+
+---
+
+# RELEVO ANTERIOR (ÚLTIMA OLEADA 2)
 
 > Documento de contexto completo para retomar el trabajo si se cae la sesión.
 > Última actualización: cierre oleada 2 (sistema de pagos + ítem 2J)

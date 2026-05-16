@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iporãve Connect — Plataforma Integral de Comercio y Logística</title>
 <!-- Content-Security-Policy -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://api.mapbox.com https://unpkg.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://iporave-api.iporaveparaguay.workers.dev https://api.mapbox.com https://*.supabase.co wss://*.supabase.co https://connect.facebook.net https://www.facebook.com; worker-src 'self' blob:; frame-ancestors 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://api.mapbox.com https://unpkg.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://iporave-api.iporaveparaguay.workers.dev https://api.mapbox.com https://*.supabase.co wss://*.supabase.co https://connect.facebook.net https://www.facebook.com; worker-src 'self' blob:; frame-ancestors 'none';">
 
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
@@ -24,6 +24,7 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js" referrerpolicy="no-referrer"></script>
 <!-- Meta Pixel -->
 <script>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -255,6 +256,9 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .btn-sm{padding:8px 16px;font-size:11px;border-radius:8px;letter-spacing:0.3px;}
 .btn:disabled,.btn[aria-disabled="true"]{opacity:.5;cursor:not-allowed;pointer-events:none;filter:saturate(.6);}
 .btn:focus-visible,.btnSm:focus-visible,.topbar-icon-btn:focus-visible,.mapBtn:focus-visible,.filterBtn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(245,166,35,0.35);}
+.scan-manual{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
+.scan-manual input{flex:1 1 170px;min-width:0;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius);padding:10px 12px;font-size:16px;font-family:'DM Sans',sans-serif;outline:none;}
+.scan-manual input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,158,11,.12);}
 .btn{transition:transform .12s var(--ease-out),box-shadow .15s var(--ease-out),background .15s var(--ease-out),opacity .15s var(--ease-out)}
 .btn:active:not(:disabled){transform:translateY(1px)}
 .skip-link{position:absolute;left:-9999px;top:0;background:var(--accent);color:#000;padding:8px 16px;border-radius:0 0 8px 0;font-weight:600;z-index:99999}
@@ -10364,6 +10368,53 @@ function _scannerFormats(){
       Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.DATA_MATRIX];
   }catch(e){return[];}
 }
+function _scannerConfig(){
+  return{
+    fps:15,
+    aspectRatio:1.777,
+    rememberLastUsedCamera:true,
+    qrbox:(vw,vh)=>{
+      const w=Math.max(220,Math.min(Math.floor(vw*0.92),520));
+      const h=Math.max(90,Math.min(Math.floor(vh*0.38),160,Math.floor(w*0.42)));
+      return{width:w,height:h};
+    }
+  };
+}
+async function _scannerCameraTarget(){
+  if(window.Html5Qrcode&&Html5Qrcode.getCameras){
+    try{
+      const cams=await Html5Qrcode.getCameras();
+      if(cams&&cams.length){
+        const rear=cams.find(c=>/back|rear|environment|trasera|posterior|atras|atrás/i.test(c.label||''))||cams[cams.length-1];
+        if(rear&&rear.id)return rear.id;
+      }
+    }catch(e){}
+  }
+  return{facingMode:{ideal:'environment'}};
+}
+function _scannerManualHtml(target){
+  const buscar=target==='np'?'_scanManualNuevoProducto()':'_scanManualBuscarCatalogo()';
+  const crear=target==='np'?'_scanManualCrearNuevoProducto()':'_scanManualCrearCatalogo()';
+  const inputId=target==='np'?'scanManualNP':'scanManualCatalogo';
+  return '<div class="scan-manual">'+
+    '<input id="'+inputId+'" inputmode="numeric" autocomplete="off" placeholder="Escribir codigo de barras">'+
+    '<button class="btn btn-secondary btn-sm" type="button" onclick="'+buscar+'">Buscar</button>'+
+    '<button class="btn btn-primary btn-sm" type="button" onclick="'+crear+'">Crear</button>'+
+    '</div>';
+}
+function _scanManualValue(id){
+  const el=$(id);
+  return el?(el.value||'').trim():'';
+}
+function _scanCodeAttr(codigo){
+  return String(codigo||'').replace(/\\/g,'\\\\').replace(/'/g,'\\\'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function _scannerCameraErrorMsg(e){
+  const msg=(e&&e.message?e.message:String(e||'')).toLowerCase();
+  if(msg.includes('permission')||msg.includes('notallowed'))return 'Permiso de camara denegado. Habilitalo en el navegador o escribi el codigo abajo.';
+  if(msg.includes('notfound')||msg.includes('overconstrained'))return 'No se encontro una camara compatible. Podes escribir el codigo abajo.';
+  return 'No se pudo iniciar la camara. Proba con mas luz, acerca el codigo y mantenelo horizontal, o escribilo abajo.';
+}
 // Beep de confirmación vía Web Audio API (sin librería)
 function _scanBeep(){
   try{
@@ -10379,49 +10430,62 @@ function _scanBeep(){
 
 // Escanear código de barras para buscar producto
 let _scannerInstance=null;
+let _scannerCatalogoLock=false;
 function abrirScannerCatalogo(){
   openA(SVG.camera+' Escanear producto',
     '<div id="qr-reader" style="width:100%"></div>'+
     '<div id="qr-result" style="margin-top:12px;font-size:13px;color:var(--text2);text-align:center;min-height:38px">'+
-      'Apuntá la cámara al código de barras del producto</div>'+
-    '<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px">EAN-13 · UPC · QR · CODE-128</div>',
+      'Apunta la camara trasera al codigo. Mejor con buena luz y el codigo horizontal.</div>'+
+    '<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px">EAN-13 · UPC · CODE-128 · QR</div>'+
+    _scannerManualHtml('catalogo'),
     '<button class="btn btn-secondary" onclick="cerrarScannerCatalogo()">Cerrar</button>'
   );
-  setTimeout(()=>{
+  _scannerCatalogoLock=false;
+  setTimeout(async()=>{
     try{
       const fmts=_scannerFormats();
       _scannerInstance=new Html5Qrcode('qr-reader',fmts.length?{formatsToSupport:fmts}:{});
-      _scannerInstance.start(
-        {facingMode:'environment'},
-        // Rectángulo horizontal: ideal para códigos de barra 1D
-        {fps:15,qrbox:{width:280,height:120}},
-        codigo=>{
-          _scanBeep();
-          const codigoN=(codigo||'').trim();
-          const prod=_catalogoCache.find(p=>p.codigo_barras&&p.codigo_barras.trim()===codigoN);
-          if(prod){
-            cerrarScannerCatalogo();
-            verProducto(prod.id);
-          }else{
-            const r=$('qr-result');
-            if(r){
-              const codSafe=escHtml(codigoN);
-              const codAttr=codigoN.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-              r.innerHTML=
-                '<div style="margin-bottom:6px"><span style="color:var(--accent);font-weight:700">'+codSafe+'</span> — no está en tu catálogo.</div>'+
-                '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'+
-                '<a onclick="cerrarScannerCatalogo();PAGES.catalogo(\''+codAttr+'\')" style="color:var(--blue);cursor:pointer;font-size:12px">Buscar en catálogo</a>'+
-                ' · <a onclick="_scanCrearConCodigo(\''+codAttr+'\')" style="color:var(--green,#16a34a);cursor:pointer;font-size:12px">Crear producto con este código</a>'+
-                '</div>';
-            }
-          }
-        }
-      );
-    }catch(e){const r=$('qr-result');if(r)r.textContent='Error al acceder a la cámara: '+e.message;}
+      const target=await _scannerCameraTarget();
+      await _scannerInstance.start(target,_scannerConfig(),codigo=>_scannerCatalogoLeido(codigo));
+      const r=$('qr-result');if(r)r.textContent='Camara lista. Centra el codigo de barras dentro del recuadro.';
+    }catch(e){const r=$('qr-result');if(r)r.textContent=_scannerCameraErrorMsg(e);}
   },300);
+}
+function _scannerCatalogoLeido(codigo){
+  const codigoN=(codigo||'').trim();
+  if(!codigoN||_scannerCatalogoLock)return;
+  _scannerCatalogoLock=true;
+  _scanBeep();
+  const prod=_catalogoCache.find(p=>p.codigo_barras&&p.codigo_barras.trim()===codigoN);
+  if(prod){
+    cerrarScannerCatalogo();
+    verProducto(prod.id);
+    return;
+  }
+  const r=$('qr-result');
+  if(r){
+    const codSafe=escHtml(codigoN);
+    const codAttr=_scanCodeAttr(codigoN);
+    r.innerHTML=
+      '<div style="margin-bottom:6px"><span style="color:var(--accent);font-weight:700">'+codSafe+'</span> no esta en tu catalogo.</div>'+
+      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'+
+      '<a onclick="cerrarScannerCatalogo();PAGES.catalogo(\''+codAttr+'\')" style="color:var(--blue);cursor:pointer;font-size:12px">Buscar en catalogo</a>'+
+      ' · <a onclick="_scanCrearConCodigo(\''+codAttr+'\')" style="color:var(--green,#16a34a);cursor:pointer;font-size:12px">Crear producto con este codigo</a>'+
+      '</div>';
+  }
+  setTimeout(()=>{_scannerCatalogoLock=false;},1500);
+}
+function _scanManualBuscarCatalogo(){
+  const codigo=_scanManualValue('scanManualCatalogo');
+  if(codigo)_scannerCatalogoLeido(codigo);
+}
+function _scanManualCrearCatalogo(){
+  const codigo=_scanManualValue('scanManualCatalogo');
+  if(codigo)_scanCrearConCodigo(codigo);
 }
 function cerrarScannerCatalogo(){
   if(_scannerInstance){try{_scannerInstance.stop();}catch(e){}  _scannerInstance=null;}
+  _scannerCatalogoLock=false;
   closeA();
 }
 // Abre formulario "Nuevo producto" con el código ya cargado
@@ -10435,63 +10499,84 @@ function _scanCrearConCodigo(codigo){
 
 let _scannerNP=null;
 let _scanNPPendingCodigo='';
+let _scannerNPLock=false;
 function _scanParaNuevoProducto(){
   openA(SVG.camera+' Escanear código',
     '<div id="qr-reader-np" style="width:100%"></div>'+
     '<div id="qr-result-np" style="margin-top:12px;font-size:13px;color:var(--text2);text-align:center;min-height:38px">'+
-      'Apuntá la cámara al código de barras</div>'+
-    '<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:4px">EAN-13 · UPC · QR · CODE-128</div>',
+      'Apunta la camara trasera al codigo. Mejor con buena luz y el codigo horizontal.</div>'+
+    '<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:4px">EAN-13 · UPC · CODE-128 · QR</div>'+
+    _scannerManualHtml('np'),
     '<button class="btn btn-secondary" onclick="_cerrarScanNP()">Cancelar</button>'
   );
   _scanNPPendingCodigo='';
-  setTimeout(()=>{
+  _scannerNPLock=false;
+  setTimeout(async()=>{
     try{
       const fmts=_scannerFormats();
       _scannerNP=new Html5Qrcode('qr-reader-np',fmts.length?{formatsToSupport:fmts}:{});
-      _scannerNP.start(
-        {facingMode:'environment'},
-        {fps:15,qrbox:{width:280,height:120}},
-        async codigo=>{
-          _scanBeep();
-          const codigoN=(codigo||'').trim();
-          if(_scannerNP){try{_scannerNP.stop();}catch(e){}_scannerNP=null;}
-          // Intentar lookup en Open Food Facts (gratis, sin API key)
-          const r=$('qr-result-np');
-          if(r)r.innerHTML='<span style="color:var(--text3)">Buscando info del producto...</span>';
-          let nombre='',categoria='';
-          try{
-            const resp=await fetch('https://world.openfoodfacts.org/api/v0/product/'+encodeURIComponent(codigoN)+'.json',{signal:AbortSignal.timeout?AbortSignal.timeout(4000):undefined});
-            const d=await resp.json();
-            if(d.status===1&&d.product){
-              nombre=d.product.product_name_es||d.product.product_name||'';
-              const marca=d.product.brands||'';
-              if(marca&&nombre&&!nombre.includes(marca))nombre=nombre+' - '+marca;
-              const cats=d.product.categories_tags||[];
-              categoria=cats[0]?cats[0].replace(/^[a-z]{2}:/,'').replace(/-/g,' '):'';
-            }
-          }catch(e){}
-          // Reabrir form nuevo producto con datos pre-cargados
-          closeA();
-          setTimeout(()=>{
-            openNuevoProducto();
-            setTimeout(()=>{
-              const cCod=$('npCodigo');if(cCod)cCod.value=codigoN;
-              if(nombre){const cNom=$('npNom');if(cNom&&!cNom.value)cNom.value=nombre;}
-              if(categoria){const cCat=$('npCat');if(cCat&&cCat.querySelector('option[value="'+categoria+'"]'))cCat.value=categoria;}
-              if(nombre){
-                pushNotif('Código listo: '+escHtml(nombre),'i');
-              }else{
-                pushNotif('Código listo: '+escHtml(codigoN),'i');
-              }
-            },250);
-          },200);
-        }
-      );
-    }catch(e){const r=$('qr-result-np');if(r)r.textContent='Error al acceder a la cámara: '+e.message;}
+      const target=await _scannerCameraTarget();
+      await _scannerNP.start(target,_scannerConfig(),codigo=>_scannerNuevoProductoLeido(codigo));
+      const r=$('qr-result-np');if(r)r.textContent='Camara lista. Centra el codigo de barras dentro del recuadro.';
+    }catch(e){const r=$('qr-result-np');if(r)r.textContent=_scannerCameraErrorMsg(e);}
   },300);
+}
+async function _scanLookupOpenFood(codigoN){
+  let nombre='',categoria='';
+  try{
+    const resp=await fetch('https://world.openfoodfacts.org/api/v0/product/'+encodeURIComponent(codigoN)+'.json',{signal:AbortSignal.timeout?AbortSignal.timeout(4000):undefined});
+    const d=await resp.json();
+    if(d.status===1&&d.product){
+      nombre=d.product.product_name_es||d.product.product_name||'';
+      const marca=d.product.brands||'';
+      if(marca&&nombre&&!nombre.includes(marca))nombre=nombre+' - '+marca;
+      const cats=d.product.categories_tags||[];
+      categoria=cats[0]?cats[0].replace(/^[a-z]{2}:/,'').replace(/-/g,' '):'';
+    }
+  }catch(e){}
+  return{nombre,categoria};
+}
+async function _scannerNuevoProductoLeido(codigo){
+  const codigoN=(codigo||'').trim();
+  if(!codigoN||_scannerNPLock)return;
+  _scannerNPLock=true;
+  _scanBeep();
+  if(_scannerNP){try{await _scannerNP.stop();}catch(e){}_scannerNP=null;}
+  const r=$('qr-result-np');
+  if(r)r.innerHTML='<span style="color:var(--text3)">Buscando info del producto...</span>';
+  const info=await _scanLookupOpenFood(codigoN);
+  closeA();
+  setTimeout(()=>{
+    openNuevoProducto();
+    setTimeout(()=>{
+      const cCod=$('npCodigo');if(cCod)cCod.value=codigoN;
+      if(info.nombre){const cNom=$('npNom');if(cNom&&!cNom.value)cNom.value=info.nombre;}
+      if(info.categoria){const cCat=$('npCat');if(cCat&&cCat.querySelector('option[value="'+info.categoria+'"]'))cCat.value=info.categoria;}
+      if(info.nombre){
+        pushNotif('Codigo listo: '+escHtml(info.nombre),'i');
+      }else{
+        pushNotif('Codigo listo: '+escHtml(codigoN),'i');
+      }
+    },250);
+  },200);
+}
+function _scanManualNuevoProducto(){
+  const codigo=_scanManualValue('scanManualNP');
+  if(codigo)_scannerNuevoProductoLeido(codigo);
+}
+function _scanManualCrearNuevoProducto(){
+  const codigo=_scanManualValue('scanManualNP');
+  if(codigo){
+    closeA();
+    setTimeout(()=>{
+      openNuevoProducto();
+      setTimeout(()=>{const cCod=$('npCodigo');if(cCod)cCod.value=codigo;},250);
+    },200);
+  }
 }
 function _cerrarScanNP(){
   if(_scannerNP){try{_scannerNP.stop();}catch(e){} _scannerNP=null;}
+  _scannerNPLock=false;
   closeA();
 }
 
