@@ -1444,7 +1444,7 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
     min-height: 38px;
     padding: 8px 14px;
   }
-  .btn-sm{ min-height: 32px; padding: 6px 10px; }
+  .btn-sm{ min-height: 44px; padding: 10px 14px; }
   /* Inputs anti-zoom iOS */
   input[type="text"], input[type="email"], input[type="password"],
   input[type="tel"], input[type="number"], input[type="search"],
@@ -1497,7 +1497,7 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
   /* Combobox compactos */
   .search-combo{ max-width: 100% !important; }
   /* Topbar compacto */
-  .topbar-icon-btn{ width: 36px !important; height: 36px !important; }
+  .topbar-icon-btn{ width: 40px !important; height: 40px !important; }
   /* Cards margen minimo */
   .sc, .mcard, .zcard, .ranking-row{
     padding: 12px !important;
@@ -2416,7 +2416,7 @@ const DL = {
       if(o.vendedorId&&String(o.vendedorId)!==_meId)_targets.add(o.vendedorId);
       if(o.created_by&&String(o.created_by)!==_meId)_targets.add(o.created_by);
       if(o.dropId&&String(o.dropId)!==_meId)_targets.add(o.dropId);
-      const _estadoEmoji={Despachado:'📦','En ruta':'🛵','En Ruta':'🛵',Entregado:'✅',Cancelado:'❌',Devuelto:'↩️',Pendiente:'🕐'};
+      const _estadoEmoji={Despachado:SVG.pkg,'En ruta':SVG.carRoute,'En Ruta':SVG.carRoute,Entregado:SVG.checkCircle,Cancelado:SVG.xCircle,Devuelto:SVG.rotateCcw||'↩️',Pendiente:SVG.clock};
       const _emoji=_estadoEmoji[o.estado]||'📋';
       _targets.forEach(uid=>{
         _fetchWithTimeout(WORKER_URL+'/api/push-send',{
@@ -4668,7 +4668,7 @@ const NAV_CFG={
   proveedor:[
     {s:'Mi Panel',items:[
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'suministros',l:'Mis suministros',ic:'pkg'},
-      {id:'pagos_prov',l:'Mis pagos',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
+      {id:'pagos_prov',l:'Mis pagos',ic:'dollar'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
       {id:'pagos',l:'Mi Liquidación',ic:'dollar'},
     ]},
@@ -4727,6 +4727,7 @@ const SVG={
   salesperson:'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M7 22v-6l-2-1 2-4h10l2 4-2 1v6"/><line x1="12" y1="8" x2="12" y2="14"/></svg>',
   scooter:'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="6" width="12.5" height="10" rx="1"/><path d="M14 9.5h4.5L21.5 12.5V16H14"/><circle cx="6" cy="18.5" r="2"/><circle cx="17.5" cy="18.5" r="2"/><line x1="14" y1="13" x2="21.5" y2="13"/></svg>',
   lock:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="11" width="15" height="10" rx="2.2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor"/><line x1="12" y1="16.8" x2="12" y2="18" stroke-width="2"/></svg>',
+  carRoute:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M5 13L7 7h10l2 6"/><rect x="3" y="13" width="18" height="5" rx="1"/><circle cx="7.5" cy="18.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="18.5" r="1.5" fill="currentColor"/><path d="M0 11h3" stroke-dasharray="2,2" opacity=".55"/><path d="M21 11h3" stroke-dasharray="2,2" opacity=".55"/></svg>',
   factory:'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 20 2 8 8 12 8 8 14 12 14 8 22 12 22 20 2 20"/><line x1="6" y1="16" x2="6" y2="18"/><line x1="11" y1="16" x2="11" y2="18"/><line x1="17" y1="16" x2="17" y2="18"/></svg>',
   handshake:'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 12 5 8 9 12 5 16 1 12"/><polyline points="15 12 19 8 23 12 19 16 15 12"/><line x1="9" y1="12" x2="15" y2="12"/></svg>',
   checkCircle:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
@@ -5072,7 +5073,7 @@ function getVisibleOrders(){
   if(r==='vendedor')return _ordersCache.filter(o=>String(o.vendedorId)===String(CU.id));
   if(r==='dropshipper')return _ordersCache.filter(o=>String(o.dropId)===String(CU.id));
   if(r==='delivery')return _ordersCache.filter(o=>String(o.deliveryId)===String(CU.id));
-  if(r==='cliente')return _ordersCache.filter(o=>o.cliente===CU.nombre);
+  if(r==='cliente')return _ordersCache.filter(o=>String(o.clienteId||'')===String(CU.id)||(o.cliente||'').trim().toLowerCase()===(CU.nombre||'').trim().toLowerCase());
   if(r==='proveedor')return _ordersCache.filter(o=>String(o.proveedorId)===String(CU.id)||(o.proveedor||'').toLowerCase()===(CU.nombre||'').toLowerCase());
   return[];
 }
@@ -5094,7 +5095,7 @@ function nextDocNum(){
     if(estado==='Entregado')return'✅';
     if(estado==='Cancelado')return'❌';
     if(estado==='Despachado')return'📦';
-    if(estado==='En Ruta')return'🛵';
+    if(estado==='En Ruta')return SVG.carRoute;
     if(estado==='Pendiente')return'⏳';
     if(estado==='Devuelto')return'↩️';
     return'📋';
@@ -6040,7 +6041,7 @@ PAGES.dashboard=async function(){
     },120);
   }
   if(CU.rol==='cliente'){
-    const mine=orders.filter(o=>o.cliente===CU.nombre);
+    const mine=orders.filter(o=>String(o.clienteId||'')===String(CU.id)||(o.cliente||'').trim().toLowerCase()===(CU.nombre||'').trim().toLowerCase());
     if(!mine.length){
       // Cliente sin pedidos: mensaje de bienvenida con CTA al catálogo
       html+='<div class="lcard2" style="border-left:3px solid var(--accent);text-align:center;padding:36px 22px">'+
@@ -6056,7 +6057,7 @@ PAGES.dashboard=async function(){
       // Encontrar el último pedido (por id descendente — id autoincremental)
       const ultimo=[...mine].sort((a,b)=>(b.id||0)-(a.id||0))[0];
       const _EC_CL={'Pendiente':'#f59e0b','Despachado':'#3b82f6','En Ruta':'#f97316','Entregado':'#22c55e','Cancelado':'#ef4444','Devuelto':'#8b5cf6','Reprogramado':'#64748b'};
-      const _EI_CL={'Pendiente':'⏳','Despachado':'📦','En Ruta':'🛵','Entregado':'✅','Cancelado':'❌','Devuelto':'↩️','Reprogramado':'🔁'};
+      const _EI_CL={'Pendiente':SVG.clock,'Despachado':SVG.pkg,'En Ruta':SVG.carRoute,'Entregado':SVG.checkCircle,'Cancelado':SVG.xCircle,'Devuelto':SVG.rotateCcw||'↩️','Reprogramado':SVG.refresh};
       const colorEst=_EC_CL[ultimo.estado]||'#64748b';
       const iconEst=_EI_CL[ultimo.estado]||'•';
       html+='<div class="sgrid">'+
@@ -6449,7 +6450,7 @@ function _deliveryEstadoEmoji(estado){
   if(estado==='Entregado')return '✅';
   if(estado==='Cancelado')return '❌';
   if(estado==='Despachado')return '📦';
-  if(estado==='En Ruta')return '🛵';
+  if(estado==='En Ruta')return SVG.carRoute;
   if(estado==='Pendiente')return '⏳';
   return '📋';
 }
@@ -8039,7 +8040,8 @@ function _liqDrop(){
   const tVentas=ent.reduce((a,o)=>a+(o.precio||0)*(o.qty||1),0);
   const tCosto=ent.reduce((a,o)=>a+(o.costo||0)*(o.qty||1),0);
   const tLog=ent.reduce((a,o)=>a+_getZonaO(o).precio,0);
-  const tGan=tVentas-tCosto-tLog;
+  const tComision=ent.reduce((a,o)=>a+(o.comision||0)*(o.qty||1),0);
+  const tGan=tComision;
   const fecha=new Date().toLocaleDateString('es-PY',{year:'numeric',month:'long',day:'numeric'});
   $('tbActions').innerHTML=
     '<button class="btn btn-secondary" onclick="_waLiq(\'Liquidación dropshipper '+CU.nombre+' — '+fecha+' — Pedidos: '+ent.length+' — Ventas: Gs. '+fmtN(tVentas)+'\')" style="background:#25d366;border-color:#25d366;color:#fff">📲 WhatsApp</button>'+
@@ -8054,10 +8056,10 @@ function _liqDrop(){
     '<div class="sc"><div class="slabel">Ventas brutas</div><div class="sval">Gs. '+fmtN(tVentas)+'</div></div>'+
     '<div class="sc re"><div class="slabel">(-) Costo</div><div class="sval">Gs. '+fmtN(tCosto)+'</div></div>'+
     '<div class="sc pu"><div class="slabel">(-) Logística</div><div class="sval">Gs. '+fmtN(tLog)+'</div></div>'+
-    '<div class="sc" style="border:2px solid var(--accent)"><div class="slabel" style="color:var(--accent)">💰 GANANCIA</div><div class="sval" style="color:var(--accent)">Gs. '+fmtN(tGan)+'</div></div>'+
+    '<div class="sc" style="border:2px solid var(--accent)"><div class="slabel" style="color:var(--accent)">💰 COMISIÓN</div><div class="sval" style="color:var(--accent)">Gs. '+fmtN(tComision)+'</div></div>'+
     '</div>'+
     '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:14px">'+
-    'ℹ️ La comisión exacta la define el admin según el acuerdo comercial vigente. Este resumen muestra tu ganancia bruta (ventas − costo − logística).</div>'+
+    'ℹ️ Comisión = suma de comisiones cargadas por pedido entregado. Si ves Gs. 0 verificá que el admin haya cargado la comisión en cada pedido.</div>'+
     '<div class="stitle">Detalle de pedidos entregados</div>'+
     (ent.length?'<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
     '<th>#</th><th>Fecha</th><th>Cliente</th><th>Producto</th>'+
@@ -8074,8 +8076,8 @@ function _liqDrop(){
 }
 
 function _liqProv(){
-  // Filtrar solo pedidos del proveedor actual (data isolation)
-  const ent=getVisibleOrders().filter(o=>o.estado==='Entregado' && (CU.rol!=='proveedor' || String(o.proveedor||'')===String(CU.nombre||'')));
+  // getVisibleOrders ya aísla por rol proveedor (case-insensitive)
+  const ent=getVisibleOrders().filter(o=>o.estado==='Entregado');
   const tCosto=ent.reduce((a,o)=>a+(o.costo||0)*(o.qty||1),0);
   const fecha=new Date().toLocaleDateString('es-PY',{year:'numeric',month:'long',day:'numeric'});
   $('tbActions').innerHTML=
@@ -10995,7 +10997,7 @@ async function editProducto(id){
 }
 async function saveEditProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
-  const nom=gv('epNom').trim();if(!nom)return;
+  const nom=gv('epNom').trim();if(!nom){showAlert('epAlert','e','El nombre del producto no puede estar vacío');return;}
   showAlert('epAlert','i','Guardando...');
   // Usar fotos del gestor de galería
   if(window._fotosEdit!==undefined){
@@ -11287,9 +11289,9 @@ async function saveNuevaPresentacion(prodId){
 function editPresentacion(prodId,presId){
   const p=_catalogoCache.find(x=>x.id===prodId);if(!p)return;
   const pr=p.presentaciones.find(x=>x.id===presId);if(!pr)return;
-  openA('Editar presentación — '+p.nombre,
+  openA('Editar presentación — '+escHtml(p.nombre||''),
     '<div class="fg"><label>Nombre de la presentación</label>'+
-      '<input type="text" id="eprNom" value="'+pr.nombre+'" style="border:2px solid var(--accent)"></div>'+
+      '<input type="text" id="eprNom" value="'+escAttr(pr.nombre||'')+'" style="border:2px solid var(--accent)"></div>'+
     '<div class="frow">'+
       '<div class="fg"><label>Precio base (Gs.)</label><input type="number" id="eprPrecio" value="'+(pr.precio||0)+'" min="0"></div>'+
       '<div class="fg"><label>Precio vendedor (Gs.)</label><input type="number" id="eprPrecioV" value="'+(pr.precioVendedor||0)+'" min="0"></div>'+
