@@ -96,6 +96,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .btn:hover{transform:translateY(-1px);box-shadow:0 3px 6px rgba(0,0,0,.15);}
 .btn:active{transform:translateY(0);box-shadow:0 1px 2px rgba(0,0,0,.1);}
 .btn-primary{background:var(--accent);color:#000;box-shadow:0 4px 14px rgba(245,166,35,.35);}.btn-primary:hover{background:var(--accent2);}
+.btn-gradient{background:var(--accent-gradient,var(--accent));color:#fff;border:none;}
 /* Topbar icon buttons — Premium nivel Apple/Linear */
 .topbar-icon-btn{
   width:40px;height:40px;
@@ -230,14 +231,16 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .btn-secondary:active{transform:translateY(0);box-shadow:0 1px 3px rgba(0,0,0,.2),inset 0 2px 4px rgba(0,0,0,.15);}
 [data-theme="light"] .btn-secondary{color:#1a1f2c!important;text-shadow:none;background:linear-gradient(180deg,#fff,#f3f4f6)!important;}
 [data-theme="light"] .btn-secondary:hover{color:#fff!important;background:var(--accent)!important;}
-.btn-danger{background:var(--red);color:#fff;}.btn-danger:hover{background:var(--red2);}
-.btn-danger:hover:not(:disabled){background:#dc2626;border-color:#dc2626;transform:translateY(-1px);box-shadow:0 4px 12px rgba(239,68,68,.3)}
-.btn-success{background:var(--green);color:#000;}.btn-success:hover{background:var(--green2);}
-.btn-success:hover:not(:disabled){background:#16a34a;border-color:#16a34a;transform:translateY(-1px);box-shadow:0 4px 12px rgba(34,197,94,.3)}
-.btn-warning{background:#f59e0b;color:#000;box-shadow:0 3px 10px rgba(245,158,11,.30);}.btn-warning:hover{background:#d97706;}
-.btn-purple{background:var(--purple);color:#fff;}
-.btn-blue{background:var(--blue);color:#fff;}.btn-blue:hover{background:var(--blue2);}
-.btn-blue:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,.3)}
+.btn-danger{background:linear-gradient(180deg,#ef4444,#dc2626);border:1px solid #b91c1c;color:#fff;}
+.btn-danger:hover:not(:disabled){background:linear-gradient(180deg,#dc2626,#b91c1c);border-color:#b91c1c;transform:translateY(-1px);box-shadow:0 4px 12px rgba(239,68,68,.3)}
+.btn-success{background:linear-gradient(180deg,#22c55e,#16a34a);border:1px solid #15803d;color:#fff;}
+.btn-success:hover:not(:disabled){background:linear-gradient(180deg,#16a34a,#15803d);border-color:#15803d;transform:translateY(-1px);box-shadow:0 4px 12px rgba(34,197,94,.3)}
+.btn-warning{background:linear-gradient(180deg,#fbbf24,#f59e0b);border:1px solid #d97706;color:#000;box-shadow:0 3px 10px rgba(245,158,11,.30);}
+.btn-warning:hover:not(:disabled){background:linear-gradient(180deg,#f59e0b,#d97706);border-color:#d97706;transform:translateY(-1px);box-shadow:0 4px 12px rgba(245,158,11,.35)}
+.btn-purple{background:linear-gradient(180deg,#a855f7,#7c3aed);border:1px solid #6d28d9;color:#fff;}
+.btn-purple:hover:not(:disabled){background:linear-gradient(180deg,#7c3aed,#6d28d9);border-color:#6d28d9;transform:translateY(-1px);box-shadow:0 4px 12px rgba(168,85,247,.3)}
+.btn-blue{background:linear-gradient(180deg,#3b82f6,#2563eb);border:1px solid #1d4ed8;color:#fff;}
+.btn-blue:hover:not(:disabled){background:linear-gradient(180deg,#2563eb,#1d4ed8);border-color:#1d4ed8;transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,.3)}
 .btn-danger:active,.btn-success:active,.btn-blue:active{transform:translateY(0);box-shadow:0 1px 2px rgba(0,0,0,.3)}
 .btn-full{width:100%;justify-content:center;}
 .btn-sm{padding:8px 16px;font-size:11px;border-radius:8px;letter-spacing:0.3px;}
@@ -509,6 +512,9 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .search-combo-list li.empty:hover{background:transparent;color:var(--text3)}
 /* MAPA COMBO BTN — apariencia de botón compacto coherente con .mapBtn */
 #mapaZonaCombo,#mapaVendCombo{min-width:0;max-width:180px;width:180px;vertical-align:middle}
+#mapaVendCombo{max-width:200px;width:200px}
+#mapaVendCombo .search-combo-input{font-size:11px !important}
+@media(max-width:768px){#mapaVendCombo{max-width:100%;width:100%}#mapaVendCombo .search-combo-input{font-size:12px !important}}
 #mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:36px;padding:7px 30px 7px 14px;font:600 12px var(--font,inherit);border-radius:10px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border:1px solid var(--border);box-shadow:0 2px 4px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.05);cursor:pointer;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
 #mapaZonaCombo .search-combo-input:hover,#mapaVendCombo .search-combo-input:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08)}
 #mapaZonaCombo .search-combo-input:focus,#mapaVendCombo .search-combo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.25),inset 0 1px 0 rgba(255,255,255,.05)}
@@ -630,21 +636,16 @@ textarea::placeholder{
 .mapbox{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;position:relative;}
 .mapbox #gmap{width:100%;height:280px;}
 .map-placeholder{height:180px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--text3);}
-/* AI AVATAR ANIMADO */
+/* AI AVATAR ANIMADO — estilo Pixar/Wall-E baby */
 .ai-avatar-wrap{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
-.ai-avatar{display:inline-block;vertical-align:middle;animation:aiFloat 3s ease-in-out infinite;overflow:visible;filter:drop-shadow(0 2px 4px rgba(124,58,237,0.25));}
-@keyframes aiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
-.ai-avatar .ai-antena{animation:aiAntena 2s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
-@keyframes aiAntena{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.25)}}
-.ai-avatar .ai-eye{animation:aiBlink 4s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
-@keyframes aiBlink{0%,45%,55%,100%{opacity:1}50%{opacity:.3}}
-.ai-avatar .ai-eye-r{animation-delay:.05s}
-.ai-avatar .ai-mouth{animation:aiMouth 6s ease-in-out infinite;}
-@keyframes aiMouth{0%,90%,100%{transform:translateY(0)}50%{transform:translateY(1px)}}
-.ai-avatar.thinking .ai-antena{animation:aiAntenaPulse .4s ease-in-out infinite;}
-@keyframes aiAntenaPulse{0%,100%{transform:scale(.9);opacity:.5}50%{transform:scale(1.6);opacity:1}}
+.ai-avatar{display:inline-block;vertical-align:middle;animation:aiFloat 3s ease-in-out infinite;overflow:visible;filter:drop-shadow(0 3px 6px rgba(59,130,246,0.25));}
+@keyframes aiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+.ai-avatar .ai-antena-dot{animation:aiAntenaPulse 2.5s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
+@keyframes aiAntenaPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(1.25)}}
+.ai-avatar.thinking .ai-antena-dot{animation:aiThink .6s ease-in-out infinite;}
+@keyframes aiThink{0%,100%{transform:scale(.8);opacity:.6}50%{transform:scale(1.55);opacity:1}}
 @media (prefers-reduced-motion: reduce){
-  .ai-avatar,.ai-avatar .ai-antena,.ai-avatar .ai-eye,.ai-avatar .ai-mouth,.ai-avatar.thinking .ai-antena{animation:none!important;}
+  .ai-avatar,.ai-avatar .ai-antena-dot,.ai-avatar .ai-eye{animation:none!important;}
 }
 /* AI CHAT FLOATING */
 #aiBtn{position:fixed;bottom:24px;right:24px;z-index:500;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#000;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(245,166,35,.4);transition:transform .2s;touch-action:none;user-select:none;}
@@ -1336,6 +1337,29 @@ body[data-rol="delivery"] .leaflet-marker-icon.dlv-pin::after{
 @keyframes dlvPulse{
   0%{transform:scale(.8);opacity:.9}
   100%{transform:scale(1.8);opacity:0}
+}
+/* Halo de geolocalización tipo Google Maps "estás aquí" — indica "vivo/moviéndose" */
+@keyframes dlvGeoPulse{
+  0%{transform:scale(1);opacity:.6}
+  100%{transform:scale(2.5);opacity:0}
+}
+.pin-dlv{position:relative;}
+.pin-dlv::before{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  background:rgba(59,130,246,.4);
+  animation:dlvGeoPulse 2s ease-out infinite;
+  z-index:-1;pointer-events:none;
+}
+/* Estado seleccionado — al clickear o elegir desde combobox */
+.pin-dlv.selected{
+  transform:scale(1.15);
+  box-shadow:0 6px 20px rgba(245,166,35,.6),0 0 0 4px rgba(245,166,35,.4) !important;
+  z-index:100 !important;
+  transition:transform .2s ease;
+}
+.pin-dlv.selected::before{
+  background:rgba(245,166,35,.5);
+  animation:dlvGeoPulse 1.2s ease-out infinite;
 }
 /* Modo alta visibilidad — togglable */
 body.alta-visibilidad{filter:contrast(1.15) saturate(1.1);}
@@ -4152,6 +4176,16 @@ const SVG={
   xCircle:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
   trendingUp:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
   alertTriangle:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  calendar:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  rotateCcw:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
+  target:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  megaphone:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
+  link:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+  fileSpreadsheet:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>',
+  fileText:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+  printer:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+  listIcon:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+  camera:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
 };
 const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'Liquidación',
   usuarios:'Usuarios',zonas:'Zonas y Tarifas',config:'Configuración',setup:'Setup / SQL',
@@ -5183,13 +5217,13 @@ PAGES.dashboard=async function(){
     const tar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
     const hoyV=mine.filter(o=>{const d=new Date(o.fecha||o.created_at||'');const n=new Date();return d.getDate()===n.getDate()&&d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}).length;
     html+='<div class="sgrid">'+
-      '<div class="sc bl"><div class="slabel">Hoy</div><div class="sval">'+hoyV+'</div></div>'+
-      '<div class="sc ac"><div class="slabel">Total pedidos</div><div class="sval">'+mine.length+'</div></div>'+
-      '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+(mine.length?Math.round(ent.length/mine.length*100):0)+'% éxito</div></div>'+
-      '<div class="sc bl"><div class="slabel">En tránsito</div><div class="sval">'+mine.filter(o=>['Despachado','En Ruta'].includes(o.estado)).length+'</div></div>'+
-      '<div class="sc ac"><div class="slabel">Pendientes</div><div class="sval">'+mine.filter(o=>o.estado==='Pendiente').length+'</div></div>'+
-      '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
-      '<div class="sc gr"><div class="slabel">Ganancia neta</div><div class="sval" style="font-size:15px">'+fmt(ing-cos-tar)+'</div></div>'+
+      '<div class="sc bl"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.calendar+'<span>Hoy</span></div><div class="sval">'+hoyV+'</div></div>'+
+      '<div class="sc ac"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.pkg+'<span>Total pedidos</span></div><div class="sval">'+mine.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.checkCircle+'<span>Entregados</span></div><div class="sval">'+ent.length+'</div><div class="ssub">'+(mine.length?Math.round(ent.length/mine.length*100):0)+'% éxito</div></div>'+
+      '<div class="sc bl"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.truck+'<span>En tránsito</span></div><div class="sval">'+mine.filter(o=>['Despachado','En Ruta'].includes(o.estado)).length+'</div></div>'+
+      '<div class="sc ac"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.clock+'<span>Pendientes</span></div><div class="sval">'+mine.filter(o=>o.estado==='Pendiente').length+'</div></div>'+
+      '<div class="sc re"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.xCircle+'<span>Cancelados/Dev.</span></div><div class="sval">'+mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.trendingUp+'<span>Ganancia neta</span></div><div class="sval" style="font-size:15px">'+fmt(ing-cos-tar)+'</div></div>'+
       '</div>';
     // ── Usuarios activos por rol (solo admin/superadmin) ──
     if(['admin','superadmin'].includes(CU.rol)&&Array.isArray(_usersCache)&&_usersCache.length){
@@ -5211,8 +5245,8 @@ PAGES.dashboard=async function(){
     if(['admin','superadmin'].includes(CU.rol)){
       html+='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">'+
         '<button class="btn btn-primary btn-sm" onclick="nav(\'neworder\')">'+SVG.plus+' Nuevo pedido</button>'+
-        '<button class="btn btn-secondary btn-sm" onclick="nav(\'usuarios\')">👥 Gestionar usuarios</button>'+
-        '<button class="btn btn-secondary btn-sm" onclick="nav(\'orders\')">📋 Todos los pedidos</button>'+
+        '<button class="btn btn-secondary btn-sm" onclick="nav(\'usuarios\')">'+SVG.users+' Gestionar usuarios</button>'+
+        '<button class="btn btn-secondary btn-sm" onclick="nav(\'orders\')">'+SVG.clipboard+' Todos los pedidos</button>'+
       '</div>';
     }
     // ── Estado Financiero (admin/superadmin) ──
@@ -5268,30 +5302,30 @@ PAGES.dashboard=async function(){
         saldoPorUser.sort((a,b)=>b.saldo-a.saldo);
         const top3=saldoPorUser.slice(0,3);
         const topHtml=top3.length?'<div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:10px">'+
-          '<div style="font-size:10px;font-weight:800;color:var(--text2);text-transform:uppercase;margin-bottom:6px">🏆 Top 3 saldos pendientes</div>'+
+          '<div style="font-size:10px;font-weight:800;color:var(--text2);text-transform:uppercase;margin-bottom:6px;display:inline-flex;align-items:center;gap:4px">'+SVG.trophy+'<span>Top 3 saldos pendientes</span></div>'+
           top3.map((x,i)=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px">'+
             '<span><b style="color:var(--accent)">'+(i+1)+'.</b> '+escHtml(x.u.nombre||'—')+' <span style="color:var(--text2);font-size:10px">('+escHtml(capRole(x.u.rol))+')</span></span>'+
             '<b style="color:#ef4444">'+fmt(x.saldo)+'</b>'+
           '</div>').join('')+
         '</div>':'';
         html+='<div style="margin-top:16px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:all .15s ease" onclick="nav(\'pagos\')" onmouseover="this.style.transform=\'translateY(-1px)\'" onmouseout="this.style.transform=\'\'">'+
-          '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px">💼 Estado Financiero — '+mesAct+'</div>'+
+          '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px;display:inline-flex;align-items:center;gap:6px">'+SVG.briefcase+'<span>Estado Financiero — '+mesAct+'</span></div>'+
           '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">'+
             '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
-              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">💚 Por pagar</div>'+
+              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;display:inline-flex;align-items:center;gap:4px"><span style="color:#ef4444">'+SVG.dollar+'</span><span>Por pagar</span></div>'+
               '<div style="font-size:18px;font-weight:900;color:#22c55e">'+fmt(teDeben)+'</div>'+
             '</div>'+
             '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
-              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">🟧 Pagado este mes</div>'+
+              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;display:inline-flex;align-items:center;gap:4px"><span style="color:#22c55e">'+SVG.checkCircle+'</span><span>Pagado este mes</span></div>'+
               '<div style="font-size:18px;font-weight:900;color:var(--accent)">'+fmt(leDebes)+'</div>'+
               '<div class="metricTrend '+clsT+'">'+flecha+' '+(pctVs>0?'+':'')+pctVs+'% vs mes ant.</div>'+
             '</div>'+
             '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
-              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">🔄 Balance neto</div>'+
+              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;display:inline-flex;align-items:center;gap:4px">'+SVG.trendingUp+'<span>Balance neto</span></div>'+
               '<div style="font-size:18px;font-weight:900;color:'+(balance>0?'#ef4444':'#22c55e')+'">'+fmt(balance)+'</div>'+
             '</div>'+
             '<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:10px">'+
-              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase">⏱️ Días prom. pagar</div>'+
+              '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;display:inline-flex;align-items:center;gap:4px">'+SVG.calendar+'<span>Días prom. pagar</span></div>'+
               '<div style="font-size:18px;font-weight:900;color:var(--text)">'+diasProm+'d</div>'+
             '</div>'+
           '</div>'+
@@ -5963,7 +5997,7 @@ PAGES.orders=PAGES.mispedidos=function(){
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportCSV()">↓ CSV</button>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="DL.exportBackup()">💾 Backup</button>':'')+
     (['superadmin','vendedor'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportarCSV()" title="Exportar pedidos a CSV">📥 Exportar CSV</button>':'')+
-    '<button class="btn btn-secondary" onclick="exportOrdersCSV()" title="Exportar a Excel">📊 Excel</button>'+
+    '<button class="btn btn-secondary" onclick="exportOrdersCSV()" title="Exportar a Excel">'+SVG.fileSpreadsheet+' Excel</button>'+
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">🖨️ PDF</button>';
   $('ca').innerHTML=
     '<div class="fbar">'+
@@ -7015,8 +7049,8 @@ async function saveNewOrder(){
 
 /* ─── BALANCE ─── */
 PAGES.balance=function(){
-  $('tbActions').innerHTML='<button class="btn btn-secondary" onclick="exportBalanceCSV()" title="Exportar a Excel">📊 Excel</button>'+
-    '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">🖨️ PDF</button>';
+  $('tbActions').innerHTML='<button class="btn btn-secondary" onclick="exportBalanceCSV()" title="Exportar a Excel">'+SVG.fileSpreadsheet+' Excel</button>'+
+    '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">'+SVG.printer+' PDF</button>';
   const orders=getVisibleOrders();
   const ent=orders.filter(o=>o.estado==='Entregado');
   const ing=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
@@ -7143,7 +7177,7 @@ PAGES.liquidacion=function(){
     '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;color:var(--accent)">IPORÃVE</div></div>'+
     '<div class="stitle">Por Proveedor</div>'+
     (Object.keys(provMap).length?Object.entries(provMap).map(([p,v])=>
-      '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px">📦 '+p+'</div>'+
+      '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:6px">'+SVG.factory+' '+p+'</div>'+
       '<div class="lrow"><span class="llbl">Pedidos entregados</span><span>'+v.n+'</span></div>'+
       '<div class="lrow"><span class="llbl">Total a pagar al proveedor</span><span style="color:var(--red)">'+fmt(v.total)+'</span></div></div>'
     ).join(''):'<div style="color:var(--text3);margin-bottom:14px">Sin datos</div>')+
@@ -7151,7 +7185,7 @@ PAGES.liquidacion=function(){
     vendedores.map(v=>{
       const vO=ent.filter(o=>o.vendedorId===v.id);
       const gan=vO.reduce((a,b)=>a+ganVend(b),0);
-      return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px">🧑‍💼 '+escHtml(v.nombre||'')+'</div>'+
+      return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:6px">'+SVG.salesperson+' '+escHtml(v.nombre||'')+'</div>'+
         '<div class="lrow"><span class="llbl">Pedidos</span><span>'+vO.length+'</span></div>'+
         '<div class="lrow"><span class="llbl">Ventas brutas</span><span>'+fmt(vO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0))+'</span></div>'+
         '<div class="lrow"><span class="llbl">Ganancia (precio−costo−logística)</span><span style="color:var(--accent)">'+fmt(gan)+'</span></div></div>';
@@ -7159,7 +7193,7 @@ PAGES.liquidacion=function(){
     '<div class="stitle">Por Dropshipper</div>'+
     drops.map(d=>{
       const dO=ent.filter(o=>o.dropId===d.id);
-      return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px">🔗 '+escHtml(d.nombre||'')+'</div>'+
+      return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:6px">'+SVG.handshake+' '+escHtml(d.nombre||'')+'</div>'+
         '<div class="lrow"><span class="llbl">Pedidos</span><span>'+dO.length+'</span></div>'+
         '<div class="lrow"><span class="llbl">Ventas brutas</span><span>'+fmt(dO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0))+'</span></div></div>';
     }).join('')+
@@ -9710,11 +9744,11 @@ PAGES.catalogo=function(q=''){
   if(esAdmin){
     acciones+='<button class="btn btn-secondary btn-sm" onclick="importarCatalogoCSV()">⬆ Importar</button>';
     acciones+='<button class="btn btn-secondary btn-sm" onclick="exportarCatalogoCSV()">'+SVG.arrowDown+' Exportar</button>';
-    acciones+='<button class="btn btn-sm" onclick="verFeedMetaAds()" style="background:#1877f2;color:#fff;border:none;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600">📣 Meta Ads</button>';
-    acciones='<button class="btn btn-secondary btn-sm" onclick="PAGES.catalogo_todos()">📋 Todos</button>'+acciones;
+    acciones+='<button class="btn btn-sm" onclick="verFeedMetaAds()" style="background:#1877f2;color:#fff;border:none;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600">'+SVG.megaphone+' Meta Ads</button>';
+    acciones='<button class="btn btn-secondary btn-sm" onclick="PAGES.catalogo_todos()">'+SVG.listIcon+' Todos</button>'+acciones;
   }
-  acciones+='<button class="btn btn-secondary btn-sm" onclick="abrirScannerCatalogo()">📷 Escanear</button>';
-  if(puedeEditar)acciones+='<button class="btn btn-sm" onclick="copiarLinkCatalogo()" style="background:var(--green,#16a34a);color:#fff;border:none;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600">🔗 Mi link</button>';
+  acciones+='<button class="btn btn-secondary btn-sm" onclick="abrirScannerCatalogo()">'+SVG.camera+' Escanear</button>';
+  if(puedeEditar)acciones+='<button class="btn btn-sm" onclick="copiarLinkCatalogo()" style="background:var(--green,#16a34a);color:#fff;border:none;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600">'+SVG.link+' Mi link</button>';
   $('tbActions').innerHTML=acciones;
 
   const base=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id||p._isShared);
@@ -11341,6 +11375,34 @@ PAGES.config=function(){
           '<button class="btn-icon" onclick="_resetColor(\'red\',\'#ef4444\')" title="Volver al default">↺</button>'+
         '</div>'+
       '</div>'+
+      '<div class="color-mode-section" style="margin-top:16px;padding:12px;background:var(--bg2);border-radius:10px;border:1px solid var(--border2)">'+
+        '<label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer">'+
+          '<input type="checkbox" id="gradientMode" onchange="_toggleGradientMode(this.checked)">'+
+          '<span style="font-weight:600;font-size:13px">Modo difuminado (combinar 2 colores)</span>'+
+        '</label>'+
+        '<div id="gradientControls" style="display:none">'+
+          '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
+            '<div>'+
+              '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Color 1</label>'+
+              '<input type="color" id="gradColor1" value="#f5a623" onchange="_aplicarGradient()" style="width:44px;height:32px;border:1px solid var(--border2);border-radius:6px;cursor:pointer">'+
+            '</div>'+
+            '<div>'+
+              '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Color 2</label>'+
+              '<input type="color" id="gradColor2" value="#7c3aed" onchange="_aplicarGradient()" style="width:44px;height:32px;border:1px solid var(--border2);border-radius:6px;cursor:pointer">'+
+            '</div>'+
+            '<div>'+
+              '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Dirección</label>'+
+              '<select id="gradAngle" onchange="_aplicarGradient()" class="dropdown-premium" style="height:32px;min-width:140px">'+
+                '<option value="135deg">Diagonal ↘</option>'+
+                '<option value="180deg">Vertical ↓</option>'+
+                '<option value="90deg">Horizontal →</option>'+
+                '<option value="45deg">Diagonal ↗</option>'+
+              '</select>'+
+            '</div>'+
+          '</div>'+
+          '<div id="gradPreview" style="margin-top:10px;height:40px;border-radius:8px;border:1px solid var(--border2);background:linear-gradient(135deg, #f5a623, #7c3aed)"></div>'+
+        '</div>'+
+      '</div>'+
       '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">'+
         '<button class="btn btn-primary" onclick="_guardarTema()">💾 Guardar tema</button>'+
         '<button class="btn btn-secondary" onclick="_resetTema()">↺ Restaurar defaults</button>'+
@@ -11482,7 +11544,49 @@ function _cargarTemaActualEnConfig(){
         if(input&&v)input.value=v;
       });
     }
+    // Restaurar modo gradient si está activo
+    const gOn=localStorage.getItem('iporave_gradient_mode')==='1';
+    if(gOn){
+      const sav=JSON.parse(localStorage.getItem('iporave_gradient_colors')||'{}');
+      const chk=document.getElementById('gradientMode');
+      const c1=document.getElementById('gradColor1');
+      const c2=document.getElementById('gradColor2');
+      const ang=document.getElementById('gradAngle');
+      if(chk)chk.checked=true;
+      if(c1&&sav.c1)c1.value=sav.c1;
+      if(c2&&sav.c2)c2.value=sav.c2;
+      if(ang&&sav.angle)ang.value=sav.angle;
+      const ctrl=document.getElementById('gradientControls');
+      if(ctrl)ctrl.style.display='block';
+      const prev=document.getElementById('gradPreview');
+      if(prev&&sav.c1&&sav.c2)prev.style.background='linear-gradient('+(sav.angle||'135deg')+', '+sav.c1+', '+sav.c2+')';
+    }
   }catch(e){}
+}
+function _toggleGradientMode(on){
+  const controls=document.getElementById('gradientControls');
+  if(controls)controls.style.display=on?'block':'none';
+  try{localStorage.setItem('iporave_gradient_mode',on?'1':'0');}catch(_){}
+  if(on){
+    _aplicarGradient();
+  }else{
+    document.documentElement.style.removeProperty('--accent-gradient');
+    try{
+      const saved=localStorage.getItem('iporave_tema_custom');
+      if(saved){_aplicarTemaCompleto(JSON.parse(saved));}
+    }catch(_){}
+  }
+}
+function _aplicarGradient(){
+  const c1=(document.getElementById('gradColor1')||{}).value||'#f5a623';
+  const c2=(document.getElementById('gradColor2')||{}).value||'#7c3aed';
+  const angle=(document.getElementById('gradAngle')||{}).value||'135deg';
+  const gradient='linear-gradient('+angle+', '+c1+', '+c2+')';
+  document.documentElement.style.setProperty('--accent-gradient',gradient);
+  const prev=document.getElementById('gradPreview');
+  if(prev)prev.style.background=gradient;
+  try{localStorage.setItem('iporave_gradient_colors',JSON.stringify({c1:c1,c2:c2,angle:angle}));}catch(_){}
+  document.documentElement.style.setProperty('--accent',c1);
 }
 (function _initTemaCustom(){
   try{
@@ -11490,6 +11594,16 @@ function _cargarTemaActualEnConfig(){
     if(saved){
       const tema=JSON.parse(saved);
       _aplicarTemaCompleto(tema);
+    }
+    // Restaurar gradient si fue activado
+    const gOn=localStorage.getItem('iporave_gradient_mode')==='1';
+    if(gOn){
+      const sav=JSON.parse(localStorage.getItem('iporave_gradient_colors')||'{}');
+      if(sav.c1&&sav.c2){
+        const gradient='linear-gradient('+(sav.angle||'135deg')+', '+sav.c1+', '+sav.c2+')';
+        document.documentElement.style.setProperty('--accent-gradient',gradient);
+        document.documentElement.style.setProperty('--accent',sav.c1);
+      }
     }
   }catch(e){}
 })();
@@ -12407,23 +12521,9 @@ function _mapaUpdateContadores(){
     '<ul class="search-combo-list" id="dlvSearchList"></ul>'+
     '</div>';
 
-  // Botones por zona (fila secundaria)
-  let zonaButtonsHtml='';
-  try{
-    if(window._zonasCache&&window._zonasCache.length){
-      const zonaSel=window._mapaFiltroZona;
-      zonaButtonsHtml='<div class="mapBar" style="border-top:1px solid var(--border)">';
-      zonaButtonsHtml+='<button class="mapBtn'+(!zonaSel?' active':'')+'" onclick="window._mapaFiltroZona=null;_aplicarFiltrosMapa()">🌎 Todas las zonas</button>';
-      window._zonasCache.forEach(function(z){
-        const isActive=String(zonaSel)===String(z.id);
-        const nom=(z.nombre||'').substring(0,16);
-        zonaButtonsHtml+='<button class="mapBtn'+(isActive?' active':'')+'" onclick="window._mapaFiltroZona='+z.id+';_aplicarFiltrosMapa()" title="'+escAttr(z.desc||'')+'">📍 '+escHtml(nom)+'</button>';
-      });
-      zonaButtonsHtml+='</div>';
-    }
-  }catch(e){}
+  // Fila secundaria de botones por zona eliminada: ya están en el dropdown #mapaZonaCombo (evita duplicación).
 
-  el.innerHTML=btnsEstado+btnsTipo+'<div class="sep"></div>'+dlvSel+zonaButtonsHtml;
+  el.innerHTML=btnsEstado+btnsTipo+'<div class="sep"></div>'+dlvSel;
 
   // Cablear combobox custom de delivery
   try{_setupDlvSearchCombo();}catch(e){console.warn('dlvCombo setup',e);}
@@ -13185,8 +13285,8 @@ function _mapaCargarDlvs(map){
     const statusDot=online
       ?'<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ade80;margin-right:4px;box-shadow:0 0 5px #4ade80"></span>'
       :'<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#6b7280;margin-right:4px"></span>';
-    // SVG scooter moderno (estilo Linear/Apple) — reemplaza emoji 🛵
-    const dlvIconSvg='<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M14 18h-4l-2-7h7l3 7"/><path d="M3 6h4l2.5 5"/></svg>';
+    // SVG persona en moto con casco — más expresivo, se entiende mejor que delivery
+    const dlvIconSvg='<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="2.5"/><path d="M12 8.5v3"/><path d="M9 11h6"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 18l3-6.5h2L17 18"/></svg>';
     el.innerHTML=
       '<div class="dlv-label" style="margin-bottom:5px">'+
         statusDot+escHtml(dlv.nombre)+(online?' 🟢':' ⚫')+
@@ -13194,7 +13294,7 @@ function _mapaCargarDlvs(map){
       // Pin exterior: aro pulsante distintivo (cyan brillante)
       '<div style="position:relative;display:flex;align-items:center;justify-content:center">'+
         '<div style="position:absolute;width:62px;height:62px;border-radius:50%;border:2px dashed '+(online?'rgba(14,165,233,.6)':'rgba(100,116,139,.4)')+';pointer-events:none"></div>'+
-        '<div style="background:'+bg+';color:#fff;width:42px;height:42px;border-radius:50%;border:3px solid '+borderCol+';'+dlvAnim+
+        '<div class="pin-dlv" data-dlv-id="'+dlv.id+'" style="background:'+bg+';color:#fff;width:42px;height:42px;border-radius:50%;border:3px solid '+borderCol+';'+dlvAnim+
           'display:flex;align-items:center;justify-content:center;position:relative;z-index:1">'+
           dlvIconSvg+
         '</div>'+
@@ -14703,7 +14803,7 @@ PAGES.pago_usuario=function(){
         '<button class="btnPagado" onclick="abrirPagoCompleto(\''+escAttr(user.id)+'\')">✅ Marcar Pagado</button>'+
         '<button class="btn btn-secondary" onclick="imprimirEstadoCuenta(\''+escAttr(user.id)+'\',\''+periodo+'\')">🖨️ Imprimir</button>'+
         '<button class="btn btn-secondary" onclick="exportarEstadoPDF(\''+escAttr(user.id)+'\',\''+periodo+'\')">📥 Exportar PDF</button>'+
-        '<button class="btn btn-secondary" onclick="exportarEstadoCSV(\''+escAttr(user.id)+'\',\''+periodo+'\')">📊 Exportar CSV</button>'+
+        '<button class="btn btn-secondary" onclick="exportarEstadoCSV(\''+escAttr(user.id)+'\',\''+periodo+'\')">'+SVG.fileSpreadsheet+' Exportar CSV</button>'+
       '</div>':'')+
       // Bloque 5 — Histórico mensual
       _renderHistoricoMensual(userId);
@@ -14787,7 +14887,7 @@ PAGES.clientes_zonas = function(){
   let html = '<div style="padding:18px">';
   html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">';
   html += '<h2 style="margin:0;font-size:20px;font-weight:900">👥 Base de Datos de Clientes</h2>';
-  html += '<button class="btn btn-secondary" onclick="exportarClientesZonasCSV()">📊 Exportar CSV</button>';
+  html += '<button class="btn btn-secondary" onclick="exportarClientesZonasCSV()">'+SVG.fileSpreadsheet+' Exportar CSV</button>';
   html += '</div>';
   html += '<input type="search" id="clientesBuscar" placeholder="Buscar cliente..." class="pagosSearchInput" style="margin-bottom:14px;width:100%" oninput="_filtrarClientesZonas(this.value)">';
   html += '<div id="clientesZonasContainer">';
@@ -14842,20 +14942,29 @@ PAGES.clientes_zonas = function(){
 /* ── ASISTENTE IA AGENTIC ── */
 function _aiAvatarSvg(size){
   var s = size || 28;
-  var gid = 'aiGrad_'+Math.floor(Math.random()*1e9);
+  var id = 'aiG_'+Math.floor(Math.random()*1e9);
   return '<svg class="ai-avatar" width="'+s+'" height="'+s+'" viewBox="0 0 64 64" fill="none" aria-hidden="true">'+
     '<defs>'+
-      '<linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient>'+
+      '<linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient>'+
+      '<radialGradient id="'+id+'_glow" cx="0.5" cy="0.4"><stop offset="0%" stop-color="#fde68a"/><stop offset="100%" stop-color="#f59e0b"/></radialGradient>'+
     '</defs>'+
-    '<line x1="32" y1="14" x2="32" y2="6" stroke="url(#'+gid+')" stroke-width="2" stroke-linecap="round"/>'+
-    '<circle class="ai-antena" cx="32" cy="5" r="2.5" fill="#fbbf24"/>'+
-    '<rect class="ai-body" x="12" y="14" width="40" height="38" rx="20" fill="url(#'+gid+')" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>'+
-    '<rect x="18" y="24" width="28" height="14" rx="7" fill="rgba(0,0,0,0.25)"/>'+
-    '<circle class="ai-eye ai-eye-l" cx="25" cy="31" r="2.5" fill="#fbbf24"/>'+
-    '<circle class="ai-eye ai-eye-r" cx="39" cy="31" r="2.5" fill="#fbbf24"/>'+
-    '<path class="ai-mouth" d="M 26 44 Q 32 47 38 44" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" fill="none"/>'+
-    '<circle cx="12" cy="32" r="2" fill="rgba(255,255,255,0.2)"/>'+
-    '<circle cx="52" cy="32" r="2" fill="rgba(255,255,255,0.2)"/>'+
+    '<ellipse cx="32" cy="56" rx="18" ry="2.5" fill="rgba(0,0,0,0.15)"/>'+
+    '<path d="M 32 12 Q 30 7 27 6" stroke="url(#'+id+')" stroke-width="2.2" stroke-linecap="round" fill="none"/>'+
+    '<circle class="ai-antena-dot" cx="26.5" cy="5.5" r="2.8" fill="url(#'+id+'_glow)"/>'+
+    '<rect x="14" y="14" width="36" height="38" rx="18" fill="url(#'+id+')"/>'+
+    '<ellipse cx="32" cy="22" rx="14" ry="6" fill="rgba(255,255,255,0.18)"/>'+
+    '<path d="M 18 28 Q 18 24 22 24 L 42 24 Q 46 24 46 28 L 46 38 Q 46 42 42 42 L 22 42 Q 18 42 18 38 Z" fill="rgba(0,0,0,0.32)"/>'+
+    '<circle class="ai-eye ai-eye-l" cx="26" cy="33" r="3" fill="#fff">'+
+      '<animate attributeName="r" values="3;3;0.5;3;3" dur="4s" repeatCount="indefinite" keyTimes="0;0.46;0.5;0.54;1"/>'+
+    '</circle>'+
+    '<circle class="ai-eye ai-eye-r" cx="38" cy="33" r="3" fill="#fff">'+
+      '<animate attributeName="r" values="3;3;0.5;3;3" dur="4s" repeatCount="indefinite" keyTimes="0;0.46;0.5;0.54;1"/>'+
+    '</circle>'+
+    '<circle cx="27" cy="32" r="0.9" fill="rgba(96,165,250,0.9)"/>'+
+    '<circle cx="39" cy="32" r="0.9" fill="rgba(96,165,250,0.9)"/>'+
+    '<path d="M 14 36 Q 10 38 9 42" stroke="url(#'+id+')" stroke-width="2.5" stroke-linecap="round" fill="none"/>'+
+    '<path d="M 50 36 Q 54 38 55 42" stroke="url(#'+id+')" stroke-width="2.5" stroke-linecap="round" fill="none"/>'+
+    '<circle cx="32" cy="48" r="1.5" fill="#fbbf24"/>'+
   '</svg>';
 }
 function _aiAvatarThinking(on){
