@@ -535,6 +535,13 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 [data-theme="light"] #mapaZonaCombo .search-combo-input,[data-theme="light"] #mapaVendCombo .search-combo-input,[data-theme="light-soft"] #mapaZonaCombo .search-combo-input,[data-theme="light-soft"] #mapaVendCombo .search-combo-input{background:linear-gradient(180deg,#ffffff 0%,#f3f4f6 100%);color:#1a1f2c;border-color:#d1d5db;box-shadow:0 1px 3px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.6)}
 [data-theme="light"] #mapaZonaCombo::after,[data-theme="light"] #mapaVendCombo::after,[data-theme="light-soft"] #mapaZonaCombo::after,[data-theme="light-soft"] #mapaVendCombo::after{border-color:#4b5563}
 @media(max-width:640px){#mapaZonaCombo,#mapaVendCombo{max-width:150px;width:150px}#mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:32px;font-size:11px;padding:6px 26px 6px 12px}}
+/* Combobox delivery más fino (desktop) */
+#dlvSearchCombo .search-combo-input,#dlvSearchInput{padding:7px 32px 7px 36px !important;height:36px !important;font-size:12px !important;border-radius:10px !important}
+#dlvSearchCombo .search-combo-icon,#dlvSearchInput + .search-combo-icon{width:14px !important;height:14px !important;left:12px !important}
+#dlvSearchCombo .search-combo-clear{right:6px !important;padding:3px !important}
+#dlvSearchCombo .search-combo-clear svg{width:12px !important;height:12px !important}
+/* Mobile: mantener tamaño cómodo touch (>=44px) */
+@media(max-width:768px){#dlvSearchCombo .search-combo-input,#dlvSearchInput{height:44px !important;padding:10px 36px 10px 38px !important;font-size:14px !important;border-radius:12px !important}#dlvSearchCombo .search-combo-icon,#dlvSearchInput + .search-combo-icon{width:16px !important;height:16px !important}#dlvSearchCombo .search-combo-clear{right:8px !important;padding:4px !important}#dlvSearchCombo .search-combo-clear svg{width:14px !important;height:14px !important}}
 /* SEARCH INPUT PREMIUM (sin combo, para buscadores simples) */
 .search-input-premium{padding:10px 14px;background:linear-gradient(180deg,var(--bg2),var(--bg3));border:1px solid var(--border2);border-radius:12px;color:var(--text);font:500 14px var(--font,inherit);transition:border .15s,box-shadow .15s;box-sizing:border-box}
 .search-input-premium:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.15)}
@@ -4180,7 +4187,7 @@ const NAV_CFG={
   vendedor:[
     {s:'Mi Panel',items:[
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis pedidos',ic:'pkg'},
-      {id:'balance',l:'Mi balance',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
+      {id:'balance',l:'Mi balance',ic:'dollar'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
       {id:'pagos',l:'Mi Liquidación',ic:'dollar'},
     ]},
@@ -4202,7 +4209,7 @@ const NAV_CFG={
   dropshipper:[
     {s:'Mi Panel',items:[
       {id:'dashboard',l:'Dashboard',ic:'grid'},{id:'orders',l:'Mis pedidos',ic:'pkg'},
-      {id:'balance',l:'Mis comisiones',ic:'dollar'},{id:'neworder',l:'Nuevo pedido',ic:'plus'},
+      {id:'balance',l:'Mis comisiones',ic:'dollar'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
       {id:'pagos',l:'Mi Liquidación',ic:'dollar'},
     ]},
@@ -4313,6 +4320,13 @@ const SVG={
   printer:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
   listIcon:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
   camera:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  settings:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  globe:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+  phone:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>',
+  mail:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+  home:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  shoppingCart:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>',
+  shoppingBag:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
 };
 const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'Liquidación',
   usuarios:'Usuarios',zonas:'Zonas y Tarifas',config:'Configuración',setup:'Setup / SQL',
@@ -4986,7 +5000,7 @@ PAGES.facturas_b2b=function(){
   $('tbTitle').textContent='Facturas B2B';
   $('tbActions').innerHTML='<button class="btn btn-primary" onclick="_openFacturaB2B()">Nueva factura +</button>';
   $('ca').innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">'+
-    '<div style="font-size:18px;font-weight:900;margin-bottom:4px">🧾 Facturas</div>'+
+    '<div style="font-size:18px;font-weight:900;margin-bottom:4px">'+SVG.fileText+' Facturas</div>'+
     '<div style="font-size:12px;color:var(--text2)">Emitidas o recibidas por tu usuario.</div>'+
   '</div><div id="b2bBody"></div>';
   _loadFacturasB2B();
@@ -5599,7 +5613,7 @@ PAGES.dashboard=async function(){
         '<div style="font-size:48px;margin-bottom:10px">🛍️</div>'+
         '<div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:6px">¡Bienvenido'+(CU.nombre?', '+escHtml(CU.nombre.split(' ')[0]):'')+'!</div>'+
         '<div style="font-size:13px;color:var(--text2);margin-bottom:18px;max-width:360px;margin-left:auto;margin-right:auto">Todavía no hiciste tu primer pedido. Explorá nuestro catálogo y descubrí nuestros productos.</div>'+
-        '<button class="btn btn-primary" onclick="nav(\'catalogo\')">🛒 Ver catálogo</button>'+
+        '<button class="btn btn-primary" onclick="nav(\'catalogo\')">'+SVG.shoppingCart+' Ver catálogo</button>'+
         '</div>';
     } else {
       const ent=mine.filter(o=>o.estado==='Entregado');
@@ -5632,10 +5646,10 @@ PAGES.dashboard=async function(){
         '<span style="color:var(--green);font-weight:700;font-family:\'JetBrains Mono\',monospace">'+fmt(totalUlt)+'</span>'+
         '</div>'+
         '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
-        '<button class="btn btn-secondary btn-sm" onclick="nav(\'mispedidos\')">📋 Ver detalles</button>'+
+        '<button class="btn btn-secondary btn-sm" onclick="nav(\'mispedidos\')">'+SVG.clipboard+' Ver detalles</button>'+
         (ultimo.estado==='En Ruta'?'<button class="btn btn-primary" style="flex:1;min-width:160px" onclick="window.open(\'?track=\'+'+ultimo.id+',\'_blank\')">🛵 Rastrear envío</button>':'')+
         (ultimo.estado==='Despachado'?'<button class="btn btn-secondary btn-sm" onclick="window.open(\'?track=\'+'+ultimo.id+',\'_blank\')">📦 Ver seguimiento</button>':'')+
-        (ultimo.estado==='Entregado'&&ultimo.deliveryId?'<button class="btn btn-primary btn-sm" onclick="_clienteCalificarUltimo('+ultimo.id+','+ultimo.deliveryId+')">⭐ Calificar</button>':'')+
+        (ultimo.estado==='Entregado'&&ultimo.deliveryId?'<button class="btn btn-primary btn-sm" onclick="_clienteCalificarUltimo('+ultimo.id+','+ultimo.deliveryId+')">'+SVG.star+' Calificar</button>':'')+
         '</div>'+
         '</div>';
     }
@@ -6126,7 +6140,7 @@ PAGES.orders=PAGES.mispedidos=function(){
     (['admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="DL.exportBackup()">💾 Backup</button>':'')+
     (['superadmin','vendedor'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="exportarCSV()" title="Exportar pedidos a CSV">📥 Exportar CSV</button>':'')+
     '<button class="btn btn-secondary" onclick="exportOrdersCSV()" title="Exportar a Excel">'+SVG.fileSpreadsheet+' Excel</button>'+
-    '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">🖨️ PDF</button>';
+    '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">'+SVG.printer+' PDF</button>';
   $('ca').innerHTML=
     '<div class="fbar">'+
     '<select id="fEst" onchange="filtrarReset()"><option value="">Todos los estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
@@ -6351,8 +6365,8 @@ function renderTable(orders,title,showActs,highlightChanges){
         '<button onclick="_closeOrderMenus();waMenu('+o.id+')">💬 WhatsApp</button>'+
         '<button onclick="_closeOrderMenus();navegarPedido('+o.id+')" style="color:#2563eb">📍 Navegar</button>'+
         '<div class="od-sep"></div>'+
-        '<button onclick="_closeOrderMenus();openBoleta('+o.id+')">🧾 Boleta IVA</button>'+
-        '<button onclick="_closeOrderMenus();imprimirGuia('+o.id+')">🖨️ Guía</button>'+
+        '<button onclick="_closeOrderMenus();openBoleta('+o.id+')">'+SVG.fileText+' Boleta IVA</button>'+
+        '<button onclick="_closeOrderMenus();imprimirGuia('+o.id+')">'+SVG.printer+' Guía</button>'+
         '<button onclick="_closeOrderMenus();imprimirTicket('+o.id+')">🏷 Ticket</button>'+
         (canEdit?'<div class="od-sep"></div>'+
           '<button onclick="_closeOrderMenus();_setPrioridad('+o.id+','+(!!(o.prioridad))+')"'+(o.prioridad?' style="color:var(--red)"':'')+'>'+
@@ -6427,7 +6441,7 @@ function waMenu(id){
     '<div class="alert alrt-i" style="margin-bottom:14px">Enviar mensaje de WhatsApp al cliente: <b>'+escHtml(o.cliente||'')+'</b> ('+escHtml(o.telefono||'')+')</div>'+
     '<div style="display:flex;flex-direction:column;gap:8px">'+
     '<button class="btn btn-success btn-full" onclick="waPedidoCreado(getOrders().find(x=>x.id==='+id+'));closeA()">📦 Pedido confirmado</button>'+
-    '<button class="btn btn-secondary btn-full" onclick="waNoContesta(getOrders().find(x=>x.id==='+id+'));closeA()">📞 No te encontré</button>'+
+    '<button class="btn btn-secondary btn-full" onclick="waNoContesta(getOrders().find(x=>x.id==='+id+'));closeA()">'+SVG.phone+' No te encontré</button>'+
     '<button class="btn btn-primary btn-full" onclick="waEntregado(getOrders().find(x=>x.id==='+id+'));closeA()">🎉 Pedido entregado</button>'+
     '</div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>'
@@ -6607,7 +6621,7 @@ function viewOrder(id){
     (o.razonSocial?'<div class="lcard2"><div class="stitle">Datos IVA</div><div class="lrow"><span class="llbl">Razón social</span><span>'+escHtml(o.razonSocial)+'</span></div><div class="lrow"><span class="llbl">RUC</span><span>'+escHtml(o.ruc||'')+'</span></div><div class="lrow"><span class="llbl">IVA</span><span>'+escHtml(o.tipoIva||'')+'</span></div></div>':'')+
     (o.notas?'<div class="lcard2"><div class="stitle">Notas</div><div style="font-size:13px">'+escHtml(o.notas)+'</div></div>':'')+
     chatSection+
-    '<div class="stitle">📋 Historial de cambios</div>'+histHtml,
+    '<div class="stitle">'+SVG.clipboard+' Historial de cambios</div>'+histHtml,
     '<button class="btn btn-secondary" onclick="closeB()">Cerrar</button>'+
     '<button class="btn btn-blue" onclick="waMenu('+o.id+')">WA</button>'+
     '<button class="btn btn-primary" onclick="closeB();openBoleta('+o.id+')">Ver Boleta</button>'
@@ -8101,7 +8115,7 @@ function _boletaHTML_legacy_unused(o){
     html: _fivaCss +
     '<div class="factura-iva-wrap">'+
     '<div class="factura-iva-actions">'+
-      '<button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button>'+
+      '<button class="btn btn-secondary" onclick="window.print()">'+SVG.printer+' Imprimir</button>'+
       '<button class="btn btn-primary" onclick="printBoleta('+(o.id||0)+')">'+SVG.arrowDown+' Descargar PDF</button>'+
     '</div>'+
     '<div class="factura-iva boleta" id="boletaDiv">'+
@@ -9998,7 +10012,7 @@ function _renderProductoCard(p,canEdit,canOrder=false){
       ((p.stock||0)>0?'<div class="prod-stock">📦 Stock: '+p.stock+'</div>':'')+
       presHtml+
       '<div class="prod-actions">'+
-        (canOrder&&presActivas.length?'<button class="btn btn-primary btn-sm btn-full" style="font-size:12px" onclick="crearPedidoDesdeProducto('+p.id+')">🛒 Crear pedido</button>':'')+
+        (canOrder&&presActivas.length?'<button class="btn btn-primary btn-sm btn-full" style="font-size:12px" onclick="crearPedidoDesdeProducto('+p.id+')">'+SVG.shoppingCart+' Crear pedido</button>':'')+
         (canEdit?'<div class="order-menu-wrap" style="width:100%">'+
           '<button class="btn btn-secondary btn-sm btn-full" style="font-size:13px;letter-spacing:.05em" onclick="_toggleCatMenu(event,'+p.id+')">⋮ Acciones</button>'+
           '<div class="order-dropdown" id="cdrop-'+p.id+'">'+
@@ -10136,7 +10150,7 @@ function openNuevoProducto(){
       '</div>'+
     '</div>'+
     // INFORMACIÓN
-    '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📋 Información</div>'+
+    '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">'+SVG.clipboard+' Información</div>'+
     '<div class="fg"><label>Nombre del producto</label><input type="text" id="npNom" maxlength="100" placeholder="Ej: Crystal Gloss Hybrid Pro"></div>'+
     '<div class="frow">'+
       '<div class="fg"><label>Categoría</label><select id="npCat"><option value="">Sin categoría</option>'+cats+'</select></div>'+
@@ -11135,7 +11149,7 @@ function openPerfilUsuario(){
     '</div>'+
     /* TAB 3 — Cobro */
     '<div class="ptab-content">'+
-    '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">💳 Cuenta bancaria</div>'+
+    '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">'+SVG.creditCard+' Cuenta bancaria</div>'+
     '<div class="fg"><label>Banco</label><input type="text" id="pfBanco" value="'+escAttr(u.banco)+'" placeholder="Banco Continental, Visión, etc."></div>'+
     '<div class="frow"><div class="fg"><label>Tipo de cuenta</label><select id="pfTipoCuenta">'+
     ['Caja de ahorro','Cuenta corriente','Cuenta vista'].map(t=>'<option '+(u.tipo_cuenta===t?'selected':'')+'>'+t+'</option>').join('')+
@@ -11282,7 +11296,7 @@ async function _cargarResenasEnPerfil(userId){
 let _califFotos=[];
 function _abrirCalificacion(pedidoId,paraId,paraRol,paraNombre){
   _califFotos=[];
-  openA('⭐ Calificar — '+paraNombre,
+  openA(SVG.star+' Calificar — '+paraNombre,
     '<div style="text-align:center;margin-bottom:16px">'+
     '<div style="font-size:14px;color:var(--text2);margin-bottom:12px">¿Cómo calificás a <b>'+paraNombre+'</b>?</div>'+
     '<div class="stars-input" id="califStarsInput" style="justify-content:center">'+
@@ -11297,7 +11311,7 @@ function _abrirCalificacion(pedidoId,paraId,paraRol,paraNombre){
     '<div id="califFotosPrev" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div></div>':'')+
     '<div id="califAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Omitir</button>'+
-    '<button class="btn btn-primary" onclick="_enviarCalificacion('+pedidoId+','+paraId+',\''+paraRol+'\')">Enviar reseña ⭐</button>'
+    '<button class="btn btn-primary" onclick="_enviarCalificacion('+pedidoId+','+paraId+',\''+paraRol+'\')">Enviar reseña '+SVG.star+'</button>'
   );
 }
 // Helper para el dashboard del cliente: abrir calificación del delivery del último pedido
@@ -13876,8 +13890,15 @@ PAGES.mapa=function(){
       initOrdersLayer(map);
       // Admin: mostrar pines de deliverys automáticamente
       if(esAdmin){window._mapaShowDlvs=true;_mapaCargarDlvs(map);}
+      // FIX: asegurar render de botones de filtros tras carga del mapa
+      try{if(typeof _mapaUpdateContadores==='function')_mapaUpdateContadores();}catch(_){}
     });
   },50);
+  // FIX: render inmediato de los botones de filtros (Todos/Pendiente/...).
+  // No esperar a que Mapbox cargue para mostrar la barra de filtros.
+  setTimeout(function(){
+    try{if(typeof _mapaUpdateContadores==='function')_mapaUpdateContadores();}catch(_){}
+  },100);
   // Onboarding del mapa (formal). Solo se muestra una vez por usuario.
   // FIX flash: una sola vez por sesión.
   try{ if(!window._onboardFiredMapa){ window._onboardFiredMapa = true; setTimeout(function(){
@@ -14343,7 +14364,7 @@ PAGES.pagos=function(){
           '<div class="acciones">'+
             '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openRegistrarPago(\''+escAttr(u.id)+'\')">💵 Registrar Pago</button>'+
             btnPagado+
-            '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();verHistorialPagos(\''+escAttr(u.id)+'\')">📋 Ver Historial</button>'+
+            '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();verHistorialPagos(\''+escAttr(u.id)+'\')">'+SVG.clipboard+' Ver Historial</button>'+
           '</div>'+
         '</div>';
         return {u,saldo,ultActividad,atRisk,html};
@@ -14357,7 +14378,7 @@ PAGES.pagos=function(){
         '<div class="stitle" style="margin-top:0">💵 Pagos del sistema — '+mes+'</div>'+
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
           '<button class="btn btn-secondary btn-sm" onclick="exportarTodosSaldosCSV()">📥 Exportar saldos a CSV</button>'+
-          '<button class="btn btn-secondary btn-sm" onclick="imprimirBalanceGeneral()">🖨️ Imprimir balance general</button>'+
+          '<button class="btn btn-secondary btn-sm" onclick="imprimirBalanceGeneral()">'+SVG.printer+' Imprimir balance general</button>'+
         '</div>'+
         '<div class="sgrid" style="margin-bottom:14px">'+
           '<div class="sc gr"><div class="slabel">Total ganado mes</div><div class="sval">'+fmt(totalGanado)+'</div></div>'+
@@ -14460,7 +14481,7 @@ PAGES.pagos=function(){
           fmt(cp.saldo)+
         '</div>'+
         '<div class="acciones">'+
-          '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();abrirPagoUsuario(\''+escAttr(cp.userId)+'\')">📋 Ver detalle</button>'+
+          '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();abrirPagoUsuario(\''+escAttr(cp.userId)+'\')">'+SVG.clipboard+' Ver detalle</button>'+
         '</div>'+
       '</div>';
     }).join('');
@@ -14487,7 +14508,7 @@ PAGES.pagos=function(){
       '<div class="stitle">🤝 Tus contrapartes — '+mes+'</div>'+
       (filasCp||'<div style="text-align:center;padding:30px;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px">Sin movimientos financieros este mes</div>')+
       '<div style="height:10px"></div>'+
-      '<div class="stitle">📋 Pagos recibidos — '+mes+'</div>'+
+      '<div class="stitle">'+SVG.clipboard+' Pagos recibidos — '+mes+'</div>'+
       '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
         '<th>Fecha</th><th>De quién</th><th>Monto</th><th>Método</th><th>Referencia</th><th>📎</th>'+
       '</tr></thead><tbody>'+
@@ -14720,7 +14741,7 @@ async function verHistorialPagos(targetUserId){
     '</tr>';
   }).join('');
   const total=pagos.reduce((a,p)=>a+(Number(p.monto)||0),0);
-  openA('📋 Historial de pagos — '+nombre,
+  openA(SVG.clipboard+' Historial de pagos — '+nombre,
     '<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">Total pagado: <b style="color:var(--green)">'+fmt(total)+'</b></div>'+
     '<div style="overflow-x:auto;max-height:60vh"><table class="tbl"><thead><tr>'+
       '<th>Fecha</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Nota</th>'+
@@ -15081,7 +15102,7 @@ PAGES.pago_usuario=function(){
       (esAdmin?'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:24px 0">'+
         '<button class="btn btn-primary" onclick="openRegistrarPago(\''+escAttr(user.id)+'\')">💵 Pago Parcial</button>'+
         '<button class="btnPagado" onclick="abrirPagoCompleto(\''+escAttr(user.id)+'\')">✅ Marcar Pagado</button>'+
-        '<button class="btn btn-secondary" onclick="imprimirEstadoCuenta(\''+escAttr(user.id)+'\',\''+periodo+'\')">🖨️ Imprimir</button>'+
+        '<button class="btn btn-secondary" onclick="imprimirEstadoCuenta(\''+escAttr(user.id)+'\',\''+periodo+'\')">'+SVG.printer+' Imprimir</button>'+
         '<button class="btn btn-secondary" onclick="exportarEstadoPDF(\''+escAttr(user.id)+'\',\''+periodo+'\')">📥 Exportar PDF</button>'+
         '<button class="btn btn-secondary" onclick="exportarEstadoCSV(\''+escAttr(user.id)+'\',\''+periodo+'\')">'+SVG.fileSpreadsheet+' Exportar CSV</button>'+
       '</div>':'')+
