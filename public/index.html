@@ -7285,97 +7285,142 @@ function _boletaHTML(o){
   const _empSec=emp.colorSecundario||'#1f2937';
   const _empNom=escHtml(emp.nombre||'IPORÃVE');
   const _empLogo=emp.logo
-    ?'<img src="'+safeUrl(emp.logo)+'" style="height:48px;object-fit:contain;display:block;margin-bottom:6px">'
-    :'<div style="font-size:24px;font-weight:800;color:'+_empColor+';letter-spacing:-0.5px;margin-bottom:4px;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000">'+_empNom+'</div>';
+    ?'<img src="'+safeUrl(emp.logo)+'" style="height:42px;object-fit:contain;display:block;margin-bottom:6px">'
+    :'';
   const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'');
+  // TODO: si en el futuro se agregan IVA 5% y exenta por item, separar montos por tasa.
+  const _iva10 = (o.tipoIva==='Exento'||o.tipoIva==='5%') ? 0 : iva;
+  const _iva5  = (o.tipoIva==='5%') ? iva : 0;
+  const _exenta= (o.tipoIva==='Exento') ? totalFact : 0;
+  const _pagada = (o.estado==='Entregado' || !!o.metodoCobro);
+  const _badgeClass = _pagada ? 'pagada' : 'pendiente';
+  const _badgeText  = _pagada ? 'PAGADA' : 'PENDIENTE';
+  const _fivaCss =
+    '<style>'+
+    '.factura-iva{max-width:780px;margin:0 auto;padding:32px 40px;background:#fff;color:#1a1a1a;font-family:"DM Sans","Helvetica Neue",system-ui,sans-serif;font-size:13px;line-height:1.55;border:1px solid #e5e5e5;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.05)}'+
+    '.factura-iva-header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:20px;border-bottom:2px solid #1a1a1a;margin-bottom:24px}'+
+    '.factura-iva-empresa{flex:1;min-width:0}'+
+    '.factura-iva-empresa h1{margin:0 0 4px 0;font-size:22px;font-weight:800;letter-spacing:0.2px;color:#1a1a1a}'+
+    '.factura-iva-empresa .fiscal{font-size:11px;color:#444;margin-top:2px;font-family:"JetBrains Mono",monospace}'+
+    '.factura-iva-empresa .contacto{font-size:11px;color:#666;margin-top:6px;line-height:1.5}'+
+    '.factura-iva-meta{text-align:right;min-width:200px;flex-shrink:0}'+
+    '.factura-iva-meta .tipo{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:2px}'+
+    '.factura-iva-meta .num{font-size:18px;font-weight:700;color:#c47a1a;font-family:"JetBrains Mono",monospace}'+
+    '.factura-iva-meta .fecha{color:#666;font-size:12px;margin-top:2px}'+
+    '.factura-iva-badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-top:8px}'+
+    '.factura-iva-badge.pagada{background:#d4f4dd;color:#0d7344}'+
+    '.factura-iva-badge.pendiente{background:#fef3cd;color:#854d0e}'+
+    '.factura-iva-cliente{background:#f8f7f4;border-left:3px solid #c47a1a;padding:14px 18px;border-radius:0 8px 8px 0;margin-bottom:20px}'+
+    '.factura-iva-cliente .label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600}'+
+    '.factura-iva-cliente .nombre{font-weight:700;font-size:15px;color:#1a1a1a;margin-bottom:6px}'+
+    '.factura-iva-cliente .data{font-size:12px;color:#444;line-height:1.7}'+
+    '.factura-iva-meta-extra{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#666;margin-bottom:16px;padding:8px 12px;background:#fafaf8;border-radius:6px;flex-wrap:wrap;gap:8px}'+
+    '.factura-iva-tabla{width:100%;border-collapse:collapse;margin-bottom:20px}'+
+    '.factura-iva-tabla th{text-align:left;padding:10px;background:#1a1a1a;color:#fff;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0}'+
+    '.factura-iva-tabla th:not(:first-child){text-align:right}'+
+    '.factura-iva-tabla td{padding:11px 10px;border-bottom:1px solid #eee;vertical-align:top;font-variant-numeric:tabular-nums}'+
+    '.factura-iva-tabla td:not(:first-child):not(.desc){text-align:right}'+
+    '.factura-iva-tabla tbody tr:nth-child(even){background:#fafaf8}'+
+    '.factura-iva-tabla td.desc small{color:#999;font-size:10px}'+
+    '.factura-iva-totales{display:flex;justify-content:flex-end;margin-bottom:24px}'+
+    '.factura-iva-totales table{min-width:300px;font-size:13px;border-collapse:collapse}'+
+    '.factura-iva-totales td{padding:5px 0;font-variant-numeric:tabular-nums}'+
+    '.factura-iva-totales td:first-child{color:#666;padding-right:32px}'+
+    '.factura-iva-totales td:last-child{text-align:right;font-weight:600;color:#1a1a1a}'+
+    '.factura-iva-totales tr.total td{font-size:18px;font-weight:800;padding-top:10px;padding-bottom:4px;border-top:3px double #1a1a1a;color:#1a1a1a}'+
+    '.factura-iva-footer{margin-top:28px;padding-top:16px;border-top:1px dashed #ccc;text-align:center;font-size:11px;color:#888}'+
+    '.factura-iva-footer .gracias{font-size:14px;color:#1a1a1a;font-weight:600;margin-bottom:6px;font-style:italic}'+
+    '.factura-iva-footer .sistema{margin-top:6px;font-size:10px;color:#999}'+
+    '.factura-iva-footer .legal{margin-top:4px;font-size:9px;color:#aaa}'+
+    '@media print{'+
+      '.factura-iva{border:none;box-shadow:none;padding:0;max-width:none;border-radius:0}'+
+      '.factura-iva-tabla thead{display:table-header-group}'+
+    '}'+
+    '</style>';
   return {zona,total,flete,totalFact,iva,base,
-    html:'<div class="boleta" id="boletaDiv" style="font-family:\'Helvetica Neue\',\'Arial\',sans-serif;color:#111827;background:#fff;line-height:1.45;border:1px solid #000;box-shadow:0 2px 8px rgba(0,0,0,0.15)">'+
+    html: _fivaCss +
+    '<div class="factura-iva boleta" id="boletaDiv">'+
     /* === HEADER === */
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:16px;margin-bottom:18px;border-bottom:2px solid '+_empSec+'">'+
-      '<div style="flex:1;min-width:0">'+
+    '<div class="factura-iva-header">'+
+      '<div class="factura-iva-empresa">'+
         _empLogo+
-        '<div style="font-size:13px;font-weight:700;color:'+_empSec+'">'+_empNom+'</div>'+
-        (emp.ruc?'<div style="font-size:10px;color:#6b7280;margin-top:3px">RUC: '+escHtml(emp.ruc)+'</div>':'')+
-        (emp.dir?'<div style="font-size:10px;color:#6b7280">'+escHtml(emp.dir)+'</div>':'')+
-        (emp.tel?'<div style="font-size:10px;color:#6b7280">Tel: '+escHtml(emp.tel)+'</div>':'')+
+        '<h1>'+_empNom+'</h1>'+
+        ((emp.ruc||_timb)?'<div class="fiscal">'+(emp.ruc?'RUC: '+escHtml(emp.ruc):'')+((emp.ruc&&_timb)?' &nbsp;·&nbsp; ':'')+(_timb?'Timbrado: '+_timb:'')+'</div>':'')+
+        '<div class="contacto">'+
+          (emp.dir?escHtml(emp.dir)+'<br>':'')+
+          (emp.tel?'Tel: '+escHtml(emp.tel):'')+
+          ((emp.tel&&emp.email)?' &nbsp;·&nbsp; ':'')+
+          (emp.email?escHtml(emp.email):'')+
+          (((emp.tel||emp.email)&&emp.web)?'<br>':'')+
+          (emp.web?escHtml(emp.web):'')+
+        '</div>'+
       '</div>'+
-      '<div style="text-align:right;flex-shrink:0">'+
-        '<div style="display:inline-block;border:2px solid '+_empColor+';padding:8px 14px;border-radius:6px;color:'+_empColor+';font-size:14px;font-weight:700;letter-spacing:0.5px;margin-bottom:8px">BOLETA DE VENTA</div>'+
-        '<div style="font-size:11px;color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">N° doc:</span> <span style="font-family:\'JetBrains Mono\',monospace;color:#111827">'+escHtml(o.numDoc||o.boletaNum||'')+'</span></div>'+
-        '<div style="font-size:11px;color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">Fecha:</span> <span style="color:#111827">'+fmtDate(o.fecha)+'</span></div>'+
-        '<div style="font-size:11px;color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">Timbrado:</span> <span style="font-family:\'JetBrains Mono\',monospace;color:#111827">'+_timb+'</span></div>'+
-        '<div style="margin-top:6px;display:inline-block;font-size:9px;padding:3px 8px;border:1px solid '+_empColor+';border-radius:4px;color:'+_empColor+';font-weight:600;letter-spacing:0.5px">COMPROBANTE IVA VÁLIDO</div>'+
+      '<div class="factura-iva-meta">'+
+        '<div class="tipo">Factura electrónica</div>'+
+        '<div class="num">N° '+escHtml(o.numDoc||o.boletaNum||'')+'</div>'+
+        '<div class="fecha">Emisión: '+fmtDate(o.fecha)+'</div>'+
+        '<div><span class="factura-iva-badge '+_badgeClass+'">'+_badgeText+'</span></div>'+
       '</div>'+
     '</div>'+
-    /* === CLIENTE / ENTREGA === */
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:18px;font-size:11px">'+
-      '<div>'+
-        '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Cliente / Comprador</div>'+
-        '<div style="font-weight:700;font-size:13px;color:'+_empSec+'">'+escHtml(o.cliente||'')+'</div>'+
-        (o.razonSocial?'<div style="color:#374151">'+escHtml(o.razonSocial)+'</div>':'')+
-        '<div style="color:#6b7280;margin-top:2px">CI: '+(escHtml(o.cedula||'')||'—')+(o.ruc?' · RUC: '+escHtml(o.ruc||''):'')+'</div>'+
-        '<div style="color:#6b7280">'+(escHtml(o.telefono||'')||'—')+'</div>'+
+    /* === CLIENTE === */
+    '<div class="factura-iva-cliente">'+
+      '<div class="label">Facturar a</div>'+
+      '<div class="nombre">'+escHtml(o.razonSocial||o.cliente||'—')+'</div>'+
+      '<div class="data">'+
+        (o.ruc?'<b>RUC:</b> '+escHtml(o.ruc)+'<br>':(o.cedula?'<b>CI:</b> '+escHtml(o.cedula)+'<br>':''))+
+        (o.direccion?escHtml(o.direccion)+'<br>':'')+
+        (o.telefono?'Tel: '+escHtml(o.telefono):'')+
+        ((o.telefono&&o.email)?' &nbsp;·&nbsp; ':'')+
+        (o.email?escHtml(o.email):'')+
       '</div>'+
-      '<div>'+
-        '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Entrega</div>'+
-        '<div style="color:#111827">'+escHtml(o.direccion||'—')+'</div>'+
-        '<div style="color:#6b7280;margin-top:2px">'+escHtml(zona.nombre||'')+(zona.tiempoEntrega?' · '+escHtml(zona.tiempoEntrega):'')+'</div>'+
-        '<div style="margin-top:6px;color:#374151"><span style="font-weight:600">Condición:</span> Contado &nbsp;·&nbsp; <span style="font-weight:600">IVA:</span> '+escHtml(o.tipoIva||'10%')+'</div>'+
-      '</div>'+
+    '</div>'+
+    /* === META extra: condición + entrega + vendedor === */
+    '<div class="factura-iva-meta-extra">'+
+      '<div><b>Condición:</b> Contado'+(getUser(o.vendedorId)?.nombre?' &nbsp;·&nbsp; <b>Vendedor:</b> '+escHtml(getUser(o.vendedorId).nombre):'')+'</div>'+
+      '<div><b>Entrega:</b> '+escHtml(zona.nombre||'—')+(zona.tiempoEntrega?' ('+escHtml(zona.tiempoEntrega)+')':'')+'</div>'+
     '</div>'+
     /* === TABLA ITEMS === */
-    '<div class="bt-wrap" style="margin-bottom:14px"><table class="bt" style="width:100%;border-collapse:collapse;border-top:3px solid '+_empSec+';border-bottom:3px solid '+_empSec+'">'+
-      '<thead><tr style="background:#f9fafb">'+
-        '<th style="padding:8px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:60px">Cant.</th>'+
-        '<th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb">Descripción</th>'+
-        '<th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:110px">Precio unit.</th>'+
-        '<th style="padding:8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:'+_empSec+';font-weight:700;border-bottom:1px solid #e5e7eb;width:120px">Total</th>'+
+    '<table class="factura-iva-tabla">'+
+      '<thead><tr>'+
+        '<th style="width:60px;text-align:left">Cant.</th>'+
+        '<th style="text-align:left">Descripción</th>'+
+        '<th style="width:110px">Precio unit.</th>'+
+        '<th style="width:70px">IVA</th>'+
+        '<th style="width:130px">Subtotal</th>'+
       '</tr></thead>'+
       '<tbody>'+
         '<tr>'+
-          '<td style="padding:8px;text-align:center;font-size:12px;color:#111827;border-bottom:1px solid #f3f4f6">'+o.qty+'</td>'+
-          '<td style="padding:8px;font-size:12px;color:#111827;border-bottom:1px solid #f3f4f6">'+escHtml(o.producto||'')+(o.proveedor?'<br><span style="font-size:10px;color:#9ca3af">Prov: '+escHtml(o.proveedor)+'</span>':'')+'</td>'+
-          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-variant-numeric:tabular-nums;font-family:\'Helvetica Neue\',Arial,sans-serif;border-bottom:1px solid #f3f4f6">Gs. '+fmtN(o.precio)+'</td>'+
-          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-weight:600;font-variant-numeric:tabular-nums;border-bottom:1px solid #f3f4f6">Gs. '+fmtN(o.precio*o.qty)+'</td>'+
+          '<td>'+o.qty+'</td>'+
+          '<td class="desc">'+escHtml(o.producto||'')+(o.proveedor?'<br><small>Prov: '+escHtml(o.proveedor)+'</small>':'')+'</td>'+
+          '<td>Gs. '+fmtN(o.precio)+'</td>'+
+          '<td>'+escHtml(o.tipoIva||'10%')+'</td>'+
+          '<td><b>Gs. '+fmtN(o.precio*o.qty)+'</b></td>'+
         '</tr>'+
         '<tr>'+
-          '<td style="padding:8px;text-align:center;font-size:12px;color:#111827">1</td>'+
-          '<td style="padding:8px;font-size:12px;color:#111827">Flete — Zona '+escHtml(zona.nombre||'')+'</td>'+
-          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
-          '<td style="padding:8px;text-align:right;font-size:12px;color:#111827;font-weight:600;font-variant-numeric:tabular-nums">Gs. '+fmtN(flete)+'</td>'+
+          '<td>1</td>'+
+          '<td class="desc">Flete — Zona '+escHtml(zona.nombre||'')+'</td>'+
+          '<td>Gs. '+fmtN(flete)+'</td>'+
+          '<td>'+escHtml(o.tipoIva||'10%')+'</td>'+
+          '<td><b>Gs. '+fmtN(flete)+'</b></td>'+
         '</tr>'+
-      '</tbody></table></div>'+
-    /* === META + TOTALES === */
-    '<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;margin-top:14px;font-size:11px;align-items:start">'+
-      '<div>'+
-        (getUser(o.vendedorId)?.nombre?'<div style="color:#6b7280"><span style="font-weight:600;color:'+_empSec+'">Vendedor:</span> '+escHtml(getUser(o.vendedorId).nombre)+'</div>':'')+
-        (o.metodoCobro?'<div style="color:#6b7280;margin-top:2px"><span style="font-weight:600;color:'+_empSec+'">Cobrado:</span> '+MICON[o.metodoCobro]+' '+escHtml(o.metodoCobro||'')+'</div>':'')+
-        (o.estado==='Entregado'?'<div style="margin-top:8px;display:inline-block;background:#dcfce7;color:#15803d;font-weight:700;padding:4px 10px;border-radius:4px;font-size:10px;letter-spacing:0.5px">✓ ENTREGADO Y COBRADO</div>':'')+
-      '</div>'+
-      '<div style="background:#f9fafb;border-radius:6px;padding:12px 14px">'+
-        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:4px"><span>Base imponible:</span><span style="font-variant-numeric:tabular-nums;color:#111827">Gs. '+fmtN(base)+'</span></div>'+
-        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:8px"><span>IVA '+(o.tipoIva||'10%')+' incluido:</span><span style="font-variant-numeric:tabular-nums;color:#111827">Gs. '+fmtN(iva)+'</span></div>'+
-        '<div style="display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid '+_empSec+';padding-top:8px;margin-top:4px">'+
-          '<span style="font-weight:700;color:'+_empSec+';font-size:13px;letter-spacing:0.5px">TOTAL</span>'+
-          '<span style="font-weight:700;font-size:18px;color:'+_empColor+';font-variant-numeric:tabular-nums">Gs. '+fmtN(totalFact)+'</span>'+
-        '</div>'+
-      '</div>'+
+      '</tbody>'+
+    '</table>'+
+    /* === TOTALES === */
+    '<div class="factura-iva-totales">'+
+      '<table>'+
+        '<tr><td>Subtotal (base):</td><td>Gs. '+fmtN(base)+'</td></tr>'+
+        '<tr><td>IVA 10% incluido:</td><td>Gs. '+fmtN(_iva10)+'</td></tr>'+
+        '<tr><td>IVA 5% incluido:</td><td>Gs. '+fmtN(_iva5)+'</td></tr>'+
+        '<tr><td>Exenta:</td><td>Gs. '+fmtN(_exenta)+'</td></tr>'+
+        '<tr class="total"><td>TOTAL</td><td>Gs. '+fmtN(totalFact)+'</td></tr>'+
+      '</table>'+
     '</div>'+
     /* === FOOTER === */
-    '<div style="margin-top:24px;padding-top:14px;border-top:1px solid #e5e7eb;text-align:center">'+
-      '<div style="font-style:italic;color:#94a3b8;font-size:12px;margin-bottom:8px">Gracias por su compra</div>'+
-      '<div style="font-size:10px;color:#6b7280;display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-bottom:6px">'+
-        (emp.tel?'<span>📞 '+escHtml(emp.tel)+'</span>':'')+
-        (emp.email?'<span>📧 '+escHtml(emp.email)+'</span>':'')+
-        (emp.web?'<span>🌐 '+escHtml(emp.web)+'</span>':'')+
-      '</div>'+
-      '<div style="text-align:center;margin-top:8px;font-size:10px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:6px">'+
-        (emp.email&&!emp.email.includes('undefined')?'📧 '+escHtml(emp.email)+'<br>':'')+
-        (emp.web?'🌐 '+escHtml(emp.web)+'<br>':'')+
-        (emp.whatsapp?'📱 '+escHtml(emp.whatsapp)+'<br>':'')+
-        'iporave-sistema.vercel.app'+
-      '</div>'+
-      '<div style="font-size:9px;color:#9ca3af;margin-top:4px">'+_empNom+' · Timbrado: '+_timb+' · Válido según Ley N° 125/91</div>'+
+    '<div class="factura-iva-footer">'+
+      '<div class="gracias">Gracias por su preferencia</div>'+
+      (o.metodoCobro?'<div>Cobrado vía '+escHtml(o.metodoCobro)+'</div>':'')+
+      '<div class="sistema">Iporãve Connect · iporaveparaguay.com</div>'+
+      '<div class="legal">'+_empNom+(_timb?' · Timbrado '+_timb:'')+' · Comprobante válido según Ley N° 125/91</div>'+
     '</div>'+
     '</div>'};
 }
@@ -9020,9 +9065,10 @@ function _renderProductoCard(p,canEdit,canOrder=false){
   const fotoHtml=p.foto
     ?'<img src="'+safeUrl(p.foto)+'" alt="'+escAttr(p.nombre)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="_imgCatErr(this)">'
     :(p.fotos&&p.fotos.length?'<img src="'+safeUrl(p.fotos[0])+'" alt="'+escAttr(p.nombre)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="_imgCatErr(this)">':'<div class="prod-img-placeholder">📦</div>');
-  const presHtml=p.presentaciones&&p.presentaciones.length
+  const presActivas=(p.presentaciones||[]).filter(pr=>!pr._eliminado);
+  const presHtml=presActivas.length
     ?'<div class="prod-pres-grid">'+
-      p.presentaciones.map(pr=>{
+      presActivas.map(pr=>{
         const rolPrice=_getPrecioRol(pr,CU.rol);
         return '<div class="prod-pres-chip">'+
           '<div class="pres-head">'+
@@ -9053,13 +9099,13 @@ function _renderProductoCard(p,canEdit,canOrder=false){
       (p.proveedorNombre?'<div class="prod-prov">'+escHtml(p.proveedorNombre)+'</div>':'')+
       '<div class="prod-precio-wrap">'+
         (tieneOferta?'<span class="prod-precio-tachado">'+fmt(p.precio_comparacion)+'</span>':'')+
-        (p.presentaciones&&p.presentaciones.length?'<span class="prod-precio-actual">'+fmt(_getPrecioRol(p.presentaciones[0],CU.rol))+'</span>':'<span style="font-size:12px;color:var(--text3)">Sin precio</span>')+
+        (presActivas.length?'<span class="prod-precio-actual">'+fmt(_getPrecioRol(presActivas[0],CU.rol))+'</span>':'<span style="font-size:12px;color:var(--text3)">Sin precio</span>')+
       '</div>'+
-      (esAdmin&&p.presentaciones&&p.presentaciones.length?'<div class="prod-precio-mayor">Mayorista: '+fmt(p.presentaciones[0].precioProveedor||0)+'</div>':'')+
+      (esAdmin&&presActivas.length?'<div class="prod-precio-mayor">Mayorista: '+fmt(presActivas[0].precioProveedor||0)+'</div>':'')+
       ((p.stock||0)>0?'<div class="prod-stock">📦 Stock: '+p.stock+'</div>':'')+
       presHtml+
       '<div class="prod-actions">'+
-        (canOrder&&p.presentaciones&&p.presentaciones.length?'<button class="btn btn-primary btn-sm btn-full" style="font-size:12px" onclick="crearPedidoDesdeProducto('+p.id+')">🛒 Crear pedido</button>':'')+
+        (canOrder&&presActivas.length?'<button class="btn btn-primary btn-sm btn-full" style="font-size:12px" onclick="crearPedidoDesdeProducto('+p.id+')">🛒 Crear pedido</button>':'')+
         (canEdit?'<div class="order-menu-wrap" style="width:100%">'+
           '<button class="btn btn-secondary btn-sm btn-full" style="font-size:13px;letter-spacing:.05em" onclick="_toggleCatMenu(event,'+p.id+')">⋮ Acciones</button>'+
           '<div class="order-dropdown" id="cdrop-'+p.id+'">'+
@@ -9361,7 +9407,9 @@ async function editProducto(id){
       '<select id="epProv"><option value="" '+((!p.proveedorNombre)?'selected':'')+'>Sin asignar</option>'+provs+'</select></div>'+
     // PRESENTACIONES INLINE
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;margin-top:4px">📦 Presentaciones y precios</div>'+
-    _presFormHTML(p.presentaciones)+
+    _presFormHTML((p.presentaciones||[]).filter(pr=>!pr._eliminado))+
+    // PAPELERA DE PRESENTACIONES ELIMINADAS
+    _renderPresentacionesEliminadas(p)+
     // COMPARTIR
     sharesHTML+
     (isAdminLike(CU.rol)?'<div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="epPublicar" '+(p.publicar_tienda?'checked':'')+'>Publicar en tienda pública</label></div>':'')+
@@ -9370,7 +9418,7 @@ async function editProducto(id){
     '<button class="btn btn-primary" onclick="saveEditProducto('+id+')">Guardar</button>',
     'lg'
   );
-  window._presEdit=JSON.parse(JSON.stringify(p.presentaciones||[]));
+  window._presEdit=JSON.parse(JSON.stringify((p.presentaciones||[]).filter(pr=>!pr._eliminado)));
   // _fotosEdit ya fue inicializado antes de openA — renderizar galería sincrónico
   _renderGaleriaEdit();
   setTimeout(()=>{const e=$('epNom');if(e){e.focus();e.select();}},120);
@@ -9400,7 +9448,11 @@ async function saveEditProducto(id){
   p.precio_comparacion=parseFloat(gv('epPrecioComp'))||0;
   p.stock=parseInt(gv('epStock'))||0;
   p.publicar_tienda=!!$('epPublicar')?.checked;
-  if(window._presEdit)p.presentaciones=window._presEdit;
+  if(window._presEdit){
+    // Conservar presentaciones eliminadas (soft delete) y reemplazar las activas con las editadas
+    const eliminadas=(p.presentaciones||[]).filter(pr=>pr._eliminado);
+    p.presentaciones=[...window._presEdit,...eliminadas];
+  }
   // Shares
   if(_supaConnected&&CU.rol!=='delivery'){
     const newIds=(window._sharesSel||[]).map(u=>u.id);
@@ -9683,13 +9735,49 @@ async function saveEditPresentacion(prodId,presId){
   DL.saveProducto(p);
 }
 async function delPresentacion(prodId,presId){
-  const p=_catalogoCache.find(x=>x.id===prodId);if(!p)return;
-  const pr=(p.presentaciones||[]).find(x=>x.id===presId);
-  const nom=pr?pr.nombre:'esta presentación';
-  if(!confirm('¿Eliminar la presentación "'+nom+'"?\n\nEsta acción NO se puede deshacer. La presentación se borra permanentemente del producto.'))return;
-  p.presentaciones=p.presentaciones.filter(x=>x.id!==presId);
+  const p=_catalogoCache.find(x=>String(x.id)===String(prodId));if(!p||!Array.isArray(p.presentaciones))return;
+  const pr=p.presentaciones.find(x=>String(x.id)===String(presId));
+  if(!pr)return;
+  if(!confirm('¿Eliminar la presentación "'+(pr.nombre||'sin nombre')+'"?\n\nPodrá restaurarla desde la sección "Presentaciones eliminadas" dentro del producto.'))return;
+  // Soft delete: marca, no remueve
+  pr._eliminado=true;
+  pr._eliminadoAt=new Date().toISOString();
+  pr._eliminadoPor=(typeof CU!=='undefined'&&CU)?CU.id:null;
+  await DL.saveProducto(p);
+  if(typeof pushNotif==='function')pushNotif('Presentación eliminada. Podrá restaurarla desde el producto.','ok');
   PAGES.catalogo();
-  DL.saveProducto(p);
+}
+async function restaurarPresentacion(prodId,presId){
+  const p=(window._catalogoCache||_catalogoCache||[]).find(x=>String(x.id)===String(prodId));
+  if(!p||!Array.isArray(p.presentaciones))return;
+  const pres=p.presentaciones.find(x=>String(x.id)===String(presId));
+  if(!pres)return;
+  delete pres._eliminado;
+  delete pres._eliminadoAt;
+  delete pres._eliminadoPor;
+  await DL.saveProducto(p);
+  if(typeof pushNotif==='function')pushNotif('Presentación restaurada correctamente.','ok');
+  if(typeof editProducto==='function')editProducto(p.id);
+  if(typeof PAGES!=='undefined'&&PAGES.catalogo)PAGES.catalogo();
+}
+window.restaurarPresentacion=restaurarPresentacion;
+function _renderPresentacionesEliminadas(p){
+  const eliminadas=(p.presentaciones||[]).filter(pr=>pr._eliminado);
+  if(!eliminadas.length)return '';
+  return '<details class="pres-trash" style="margin-top:16px;padding:12px;background:var(--bg3);border-radius:10px;border:1px dashed var(--border2)">'+
+    '<summary style="cursor:pointer;font-weight:600;color:var(--text2);user-select:none">🗑️ Presentaciones eliminadas ('+eliminadas.length+')</summary>'+
+    '<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">'+
+      eliminadas.map(pr=>
+        '<div class="pres-trash-item" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border-radius:8px;opacity:0.85;gap:8px">'+
+          '<div style="min-width:0;flex:1">'+
+            '<div style="font-weight:600;color:var(--text)">'+escHtml(pr.nombre||'Sin nombre')+'</div>'+
+            '<div style="font-size:11px;color:var(--text3)">Eliminada: '+new Date(pr._eliminadoAt||Date.now()).toLocaleDateString('es-PY')+'</div>'+
+          '</div>'+
+          '<button type="button" class="btn btn-sm btn-secondary" onclick="restaurarPresentacion('+JSON.stringify(String(p.id))+','+JSON.stringify(String(pr.id))+')" title="Restaurar esta presentación">↻ Restaurar</button>'+
+        '</div>'
+      ).join('')+
+    '</div>'+
+  '</details>';
 }
 
 /* ─── PRODUCT PICKER (Nuevo Pedido) ─── */
