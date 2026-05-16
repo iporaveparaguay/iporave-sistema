@@ -121,9 +121,9 @@ body.no-auth .topbar,body.no-auth .sidebar,body.no-auth .sidebarCollapseBtn,body
 .dot-green{background:var(--green);}.dot-amber{background:var(--accent);}
 .snav{flex:1;padding:8px 0;overflow-y:auto;}
 .nsec{padding:7px 20px 2px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
-.ni{display:flex;align-items:center;gap:9px;padding:8px 20px;font-size:13px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all 0.15s ease-out;position:relative;touch-action:manipulation;}
-.ni:hover{background:rgba(245,166,35,0.08);color:var(--text);padding-left:18px;}
-.ni.active{background:var(--bg3);color:var(--accent);border-left-color:var(--accent);}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 20px;font-size:13px;color:var(--text);opacity:0.78;cursor:pointer;border-left:2px solid transparent;transition:all 0.15s ease-out;position:relative;touch-action:manipulation;font-weight:500;}
+.ni:hover{background:rgba(245,166,35,0.08);color:var(--text);opacity:1;padding-left:18px;}
+.ni.active{background:var(--bg3);color:var(--accent);opacity:1;border-left-color:var(--accent);font-weight:600;}
 .ni .nbadge{position:absolute;right:14px;background:var(--red);color:#fff;font-size:9px;padding:1px 5px;border-radius:10px;font-weight:700;}
 .sfooter{padding:11px 20px;border-top:1px solid var(--border);}
 .snav-version{padding:8px 20px 12px;font-size:10px;color:#6b7280;text-align:center;border-top:1px solid var(--border);letter-spacing:.3px;}
@@ -862,7 +862,7 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
       </button>
       <span class="tbtitle" id="tbTitle">Dashboard</span>
       <div class="tbactions" id="tbActions"></div>
-      <button id="themeToggleBtn" type="button" onclick="toggleTheme()" style="width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Cambiar tema" aria-label="Cambiar tema"><span id="themeIcon">🌙</span></button>
+      <button id="themeToggleBtn" type="button" onclick="toggleTheme()" style="width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Cambiar tema" aria-label="Cambiar tema"><span id="themeIcon">☀️</span></button>
       <button id="codexNotifBell" type="button" onclick="_notifSessionToggle()" style="display:none;position:relative;width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:17px;align-items:center;justify-content:center;flex-shrink:0" aria-label="Notificaciones">🔔<span id="codexNotifBadge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:999px;background:#ef4444;color:#fff;font-size:10px;font-weight:900;align-items:center;justify-content:center;padding:0 3px"></span></button>
       <span class="offline-badge" id="offlineBadge">⚡ Sin conexión</span>
     </div>
@@ -13541,7 +13541,7 @@ function toggleTheme(){
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   const icon = document.getElementById('themeIcon');
-  if(icon) icon.textContent = next === 'dark' ? '🌙' : '☀️';
+  if(icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
   try{ localStorage.setItem('theme', next); }catch(_){ }
   window.dispatchEvent(new CustomEvent('themeChange', { detail: next }));
 }
@@ -13551,7 +13551,7 @@ function toggleTheme(){
     if(saved){
       document.documentElement.setAttribute('data-theme', saved);
       const icon = document.getElementById('themeIcon');
-      if(icon) icon.textContent = saved === 'dark' ? '🌙' : '☀️';
+      if(icon) icon.textContent = saved === 'dark' ? '☀️' : '🌙';
     } else {
       document.documentElement.setAttribute('data-theme', 'dark');
     }
