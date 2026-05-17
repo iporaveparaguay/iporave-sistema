@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "validate": "node validate.js"
+    "validate": "node validate.js",
+    "bump-sw": "node scripts/bump-sw-version.js",
+    "predeploy": "npm run validate && npm run bump-sw"
   },
   "engines": {
     "node": ">=18.0.0"

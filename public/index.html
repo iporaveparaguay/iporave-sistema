@@ -9401,12 +9401,15 @@ function printBoleta(id){
 function waBoleta(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
   const b=_boletaHTML(o);
+  // L1 fix: omitir línea de flete si la zona es "—" (sin zona asignada) o flete=0
+  const hasZona=b.zona&&b.zona.nombre&&b.zona.nombre!=='—'&&Number(b.flete)>0;
+  const lineaFlete=hasZona?('🚚 Flete zona '+b.zona.nombre+': Gs. '+fmtN(b.flete)+'\n'):'';
   const msg='*Boleta de Venta — Iporãve*\n\n'+
     '📄 Boleta N°: '+o.boletaNum+'\n'+
     '📅 Fecha: '+fmtDate(o.fecha)+'\n'+
     '👤 Cliente: '+o.cliente+'\n'+
     '📦 Producto: '+o.producto+' x'+o.qty+'\n'+
-    '🚚 Flete zona '+b.zona.nombre+': Gs. '+fmtN(b.flete)+'\n'+
+    lineaFlete+
     '💰 *TOTAL: Gs. '+fmtN(b.totalFact)+'*\n\n'+
     '_'+EMPRESA.nombre+' · '+EMPRESA.tel+'_';
   const tel=(o.telefono||'').replace(/\D/g,'').replace(/^0/,'');
