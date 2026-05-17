@@ -5314,6 +5314,7 @@ function nav(page){
   if(page!=='estadisticas'){try{window._estadisticasAnimated=false;}catch(_){}}
   $('tbTitle').textContent=PT[page]||page;
   $('tbActions').innerHTML='';
+  try{_sfpDestroy();}catch(_){}
   $('ca').classList.remove('mc-page');
   // M4 fix: clase body page-mapa para que los selectores CSS .page-mapa apliquen correctamente
   document.body.classList.toggle('page-mapa', page==='mapa');
