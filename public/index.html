@@ -5147,6 +5147,11 @@ function updateNavBadges(){
   if(bm){bm.textContent=_unreadMsgs>99?'99+':String(_unreadMsgs);bm.style.display=_unreadMsgs>0?'':'none';}
 }
 function nav(page){
+  // FIX SEC-1: bloquear ejecución si no hay sesión cargada (excepto páginas públicas)
+  if(!CU && page !== 'login' && page !== 'tracking' && page !== 'registro'){
+    console.warn('nav sin CU:', page);
+    return;
+  }
   // Cerrar coachmark Onboard activo al cambiar de página (sin marcarlo como visto)
   try{ if(typeof Onboard !== 'undefined' && Onboard._closeCurrent) Onboard._closeCurrent(); }catch(_){}
   // Limpiar modales stale al navegar (prevenir modales superpuestos)
@@ -5162,6 +5167,11 @@ function nav(page){
   if(CU&&CU.rol==='cliente'&&['usuarios','orders','zonas','zonasYTarifas','config','setup','setupSql','recaudacion','recaudacionDelivery','liquidacion','balance','analitica_admin','analitica_vend','analitica_drop','analitica_prov','analitica','cierre','cierreJornada','estadisticas','estadisticasAvanzadas','mapa','suministros','pagos_prov','pagos','clientes_recurrentes','facturas_b2b','boletasIVA','entregas','cupo','recaudacion_dlv'].includes(page)){
     try{pushNotif('Acceso no permitido para su rol','w');}catch(_){}
     return nav('dashboard');
+  }
+  // FIX SEC-3: delivery no puede acceder a páginas de admin/finanzas
+  const _paginasProhibidasDelivery=['pagos','balance','liquidacion','superadmin','config','analitica_admin','finanzas'];
+  if(CU&&CU.rol==='delivery'&&_paginasProhibidasDelivery.includes(page)){
+    return nav('orders');
   }
   var bgWrap = document.getElementById('bgWrap');
   if (bgWrap && bgWrap.parentNode===document.body) {
@@ -6876,6 +6886,7 @@ function _renderDlvCard(o,dist){
   '</div>';
 }
 PAGES.orders=PAGES.mispedidos=function(){
+  if(!CU) return; // FIX SEC-2
   _pedidosShown=_pedidosPageSize;
   const canCreate=['admin','superadmin','vendedor','proveedor','dropshipper'].includes(CU.rol);
   $('tbActions').innerHTML=
@@ -8183,6 +8194,7 @@ async function saveNewOrder(){
 
 /* ─── BALANCE ─── */
 PAGES.balance=function(){
+  if(!CU) return; // FIX SEC-2
   $('tbActions').innerHTML='<button class="btn btn-secondary" onclick="exportBalanceCSV()" title="Exportar a Excel">'+SVG.fileSpreadsheet+' Excel</button>'+
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">'+SVG.printer+' PDF</button>';
   const orders=getVisibleOrders();
@@ -8277,6 +8289,7 @@ PAGES.balance=function(){
 
 /* ─── LIQUIDACION ─── */
 PAGES.liquidacion=function(){
+  if(!CU) return; // FIX SEC-2
   var _miLiqHook=function(){
     if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredLiq){
       window._onboardFiredLiq = true;
@@ -12522,7 +12535,7 @@ function escMd(s){
   // `code` inline
   t=t.replace(/`([^`\n]+)`/g,'<code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:12px">$1</code>');
   // links [texto](url)
-  t=t.replace(/\[([^\]]+)\]\((https?:[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  t=t.replace(/\[([^\]]+)\]\((https?:[^\s)]+)\)/g,function(_,text,url){var safeUrl=url.replace(/"/g,'%22').replace(/'/g,'%27');return '<a href="'+safeUrl+'" target="_blank" rel="noopener noreferrer">'+text+'</a>';});
   // bullets simples al inicio de línea
   t=t.replace(/^(?:- |\* )(.+)$/gm,'• $1');
   // newlines
@@ -18057,8 +18070,8 @@ async function _refreshActualPage(){
     const tareas = [];
     if(typeof refreshCache === 'function') tareas.push(Promise.resolve(refreshCache()));
     if(typeof DL !== 'undefined'){
-      if(DL.getOrders) tareas.push(DL.getOrders().then(d=>{window._ordersCache=d}).catch(()=>{}));
-      if(DL.getUsers) tareas.push(DL.getUsers().then(d=>{window._usersCache=d}).catch(()=>{}));
+      if(DL.getOrders) tareas.push(DL.getOrders().then(d=>{_ordersCache=d}).catch(()=>{}));
+      if(DL.getUsers) tareas.push(DL.getUsers().then(d=>{_usersCache=d}).catch(()=>{}));
       if(DL.getPagos) tareas.push(DL.getPagos({}).then(d=>{window._pagosCache=d}).catch(()=>{}));
     }
     await Promise.allSettled(tareas);
