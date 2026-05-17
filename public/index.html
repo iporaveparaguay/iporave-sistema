@@ -4729,7 +4729,7 @@ function _toggleTutorial(on){
   if(!on){
     try{
       if(window.Onboard&&typeof window.Onboard._closeCurrent==='function') window.Onboard._closeCurrent();
-      if(window.Onboard) window.Onboard._queue=[];
+      if(window.Onboard&&typeof window.Onboard.clearQueue==='function') window.Onboard.clearQueue();
     }catch(_){}
   }
   if(typeof _updateTutorialToggleBtn==='function') _updateTutorialToggleBtn();
@@ -19155,6 +19155,9 @@ function toggleTheme(){
   function _drainQueue(){
     if(STATE.active) return;
     if(!QUEUE.length){ QUEUE_RUNNING = false; return; }
+    if(typeof window._isTutorialEnabled==='function' && !window._isTutorialEnabled()){
+      QUEUE.length=0; QUEUE_RUNNING=false; return;
+    }
     QUEUE_RUNNING = true;
     var item = QUEUE.shift();
     // Si ya fue visto (otra pestaña), saltar
@@ -19364,7 +19367,7 @@ function toggleTheme(){
     return removed;
   }
 
-  window.Onboard = { show: show, showIfNew: showIfNew, enqueue: enqueue, reset: reset, _markSeen: markSeen, _wasSeen: wasSeen, _destroy: destroy, _closeCurrent: closeCurrent, _queue: QUEUE };
+  window.Onboard = { show: show, showIfNew: showIfNew, enqueue: enqueue, reset: reset, _markSeen: markSeen, _wasSeen: wasSeen, _destroy: destroy, _closeCurrent: closeCurrent, _queue: QUEUE, clearQueue: function(){ QUEUE.length=0; QUEUE_RUNNING=false; } };
 })();
 </script>
 <script>
