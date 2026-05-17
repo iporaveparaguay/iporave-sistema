@@ -13250,6 +13250,32 @@ PAGES.config=function(){
       '</label>'+
       '<div><button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" type="button" onclick="_resetTutorial()">Reiniciar tutoriales (volver a ver)</button></div>'+
     '</div>'+
+    /* ── SECCIÓN: Datos de la empresa ── */
+    (function(){
+      const cs=getCfgSistema();
+      return '<div class="lcard2" id="cfgSistemaBlock">'+
+        '<div class="stitle" style="margin-top:0">🏢 Datos de la empresa</div>'+
+        '<div class="alert alrt-i" style="margin-bottom:14px">Estos datos se usan en PDFs, boletas y mensajes de WhatsApp.</div>'+
+        '<div class="fg"><label>Nombre del negocio</label><input type="text" id="csNombre" value="'+escAttr(cs.nombreNegocio||'')+'" placeholder="Ej: Iporãve Paraguay"></div>'+
+        '<div class="fg"><label>Logo URL</label><input type="text" id="csLogo" value="'+escAttr(cs.logoUrl||'')+'" placeholder="https://..."></div>'+
+        '<div class="fg"><label>Teléfono de soporte</label><input type="text" id="csTel" value="'+escAttr(cs.telefonoSoporte||'')+'" placeholder="+595 9xx xxxxxx"></div>'+
+        '<div class="fg"><label>Dirección del negocio</label><input type="text" id="csDireccion" value="'+escAttr(cs.direccion||'')+'" placeholder="Calle y número, Ciudad"></div>'+
+        '<div class="stitle" style="margin-top:18px">📦 Configuración de pedidos</div>'+
+        '<div class="frow">'+
+          '<div class="fg"><label>Comisión default vendedor (%)</label><input type="number" id="csComVend" value="'+escAttr(cs.comisionVendedor!=null?String(cs.comisionVendedor):'')+'" min="0" max="100" step="0.1" placeholder="Ej: 10"></div>'+
+          '<div class="fg"><label>Comisión default drop (%)</label><input type="number" id="csComDrop" value="'+escAttr(cs.comisionDrop!=null?String(cs.comisionDrop):'')+'" min="0" max="100" step="0.1" placeholder="Ej: 5"></div>'+
+        '</div>'+
+        '<div class="frow">'+
+          '<div class="fg"><label>Días para pedido "antiguo"</label><input type="number" id="csDiasAntiguo" value="'+escAttr(cs.diasAntiguo!=null?String(cs.diasAntiguo):'7')+'" min="1" max="365" placeholder="7"></div>'+
+          '<div class="fg"><label>Saldo mínimo alerta pago (Gs.)</label><input type="number" id="csSaldoAlerta" value="'+escAttr(cs.saldoMinimoAlerta!=null?String(cs.saldoMinimoAlerta):'')+'" min="0" step="1000" placeholder="Ej: 50000"></div>'+
+        '</div>'+
+        '<div class="stitle" style="margin-top:18px">💬 Prefijos de mensajes WA automáticos</div>'+
+        '<div class="fg"><label>Prefijo mensaje "En Ruta" (usa {cliente},{id},{trackUrl})</label><textarea id="csWaEnRuta" rows="3">'+escHtml(cs.prefWaEnRuta||'🛵 ¡Hola {cliente}! Tu pedido #{id} ya está en camino. Seguí al delivery aquí: {trackUrl} — Iporãve')+'</textarea></div>'+
+        '<div class="fg"><label>Prefijo mensaje "Entregado" (usa {cliente},{id})</label><textarea id="csWaEntregado" rows="3">'+escHtml(cs.prefWaEntregado||'🎉 ¡Tu pedido #{id} fue entregado! Gracias por comprar en Iporãve. ¡Hasta la próxima! 😊')+'</textarea></div>'+
+        '<div id="cfgSistemaAlert"></div>'+
+        '<button class="btn btn-primary" style="margin-top:8px" onclick="saveCfgSistema()">💾 Guardar configuración del sistema</button>'+
+      '</div>';
+    })()+
     '</div>';
   _cargarTemaActualEnConfig();
   if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredConfig && CU && ['admin','superadmin'].includes(CU.rol)){
@@ -13286,6 +13312,32 @@ function saveCfgMain(){
     ivaTasa:parseFloat(gv('cfgIVA'))||10,
   });
   showAlert('cfgAlert','s','✓ Configuración guardada correctamente');
+}
+function getCfgSistema(){
+  try{
+    const s=localStorage.getItem('ipv5_config_sistema');
+    return s?JSON.parse(s):{};
+  }catch(e){return{};}
+}
+function saveCfgSistema(){
+  const data={
+    nombreNegocio:(gv('csNombre')||'').trim(),
+    logoUrl:(gv('csLogo')||'').trim(),
+    telefonoSoporte:(gv('csTel')||'').trim(),
+    direccion:(gv('csDireccion')||'').trim(),
+    comisionVendedor:parseFloat(gv('csComVend'))||0,
+    comisionDrop:parseFloat(gv('csComDrop'))||0,
+    diasAntiguo:parseInt(gv('csDiasAntiguo'))||7,
+    saldoMinimoAlerta:parseInt(gv('csSaldoAlerta'))||0,
+    prefWaEnRuta:(gv('csWaEnRuta')||'').trim(),
+    prefWaEntregado:(gv('csWaEntregado')||'').trim(),
+  };
+  try{
+    localStorage.setItem('ipv5_config_sistema',JSON.stringify(data));
+    showAlert('cfgSistemaAlert','s','✓ Configuración del sistema guardada');
+  }catch(e){
+    showAlert('cfgSistemaAlert','e','Error al guardar: '+e.message);
+  }
 }
 /* ─── PERSONALIZACIÓN DEL TEMA (color picker + eyedropper) ─── */
 async function _eyedropper(colorKey){
