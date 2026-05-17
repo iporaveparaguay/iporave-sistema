@@ -306,14 +306,6 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 :root[data-theme="light"] .mapa-locate-btn,
 :root[data-theme="light-soft"] .mapa-locate-btn{background:rgba(255,255,255,0.92);color:#1a1a1a;border:1px solid rgba(0,0,0,0.1);}
 .mapa-estilo-fade #ordersMap{transition:opacity .2s ease;opacity:.0;}
-/* MAPA: menú ⋯ (dropdown en todos los tamaños) */
-.mapa-secundarios{display:inline-flex;align-items:center;gap:6px;position:relative;}
-.mapa-menu-btn{display:inline-flex;}
-.mapa-secundarios-panel{display:none;position:absolute;top:100%;right:0;z-index:200;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:8px;gap:6px;flex-direction:column;align-items:stretch;box-shadow:0 8px 24px rgba(0,0,0,.35);min-width:240px;}
-.mapa-secundarios-panel.open{display:flex;}
-.mapa-secundarios-panel #mapaContadores{display:flex;flex-direction:column;gap:4px;width:100%;}
-.mapa-secundarios-panel #mapaContadores .mapBtn{width:100%;justify-content:flex-start;text-align:left;}
-.mapa-secundarios-panel .mapa-sep{width:100%;height:1px;background:var(--border);margin:2px 0;}
 /* APP LAYOUT */
 #appScreen{display:none;min-height:100vh;}
 #appScreen.show{display:flex;}
@@ -1166,7 +1158,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 @media(max-width:639px){
   :root{--mapa-offset:175px;}
   /* Topbar mapa mobile: 2 filas */
-  .page-mapa #tbActions,#tbActions:has(.mapa-secundarios){
+  .page-mapa #tbActions{
     flex-wrap:wrap!important;
     overflow:visible!important;
     gap:4px!important;
@@ -1174,7 +1166,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
     align-items:center;
   }
   /* Fila 1: botones de acción */
-  .page-mapa #tbActions .map-btn,#tbActions:has(.mapa-secundarios) .map-btn,.mapa-secundarios{
+  .page-mapa #tbActions .map-btn{
     order:1;
     flex-shrink:0;
   }
