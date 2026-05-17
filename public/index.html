@@ -1122,6 +1122,14 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   /* Fix: elementos que se corten por overflow */
   .sgrid{overflow:hidden;}
   .sc{box-sizing:border-box;min-width:0;word-break:break-word;}
+  /* BUG-U5: order explícito en topbar para evitar mezcla de filas en mobile */
+  #menuBtn{order:0;}
+  .tbtitle,#tbTitle{order:1;flex:1 1 auto;}
+  .tbactions,#tbActions{order:2;flex:0 0 auto;}
+  #gpsStatusPill{order:3;}
+  #refreshBtn,#tutorialToggleBtn,#themeToggleBtn,#codexNotifBell{order:4;}
+  #topbarKebab{order:4;}
+  #offlineBadge{order:5;}
 }
 /* FIX mobile mapa: 2 filas en topbar — botones fila 1, combos fila 2 */
 @media(max-width:639px){
