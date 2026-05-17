@@ -122,6 +122,36 @@
 
 ---
 
+## 🆕 AUDITORÍA 17 — Opus 4.7 MAX 2026-05-17 (cierre sesión)
+
+### Bugs CERRADOS en auditoría 17:
+| ID | Bug | Archivo | Estado |
+|----|-----|---------|--------|
+| NB3 | Listeners SW + scroll bell se duplicaban en multi-login | index.html (doLogout + _notifSessionInit) | ✅ ARREGLADO |
+| NB4 | XSS en email de notificación de dispositivo nuevo | iporave-worker login.js + utils.js (escapeHtmlMail) | ✅ ARREGLADO |
+| NB8 | /api/dispositivos-pendientes cross-tenant leak | iporave-worker dispositivos-pendientes.js | ✅ ARREGLADO |
+| NB10 | sw.js stale-while-revalidate HTML viejo post-deploy | public/sw.js (NetworkFirst con timeout 3s) | ✅ ARREGLADO |
+| NB11 | /api/orders/notify no validaba ownership de order_id | iporave-worker orders.js | ✅ ARREGLADO |
+| NB12 | get-users.js slice silencioso a 100 | iporave-worker get-users.js (subido a 500 + truncated flag) | ✅ ARREGLADO |
+| AUD-XSS-2 | XSS en modal calificación (paraNombre raw) | index.html 12354/12356 | ✅ ARREGLADO |
+| AUD-XSS-3 | XSS en modal eliminar producto (p.nombre raw) | index.html 11380 | ✅ ARREGLADO |
+
+### Bugs NUEVOS encontrados auditoría 17 (PENDIENTES):
+| ID | Bug | Archivo | Severidad |
+|----|-----|---------|-----------|
+| **AUD-1** | **MAPBOX_TOKEN público hardcodeado en wrangler.toml — debe ir a secret** | iporave-worker wrangler.toml línea 13 | **CRÍTICO** |
+| **AUD-4** | **admin-tools.js cleanup-test borra pedidos por substring "test/prueba/demo" sin tenant scope ni OTP → riesgo data-loss masivo** | iporave-worker admin-tools.js línea 72 | **CRÍTICO** |
+| **AUD-5** | **`verifyToken` cache key usa solo 32 chars del JWT → colisión + sesión zombie 5min tras bloquear usuario** | iporave-worker utils.js 59-95 | **ALTO** |
+| **AUD-6** | **`calificaciones.js` permite duplicados cuando no hay pedido_id (admin/superadmin) → inflar rating** | iporave-worker calificaciones.js 101-111 | **ALTO** |
+| **AUD-7** | **`comprobantes-share.js` admin de otro tenant puede enviar comprobantes por WA del destinatario** | iporave-worker comprobantes-share.js línea 28 | **ALTO** |
+
+### Acciones manuales pendientes para usuario:
+1. `wrangler secret put MAPBOX_TOKEN` y rotar token en cuenta Mapbox
+2. Refactor de `admin-tools.js` cleanup para requerir OTP + filtrar por created_by
+3. Revisar lógica de cache de tokens en utils.js (hash completo + invalidación al bloquear)
+
+---
+
 ## 🟢 BLOQUE 3B — BUGS BAJOS (impacto menor / estético / técnico)
 
 | ID | Bug | Archivo | Línea | Notas |

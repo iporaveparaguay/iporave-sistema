@@ -6,7 +6,7 @@
 //  - Push y notificationclick preservados
 //  - Background Sync: dispara mensaje a clientes para drenar cola offline
 
-const CACHE_VERSION = 'v11';
+const CACHE_VERSION = 'v12';
 const CACHE_STATIC = 'iporave-static-' + CACHE_VERSION;
 const CACHE_API = 'iporave-api-cache-v1';
 const CACHE_TILES = 'iporave-tiles-v1';
@@ -108,12 +108,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Navegación / HTML / app shell
+  // Navegación / HTML / app shell — NetworkFirst con timeout 3s
+  // (evita servir HTML viejo post-deploy; fixes urgentes llegan al primer load)
   if (req.mode === 'navigate' ||
+      req.destination === 'document' ||
       url.pathname.endsWith('.html') ||
       url.pathname === BASE + '/' ||
       url.pathname === '/') {
-    event.respondWith(_staleWhileRevalidate(req, CACHE_STATIC, BASE + '/index.html'));
+    event.respondWith(_networkFirstHtml(req, CACHE_STATIC, BASE + '/index.html'));
     return;
   }
 
@@ -150,6 +152,29 @@ async function _networkFirstApi(req) {
       { status: 503, headers: { 'Content-Type': 'application/json' } }
     );
   }
+}
+
+async function _networkFirstHtml(req, cacheName, fallbackUrl) {
+  const cache = await caches.open(cacheName);
+  try {
+    const networkPromise = fetch(req);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 3000));
+    const resp = await Promise.race([networkPromise, timeoutPromise]);
+    if (resp && resp.ok) {
+      cache.put(req, resp.clone()).catch(() => {});
+      return resp;
+    }
+  } catch (_) {
+    // network failed o timeout — caer a caché
+  }
+  const cached = await cache.match(req);
+  if (cached) return cached;
+  if (fallbackUrl) {
+    const fb = await caches.match(fallbackUrl);
+    if (fb) return fb;
+  }
+  return new Response('Sin conexión', { status: 503 });
 }
 
 async function _staleWhileRevalidate(req, cacheName, fallbackUrl) {

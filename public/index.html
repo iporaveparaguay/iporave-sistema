@@ -4712,6 +4712,17 @@ function doLogout(){
   // Limpiar callbacks de auth sensible para evitar ejecución de sesión anterior
   window._sensitiveAuthCallback=null;
   window._userAuthCallback=null;
+  // NB3 fix: remover listeners reales antes de resetear flags. Sin esto, cada login/logout
+  // suma un listener más al SW y al scroll → 1 push se duplica N veces tras N ciclos de sesión.
+  if(window._notifSwHandler){
+    try{if(navigator.serviceWorker&&navigator.serviceWorker.removeEventListener){navigator.serviceWorker.removeEventListener('message',window._notifSwHandler);}}catch(_){}
+    window._notifSwHandler=null;
+  }
+  if(window._bellScrollHandler){
+    try{window.removeEventListener('scroll',window._bellScrollHandler,{passive:true});}catch(_){}
+    try{window.removeEventListener('scroll',window._bellScrollHandler);}catch(_){}
+    window._bellScrollHandler=null;
+  }
   // Resetear flags de listeners para que se rebindeen limpio en próximo login
   window._notifSessionSwBound=false;
   window._bellScrollBound=false;
@@ -5519,24 +5530,32 @@ function _notifSessionEnsureUi(){
 function _notifSessionInit(){
   _notifSessionEnsureUi();
   if(navigator.serviceWorker&&navigator.serviceWorker.addEventListener&&!window._notifSessionSwBound){
-    navigator.serviceWorker.addEventListener('message',function(ev){
-      const n=_notifSessionData(ev.data);
-      if(!n)return;
-      _notificaciones.push({titulo:n.titulo,cuerpo:n.cuerpo,timestamp:Date.now(),leida:false});
-      _notifSessionRender();
-    });
+    // NB3 fix: guardar referencia al handler para poder removerlo en doLogout y evitar duplicados en multi-login
+    if(!window._notifSwHandler){
+      window._notifSwHandler=function(ev){
+        const n=_notifSessionData(ev.data);
+        if(!n)return;
+        _notificaciones.push({titulo:n.titulo,cuerpo:n.cuerpo,timestamp:Date.now(),leida:false});
+        _notifSessionRender();
+      };
+    }
+    navigator.serviceWorker.addEventListener('message',window._notifSwHandler);
     window._notifSessionSwBound=true;
   }
   if(!window._bellScrollBound){
-    var _bellLastScrollY=window.scrollY||0;
-    window.addEventListener('scroll',function(){
-      if(window.innerWidth>768){_bellLastScrollY=window.scrollY;return;}
-      var b=document.getElementById('codexNotifBell');
-      if(!b){_bellLastScrollY=window.scrollY;return;}
-      var goingDown=window.scrollY>_bellLastScrollY;
-      b.style.opacity=goingDown?'0.3':'1';
-      _bellLastScrollY=window.scrollY;
-    },{passive:true});
+    // NB3 fix: guardar referencia al handler de scroll para removerlo en doLogout
+    if(!window._bellScrollHandler){
+      window._bellLastScrollY=window.scrollY||0;
+      window._bellScrollHandler=function(){
+        if(window.innerWidth>768){window._bellLastScrollY=window.scrollY;return;}
+        var b=document.getElementById('codexNotifBell');
+        if(!b){window._bellLastScrollY=window.scrollY;return;}
+        var goingDown=window.scrollY>window._bellLastScrollY;
+        b.style.opacity=goingDown?'0.3':'1';
+        window._bellLastScrollY=window.scrollY;
+      };
+    }
+    window.addEventListener('scroll',window._bellScrollHandler,{passive:true});
     window._bellScrollBound=true;
   }
 }
@@ -11358,7 +11377,8 @@ function _doDelProducto(id){
 }
 async function delProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
-  openA('Eliminar producto','<div style="padding:8px 4px">¿Eliminar "<b>'+p.nombre+'</b>" y todas sus presentaciones?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doDelProducto('+id+')">Eliminar</button>');
+  // AUD-XSS-3 fix: escapar p.nombre — producto con nombre malicioso podía ejecutar JS en modal eliminar
+  openA('Eliminar producto','<div style="padding:8px 4px">¿Eliminar "<b>'+escHtml(p.nombre||'')+'</b>" y todas sus presentaciones?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doDelProducto('+id+')">Eliminar</button>');
 }
 
 /* ─── EDITOR DE DESCRIPCIÓN ENRIQUECIDA ─── */
@@ -12332,9 +12352,10 @@ async function _cargarResenasEnPerfil(userId){
 let _califFotos=[];
 function _abrirCalificacion(pedidoId,paraId,paraRol,paraNombre){
   _califFotos=[];
-  openA(SVG.star+' Calificar — '+paraNombre,
+  // AUD-XSS-2 fix: escapar paraNombre en título y body — venía sin sanitizar (XSS persistente vía nombre usuario malicioso)
+  openA(SVG.star+' Calificar — '+escHtml(paraNombre||''),
     '<div style="text-align:center;margin-bottom:16px">'+
-    '<div style="font-size:14px;color:var(--text2);margin-bottom:12px">¿Cómo calificás a <b>'+paraNombre+'</b>?</div>'+
+    '<div style="font-size:14px;color:var(--text2);margin-bottom:12px">¿Cómo calificás a <b>'+escHtml(paraNombre||'')+'</b>?</div>'+
     '<div class="stars-input" id="califStarsInput" style="justify-content:center">'+
     [1,2,3,4,5].map(i=>'<span onclick="_califSetStar('+i+')" data-s="'+i+'" role="button" tabindex="0" aria-label="Calificar '+i+' estrellas">★</span>').join('')+
     '</div><div id="califStarLabel" style="font-size:12px;color:var(--text3);margin-top:4px">Tocá para calificar</div></div>'+
