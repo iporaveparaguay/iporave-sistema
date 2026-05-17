@@ -1885,8 +1885,8 @@ body.alta-visibilidad select{
    CONSTANTS
 ══════════════════════════════════════════════════ */
 const ESTADOS = ['Pendiente','Despachado','En Ruta','Entregado','Cancelado',
-  'No contesta 1°','No contesta 2°','No contesta 3°','Reprogramado','Devuelto'];
-const ESTADOS_REQ_OBS = new Set(['Cancelado','No contesta 1°','No contesta 2°','No contesta 3°','Devuelto']);
+  'No contesta 1°','No contesta 2°','No contesta 3°','Reprogramado','Devuelto','Intento fallido'];
+const ESTADOS_REQ_OBS = new Set(['Cancelado','No contesta 1°','No contesta 2°','No contesta 3°','Devuelto','Intento fallido']);
 const METODOS = ['Efectivo','QR','POS','Transferencia'];
 const MICON = {Efectivo:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',QR:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/></svg>',POS:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',Transferencia:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="2 10 12 3 22 10 2 10"/><line x1="4" y1="10" x2="4" y2="20"/><line x1="20" y1="10" x2="20" y2="20"/><line x1="2" y1="20" x2="22" y2="20"/></svg>'};
 const EMPRESA = {nombre:'Distribuidora Iporãve',ruc:'80167603-7',dir:'Villa Elisa, Paraguay',tel:'0981-XXXXXX',web:'iporaveparaguay.com',ig:'@iporaveparaguay',timbrado:'11223344'};
@@ -7044,7 +7044,7 @@ function renderTable(orders,title,showActs,highlightChanges){
       '<div style="font-size:11px;color:var(--text2)">'+escHtml(o.telefono||'')+'</div>'+
       (o.direccion?'<div class="col-show-mobile" style="font-size:10px;color:var(--text3);margin-top:2px">📍 '+escHtml(o.direccion.length>40?o.direccion.substring(0,38)+'…':o.direccion)+'</div>':'')+
       '<div class="col-show-mobile" style="font-size:11px;color:var(--text2);margin-top:1px">'+escHtml(o.producto||'')+(o.qty>1?' ×'+o.qty:'')+'</div>'+
-      '<div class="col-show-mobile" style="font-size:11px;color:var(--accent)">'+bE(o.estado)+'</div>'+
+      '<div class="col-show-mobile" style="font-size:11px;color:var(--accent)">'+bE(o.estado)+(o.intentosFallidos>0?'<span class="badge" style="background:#ea580c;color:#fff;margin-left:4px">&#9888; '+o.intentosFallidos+' intento(s) fallido(s)</span>':'')+'</div>'+
       (o.fechaEntrega?'<div style="font-size:10px;color:var(--text3);margin-top:2px">📅 Entrega: '+escHtml(o.fechaEntrega)+(o.horaVentana?' '+escHtml(o.horaVentana):'')+'</div>':'')+
     '</td>'+
     '<td class="col-hide"><div>'+escHtml(o.producto||'')+'</div><div style="font-size:11px;color:var(--text2)">x'+o.qty+'</div>'+
@@ -7053,7 +7053,7 @@ function renderTable(orders,title,showActs,highlightChanges){
     '<td class="col-hide" style="font-size:12px;color:var(--text2)">'+escHtml(o.proveedor||'—')+'</td>'+
     '<td class="col-hide" style="font-size:12px">'+escHtml(_getZonaO(o).nombre||'')+'</td>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--green)">'+fmt((o.precio||0)*(o.qty||1))+'</td>'+
-    '<td class="col-hide">'+bE(o.estado)+'</td>'+
+    '<td class="col-hide">'+bE(o.estado)+(o.intentosFallidos>0?'<br><span class="badge" style="background:#ea580c;color:#fff;font-size:10px;margin-top:3px">&#9888; '+o.intentosFallidos+' intento(s) fallido(s)</span>':'')+'</td>'+
     (showActs?'<td style="white-space:nowrap"><div class="order-menu-wrap">'+
       '<button class="order-menu-btn" onclick="_toggleOrderMenu(event,'+o.id+')" title="Acciones">⋮</button>'+
       '<div class="order-dropdown" id="odrop-'+o.id+'">'+
@@ -7374,6 +7374,7 @@ function viewOrder(id){
     '</div></div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+
       bE(o.estado)+
+      (o.intentosFallidos>0?'<span class="badge" style="background:#ea580c;color:#fff">&#9888; '+o.intentosFallidos+' intento(s) fallido(s)</span>':'')+
       (o.estadoPago==='pagado'?'<span class="badge" style="background:var(--green,#16a34a);color:#fff">✓ Pagado</span>':
        o.estadoPago==='parcial'?'<span class="badge" style="background:#d97706;color:#fff">⚡ Pago parcial</span>':
        '<span class="badge" style="background:var(--red,#dc2626);color:#fff">💳 Pago pendiente</span>')+
@@ -7553,7 +7554,7 @@ function dlvModal(id){
     '<div class="gpsw"><div class="gpss"><div class="gpsd" id="gpsDot"></div><span style="margin-left:5px" id="gpsText">Obteniendo GPS...</span></div><div class="gpsc" id="gpsCrd">—</div></div>'+
     '<input type="hidden" id="gpsLat"><input type="hidden" id="gpsLng">'+
     '<div class="fg"><label>Nuevo estado</label><select id="dEst" onchange="toggleDlvF()">'+
-    ['Despachado','En Ruta','Entregado','No contesta 1°','No contesta 2°','No contesta 3°','Reprogramado','Devuelto','Cancelado'].map(e=>'<option>'+e+'</option>').join('')+'</select></div>'+
+    ['Despachado','En Ruta','Entregado','No contesta 1°','No contesta 2°','No contesta 3°','Reprogramado','Devuelto'].concat(['delivery','admin','superadmin'].includes(CU.rol)?['Intento fallido','Cancelado']:['Cancelado']).map(e=>'<option>'+e+'</option>').join('')+'</select></div>'+
     '<div id="fieldEnt" style="display:none">'+
       '<div class="stitle">Método de cobro</div>'+
       '<div class="mgrid">'+METODOS.map(m=>'<div class="mcard" onclick="selM(\''+m+'\',this)"><div class="mci">'+MICON[m]+'</div><div class="mcn">'+m+'</div></div>').join('')+'</div>'+
@@ -7647,8 +7648,21 @@ async function _ejecutarConfirmDlv(){
   window._dlvPending=null;
   const {id,estado,notas,metodo,fotoOk,o}=p;
   o.historial=o.historial||[];
-  o.historial.push({estado,usuario:CU.nombre,fecha:nowStr(),obs:notas});
-  o.estado=estado;o.notas=notas;
+  let _estadoFinal=estado;
+  if(estado==='Intento fallido'){
+    const _intentos=(o.intentosFallidos||0)+1;
+    o.intentosFallidos=_intentos;
+    if(_intentos>=3){
+      _estadoFinal='Cancelado';
+      o.historial.push({estado:'Intento fallido',usuario:CU.nombre,fecha:nowStr(),obs:notas});
+      o.historial.push({estado:'Cancelado',usuario:'Sistema',fecha:nowStr(),obs:'Auto-cancelado por 3 intentos fallidos de entrega'});
+    }else{
+      o.historial.push({estado:'Intento fallido',usuario:CU.nombre,fecha:nowStr(),obs:notas});
+    }
+  }else{
+    o.historial.push({estado,usuario:CU.nombre,fecha:nowStr(),obs:notas});
+  }
+  o.estado=_estadoFinal;o.notas=notas;
   const _newLat=gv('gpsLat'),_newLng=gv('gpsLng');
   if(_newLat&&_newLng){o.gpsLat=_newLat;o.gpsLng=_newLng;}
   const _esDelivery=CU&&CU.rol==='delivery';
@@ -7656,12 +7670,13 @@ async function _ejecutarConfirmDlv(){
   if(estado==='Despachado'){if(!_esDelivery)waDespachado(o);}
   if(estado==='En Ruta'){if(!_esDelivery)waEnRuta(o);else _waAutoNotif(o,'En Ruta');notifEnRutaAdmin(o);_gpsLoopStart(o);}
   if(_esDelivery&&['Despachado','En Ruta','Entregado'].includes(estado))pushNotif('Mensaje enviado al cliente','ok');
-  if(['Cancelado','Devuelto','Reprogramado'].includes(estado)){_gpsLoopStop();if(estado==='Cancelado')_waAutoNotif(o,'Cancelado');}
+  if(['Cancelado','Devuelto','Reprogramado'].includes(_estadoFinal)){_gpsLoopStop();if(_estadoFinal==='Cancelado')_waAutoNotif(o,'Cancelado');}
   if(estado.startsWith('No contesta'))waNoContesta(o);
   await DL.saveOrder(o);
   await refreshCache();
   closeA();filtrar();
-  pushNotif('Pedido #'+id+' → '+estado,'s');
+  const _msgNotif=(_estadoFinal!==estado)?'Pedido #'+id+' → '+_estadoFinal+' (auto-cancelado por 3 intentos fallidos)':'Pedido #'+id+' → '+estado;
+  pushNotif(_msgNotif,'s');
   if(estado==='Entregado'&&o.deliveryId&&isAdminLike(CU.rol)){
     const dlv=getUser(o.deliveryId);
     if(dlv&&dlv.nombre)setTimeout(()=>_abrirCalificacion(id,o.deliveryId,'delivery',dlv.nombre),600);
@@ -16237,31 +16252,53 @@ function _verComprobante(pagoId){
 async function verHistorialPagos(targetUserId){
   const u=(_usersCache||[]).find(x=>String(x.id)===String(targetUserId));
   const nombre=u?u.nombre:'usuario';
+  const rol=u?capRole(u.rol):'';
   const pagos=await DL.getPagos({pagado_a:targetUserId});
   // Cargar comprobantes en paralelo antes de renderizar
   try{ await _cargarComprobantesDePagos(pagos.map(function(p){return p.id;})); }catch(_){ }
   const filas=pagos.map(p=>{
+    const registrador=(_usersCache||[]).find(function(x){return String(x.id)===String(p.pagado_por);});
+    const registradorNombre=registrador?escHtml(registrador.nombre):'<span style="color:var(--text3)">—</span>';
     const tieneComp=(window._comprobantesCache&&window._comprobantesCache[p.id]&&window._comprobantesCache[p.id].length);
     const compIcon=tieneComp
-      ? ' <button class="btn btn-icon" onclick="_verComprobante(\''+escAttr(p.id)+'\')" title="Ver comprobante" style="padding:2px 6px;font-size:14px">📎</button>'
-      : '';
+      ? '<button class="btn btn-icon" onclick="_verComprobante(\''+escAttr(p.id)+'\')" title="Ver comprobante" style="padding:2px 6px;font-size:14px">📎</button>'
+      : '<span style="color:var(--text3);font-size:12px">—</span>';
     return '<tr>'+
-      '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+compIcon+'</td>'+
-      '<td style="font-weight:700;color:var(--green)">'+fmt(p.monto)+'</td>'+
+      '<td style="font-family:\'JetBrains Mono\',monospace;font-size:12px">'+escHtml(p.fecha||'')+'</td>'+
+      '<td style="font-weight:800;color:var(--green,#16a34a)">'+fmt(p.monto)+'</td>'+
       '<td>'+escHtml(p.metodo||'—')+'</td>'+
       '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.referencia||'—')+'</td>'+
       '<td style="font-size:12px;color:var(--text2)">'+escHtml(p.nota||'')+'</td>'+
+      '<td style="font-size:12px;color:var(--text2)">'+registradorNombre+'</td>'+
+      '<td style="text-align:center">'+compIcon+'</td>'+
     '</tr>';
   }).join('');
   const total=pagos.reduce((a,p)=>a+(Number(p.monto)||0),0);
-  openA(SVG.clipboard+' Historial de pagos — '+escHtml(nombre),
-    '<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">Total pagado: <b style="color:var(--green)">'+fmt(total)+'</b></div>'+
-    '<div style="overflow-x:auto;max-height:60vh"><table class="tbl"><thead><tr>'+
-      '<th>Fecha</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Nota</th>'+
+  const saldoPend=typeof calcularSaldoUsuario==='function'?calcularSaldoUsuario(targetUserId):0;
+  const esAdmin=CU&&(CU.rol==='admin'||CU.rol==='superadmin');
+  const btnNuevoPago=(esAdmin&&saldoPend>0)
+    ? '<button class="btn btn-primary" onclick="closeA();openRegistrarPago(\''+escAttr(targetUserId)+'\')">💵 Registrar pago</button>'
+    : '';
+  const headerHtml=
+    '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">'+
+      '<div style="flex:1;min-width:160px">'+
+        '<div style="font-size:16px;font-weight:900">'+escHtml(nombre)+'</div>'+
+        (rol?'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+escHtml(rol)+'</div>':'')+
+      '</div>'+
+      '<div style="text-align:right">'+
+        '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700">Total pagado</div>'+
+        '<div style="font-size:22px;font-weight:900;color:var(--green,#16a34a)">'+fmt(total)+'</div>'+
+        (saldoPend>0?'<div style="font-size:11px;color:#ef4444;font-weight:700;margin-top:2px">Pendiente: '+fmt(saldoPend)+'</div>':'')+
+      '</div>'+
+    '</div>';
+  openA(SVG.clipboard+' Historial de pagos',
+    headerHtml+
+    '<div style="overflow-x:auto;max-height:55vh"><table class="tbl"><thead><tr>'+
+      '<th>Fecha</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Nota</th><th>Registrado por</th><th>📎</th>'+
     '</tr></thead><tbody>'+
-      (filas||'<tr><td colspan="5" style="text-align:center;color:var(--text3)">Sin pagos registrados</td></tr>')+
+      (filas||'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Sin pagos registrados</td></tr>')+
     '</tbody></table></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>'
+    btnNuevoPago+'<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>'
   );
 }
 
