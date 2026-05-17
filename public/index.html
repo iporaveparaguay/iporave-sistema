@@ -7234,7 +7234,7 @@ PAGES.orders=PAGES.mispedidos=function(){
     (canCreate?'<button id="btnNuevoPedido" class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
     '<button class="btn btn-secondary" onclick="_abrirPanelPedidos()" title="Buscar y filtrar pedidos" style="display:inline-flex;align-items:center;gap:5px">'+lupaIcon+' Filtros</button>';
   $('ca').innerHTML=
-    '<div class="fbar" style="display:none">'+
+    '<div class="fbar">'+
     '<select id="fEst" onchange="filtrarReset()"><option value="">Todos los estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
     '<select id="fZona" onchange="filtrarReset()"><option value="">Todas las zonas</option>'+_zonasCache.map(z=>'<option value="'+z.id+'">'+escHtml(z.nombre||'')+'</option>').join('')+'</select>'+
     '<select id="fProv" onchange="filtrarReset()"><option value="">Todos los proveedores</option>'+[...new Set(getVisibleOrders().map(o=>o.proveedor).filter(Boolean))].map(p=>'<option value="'+escAttr(p)+'">'+escHtml(p)+'</option>').join('')+'</select>'+
