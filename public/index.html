@@ -13042,7 +13042,8 @@ PAGES.mensajes=async function(){
   // Cargar todos los mensajes del usuario actual
   const {data,error}=await _supa.from('mensajes').select('*')
     .or(`de_id.eq.${CU.id},para_id.eq.${CU.id}`)
-    .order('created_at',{ascending:false});
+    .order('created_at',{ascending:false})
+    .limit(200);
   if(error){$('ca').innerHTML='<div class="mc-empty">Error al cargar mensajes.</div>';return;}
   const msgs=data||[];
   // Botones de acción dentro del contenido (siempre visibles en mobile)
@@ -13108,7 +13109,8 @@ async function openConvThread(partnerId,partnerNom){
 async function _renderConvThread(pid,pnom,prol){
   const {data}=await _supa.from('mensajes').select('*')
     .or(`and(de_id.eq.${CU.id},para_id.eq.${pid}),and(de_id.eq.${pid},para_id.eq.${CU.id})`)
-    .order('created_at',{ascending:true});
+    .order('created_at',{ascending:true})
+    .limit(500);
   const msgs=(data||[]);
   const fmtTime=d=>new Date(d).toLocaleString('es-PY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
   let bubblesHtml='';
@@ -17087,7 +17089,8 @@ document.addEventListener('DOMContentLoaded',function(){
       const permission = await Notification.requestPermission();
       if(permission !== 'granted') return;
       try {
-        const sub = await reg.pushManager.subscribe({
+        let sub = await reg.pushManager.getSubscription();
+        if(!sub) sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: VAPID_PUBLIC_KEY,
         });
