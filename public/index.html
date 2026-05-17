@@ -3864,8 +3864,11 @@ function _getAISystemPrompt(){
 
 async function sendAI(){
   if(!CU||!_sessionToken){return;}
-  const input=$('aiInput');if(!input)return;
-  const msg=input.value.trim();if(!msg)return;
+  // BUG-NUEVO-9 fix: evitar race condition por doble-click o doble-Enter
+  if(window._aiBusy){return;}
+  window._aiBusy=true;
+  const input=$('aiInput');if(!input){window._aiBusy=false;return;}
+  const msg=input.value.trim();if(!msg){window._aiBusy=false;return;}
   input.value='';input.style.height='38px';input.classList.remove('at-max');
   addAIMsg(escHtml(msg),'user');
   addAIMsg('⏳ Pensando…','bot','ai-typing');
@@ -4010,6 +4013,9 @@ async function sendAI(){
     addAIMsg((e.message?.includes('Failed to fetch')
       ?'⚠️ Sin conexión con el asistente. Verificá internet.'
       :'⚠️ Error: '+escHtml(e.message)),'bot');
+  }finally{
+    // BUG-NUEVO-9 fix: siempre liberar el flag busy aunque haya error
+    window._aiBusy=false;
   }
 }
 function addAIMsg(html,role,extraClass){
@@ -4681,6 +4687,12 @@ function doLogout(){
   if(_realtimeSub){try{_supa.removeChannel(_realtimeSub);}catch(e){} _realtimeSub=null;}
   if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
   if(window._ordersPolling){clearInterval(window._ordersPolling);window._ordersPolling=null;}
+  // BUG-NUEVO-2 fix: limpiar TODOS los timers para evitar fetchs fantasma post-logout (401 spam + consumo batería)
+  try{if(window._mapaUpdateTimer){clearInterval(window._mapaUpdateTimer);window._mapaUpdateTimer=null;}}catch(_){}
+  try{if(typeof _ordersLayerInterval!=='undefined'&&_ordersLayerInterval){clearInterval(_ordersLayerInterval);_ordersLayerInterval=null;}}catch(_){}
+  try{if(typeof _gpsLoopTimer!=='undefined'&&_gpsLoopTimer){clearInterval(_gpsLoopTimer);_gpsLoopTimer=null;}}catch(_){}
+  try{if(typeof _gpsBannerTimer!=='undefined'&&_gpsBannerTimer){clearInterval(_gpsBannerTimer);_gpsBannerTimer=null;}}catch(_){}
+  try{if(window._trackRefreshTimer){clearInterval(window._trackRefreshTimer);window._trackRefreshTimer=null;}}catch(_){}
   _ordersCache=[];_usersCache=[];_zonasCache=[];_catalogoCache=[];
   _shownMsgIds=new Set();
   _sessionStart='';

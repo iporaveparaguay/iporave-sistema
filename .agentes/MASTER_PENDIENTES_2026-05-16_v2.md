@@ -98,6 +98,30 @@
 
 ---
 
+## 🆕 BUGS NUEVOS DESCUBIERTOS EN AUDITORÍA 16 (2026-05-16 Opus 4.7 MAX)
+
+### Bugs arreglados esta sesión:
+| ID | Bug | Archivo | Estado |
+|----|-----|---------|--------|
+| NB1 | `delete-user.js` usaba columnas `from_id`/`to_id` cuando la tabla `mensajes` usa `de_id`/`para_id` → mensajes quedaban huérfanos al eliminar usuario | iporave-worker delete-user.js 116/118 | ✅ ARREGLADO |
+| NB2 | `doLogout` no limpiaba `_mapaUpdateTimer`, `_gpsLoopTimer`, `_gpsBannerTimer`, `_ordersLayerInterval`, `_trackRefreshTimer` → fetchs fantasma 401 + drenaje batería | index.html doLogout | ✅ ARREGLADO |
+| NB5 | `config.js` ejecutaba cleanup de demos en CADA GET de superadmin (8+ queries) → ahora una sola vez por boot del worker | iporave-worker config.js | ✅ ARREGLADO |
+| NB6 | `notif-entrega.js` solo notificaba al primer admin (`.limit(1).single()`) → ahora a todos los admins + superadmin | iporave-worker notif-entrega.js | ✅ ARREGLADO |
+| NB7 | `tracking.js` guardaba lat/lng como strings (variables `lat`/`lng` del body) en vez de los parseados `latN`/`lngN` | iporave-worker tracking.js 44 | ✅ ARREGLADO |
+| NB9 | `sendAI()` sin flag `_aiBusy` → doble-Enter/click producía race condition con `_aiHistory.push()` duplicado y respuestas cruzadas | index.html 3865 | ✅ ARREGLADO |
+
+### Bugs nuevos PENDIENTES (requieren más diseño/tiempo):
+| ID | Bug | Archivo | Severidad |
+|----|-----|---------|-----------|
+| NB3 | Listeners SW + scroll bell duplicados en multi-login (no se hace `removeEventListener` al logout) | index.html ~5509 / 4698 | ALTO |
+| NB4 | XSS en email de notificación de nuevo dispositivo (user.nombre/userAgent sin escapar en template) | iporave-worker login.js 201-218 | ALTO |
+| NB8 | `/api/dispositivos-pendientes` no filtra por `created_by` → admin A ve solicitudes de usuarios de admin B (cross-tenant leak) | iporave-worker dispositivos-pendientes.js 30-35 | MEDIO |
+| NB10 | `sw.js` stale-while-revalidate sirve index.html viejo en primera carga post-deploy → 2 recargas para ver fix | public/sw.js 111-122 | MEDIO |
+| NB11 | `/api/orders/notify` no valida que `order_id` pertenezca al caller → vendedor A puede spammear delivery de vendedor B | iporave-worker orders.js 36-77 | MEDIO |
+| NB12 | `get-users.js` slice silencioso a 100 → admin con >100 usuarios pierde algunos del listado sin aviso | iporave-worker get-users.js 51-62 | BAJO |
+
+---
+
 ## 🟢 BLOQUE 3B — BUGS BAJOS (impacto menor / estético / técnico)
 
 | ID | Bug | Archivo | Línea | Notas |
