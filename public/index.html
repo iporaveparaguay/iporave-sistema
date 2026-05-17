@@ -2295,6 +2295,8 @@ function _clearSensitiveCfg(){
 async function initSupabase(){
   const cfg=getCfg();
   if(!cfg.supabaseUrl||!cfg.supabaseKey)return false;
+  // Singleton: si ya existe instancia con la misma URL, no crear otra (evita GoTrueClient warning)
+  if(_supa&&_supa.supabaseUrl===cfg.supabaseUrl)return true;
   try{
     _supa=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{storage:window.sessionStorage,persistSession:true,detectSessionInUrl:false,autoRefreshToken:true}});
     if(_sessionToken&&_refreshToken){
