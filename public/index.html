@@ -7800,6 +7800,7 @@ async function saveEditOrder(id){
     o.etiquetas=_etiqEls.length?Array.from(_etiqEls).map(function(el){return el.getAttribute('data-etiq');}):[];
   }
   if(ns!==_prevEstado&&['En Ruta','Entregado','Cancelado'].includes(ns))_waAutoNotif(o,ns);
+  if(ns!==_prevEstado&&ns==='Entregado')notifEntregadoVendedor(o);
   await DL.saveOrder(o);
   await refreshCache();
   closeA();filtrar();
@@ -8354,9 +8355,11 @@ PAGES.balance=function(){
     '<button class="btn btn-secondary" onclick="exportOrdersPDF()" title="Imprimir/PDF">'+SVG.printer+' PDF</button>';
   const orders=getVisibleOrders();
   const ent=orders.filter(o=>o.estado==='Entregado');
-  const ing=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
-  const cos=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
-  const tar=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
+  const _hoy=today();
+  const entHoy=ent.filter(o=>(o.fecha||_hoy).startsWith(_hoy));
+  const ing=entHoy.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
+  const cos=entHoy.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
+  const tar=entHoy.reduce((a,b)=>a+_getZonaO(b).precio,0);
   const byDate={};
   ent.forEach(o=>{
     const d=o.fecha||today();
@@ -8494,10 +8497,12 @@ PAGES.liquidacion=function(){
     }).join('')+
     '<div class="stitle">Por Dropshipper</div>'+
     drops.map(d=>{
-      const dO=ent.filter(o=>o.dropId===d.id);
+      const dO=ent.filter(o=>String(o.dropId)===String(d.id));
+      const ganDrop=dO.reduce((a,b)=>a+(b.comision||0)*(b.qty||1),0);
       return '<div class="lcard2"><div style="font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:6px">'+SVG.handshake+' '+escHtml(d.nombre||'')+'</div>'+
         '<div class="lrow"><span class="llbl">Pedidos</span><span>'+dO.length+'</span></div>'+
-        '<div class="lrow"><span class="llbl">Ventas brutas</span><span>'+fmt(dO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0))+'</span></div></div>';
+        '<div class="lrow"><span class="llbl">Ventas brutas</span><span>'+fmt(dO.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0))+'</span></div>'+
+        '<div class="lrow"><span class="llbl">Comisión total</span><span style="color:var(--accent)">'+fmt(ganDrop)+'</span></div></div>';
     }).join('')+
     '<div class="stitle">Por Delivery</div>'+
     dlvs.map(d=>{
