@@ -7032,7 +7032,7 @@ function renderTable(orders,title,showActs,highlightChanges){
       '<button class="order-menu-btn" onclick="_toggleOrderMenu(event,'+o.id+')" title="Acciones">⋮</button>'+
       '<div class="order-dropdown" id="odrop-'+o.id+'">'+
         '<button onclick="_closeOrderMenus();viewOrder('+o.id+')">👁 Ver</button>'+
-        (canEdit?'<button onclick="_closeOrderMenus();editOrder('+o.id+')">'+SVG.pencil+' Editar</button>':'')+
+        (canEdit&&(CU.rol!=='vendedor'||!o.deliveryId)?'<button onclick="_closeOrderMenus();editOrder('+o.id+')">'+SVG.pencil+' Editar</button>':'')+
         (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button onclick="_closeOrderMenus();dlvModal('+o.id+')">📦 Actualizar estado</button>':'')+
         '<button onclick="_closeOrderMenus();waMenu('+o.id+')">💬 WhatsApp</button>'+
         '<button onclick="_closeOrderMenus();navegarPedido('+o.id+')" style="color:#2563eb">📍 Navegar</button>'+
@@ -7040,11 +7040,11 @@ function renderTable(orders,title,showActs,highlightChanges){
         '<button onclick="_closeOrderMenus();openBoleta('+o.id+')">'+SVG.fileText+' Boleta IVA</button>'+
         '<button onclick="_closeOrderMenus();imprimirGuia('+o.id+')">'+SVG.printer+' Guía</button>'+
         '<button onclick="_closeOrderMenus();imprimirTicket('+o.id+')">🏷 Ticket</button>'+
-        (canEdit?'<div class="od-sep"></div>'+
+        (canEdit&&(CU.rol!=='vendedor'||!o.deliveryId)?'<div class="od-sep"></div>'+
           '<button onclick="_closeOrderMenus();_setPrioridad('+o.id+','+(!!(o.prioridad))+')"'+(o.prioridad?' style="color:var(--red)"':'')+'>'+
             (o.prioridad?'⚡ Quitar prioridad':'⚡ Marcar prioridad')+
           '</button>':'')+
-        (canEdit?'<div class="od-sep"></div><button onclick="_closeOrderMenus();confirmDeleteOrder('+o.id+')" style="color:var(--red)">✕ Eliminar</button>':'')+
+        (canEdit&&(CU.rol!=='vendedor'||!o.deliveryId)?'<div class="od-sep"></div><button onclick="_closeOrderMenus();confirmDeleteOrder('+o.id+')" style="color:var(--red)">✕ Eliminar</button>':'')+
       '</div>'+
     '</div></td>':'')+'</tr>'
   ).join('')+'</tbody></table></div></div>';
@@ -7283,6 +7283,11 @@ function viewOrder(id){
     '</div></div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+
       bE(o.estado)+
+      (o.estadoPago==='pagado'?'<span class="badge" style="background:var(--green,#16a34a);color:#fff">✓ Pagado</span>':
+       o.estadoPago==='parcial'?'<span class="badge" style="background:#d97706;color:#fff">⚡ Pago parcial</span>':
+       '<span class="badge" style="background:var(--red,#dc2626);color:#fff">💳 Pago pendiente</span>')+
+      (o.tipoLogistica==='externa'?'<span class="badge" style="background:var(--purple,#7c3aed);color:#fff">📦 '+escHtml(o.logExternaNombre||'Carrier externo')+'</span>':'')+
+      (o.fechaEntrega?'<span class="badge be">📅 Entrega: '+escHtml(o.fechaEntrega)+(o.horaVentana?' '+escHtml(o.horaVentana):'')+'</span>':'')+
       (o.metodoCobro?'<span class="badge be">'+MICON[o.metodoCobro]+' '+escHtml(o.metodoCobro)+'</span>':'')+
       (o.fotoEntrega&&canSeeFoto?'<span class="badge be">📷 Foto OK</span>':'')+
       (o.gpsLat?'<span class="badge br">📍 GPS OK</span>':'')+
@@ -7319,8 +7324,7 @@ function editOrder(id){
   const vendOpts='<option value="">Sin asignar</option>'+allSales.map(d=>'<option value="'+d.id+'" '+(o.vendedorId===d.id?'selected':'')+'>'+escHtml(d.nombre||'')+' ('+escHtml(capRole(d.rol))+')</option>').join('');
   openA('Editar pedido #'+id,
     '<div class="stitle">Datos del cliente</div>'+
-    '<div class="frow"><div class="fg"><label>Nombre cliente *</label><input type="text" id="eCli" value="'+escAttr(o.cliente)+'"></div>'+
-    '<div class="fg"><label>Cédula</label><input type="text" id="eCed" value="'+escAttr(o.cedula)+'"></div></div>'+
+    '<div class="fg"><label>Nombre cliente *</label><input type="text" id="eCli" value="'+escAttr(o.cliente)+'"></div>'+
     '<div class="frow"><div class="fg"><label>Teléfono</label><input type="text" id="eTel" value="'+escAttr(o.telefono)+'"></div>'+
     '<div class="fg"><label>Fecha</label><input type="date" id="eFecha" value="'+escAttr(o.fecha||today())+'"></div></div>'+
     '<div class="fg">'+
@@ -7355,9 +7359,24 @@ function editOrder(id){
     '<div class="stitle">Logística</div>'+
     '<div class="fg"><label>Estado</label><select id="eEst">'+ESTADOS.map(e=>'<option value="'+e+'" '+(o.estado===e?'selected':'')+'>'+e+'</option>').join('')+'</select></div>'+
     '<div class="fg"><label>Método de cobro</label><select id="eMetodo"><option value="">Sin definir</option>'+METODOS.map(m=>'<option value="'+m+'" '+(o.metodoCobro===m?'selected':'')+'>'+m+'</option>').join('')+'</select></div>'+
-    '<div class="frow"><div class="fg"><label>Delivery asignado</label><select id="eDlv">'+dlvOpts+'</select></div>'+
+    '<div class="frow"><div class="fg"><label>Asignado a (delivery)</label><select id="eDlv">'+dlvOpts+'</select></div>'+
     '<div class="fg"><label>Dropshipper</label><select id="eDrop">'+dropOpts+'</select></div></div>'+
     '<div class="fg"><label>Vendedor</label><select id="eVend">'+vendOpts+'</select></div>'+
+    '<div class="frow"><div class="fg"><label>Fecha de entrega</label><input type="date" id="eFechaEntrega" value="'+escAttr(o.fechaEntrega||'')+'"></div>'+
+    '<div class="fg"><label>Franja horaria</label><select id="eHoraVentana"><option value="">Sin especificar</option>'+
+    ['Mañana (8-12hs)','Tarde (12-18hs)','Noche (18-22hs)','Todo el día'].map(h=>'<option '+(o.horaVentana===h?'selected':'')+'>'+h+'</option>').join('')+
+    '</select></div></div>'+
+    '<div class="fg"><label>Tipo de logística</label><select id="eTipoLogistica" onchange="var d=$(\'eLogExternaDiv\');if(d)d.style.display=this.value===\'externa\'?\'block\':\'none\'">'+
+    '<option value="propia" '+((!o.tipoLogistica||o.tipoLogistica==='propia')?'selected':'')+'>🚚 Logística propia</option>'+
+    '<option value="externa" '+(o.tipoLogistica==='externa'?'selected':'')+'>📦 Logística externa</option>'+
+    '</select></div>'+
+    '<div id="eLogExternaDiv" style="display:'+(o.tipoLogistica==='externa'?'block':'none')+';margin-top:6px">'+
+    '<input type="text" id="eLogExternaNombre" value="'+escAttr(o.logExternaNombre||'')+'" placeholder="Nombre del carrier externo..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px;box-sizing:border-box"></div>'+
+    '<div class="fg"><label>Estado de pago</label><select id="eEstadoPago">'+
+    '<option value="pendiente" '+((!o.estadoPago||o.estadoPago==='pendiente')?'selected':'')+'>💳 Pago pendiente</option>'+
+    '<option value="parcial" '+(o.estadoPago==='parcial'?'selected':'')+'>⚡ Pago parcial</option>'+
+    '<option value="pagado" '+(o.estadoPago==='pagado'?'selected':'')+'>✓ Pagado</option>'+
+    '</select></div>'+
     '<div class="stitle">Datos IVA <span style="font-weight:400;color:var(--text3)">(opcional)</span></div>'+
     '<div class="frow"><div class="fg"><label>Razón social</label><input type="text" id="eRazon" value="'+escAttr(o.razonSocial)+'"></div>'+
     '<div class="fg"><label>RUC</label><input type="text" id="eRuc" value="'+escAttr(o.ruc)+'"></div></div>'+
@@ -7378,7 +7397,7 @@ async function saveEditOrder(id){
     o.historial=o.historial||[];
     o.historial.push({estado:ns,usuario:CU.nombre,fecha:nowStr(),obs});
   }
-  o.cliente=cli;o.cedula=gv('eCed');o.telefono=gv('eTel');
+  o.cliente=cli;o.telefono=gv('eTel');
   o.fecha=gv('eFecha')||o.fecha;o.direccion=gv('eDir');
   o.sitio=gv('eSitio')||o.sitio||null;
   let _eLat=gv('nGpsLat'),_eLng=gv('nGpsLng');
@@ -7419,6 +7438,11 @@ async function saveEditOrder(id){
   const drop=parseInt(gv('eDrop'));if(drop)o.dropId=drop;else if(gv('eDrop')==='')o.dropId=null;
   const vend=parseInt(gv('eVend'));if(vend)o.vendedorId=vend;
   o.razonSocial=gv('eRazon');o.ruc=gv('eRuc');o.tipoIva=gv('eIva')||o.tipoIva;
+  o.fechaEntrega=gv('eFechaEntrega')||o.fechaEntrega||null;
+  o.horaVentana=gv('eHoraVentana')||o.horaVentana||null;
+  o.tipoLogistica=gv('eTipoLogistica')||o.tipoLogistica||'propia';
+  o.logExternaNombre=(gv('eLogExternaNombre')||'').trim()||o.logExternaNombre||null;
+  o.estadoPago=gv('eEstadoPago')||o.estadoPago||'pendiente';
   await DL.saveOrder(o);
   await refreshCache();
   closeA();filtrar();
@@ -7565,9 +7589,11 @@ function openNewOrder(){
     '<input type="text" id="nCli" placeholder="Nombre del cliente" oninput="sugerirClienteAnterior()">'+
     '<div id="nCliSug" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:140px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div>'+
     '</div>'+
-    '<div class="fg"><label>Cédula</label><input type="text" inputmode="numeric" pattern="[0-9]*" id="nCed"></div></div>'+
+    '</div>'+
     '<div class="frow"><div class="fg"><label>Teléfono</label><input type="tel" inputmode="tel" autocomplete="tel" id="nTel"></div>'+
-    '<div class="fg"><label>Fecha</label><input type="date" id="nFecha" value="'+today()+'"></div></div>'+
+    '<div class="fg"><label>Fecha pedido</label><input type="date" id="nFecha" value="'+today()+'"></div></div>'+
+    '<div class="frow"><div class="fg"><label>Fecha de entrega <span style="font-weight:400;color:var(--text3);font-size:11px">(programar)</span></label><input type="date" id="nFechaEntrega"></div>'+
+    '<div class="fg"><label>Franja horaria</label><select id="nHoraVentana"><option value="">Sin especificar</option><option>Mañana (8-12hs)</option><option>Tarde (12-18hs)</option><option>Noche (18-22hs)</option><option>Todo el día</option></select></div></div>'+
     '<div class="fg">'+
     '<label style="display:flex;justify-content:space-between;align-items:center">'+
     '<span>Dirección del cliente</span>'+
@@ -7627,7 +7653,15 @@ function openNewOrder(){
     '<div class="stitle">Asignación</div>'+
     '<div class="frow">'+
       '<div class="fg"><label>Dropshipper</label><select id="nDrop"><option value="">Sin dropshipper</option>'+drops.map(d=>'<option value="'+d.id+'">'+escHtml(d.nombre||'')+'</option>').join('')+'</select></div>'+
-      '<div class="fg"><label>Delivery</label><select id="nDlv"><option value="">Sin asignar</option>'+dlvs.map(d=>'<option value="'+d.id+'">'+escHtml(d.nombre||'')+' ('+escHtml(d.vehiculo||'moto')+')</option>').join('')+'</select></div>'+
+      '<div class="fg"><label>Asignado a <span style="font-weight:400;color:var(--text3);font-size:11px">(al asignar, vendedor no puede editar)</span></label><select id="nDlv"><option value="">Sin asignar</option>'+dlvs.map(d=>'<option value="'+d.id+'">'+escHtml(d.nombre||'')+' ('+escHtml(d.vehiculo||'moto')+')</option>').join('')+'</select></div>'+
+    '</div>'+
+    '<div class="fg"><label>Tipo de logística</label>'+
+    '<select id="nTipoLogistica" style="width:100%" onchange="var d=$(\'nLogExternaDiv\');if(d)d.style.display=this.value===\'externa\'?\'block\':\'none\'">'+
+      '<option value="propia">🚚 Logística propia (delivery Iporãve)</option>'+
+      '<option value="externa">📦 Logística externa (carrier / mensajería)</option>'+
+    '</select></div>'+
+    '<div id="nLogExternaDiv" style="display:none;margin-top:6px">'+
+      '<input type="text" id="nLogExternaNombre" placeholder="Nombre del carrier externo (ej: Andreani, OCA, mensajería propia...)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px;box-sizing:border-box">'+
     '</div>'+
     '<div class="stitle">Datos IVA <span style="font-weight:400;color:var(--text3)">(opcional)</span></div>'+
     '<div class="frow"><div class="fg"><label>Razón social</label><input type="text" id="nRazon"></div>'+
@@ -7749,7 +7783,6 @@ function sugerirClienteAnterior(){
 function autoFillCliente(pedidoId){
   const o=_ordersCache.find(x=>x.id===pedidoId);if(!o)return;
   if($('nCli'))$('nCli').value=o.cliente||'';
-  if($('nCed'))$('nCed').value=o.cedula||'';
   if($('nTel'))$('nTel').value=o.telefono||'';
   if($('nDir'))$('nDir').value=o.direccion||'';
   if(o.gpsLat&&o.gpsLng){
@@ -7873,12 +7906,14 @@ async function saveNewOrder(){
   const dropIdSel=CU.rol==='dropshipper'?CU.id:(parseInt(gv('nDrop'))||null);
   const estadoInicial=CU.rol==='dropshipper'?'Confirmado':'Pendiente';
   const o={
-    id:newId,fecha:gv('nFecha')||today(),cliente:cli,cedula:(gv('nCed')||'').trim(),
+    id:newId,fecha:gv('nFecha')||today(),cliente:cli,
     telefono:(gv('nTel')||'').trim(),direccion:gv('nDir'),zona,zonaCustomNombre,zonaCustomPrecio,
     proveedor:prov,proveedorId:provId,producto:prod,
     qty:Math.max(1,parseInt(gv('nQty'))||1),precio,costo,estado:estadoInicial,
     vendedorId:vendedorIdSel,created_by:CU.id,
     dropId:dropIdSel,deliveryId:parseInt(gv('nDlv'))||null,
+    fechaEntrega:gv('nFechaEntrega')||null,horaVentana:gv('nHoraVentana')||null,
+    tipoLogistica:gv('nTipoLogistica')||'propia',logExternaNombre:(gv('nLogExternaNombre')||'').trim()||null,estadoPago:'pendiente',
     metodoCobro:null,fotoEntrega:false,gpsLat,gpsLng,sitio:(gv('nSitio')||'').trim()||null,notas:(gv('nNotas')||'').trim(),
     boletaNum:'B-'+String(newId).padStart(4,'0'),numDoc:nextDocNum(),
     razonSocial:gv('nRazon'),ruc:gv('nRuc'),tipoIva:gv('nIva')||'10%',
