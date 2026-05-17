@@ -15948,16 +15948,45 @@ function _buildFileUrl(url){
   if(!url)return'';
   return(/^https?:\/\//i.test(url))?url:(WORKER_URL+(url.startsWith('/')?url:'/'+url));
 }
+// M26/L3 fix: UI para borrar comprobante (el endpoint DELETE /api/comprobantes?id= ya existía sin UI)
+async function _deleteComprobante(compId,pagoId){
+  openA('Eliminar comprobante',
+    '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Eliminar este comprobante? La acción no se puede deshacer.</div>',
+    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
+    '<button class="btn btn-danger" onclick="closeA();_doDeleteComprobante('+Number(compId)+','+Number(pagoId)+')">Eliminar</button>'
+  );
+}
+async function _doDeleteComprobante(compId,pagoId){
+  try{
+    const r=await fetch(WORKER_URL+'/api/comprobantes?id='+encodeURIComponent(compId),{
+      method:'DELETE',
+      headers:{'Authorization':'Bearer '+(_sessionToken||'')}
+    });
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){ pushNotif('Error al eliminar: '+(d.error||r.status),'e'); return; }
+    // Actualizar cache local
+    if(window._comprobantesCache&&window._comprobantesCache[pagoId]){
+      window._comprobantesCache[pagoId]=window._comprobantesCache[pagoId].filter(c=>c.id!==compId);
+    }
+    pushNotif('Comprobante eliminado','s');
+  }catch(e){ pushNotif('Error de red al eliminar comprobante','e'); }
+}
 function _verComprobante(pagoId){
   const items=(window._comprobantesCache&&window._comprobantesCache[pagoId])||[];
   if(!items.length){ pushNotif('Sin comprobantes','w'); return; }
-  if(items.length===1){
+  const canDelete=isAdminLike(CU.rol); // admins y el uploader pueden borrar (el backend valida)
+  if(items.length===1&&!canDelete){
     window.open(_buildFileUrl(items[0].downloadUrl), '_blank');
   } else {
     const html=items.map(function(i){
-      return '<a href="'+escAttr(_buildFileUrl(i.downloadUrl))+'" target="_blank" rel="noopener noreferrer" style="display:block;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;color:var(--text);text-decoration:none">📎 '+escHtml(i.nombre_archivo)+'</a>';
+      const delBtn=canDelete
+        ?'<button class="btn btn-icon" onclick="_deleteComprobante('+Number(i.id)+','+Number(pagoId)+')" title="Eliminar" style="color:var(--red);padding:2px 6px;font-size:12px">✕</button>'
+        :'';
+      return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'+
+        '<a href="'+escAttr(_buildFileUrl(i.downloadUrl))+'" target="_blank" rel="noopener noreferrer" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none">📎 '+escHtml(i.nombre_archivo)+'</a>'+
+        delBtn+'</div>';
     }).join('');
-    openA('Comprobantes', html, '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>');
+    openA('Comprobantes',html,'<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>');
   }
 }
 
