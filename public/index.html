@@ -2207,7 +2207,7 @@ function bE(e){
     'No contesta 1°':'bn1','No contesta 2°':'bn2','No contesta 3°':'bn3',Reprogramado:'brp',Devuelto:'bret'};
   return '<span class="badge '+(m[e]||'bp')+'">'+e+'</span>';
 }
-function openA(t,b,f,size=''){$('mABox').className='mbox'+(size?' '+size:'');$('mATitle').innerHTML=t;$('mABody').innerHTML=b;$('mAFoot').innerHTML=f||'';$('mA').classList.add('open');}
+function openA(t,b,f,size=''){$('mABox').className='mbox'+(size?' '+size:'');$('mATitle').textContent=t;$('mABody').innerHTML=b;$('mAFoot').innerHTML=f||'';$('mA').classList.add('open');}
 function closeA(){$('mA').classList.remove('open');}
 function openB(t,b,f){$('mBTitle').textContent=t;$('mBBody').innerHTML=b;$('mBFoot').innerHTML=f||'';$('mB').classList.add('open');}
 function closeB(){$('mB').classList.remove('open');}
@@ -3877,7 +3877,7 @@ async function sendAI(){
     'Usuario actual: '+(CU?CU.nombre+' ('+capRole(CU.rol)+', ID:'+CU.id+', usuario: '+CU.username+')':'—')+'.\n\n';
 
   if(isAdmin){
-    const usersList=_usersCache.map(u=>`#${u.id} ${u.nombre} — rol: ${capRole(u.rol)}, usuario: ${u.username}${u.whatsapp?', WA: '+u.whatsapp:''}${u.vehiculo?', vehículo: '+u.vehiculo:''}${u.patente?', patente: '+u.patente:''}`).join('\n');
+    const usersList=_usersCache.map(u=>`#${u.id} ${u.nombre} — rol: ${capRole(u.rol)}, usuario: ${u.username}`).join('\n');
     const actividadPorUsuario=_usersCache.filter(u=>u.rol!=='admin').map(u=>{
       // G2 — String coercion en comparaciones de IDs
       const pedVendedor=visOrders.filter(o=>String(o.vendedorId)===String(u.id));
@@ -4661,6 +4661,7 @@ function doLogout(){
   if(_realtimeSub){try{_supa.removeChannel(_realtimeSub);}catch(e){} _realtimeSub=null;}
   if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
   if(window._ordersPolling){clearInterval(window._ordersPolling);window._ordersPolling=null;}
+  _ordersCache=[];_usersCache=[];_zonasCache=[];_catalogoCache=[];
   _shownMsgIds=new Set();
   _sessionStart='';
   _supa=null;_supaConnected=false;
@@ -8240,8 +8241,6 @@ function _liqDrop(){
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:18px">'+
     '<div class="sc gr"><div class="slabel">Pedidos entregados</div><div class="sval">'+ent.length+'</div></div>'+
     '<div class="sc"><div class="slabel">Ventas brutas</div><div class="sval">Gs. '+fmtN(tVentas)+'</div></div>'+
-    '<div class="sc re"><div class="slabel">(-) Costo</div><div class="sval">Gs. '+fmtN(tCosto)+'</div></div>'+
-    '<div class="sc pu"><div class="slabel">(-) Logística</div><div class="sval">Gs. '+fmtN(tLog)+'</div></div>'+
     '<div class="sc" style="border:2px solid var(--accent)"><div class="slabel" style="color:var(--accent)">💰 COMISIÓN</div><div class="sval" style="color:var(--accent)">Gs. '+fmtN(tComision)+'</div></div>'+
     '</div>'+
     '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:14px">'+
@@ -8296,6 +8295,7 @@ function _liqProv(){
 
 /* ─── RECAUDACION ─── */
 PAGES.recaudacion=function(){
+  if(!isAdminLike(CU.rol)&&CU.rol!=='delivery'){$('ca').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)">Sin acceso.</div>';return;}
   const orders=_ordersCache;
   let dlvs=_usersCache.filter(u=>u.rol==='delivery');
   if(CU.rol==='delivery')dlvs=dlvs.filter(d=>d.id===CU.id);
@@ -9865,8 +9865,9 @@ PAGES.analitica_dlv=function(){
 
 /* ─── CLIENTES RECURRENTES (vendedor) ─── */
 PAGES.clientes_recurrentes=function(){
+  if(!CU||CU.rol!=='vendedor'){$('ca').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)">Sin acceso.</div>';return;}
   $('tbActions').innerHTML='';
-  const mine=_ordersCache.filter(o=>o.vendedorId===CU.id||o.vendedor===CU.nombre);
+  const mine=_ordersCache.filter(o=>String(o.vendedorId)===String(CU.id));
   const mapa={};
   mine.forEach(o=>{
     const nombreOriginal=(o.cliente||o.clienteNombre||'Sin nombre').trim();
@@ -9924,7 +9925,7 @@ PAGES.analitica_admin=function(){
   const vendedores=_usersCache.filter(u=>['vendedor','dropshipper'].includes(u.rol));
   const rankVend=vendedores.map(v=>{
     const vO=ent.filter(o=>o.vendedorId===v.id||o.dropId===v.id);
-    return{nombre:v.nombre,rol:v.rol,n:vO.length,gan:vO.reduce((a,b)=>a+ganVend(b),0)};
+    return{nombre:v.nombre,rol:v.rol,n:vO.length,gan:vO.reduce((a,b)=>a+(v.rol==='dropshipper'?(b.comision||0)*(b.qty||1):ganVend(b)),0)};
   }).filter(x=>x.n>0).sort((a,b)=>b.gan-a.gan);
   const provMap={};
   ent.forEach(o=>{const p=o.proveedor||'Sin proveedor';if(!provMap[p])provMap[p]={n:0,vol:0};provMap[p].n++;provMap[p].vol+=(o.costo||0)*(o.qty||1);});
@@ -14246,7 +14247,7 @@ async function _mapaCargar(map){
   // Si el filtro es "Solo Deliveries", no dibujar pedidos
   if((window._mapaFiltroTipo||'todos')==='deliveries'){_mapaUpdateContadores();return;}
   _mapaUpdateContadores();
-  let _mapaBase=['vendedor','proveedor','dropshipper'].includes(CU.rol)?getVisibleOrders():_ordersCache;
+  let _mapaBase=getVisibleOrders();
   // FIX #7: delivery NUNCA ve Entregado, aun si el filtro de estado lo pide. Aplicar ANTES del filtro de estado.
   if(CU&&CU.rol==='delivery')_mapaBase=_mapaBase.filter(o=>o.estado!=='Entregado');
   // Sin filtro activo: ocultar Cancelado/Devuelto por defecto. Con filtro activo: mostrar solo los del filtro (incluso Cancelado/Devuelto)
@@ -16093,7 +16094,9 @@ PAGES.pago_usuario=function(){
     const {ini,fin}=_pagoUsuarioRangoFecha(periodo);
     const enRango=(fechaStr)=>{
       if(!fechaStr) return false;
-      const d=new Date(fechaStr);
+      const p=String(fechaStr).slice(0,10).split('-');
+      if(p.length<3) return false;
+      const d=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]));
       return d>=ini && d<=fin;
     };
 
@@ -17784,7 +17787,7 @@ function toggleTheme(){
     if(!q) return {pedidos:[],usuarios:[],productos:[]};
     var pedidos=[], usuarios=[], productos=[];
     try{
-      var oc = (typeof _ordersCache !== 'undefined' && _ordersCache) ? _ordersCache : [];
+      var oc = (typeof getVisibleOrders === 'function') ? getVisibleOrders() : ((typeof _ordersCache !== 'undefined' && _ordersCache) ? _ordersCache : []);
       for(var i=0;i<oc.length && pedidos.length<8;i++){
         var o=oc[i]||{};
         var hay = String(o.id||'')+' '+String(o.cliente||'')+' '+String(o.direccion||'')+' '+String(o.telefono||'');
