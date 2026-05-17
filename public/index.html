@@ -5227,7 +5227,12 @@ function getVisibleOrders(){
   if(r==='vendedor')return _ordersCache.filter(o=>String(o.vendedorId)===String(CU.id));
   if(r==='dropshipper')return _ordersCache.filter(o=>String(o.dropId)===String(CU.id));
   if(r==='delivery')return _ordersCache.filter(o=>String(o.deliveryId)===String(CU.id));
-  if(r==='cliente')return _ordersCache.filter(o=>String(o.clienteId||'')===String(CU.id)||(o.cliente||'').trim().toLowerCase()===(CU.nombre||'').trim().toLowerCase());
+  if(r==='cliente')return _ordersCache.filter(o=>{
+    // A1 fix: si el pedido tiene clienteId, solo coincidir por ID (no nombre — 2 clientes mismo nombre se mezclaban)
+    if(o.clienteId)return String(o.clienteId)===String(CU.id);
+    // Legacy: pedidos sin clienteId — caen solo por nombre exacto
+    return (o.cliente||'').trim().toLowerCase()===(CU.nombre||'').trim().toLowerCase();
+  });
   if(r==='proveedor')return _ordersCache.filter(o=>String(o.proveedorId)===String(CU.id));
   return[];
 }
@@ -6193,7 +6198,11 @@ PAGES.dashboard=async function(){
     },120);
   }
   if(CU.rol==='cliente'){
-    const mine=orders.filter(o=>String(o.clienteId||'')===String(CU.id)||(o.cliente||'').trim().toLowerCase()===(CU.nombre||'').trim().toLowerCase());
+    const mine=orders.filter(o=>{
+      // A1 fix: si tiene clienteId, solo ID (no nombre)
+      if(o.clienteId)return String(o.clienteId)===String(CU.id);
+      return (o.cliente||'').trim().toLowerCase()===(CU.nombre||'').trim().toLowerCase();
+    });
     if(!mine.length){
       // Cliente sin pedidos: mensaje de bienvenida con CTA al catálogo
       html+='<div class="lcard2" style="border-left:3px solid var(--accent);text-align:center;padding:36px 22px">'+
@@ -9913,7 +9922,7 @@ PAGES.analitica_admin=function(){
   const ent=orders.filter(o=>o.estado==='Entregado');
   const tIng=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
   const tCos=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
-  const tLog=ent.reduce((a,b)=>a+_getZonaO(b).precio,0);
+  const tLog=ent.reduce((a,b)=>a+(_getZonaO(b).precio||0),0);
   const tGan=tIng-tCos-tLog;
   const pctExito=orders.length?Math.round(ent.length/orders.length*100):0;
   const ticketProm=ent.length?Math.round(tIng/ent.length):0;
@@ -10156,6 +10165,11 @@ async function saveNewUser(){
 }
 function editUser(id){
   const u=_usersCache.find(x=>x.id===id);if(!u)return;
+  // C10 fix: admin no puede editar superadmin u otros admins, ni usuarios de otros admins
+  if(CU&&CU.rol==='admin'){
+    if(['admin','superadmin'].includes(u.rol)){pushNotif('No podés editar usuarios con rol '+u.rol+'.','e');return;}
+    if(u.created_by&&String(u.created_by)!==String(CU.id)){pushNotif('No podés editar usuarios creados por otro administrador.','e');return;}
+  }
   const esDelivery=(u.rol==='delivery');
   const pagoMetodo=u.pago_metodo||'cupo';
   const pagoNotas=u.pago_notas||'';
@@ -10339,6 +10353,25 @@ async function doDelUser(id){
     if(['admin','superadmin'].includes(u.rol)){pushNotif('No podés eliminar usuarios de otro administrador.','e');return;}
     if(u.created_by!==CU.id){pushNotif('No podés eliminar usuarios de otro administrador.','e');return;}
   }
+  // A12 fix: si el usuario es delivery, no eliminar si tiene pedidos activos asignados
+  if(u && u.rol==='delivery'){
+    const pedidosActivos=(_ordersCache||[]).filter(o=>
+      String(o.deliveryId)===String(id) &&
+      !['Entregado','Cancelado','Devuelto'].includes(o.estado)
+    );
+    if(pedidosActivos.length){
+      pushNotif('No se puede eliminar este delivery — tiene '+pedidosActivos.length+' pedido(s) activo(s). Reasignalos primero.','e');
+      return;
+    }
+  }
+  // A12 fix (proveedor): si tiene productos en catálogo, advertir
+  if(u && u.rol==='proveedor'){
+    const productosActivos=(_catalogoCache||[]).filter(p=>String(p.owner_user_id||p.proveedor_id)===String(id));
+    if(productosActivos.length){
+      pushNotif('No se puede eliminar — este proveedor tiene '+productosActivos.length+' producto(s) en catálogo. Reasignalos primero.','e');
+      return;
+    }
+  }
   await DL.deleteUser(id);
   _usersCache=_usersCache.filter(u=>u.id!==id);
   PAGES.usuarios();
@@ -10451,15 +10484,24 @@ function openNewZona(){
 async function saveNewZona(){
   const nom=gv('nzN').trim(),prec=parseFloat(gv('nzP'));
   if(!nom||!prec){showAlert('nzAlert','e','Completá nombre y tarifa');return;}
+  // A25 fix: validar nombre duplicado antes de crear
+  const nomLower=nom.toLowerCase();
+  if(_zonasCache.some(z=>(z.nombre||'').toLowerCase()===nomLower)){
+    showAlert('nzAlert','e','Ya existe una zona con ese nombre');return;
+  }
   const id=Math.max(..._zonasCache.map(z=>z.id),0)+1;
   const z={id,nombre:nom,desc:gv('nzD').trim(),precio:prec,
     extraDelivery:parseFloat(gv('nzE'))||0,tiempoEntrega:gv('nzT').trim()};
-  // Actualizar cache local inmediatamente → render sin esperar Supabase
-  _zonasCache=[..._zonasCache,z];
-  closeA();PAGES.zonas();
-  pushNotif('Zona "'+nom+'" creada','s');
-  // Persistir en segundo plano
-  DL.saveZona(z);
+  closeA();
+  // A11 fix: esperar confirmación de Supabase ANTES de mostrar éxito
+  try{
+    await DL.saveZona(z);
+    _zonasCache=[..._zonasCache,z];
+    PAGES.zonas();
+    pushNotif('Zona "'+nom+'" creada','s');
+  }catch(e){
+    pushNotif('Error guardando zona: '+(e.message||e),'e');
+  }
 }
 function editZona(id){
   const z=_zonasCache.find(x=>x.id===id);if(!z)return;
@@ -13028,6 +13070,11 @@ function _aplicarGradient(){
   }catch(e){}
 })();
 function _doResetAll(){
+  // C9 fix: solo superadmin puede resetear todos los datos
+  if(!CU||CU.rol!=='superadmin'){
+    pushNotif('Solo el superadmin puede resetear los datos demo.','e');
+    return;
+  }
   ['users','usersVer','orders','zonas','cupos','jornadas'].forEach(k=>localStorage.removeItem('ipv5_'+k));
   DL._initLocal();
   refreshCache().then(()=>nav('dashboard'));
@@ -14925,7 +14972,7 @@ async function _doMapaCambiarEstado(id,nuevoEstado){
 async function _mapaCambiarEstado(id,nuevoEstado){
   const o=_ordersCache.find(x=>x.id===id);if(!o)return;
   if(o.estado==='Entregado'){pushNotif('El pedido ya está Entregado y no se puede modificar','e');return;}
-  openA('Cambiar estado','<div style="padding:8px 4px">¿Cambiar pedido <b>#'+id+'</b> a "<b>'+nuevoEstado+'</b>"?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doMapaCambiarEstado('+id+',''+nuevoEstado+'')" >Confirmar</button>');
+  openA('Cambiar estado','<div style="padding:8px 4px">¿Cambiar pedido <b>#'+id+'</b> a "<b>'+nuevoEstado+'</b>"?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doMapaCambiarEstado('+id+',&quot;'+nuevoEstado+'&quot;)" >Confirmar</button>');
 }
 
 async function _toggleTurnoConfirmado(){
