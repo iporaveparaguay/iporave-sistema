@@ -2473,7 +2473,6 @@ const DL = {
   async getOrders(filters){
     if(_supaConnected){
       let q=_supa.from('pedidos').select('*').order('id',{ascending:false});
-      if(CU&&CU.rol==='admin')q=q.eq('created_by',CU.id);
       if(filters){
         if(filters.vendedorId)q=q.eq('vendedor_id',filters.vendedorId);
         if(filters.deliveryId)q=q.eq('delivery_id',filters.deliveryId);
@@ -2505,7 +2504,6 @@ const DL = {
       }
     }
     let orders=this._lg('orders')||[];
-    if(CU&&CU.rol==='admin')orders=orders.filter(o=>String(o.created_by)===String(CU.id));
     if(filters){
       // G2 — String coercion en comparaciones de IDs
       if(filters.vendedorId)orders=orders.filter(o=>String(o.vendedorId)===String(filters.vendedorId));
@@ -10811,21 +10809,19 @@ async function saveNewUser(){
   if(pass.length<6){showAlert('nuAlert','e','La contraseña debe tener al menos 6 caracteres');return;}
   if(_usersCache.find(u=>u.email===email)){showAlert('nuAlert','e','El email ya está registrado');return;}
   window._saveNewUserBusy=true;
-  const id=Math.max(0,..._usersCache.map(u=>Number(u.id)||0))+1;
   const username=email.split('@')[0];
-  const u={id,email,username,password:pass,nombre:nom,rol,contactos:[],
+  // Sin id local — el servidor asigna el id real vía INSERT SERIAL para evitar colisiones
+  const u={email,username,password:pass,nombre:nom,rol,contactos:[],
     vehiculo:rol==='delivery'?gv('nuVeh'):'',patente:rol==='delivery'?gv('nuPat'):'',
     whatsapp:rol==='delivery'?gv('nuWa'):''};
-  _usersCache=[..._usersCache,u];
   showAlert('nuAlert','i','Guardando...');
   try{
     const r=await DL.saveUser(u);
     if(!r.ok){
-      _usersCache=_usersCache.filter(x=>x.id!==u.id);
       showAlert('nuAlert','e','❌ Error al guardar en Supabase: '+r.error+'. El usuario NO fue creado. Mostrá este error al soporte.');
       return;
     }
-    closeA();PAGES.usuarios();
+    closeA();await PAGES.usuarios();
     pushNotif('Usuario "'+email+'" creado correctamente','s');
   }finally{window._saveNewUserBusy=false;}
 }
