@@ -386,5 +386,85 @@
 
 ---
 
-**Fin del documento v2. Generado 2026-05-16.**  
-**Fuentes: v3→v7 RELEVOs + Oleadas 1/2/3 (10 agentes) + sesión Claude $20 (5 agentes) = 15 agentes de auditoría.**
+## 🆕 SESIÓN 2026-05-17 — Opus 4.7 + Sonnet 4.6 (cierre de sesión + bugs medios)
+
+### Bugs CERRADOS esta sesión (17):
+
+**Worker (8 commits, 4 deploys):**
+| ID | Bug | Commit |
+|----|-----|--------|
+| AUD-1 | MAPBOX_TOKEN expuesto en wrangler.toml → movido a secret | d1f6bd1 |
+| AUD-4 | admin-tools.js: OTP obligatorio para CUALQUIER borrado | fbf897d |
+| AUD-5 | utils.js: cache key usa slice(-64) en vez de slice(0,32) — sin colisión JWT | fbf897d |
+| AUD-6 | calificaciones.js: dedup 24h para admin/superadmin sin pedido_id | fbf897d |
+| AUD-7 | comprobantes-share.js: admin solo de su tenant (created_by check) | fbf897d |
+| SEC5/A17 | corsHeaders(request) en OPTIONS handlers — CORS refleja Origin real | fbf897d |
+| SEC15 | delete-user.js: bloquea borrado si hay pedidos activos (409) | edcf00d |
+| M1 backend | save-user.js: valida y normaliza WhatsApp `595XXXXXXXXX` | 1fd0d6e |
+
+**Frontend (9 commits, 6 deploys Vercel):**
+| ID | Bug | Commit |
+|----|-----|--------|
+| M29 | exportCSV: BOM U+FEFF + escape RFC 4180 para Excel | c2cf994 |
+| M18 | Viewport: interactive-widget=resizes-visual (teclado mobile) | c2cf994 |
+| L5 | manifest.json: icons separados "any" y "maskable" (W3C) | c2cf994 |
+| M24 | saveNewZona: ID basado en Date.now() (no Math.max+1) — sin colisión multi-sesión | ff381fb |
+| M1 | saveEditUser: valida WhatsApp antes de enviar al servidor | ff381fb |
+| M3 | _gpsSendPos: notifica al delivery tras 3 fallos consecutivos de red | ff381fb |
+| M4 | nav(): toggle clase page-mapa en body → CSS aplica selectores .page-mapa | 3310fc3 |
+| L4 | _buildFileUrl: no duplica dominio si downloadUrl ya es absoluta | 72e98b5 |
+| M26/L3 | UI borrar comprobante: botón + modal + llama al endpoint DELETE existente | f7454fe |
+| SEC2 | escapar cliente/dirección/nombre en 2 modales openA (líneas 15532, 16944) | ba79279 |
+| L1 | waBoleta: omite línea "Flete zona —" cuando no hay zona | 98aee4c |
+| L6 | sw.js auto-bump CACHE_VERSION via npm run predeploy (scripts/bump-sw-version.js) | 98aee4c |
+
+### Bugs YA ESTABAN CORREGIDOS (descubiertos en auditoría 3 agentes paralelos):
+- A3 (`_gpsToggleFromPill` ya usa openA, no confirm) — commit ba88952
+- A4 (`_toggleTurno` ya usa openA, no confirm) — commit ba88952
+- A5 (`Reprogramado` ya está en GPS stop states) — commit ba88952
+- A8 (`_liqDrop` ya usa comisión correcta para dropshipper) — commit ba88952
+- A9 (`analitica_drop` ya multiplica por qty) — commit ba88952
+- A13 (`PAGES.usuarios` ya filtra por created_by) — commit ba88952
+- A14 (`waSend` ya usa link sintético, no window.open) — commit ba88952
+- A15 (`_scannerNPLock` ya tiene finally reset) — verificado
+- A21 (`ejecutarCierre` ya verifica isAdminLike) — commit ba88952
+- A24 (`_asistHistorial` ya se limpia en doLogout) — verificado
+- A25 (`ejecutarCierre` ya usa openA, no confirm) — commit ba88952
+- A26 (`ejecutarCierre` ya verifica cierre duplicado del día) — commit ba88952
+- M11 (TODOS los confirm() ya fueron migrados a openA) — múltiples commits
+- M27 (`_resetTema` ya usa openA) — verificado
+- M28 (`delZona` ya usa openA) — verificado
+- L2 (`_boletaHTML_legacy_unused` ya fue eliminado) — commit 67dfdf3
+- L7 (PAGES.config delivery block NO es código muerto — es modo alta visibilidad) — verificado
+- SEC8 (whatsapp-webhook ya tiene HMAC SHA-256 + timingSafeEqual) — verificado
+
+### Bugs descartados/no aplicables:
+- SEC7 (eliminar 'unsafe-inline' del CSP) — NO factible hoy: 494 onclick handlers + script monolítico de 17k líneas. Documentado para refactor futuro.
+- M22 (cascade IA gratis Groq→Gemini) — usuario eligió posponerlo. Plan listo, requiere 1-4h en sesión dedicada.
+- A22 (`pagado_por` UUID vs integer) — requiere verificar schema en Supabase manualmente.
+
+### Pendientes REALES restantes (sin capturas):
+- **SEC9** — 2FA para acciones críticas (eliminar usuario, cambiar rol, resetAll). Requiere endpoint `/api/2fa/verify-otp` + email/Telegram OTP + UI. ~2-3h.
+- **A2** — `_fotoBase64` reset entre pedidos: actualmente resetea al abrir dlvConfirm pero no entre cierres parciales. Bajo impacto.
+- **A16** — `getPagos({})` sin filtro de rol. Frontend filtra pero admin descarga todos los pagos por red. RLS Supabase debería arreglarlo.
+
+### Acciones manuales pendientes:
+1. **Rotar MAPBOX_TOKEN** en account.mapbox.com (el viejo queda en git history)
+2. **Configurar `CLEANUP_OTP`** en Cloudflare Worker secrets (para que admin-tools cleanup funcione)
+3. **Verificar RLS Supabase** — que no haya `using(true)` en tablas críticas
+4. **Verificar A22** — schema de columna `pagado_por` en tabla `pagos` (UUID o integer)
+
+### Estadísticas finales de auditoría:
+| Categoría | Total | Corregidos | Pendientes |
+|-----------|-------|-----------|------------|
+| Críticos (crash) | 17 | 17 | 0 ✅ |
+| Altos (flujos) | 26 | 24 | 2 |
+| Medios (UX) | 29 | 22 | 7 (necesitan capturas) |
+| Bajos | 7 | 5 | 2 |
+| Seguridad | 15 | 13 | 2 (SEC7 docs, SEC9 sesión dedicada) |
+| **TOTAL** | **94** | **81** (86%) | **13** |
+
+---
+
+**Fin del documento v2. Última actualización: 2026-05-17.**  
+**Fuentes: v3→v7 RELEVOs + Oleadas 1/2/3 (10 agentes) + sesión Claude $20 (5 agentes) + sesión Opus/Sonnet 2026-05-17 (10+ agentes) = 25+ agentes de auditoría.**
