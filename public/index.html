@@ -5228,7 +5228,7 @@ function getVisibleOrders(){
   if(r==='dropshipper')return _ordersCache.filter(o=>String(o.dropId)===String(CU.id));
   if(r==='delivery')return _ordersCache.filter(o=>String(o.deliveryId)===String(CU.id));
   if(r==='cliente')return _ordersCache.filter(o=>String(o.clienteId||'')===String(CU.id)||(o.cliente||'').trim().toLowerCase()===(CU.nombre||'').trim().toLowerCase());
-  if(r==='proveedor')return _ordersCache.filter(o=>String(o.proveedorId)===String(CU.id)||(o.proveedor||'').toLowerCase()===(CU.nombre||'').toLowerCase());
+  if(r==='proveedor')return _ordersCache.filter(o=>String(o.proveedorId)===String(CU.id));
   return[];
 }
 function nextDocNum(){
@@ -6150,12 +6150,12 @@ PAGES.dashboard=async function(){
     '</div>';
   }
   if(CU.rol==='proveedor'){
-    const mine=orders.filter(o=>String(o.proveedorId)===String(CU.id)||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+    const mine=orders.filter(o=>String(o.proveedorId)===String(CU.id));
     const ent=mine.filter(o=>o.estado==='Entregado');
     const act=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
     const porCobrar=ent.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
-    const prodActivos=(_catalogoCache||[]).filter(p=>String(p.proveedorId)===String(CU.id)||(p.proveedor||'').toLowerCase()===CU.nombre.toLowerCase()).length;
+    const prodActivos=(_catalogoCache||[]).filter(p=>String(p.proveedorId)===String(CU.id)).length;
     // Gráfico 14 días
     const now14=new Date();const days14=[];const labels14=[];
     for(let i=13;i>=0;i--){const d=new Date(now14);d.setDate(d.getDate()-i);const iso=_isoDate(d);days14.push(iso);labels14.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
@@ -7154,7 +7154,7 @@ function viewOrder(id){
   }
 
   // Foto de entrega: solo visible para admin, vendedor (creador) o proveedor vinculado
-  const canSeeFoto=(['admin','superadmin'].includes(CU.rol))||(CU.rol==='vendedor'&&o.vendedorId===CU.id)||(CU.rol==='proveedor'&&(o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase()));
+  const canSeeFoto=(['admin','superadmin'].includes(CU.rol))||(CU.rol==='vendedor'&&o.vendedorId===CU.id)||(CU.rol==='proveedor'&&String(o.proveedorId)===String(CU.id));
   const fotoSection=canSeeFoto&&o.fotoEntrega&&o.fotoEntrega!==true
     ?'<div class="stitle">📷 Foto de entrega</div>'+
       '<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;text-align:center;padding:8px">'+
@@ -9427,7 +9427,7 @@ setTimeout(function(){
 },0);
 PAGES.analitica_prov=function(){
   $('tbActions').innerHTML='';
-  const mine=_ordersCache.filter(o=>String(o.proveedorId)===String(CU.id)||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  const mine=_ordersCache.filter(o=>String(o.proveedorId)===String(CU.id));
   if(!mine.length){
     $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">No hay órdenes asignadas a tu nombre de proveedor.<br><span style="font-size:12px;margin-top:8px;display:block">El vendedor debe ingresar tu nombre exacto en el campo "Proveedor" al crear el pedido.</span></div>';
     return;
@@ -10348,7 +10348,7 @@ async function doDelUser(id){
 /* ─── SUMINISTROS (vista proveedor) ─── */
 PAGES.suministros=function(){
   $('tbActions').innerHTML='';
-  const mine=_ordersCache.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  const mine=_ordersCache.filter(o=>String(o.proveedorId)===String(CU.id));
   if(!mine.length){
     $('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">'+
       '<div style="font-size:32px;margin-bottom:12px">📦</div>'+
@@ -10364,7 +10364,7 @@ PAGES.suministros=function(){
 /* ─── PAGOS PROVEEDOR ─── */
 PAGES.pagos_prov=function(){
   $('tbActions').innerHTML='';
-  const mine=_ordersCache.filter(o=>o.proveedorId===CU.id||(o.proveedor||'').toLowerCase()===CU.nombre.toLowerCase());
+  const mine=_ordersCache.filter(o=>String(o.proveedorId)===String(CU.id));
   if(!mine.length){$('ca').innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">No tenés órdenes asignadas todavía.</div>';return;}
   const entregados=mine.filter(o=>o.estado==='Entregado');
   const pendientes=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
