@@ -2001,6 +2001,7 @@ const fmtDate = d => d?new Date(d+'T12:00').toLocaleDateString('es-PY',{day:'2-d
 const capRole = r => ({superadmin:'Superadmin',admin:'Administrador',vendedor:'Vendedor',dropshipper:'Dropshipper',delivery:'Delivery',proveedor:'Proveedor',cliente:'Cliente'}[r]||r);
 const isAdminLike = r => ['admin','superadmin'].includes(r);
 const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const _isoDate = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const nowStr = () => new Date().toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const mesActual = () => today().slice(0,7);
 const ganVend = o => ((o.precio||0)*(o.qty||1))-((o.costo||0)*(o.qty||1))-(_getZonaO(o).precio||0);
@@ -2847,7 +2848,7 @@ const DL = {
       metodo: p.metodo||'efectivo',
       referencia: p.referencia||null,
       nota: p.nota||null,
-      fecha: p.fecha||new Date().toISOString().slice(0,10)
+      fecha: p.fecha||today()
     };
     const {data,error}=await _supa.from('pagos').insert(row).select().single();
     if(error){console.warn('[savePago]',error.message);pushNotif('Error al registrar pago: '+error.message,'e');return null;}
@@ -2863,7 +2864,7 @@ const DL = {
       if(misUsuarios.length) q=q.in('pagado_a',misUsuarios);
       else return [];
     }
-    const {data,error}=await q;
+    const {data,error}=await q.limit(500);
     if(error){console.warn('[getPagos]',error.message);return [];}
     return data||[];
   },
@@ -5809,7 +5810,7 @@ function _appendSuperadminDashboardExtra(){
     var dias7=[],labels7=[];
     for(var i=6;i>=0;i--){
       var d=new Date();d.setDate(d.getDate()-i);
-      var iso=d.toISOString().slice(0,10);
+      var iso=_isoDate(d);
       dias7.push(iso);
       labels7.push(d.toLocaleDateString('es-PY',{weekday:'short',day:'2-digit'}).replace('.',''));
     }
@@ -5995,7 +5996,7 @@ PAGES.dashboard=async function(){
         const balance=teDeben-leDebes;
         // Mes pasado
         const dPrev=new Date(); dPrev.setMonth(dPrev.getMonth()-1);
-        const mesPrev=dPrev.toISOString().slice(0,7);
+        const mesPrev=_isoDate(dPrev).slice(0,7);
         const pagadoPrev=(pagosAll||[]).filter(p=>(p.fecha||'').startsWith(mesPrev))
           .reduce((a,p)=>a+Number(p.monto||0),0);
         let pctVs=0, flecha='→', clsT='flat';
@@ -6074,7 +6075,7 @@ PAGES.dashboard=async function(){
       const pendiente=Math.max(0,ganadoMes-cobradoMes);
       // Mes anterior — total cobrado
       const dPrev=new Date(); dPrev.setMonth(dPrev.getMonth()-1);
-      const mesPrev=dPrev.toISOString().slice(0,7);
+      const mesPrev=_isoDate(dPrev).slice(0,7);
       const cobradoPrev=((window._pagosCache)||[]).filter(p=>String(p.pagado_a)===String(CU.id)&&(p.fecha||'').startsWith(mesPrev))
         .reduce((a,p)=>a+Number(p.monto||0),0);
 
@@ -6113,7 +6114,7 @@ PAGES.dashboard=async function(){
     const rec=entTot.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
     const tasaExito=mine.length?Math.round(entTot.length/mine.length*100):0;
     // Stats semana actual (lunes a hoy)
-    const semStart=(function(){const d=new Date();const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return d.toISOString().slice(0,10);}());
+    const semStart=(function(){const d=new Date();const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return _isoDate(d);}());
     const semO=mine.filter(o=>o.fecha>=semStart);
     const semEnt=semO.filter(o=>o.estado==='Entregado').length;
     html+='<div class="sgrid">'+
@@ -6156,7 +6157,7 @@ PAGES.dashboard=async function(){
     const prodActivos=(_catalogoCache||[]).filter(p=>String(p.proveedorId)===String(CU.id)||(p.proveedor||'').toLowerCase()===CU.nombre.toLowerCase()).length;
     // Gráfico 14 días
     const now14=new Date();const days14=[];const labels14=[];
-    for(let i=13;i>=0;i--){const d=new Date(now14);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days14.push(iso);labels14.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+    for(let i=13;i>=0;i--){const d=new Date(now14);d.setDate(d.getDate()-i);const iso=_isoDate(d);days14.push(iso);labels14.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
     const pedD14={};const entD14={};days14.forEach(d=>{pedD14[d]=0;entD14[d]=0;});
     mine.forEach(o=>{if(days14.includes(o.fecha)){pedD14[o.fecha]=(pedD14[o.fecha]||0)+1;if(o.estado==='Entregado')entD14[o.fecha]=(entD14[o.fecha]||0)+1;}});
     html+='<div class="sgrid">'+
@@ -6301,7 +6302,7 @@ function _renderCharts(){
   const dias=[],labels=[];
   for(let i=13;i>=0;i--){
     const d=new Date();d.setDate(d.getDate()-i);
-    const iso=d.toISOString().slice(0,10);
+    const iso=_isoDate(d);
     dias.push(iso);
     labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));
   }
@@ -7025,7 +7026,7 @@ function exportarCSV(){
   var blob=new Blob([bom+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
-  var fecha=new Date().toISOString().slice(0,10).replace(/-/g,'');
+  var fecha=today().replace(/-/g,'');
   a.href=url;
   a.download='pedidos_'+fecha+'.csv';
   document.body.appendChild(a);
@@ -8622,7 +8623,7 @@ async function _guardarConfigDelivery(userId){
 
 /* ─── BOLETAS ─── */
 PAGES.boletas=function(){
-  const hoy=new Date().toISOString().slice(0,10);
+  const hoy=today();
   const primerDia=hoy.slice(0,8)+'01';
   const inp='style="background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;min-width:130px" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"';
   $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Boletas IVA</span></div>'+
@@ -9328,7 +9329,7 @@ function _s3UserId(){
 }
 function _s3IsoDays(n){
   const arr=[];const now=new Date();
-  for(let i=n-1;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);arr.push(d.toISOString().slice(0,10));}
+  for(let i=n-1;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);arr.push(_isoDate(d));}
   return arr;
 }
 function _s3CompactCard(icon,label,value,color){
@@ -9438,7 +9439,7 @@ PAGES.analitica_prov=function(){
   const enCamino=act.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
   const perdidos=canc.reduce((a,b)=>a+(b.costo||0)*(b.qty||1),0);
   const now=new Date();const days30=[];const labels=[];
-  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=_isoDate(d);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
   const entByDay={};const pedByDay={};days30.forEach(d=>{entByDay[d]=0;pedByDay[d]=0;});
   mine.forEach(o=>{if(days30.includes(o.fecha)){pedByDay[o.fecha]=(pedByDay[o.fecha]||0)+1;if(o.estado==='Entregado')entByDay[o.fecha]=(entByDay[o.fecha]||0)+1;}});
   const prodMap={};
@@ -9550,7 +9551,7 @@ PAGES.analitica_vend=function(periodo){
   $('tbActions').innerHTML='';
   const all=_ordersCache.filter(o=>o.vendedorId===CU.id);
   const hoyStr=today();const now=new Date();
-  const semIni=new Date(now);semIni.setDate(semIni.getDate()-6);const semIniStr=semIni.toISOString().slice(0,10);
+  const semIni=new Date(now);semIni.setDate(semIni.getDate()-6);const semIniStr=_isoDate(semIni);
   const mesStr=mesActual();
   let mine=all;
   if(periodo==='hoy')mine=all.filter(o=>o.fecha===hoyStr);
@@ -9564,7 +9565,7 @@ PAGES.analitica_vend=function(periodo){
   const pctExito=mine.length?Math.round(ent.length/mine.length*100):0;
   const ticketProm=ent.length?Math.round(vBruta/ent.length):0;
   const days30=[];const labels=[];
-  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=_isoDate(d);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
   const ganByDay={};days30.forEach(d=>ganByDay[d]=0);
   all.filter(o=>o.estado==='Entregado'&&days30.includes(o.fecha)).forEach(o=>{ganByDay[o.fecha]=(ganByDay[o.fecha]||0)+ganVend(o);});
   const prodMap={};
@@ -9715,7 +9716,7 @@ PAGES.analitica_drop=function(){
   const pctExito=mine.length?Math.round(ent.length/mine.length*100):0;
   const ticketProm=ent.length?Math.round(vBruta/ent.length):0;
   const now=new Date();const days30=[];const labels=[];
-  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=_isoDate(d);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
   const pedByDay={};days30.forEach(d=>pedByDay[d]=0);
   mine.forEach(o=>{if(days30.includes(o.fecha))pedByDay[o.fecha]=(pedByDay[o.fecha]||0)+1;});
   const prodMap={};
@@ -9797,14 +9798,14 @@ PAGES.analitica_dlv=function(){
   const ingresos=ent.reduce((a,b)=>a+(b.precio||0)*(b.qty||1),0);
   const pctExito=mine.length?Math.round(ent.length/mine.length*100):0;
   const now=new Date();
-  const hoyISO=now.toISOString().slice(0,10);
-  const semStart=(function(){const d=new Date();const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return d.toISOString().slice(0,10);}());
+  const hoyISO=today();
+  const semStart=(function(){const d=new Date();const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return _isoDate(d);}());
   const mesStart=hoyISO.slice(0,7)+'-01';
   const entHoy=ent.filter(o=>o.fecha===hoyISO).length;
   const entSemana=ent.filter(o=>o.fecha>=semStart).length;
   const entMes=ent.filter(o=>o.fecha>=mesStart).length;
   const days30=[];const labels30=[];
-  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days30.push(iso);labels30.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=_isoDate(d);days30.push(iso);labels30.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
   const entByDay={};days30.forEach(d=>entByDay[d]=0);
   ent.forEach(o=>{if(days30.includes(o.fecha))entByDay[o.fecha]=(entByDay[o.fecha]||0)+1;});
   const zonaMap={};
@@ -9917,7 +9918,7 @@ PAGES.analitica_admin=function(){
   const ticketProm=ent.length?Math.round(tIng/ent.length):0;
   const margen=tIng?Math.round(tGan/tIng*100):0;
   const now=new Date();const days30=[];const labels=[];
-  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=d.toISOString().slice(0,10);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=_isoDate(d);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
   const ingByDay={};const ganByDay={};days30.forEach(d=>{ingByDay[d]=0;ganByDay[d]=0;});
   ent.forEach(o=>{if(days30.includes(o.fecha)){ingByDay[o.fecha]=(ingByDay[o.fecha]||0)+(o.precio||0)*(o.qty||1);ganByDay[o.fecha]=(ganByDay[o.fecha]||0)+ganVend(o);}});
   const vendedores=_usersCache.filter(u=>['vendedor','dropshipper'].includes(u.rol));
@@ -10128,10 +10129,12 @@ function openNewUser(){
 }
 function toggleDlvF2(){const r=gv('nuRol');const f=$('dlvXF');if(f)f.style.display=r==='delivery'?'block':'none';}
 async function saveNewUser(){
+  if(window._saveNewUserBusy)return;
   const nom=gv('nuNom').trim(),email=gv('nuEmail').trim(),pass=gv('nuPass').trim(),rol=gv('nuRol');
   if(!nom||!email||!pass){showAlert('nuAlert','e','Completá todos los campos');return;}
   if(pass.length<6){showAlert('nuAlert','e','La contraseña debe tener al menos 6 caracteres');return;}
   if(_usersCache.find(u=>u.email===email)){showAlert('nuAlert','e','El email ya está registrado');return;}
+  window._saveNewUserBusy=true;
   const id=Math.max(0,..._usersCache.map(u=>Number(u.id)||0))+1;
   const username=email.split('@')[0];
   const u={id,email,username,password:pass,nombre:nom,rol,contactos:[],
@@ -10139,14 +10142,16 @@ async function saveNewUser(){
     whatsapp:rol==='delivery'?gv('nuWa'):''};
   _usersCache=[..._usersCache,u];
   showAlert('nuAlert','i','Guardando...');
-  const r=await DL.saveUser(u);
-  if(!r.ok){
-    _usersCache=_usersCache.filter(x=>x.id!==u.id);
-    showAlert('nuAlert','e','❌ Error al guardar en Supabase: '+r.error+'. El usuario NO fue creado. Mostrá este error al soporte.');
-    return;
-  }
-  closeA();PAGES.usuarios();
-  pushNotif('Usuario "'+email+'" creado correctamente','s');
+  try{
+    const r=await DL.saveUser(u);
+    if(!r.ok){
+      _usersCache=_usersCache.filter(x=>x.id!==u.id);
+      showAlert('nuAlert','e','❌ Error al guardar en Supabase: '+r.error+'. El usuario NO fue creado. Mostrá este error al soporte.');
+      return;
+    }
+    closeA();PAGES.usuarios();
+    pushNotif('Usuario "'+email+'" creado correctamente','s');
+  }finally{window._saveNewUserBusy=false;}
 }
 function editUser(id){
   const u=_usersCache.find(x=>x.id===id);if(!u)return;
@@ -10327,6 +10332,7 @@ function delUser(id){
   );
 }
 async function doDelUser(id){
+  if(id===CU.id){pushNotif('No podés eliminarte a vos mismo','e');return;}
   const u=_usersCache.find(x=>x.id===id);
   if(u&&CU.rol==='admin'){
     if(['admin','superadmin'].includes(u.rol)){pushNotif('No podés eliminar usuarios de otro administrador.','e');return;}
@@ -11394,8 +11400,10 @@ async function editProducto(id){
   setTimeout(()=>{_renderPresForm();if(CU.rol!=='delivery')_renderChips();_setRichContent('epDesc',p.descripcion_html||'');},130);
 }
 async function saveEditProducto(id){
+  if(window._saveEditProdBusy)return;
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
   const nom=gv('epNom').trim();if(!nom){showAlert('epAlert','e','El nombre del producto no puede estar vacío');return;}
+  window._saveEditProdBusy=true;
   showAlert('epAlert','i','Guardando...');
   // Usar fotos del gestor de galería
   if(window._fotosEdit!==undefined){
@@ -11436,6 +11444,7 @@ async function saveEditProducto(id){
   closeA();PAGES.catalogo();
   pushNotif('Producto actualizado','s');
   DL.saveProducto(p);
+  window._saveEditProdBusy=false;
 }
 function _doDelProducto(id){
   _catalogoCache=_catalogoCache.filter(x=>x.id!==id);
@@ -11681,6 +11690,7 @@ async function saveNuevaPresentacion(prodId){
   const precioVendedor=parseFloat(gv('nprPrecioV'))||0;
   const precioDropshipper=parseFloat(gv('nprPrecioD'))||0;
   const precioProveedor=parseFloat(gv('nprPrecioP'))||0;
+  if(precio<0||precioVendedor<0||precioDropshipper<0||precioProveedor<0){showAlert('nprAlert','e','Los precios no pueden ser negativos');return;}
   p.presentaciones.push({id:presId,nombre:nom,precio,precioVendedor,precioDropshipper,precioProveedor});
   closeA();PAGES.catalogo();
   pushNotif('Presentación "'+nom+'" agregada','s');
@@ -12330,11 +12340,11 @@ async function subirCedulaDorso(input){
 }
 async function guardarPerfilUsuario(){
   const data={id:CU.id,
-    nombre:gv('pfNombre')||CU.nombre,
-    whatsapp:gv('pfWa'),telefono2:gv('pfTel2'),email:gv('pfEmail'),
-    tipo_doc:gv('pfTipoDoc'),cedula:gv('pfCedula'),
-    nombre_comercial:gv('pfNomCom'),ruc:gv('pfRuc'),
-    descripcion_negocio:$('pfDesc')?$('pfDesc').value:'',
+    nombre:(gv('pfNombre')||CU.nombre).trim(),
+    whatsapp:(gv('pfWa')||'').trim(),telefono2:(gv('pfTel2')||'').trim(),email:(gv('pfEmail')||'').trim(),
+    tipo_doc:gv('pfTipoDoc'),cedula:(gv('pfCedula')||'').trim(),
+    nombre_comercial:(gv('pfNomCom')||'').trim(),ruc:(gv('pfRuc')||'').trim(),
+    descripcion_negocio:$('pfDesc')?$('pfDesc').value.trim():'',
     color_primario:gv('pfColorPrim')||null,
     color_secundario:gv('pfColorSec')||null,
     web:gv('pfWeb'),instagram:gv('pfIg'),facebook:gv('pfFb'),
@@ -12931,7 +12941,7 @@ function _exportarTema(){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;
-  a.download='iporave-tema-'+new Date().toISOString().slice(0,10)+'.json';
+  a.download='iporave-tema-'+today()+'.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -15735,7 +15745,7 @@ function openRegistrarPago(targetUserId,montoPreRellenado){
   }
   const u=target;
   const nombre=u?u.nombre:'usuario';
-  const hoy=new Date().toISOString().slice(0,10);
+  const hoy=today();
   const saldoActual=calcularSaldoUsuario(targetUserId);
   const pre=Number(montoPreRellenado)>0?Math.round(Number(montoPreRellenado)):'';
   // TAREA 4 — Limpieza del modal entre usos
@@ -15803,13 +15813,15 @@ function abrirPagoUsuario(targetUserId){
 }
 
 async function _doRegistrarPagoForzado(targetUserId){
+  if(window._pagoEnProceso)return;
+  window._pagoEnProceso=true;
   const btn=document.querySelector('[onclick*="confirmarRegistroPago"]');
   if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.textContent='⏳ Guardando...';}
   const monto=parseFloat($('pagoMonto').value)||0;
   const metodo=$('pagoMetodo').value;
   const referencia=$('pagoRef').value.trim();
   const nota=$('pagoNota').value.trim();
-  const fecha=$('pagoFecha').value||new Date().toISOString().slice(0,10);
+  const fecha=$('pagoFecha').value||today();
   try{
     const res=await DL.savePago({
       pagado_por:CU.auth_id,
@@ -15872,6 +15884,8 @@ async function _doRegistrarPagoForzado(targetUserId){
   } catch(err){
     pushNotif('Error al registrar: '+(err.message||'desconocido'),'e');
     if(btn){btn.disabled=false;btn.style.opacity='';btn.textContent='💾 Registrar';}
+  } finally{
+    window._pagoEnProceso=false;
   }
 }
 async function confirmarRegistroPago(targetUserId){
@@ -16726,7 +16740,7 @@ function exportarClientesZonasCSV(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'clientes-por-zona-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.download = 'clientes-por-zona-' + today() + '.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
   pushNotif('CSV descargado','ok');
@@ -17006,7 +17020,7 @@ function exportarTodosSaldosCSV(){
   const usuarios=(_usersCache||[]).filter(u=>rolesPagables.includes(u.rol)&&u.activo!==false);
   const orders=_ordersCache||[];
   const pagosAll=window._pagosCache||[];
-  const mes=(typeof mesActual==='function')?mesActual():new Date().toISOString().slice(0,7);
+  const mes=(typeof mesActual==='function')?mesActual():mesActual();
   const esc=_csvEscape;
   let csv='﻿';
   csv+='BALANCE GENERAL - '+mes+'\n';
@@ -17032,7 +17046,7 @@ function imprimirBalanceGeneral(){
   const usuarios=(_usersCache||[]).filter(u=>rolesPagables.includes(u.rol)&&u.activo!==false);
   const orders=_ordersCache||[];
   const pagosAll=window._pagosCache||[];
-  const mes=(typeof mesActual==='function')?mesActual():new Date().toISOString().slice(0,7);
+  const mes=(typeof mesActual==='function')?mesActual():mesActual();
   const fmtMoney=(n)=>'Gs. '+(Number(n)||0).toLocaleString('es-PY');
   let tg=0,tp=0,ts=0;
   const filas=usuarios.map(u=>{
