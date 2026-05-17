@@ -18502,7 +18502,7 @@ document.addEventListener('DOMContentLoaded',function(){
   if('serviceWorker' in navigator && 'PushManager' in window){
     navigator.serviceWorker.register('/sw.js').then(async reg=>{
       console.log('SW registrado:', reg.scope);
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('iporave_token');
       if(!token) return;
       const permission = await Notification.requestPermission();
       if(permission !== 'granted') return;
