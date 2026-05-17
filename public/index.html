@@ -8474,6 +8474,7 @@ PAGES.liquidacion=function(){
   if(CU.rol==='vendedor'){_liqVend();_miLiqHook();return;}
   if(CU.rol==='dropshipper'){_liqDrop();_miLiqHook();return;}
   if(CU.rol==='proveedor'){_liqProv();_miLiqHook();return;}
+  if(CU.rol==='delivery'){_liqDlv();_miLiqHook();return;}
   $('tbActions').innerHTML='<button class="btn btn-primary" onclick="printLiq()">'+SVG.arrowDown+' PDF / Imprimir</button>';
   const orders=_ordersCache;
   const ent=orders.filter(o=>o.estado==='Entregado');
@@ -8726,6 +8727,40 @@ function _waLiq(txt){
   window.open(url,'_blank');
 }
 
+function _liqDlv(){
+  const ent=getVisibleOrders().filter(o=>o.estado==='Entregado');
+  const tTar=ent.reduce((a,o)=>a+(_getZonaO(o).precio||0),0);
+  const tExt=ent.reduce((a,o)=>a+(_getZonaO(o).extraDelivery||0),0);
+  const tTotal=tTar+tExt;
+  const fecha=new Date().toLocaleDateString('es-PY',{year:'numeric',month:'long',day:'numeric'});
+  $('tbActions').innerHTML=
+    '<button class="btn btn-secondary" onclick="_waLiq(\'Liquidación delivery '+CU.nombre+' — '+fecha+' — Entregas: '+ent.length+' — A cobrar: Gs. '+fmtN(tTotal)+'\')" style="background:#25d366;border-color:#25d366;color:#fff">📲 WhatsApp</button>'+
+    '<button class="btn btn-primary" onclick="printLiq()">'+SVG.arrowDown+' PDF / Imprimir</button>';
+  $('ca').innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">'+
+    '<div><h2 style="font-family:\'Bebas Neue\',sans-serif;font-size:26px;letter-spacing:2px">MI LIQUIDACIÓN</h2>'+
+    '<p style="color:var(--text2);font-size:12px">'+escHtml(CU.nombre)+' · Delivery · '+fecha+'</p></div>'+
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;color:var(--accent)">IPORÃVE</div></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:18px">'+
+    '<div class="sc bl"><div class="slabel">Entregas realizadas</div><div class="sval">'+ent.length+'</div></div>'+
+    '<div class="sc gr"><div class="slabel">Tarifa logística</div><div class="sval" style="font-size:14px">'+fmt(tTar)+'</div></div>'+
+    (tExt>0?'<div class="sc cy"><div class="slabel">Extras</div><div class="sval" style="font-size:14px">'+fmt(tExt)+'</div></div>':'')+
+    '<div class="sc" style="border:2px solid var(--accent)"><div class="slabel" style="color:var(--accent)">💰 A COBRAR</div><div class="sval" style="font-size:14px;color:var(--accent)">'+fmt(tTotal)+'</div></div>'+
+    '</div>'+
+    '<div class="stitle">Detalle de entregas</div>'+
+    (ent.length?'<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+    '<th>#</th><th>Fecha</th><th>Cliente</th><th>Producto</th>'+
+    '<th class="col-hide">Zona</th><th>Tarifa</th></tr></thead><tbody>'+
+    ent.map(o=>{const tar=_getZonaO(o).precio||0;return '<tr>'+
+      '<td style="color:var(--accent);font-size:11px">#'+o.id+'</td>'+
+      '<td>'+fmtDate(o.fecha)+'</td>'+
+      '<td>'+escHtml(o.cliente||'')+'</td>'+
+      '<td>'+escHtml(o.producto||'')+'</td>'+
+      '<td class="col-hide">'+escHtml(o.zona||'—')+'</td>'+
+      '<td style="color:var(--green)">'+fmt(tar)+'</td>'+
+    '</tr>';}).join('')+'</tbody></table></div>':
+    '<div style="text-align:center;padding:32px;color:var(--text3)">Sin entregas realizadas todavía</div>');
+}
 function _liqVend(){
   const ent=getVisibleOrders().filter(o=>o.estado==='Entregado');
   const tVentas=ent.reduce((a,o)=>a+(o.precio||0)*(o.qty||1),0);
@@ -8840,7 +8875,7 @@ PAGES.recaudacion=function(){
   if(!isAdminLike(CU.rol)&&CU.rol!=='delivery'){$('ca').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)">Sin acceso.</div>';return;}
   const orders=_ordersCache;
   let dlvs=_usersCache.filter(u=>u.rol==='delivery');
-  if(CU.rol==='delivery')dlvs=dlvs.filter(d=>d.id===CU.id);
+  if(CU.rol==='delivery')dlvs=dlvs.filter(d=>String(d.id)===String(CU.id));
   if(!dlvs.length){$('ca').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)">No tenés personal de delivery asignado todavía.</div>';return;}
   let html='';
   dlvs.forEach(d=>{
