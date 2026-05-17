@@ -6832,8 +6832,13 @@ PAGES.orders=PAGES.mispedidos=function(){
     '<select id="fZona" onchange="filtrarReset()"><option value="">Todas las zonas</option>'+_zonasCache.map(z=>'<option value="'+z.id+'">'+escHtml(z.nombre||'')+'</option>').join('')+'</select>'+
     '<select id="fProv" onchange="filtrarReset()"><option value="">Todos los proveedores</option>'+[...new Set(getVisibleOrders().map(o=>o.proveedor).filter(Boolean))].map(p=>'<option value="'+escAttr(p)+'">'+escHtml(p)+'</option>').join('')+'</select>'+
     '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Fecha exacta <input type="date" id="fFecha" onchange="filtrarReset()" title="Filtra pedidos de un día específico"></label>'+
-    '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Desde <input type="date" id="fDesde" onchange="filtrarReset()" title="Fecha inicio del rango"></label>'+
-    '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Hasta <input type="date" id="fHasta" onchange="filtrarReset()" title="Fecha fin del rango"></label>'+
+    '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Desde <input type="date" id="fDesde" oninput="_syncFechaGlobal()" onchange="filtrarReset()" title="Fecha inicio del rango"></label>'+
+    '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Hasta <input type="date" id="fHasta" oninput="_syncFechaGlobal()" onchange="filtrarReset()" title="Fecha fin del rango"></label>'+
+    '<span id="fFechaRapida" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">'+
+      '<button class="btn btn-secondary" style="font-size:11px;padding:3px 8px;" onclick="_setFechaRapida(\'hoy\')">Hoy</button>'+
+      '<button class="btn btn-secondary" style="font-size:11px;padding:3px 8px;" onclick="_setFechaRapida(\'semana\')">Esta semana</button>'+
+      '<button class="btn btn-secondary" style="font-size:11px;padding:3px 8px;" onclick="_setFechaRapida(\'mes\')">Este mes</button>'+
+    '</span>'+
     '<button class="btn btn-secondary" onclick="clearF()">Limpiar</button>'+
     '</div>'+
     '<div id="oContainer"></div>';
@@ -6841,6 +6846,9 @@ PAGES.orders=PAGES.mispedidos=function(){
   var fbar=$('ca').querySelector('.fbar');
   if(wrap&&fbar&&wrap.parentNode!==fbar){fbar.insertBefore(wrap,fbar.firstChild);}
   else if(!wrap){_bgEnsureUI&&_bgEnsureUI();}
+  // Restaurar fechas persistidas en variables globales
+  if(window._oFechaDesde){var ed=$('fDesde');if(ed)ed.value=window._oFechaDesde;}
+  if(window._oFechaHasta){var eh=$('fHasta');if(eh)eh.value=window._oFechaHasta;}
   filtrar();
   // FIX flash: una sola vez por sesión (evita re-encolado en re-renders).
   try{ if(!window._onboardFiredOrders){ window._onboardFiredOrders = true; setTimeout(function(){
@@ -6853,7 +6861,22 @@ PAGES.orders=PAGES.mispedidos=function(){
     Onboard.enqueue('page_orders_fila','#oContainer .tbl tbody tr:first-child, #oContainer .pedidos-row:first-child, #oContainer tr:first-child','Cada fila representa un pedido. Seleccione para acceder al detalle completo.');
   },1000); } }catch(_){}
 };
-function clearF(){['fEst','fZona','fProv','fFecha','fDesde','fHasta'].forEach(id=>{const e=$(id);if(e)e.value='';});const bg=document.getElementById('busquedaGlobal');if(bg)bg.value='';_pedidosShown=_pedidosPageSize;filtrar();}
+function _syncFechaGlobal(){window._oFechaDesde=(gv('fDesde')||'');window._oFechaHasta=(gv('fHasta')||'');}
+function _setFechaRapida(tipo){
+  var hoy=new Date();
+  var pad=function(n){return String(n).padStart(2,'0');};
+  var fmt=function(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
+  var desde='',hasta=fmt(hoy);
+  if(tipo==='hoy'){desde=fmt(hoy);}
+  else if(tipo==='semana'){var lunes=new Date(hoy);lunes.setDate(hoy.getDate()-(hoy.getDay()||7)+1);desde=fmt(lunes);}
+  else if(tipo==='mes'){desde=hoy.getFullYear()+'-'+pad(hoy.getMonth()+1)+'-01';}
+  var ed=$('fDesde'),eh=$('fHasta');
+  if(ed)ed.value=desde;
+  if(eh)eh.value=hasta;
+  window._oFechaDesde=desde;window._oFechaHasta=hasta;
+  filtrarReset();
+}
+function clearF(){['fEst','fZona','fProv','fFecha','fDesde','fHasta'].forEach(id=>{const e=$(id);if(e)e.value='';});window._oFechaDesde='';window._oFechaHasta='';const bg=document.getElementById('busquedaGlobal');if(bg)bg.value='';_pedidosShown=_pedidosPageSize;filtrar();}
 function _ordersFilteredFromUI(){
   let orders=getVisibleOrders();
   const s=(gv('fSrch')||'').toLowerCase();
@@ -9195,10 +9218,34 @@ async function _doEjecutarCierre(){
   const tar=ent.reduce((a,b)=>a+(_getZonaO(b).precio||0),0);
   const byM={};METODOS.forEach(m=>{byM[m]=0;});
   ent.forEach(o=>{if(o.metodoCobro&&METODOS.includes(o.metodoCobro))byM[o.metodoCobro]=(byM[o.metodoCobro]||0)+((o.precio||0)*(o.qty||1));});
+  // Por vendedor
+  const byVend={};
+  hoyO.forEach(o=>{
+    const vid=String(o.vendedorId||o.created_by||'');if(!vid)return;
+    if(!byVend[vid])byVend[vid]={nombre:(getUser(vid)||{nombre:'—'}).nombre,creados:0,entregados:0,monto:0,comision:0};
+    byVend[vid].creados++;
+    if(o.estado==='Entregado'){byVend[vid].entregados++;byVend[vid].monto+=(o.precio||0)*(o.qty||1);byVend[vid].comision+=(o.comision||0);}
+  });
+  // Por delivery
+  const byDlv={};
+  hoyO.forEach(o=>{
+    const did=String(o.deliveryId||'');if(!did)return;
+    if(!byDlv[did])byDlv[did]={nombre:(getUser(did)||{nombre:'—'}).nombre,entregados:0,fallidos:0,sueldo:0};
+    if(o.estado==='Entregado'){byDlv[did].entregados++;byDlv[did].sueldo+=(_getZonaO(o).precio||0);}
+    if(['Intento fallido','No contesta 1°','No contesta 2°','No contesta 3°'].includes(o.estado))byDlv[did].fallidos++;
+  });
+  // Por proveedor
+  const byProv={};
+  ent.forEach(o=>{
+    const pid=String(o.proveedorId||'');const pnom=o.proveedor||'Sin proveedor';const key=pid||pnom;
+    if(!byProv[key])byProv[key]={nombre:pid?(getUser(pid)||{nombre:pnom}).nombre:pnom,entregados:0,monto:0};
+    byProv[key].entregados++;byProv[key].monto+=(o.costo||0)*(o.qty||1);
+  });
   const j={fecha:today(),timestamp:nowStr(),total:hoyO.length,entregados:ent.length,
     cancelados:hoyO.filter(o=>o.estado==='Cancelado').length,
     pendientes:hoyO.filter(o=>o.estado==='Pendiente').length,
-    ingresos:ing,costos:cos,tarifas:tar,ganancia:ing-cos-tar,metodos:byM};
+    ingresos:ing,costos:cos,tarifas:tar,ganancia:ing-cos-tar,metodos:byM,
+    byVendedor:byVend,byDelivery:byDlv,byProveedor:byProv};
   await DL.saveJornada(j);
   verCierre(j.fecha);
   pushNotif('Cierre de jornada ejecutado','s');
@@ -9220,6 +9267,30 @@ function verCierre(fecha){
     '<div class="lcard2"><div class="stitle" style="margin-top:0">Por método de cobro</div>'+
     METODOS.map(m=>'<div class="lrow"><span class="llbl">'+MICON[m]+' '+m+'</span><span style="color:var(--green)">'+fmt((j.metodos&&j.metodos[m])||0)+'</span></div>').join('')+
     '</div>'+
+    // Sección 2 — Por vendedor
+    (j.byVendedor&&Object.keys(j.byVendedor).length?
+      '<div class="lcard2"><div class="stitle" style="margin-top:0">Por vendedor</div>'+
+      '<div style="overflow-x:auto"><table class="tbl" style="width:100%;font-size:12px">'+
+      '<thead><tr><th class="th">Vendedor</th><th class="th" style="text-align:right">Creados</th><th class="th" style="text-align:right">Entregados</th><th class="th" style="text-align:right">Monto</th><th class="th" style="text-align:right">Comisión</th></tr></thead>'+
+      '<tbody>'+Object.values(j.byVendedor).map(v=>
+        '<tr><td class="td">'+v.nombre+'</td><td class="td" style="text-align:right">'+v.creados+'</td><td class="td" style="text-align:right">'+v.entregados+'</td><td class="td" style="text-align:right;color:var(--green)">'+fmt(v.monto)+'</td><td class="td" style="text-align:right;color:var(--accent)">'+fmt(v.comision)+'</td></tr>'
+      ).join('')+'</tbody></table></div></div>':'')+
+    // Sección 3 — Por delivery
+    (j.byDelivery&&Object.keys(j.byDelivery).length?
+      '<div class="lcard2"><div class="stitle" style="margin-top:0">Por delivery</div>'+
+      '<div style="overflow-x:auto"><table class="tbl" style="width:100%;font-size:12px">'+
+      '<thead><tr><th class="th">Delivery</th><th class="th" style="text-align:right">Entregados</th><th class="th" style="text-align:right">Intentos fallidos</th><th class="th" style="text-align:right">Sueldo del día</th></tr></thead>'+
+      '<tbody>'+Object.values(j.byDelivery).map(d=>
+        '<tr><td class="td">'+d.nombre+'</td><td class="td" style="text-align:right">'+d.entregados+'</td><td class="td" style="text-align:right;color:var(--red)">'+d.fallidos+'</td><td class="td" style="text-align:right;color:var(--green)">'+fmt(d.sueldo)+'</td></tr>'
+      ).join('')+'</tbody></table></div></div>':'')+
+    // Sección 4 — Por proveedor
+    (j.byProveedor&&Object.keys(j.byProveedor).length?
+      '<div class="lcard2"><div class="stitle" style="margin-top:0">Por proveedor</div>'+
+      '<div style="overflow-x:auto"><table class="tbl" style="width:100%;font-size:12px">'+
+      '<thead><tr><th class="th">Proveedor</th><th class="th" style="text-align:right">Pedidos entregados</th><th class="th" style="text-align:right">Monto a pagar</th></tr></thead>'+
+      '<tbody>'+Object.values(j.byProveedor).map(p=>
+        '<tr><td class="td">'+p.nombre+'</td><td class="td" style="text-align:right">'+p.entregados+'</td><td class="td" style="text-align:right;color:var(--red)">'+fmt(p.monto)+'</td></tr>'
+      ).join('')+'</tbody></table></div></div>':'')+
     '<div style="text-align:center;color:var(--text3);font-size:12px;margin-top:8px">Generado: '+j.timestamp+'</div>',
     '<button class="btn btn-secondary" onclick="closeC()">Cerrar</button>'+
     '<button class="btn btn-primary" onclick="window.print()">Imprimir</button>'
