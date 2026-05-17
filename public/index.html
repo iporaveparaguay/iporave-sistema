@@ -7873,22 +7873,40 @@ function sugerirClienteAnterior(){
   const q=(gv('nCli')||'').trim().toLowerCase();
   const sug=$('nCliSug');if(!sug)return;
   if(q.length<2){sug.style.display='none';return;}
-  const vistos={};
-  const matches=_ordersCache.filter(o=>{
-    if(!o.cliente)return false;
+  // Contar frecuencia por cliente y guardar referencia al pedido más reciente
+  const mapaClientes={};
+  _ordersCache.forEach(function(o){
+    if(!o.cliente)return;
     const k=o.cliente.toLowerCase();
-    if(!k.includes(q)||vistos[k])return false;
-    vistos[k]=true;return true;
-  }).slice(0,5);
+    if(!k.includes(q))return;
+    if(!mapaClientes[k]){
+      mapaClientes[k]={nombre:o.cliente,pedidoRef:o,count:0};
+    }
+    mapaClientes[k].count++;
+  });
+  // Ordenar por frecuencia descendente y tomar top 5
+  const matches=Object.values(mapaClientes)
+    .sort(function(a,b){return b.count-a.count;})
+    .slice(0,5);
   if(!matches.length){sug.style.display='none';return;}
   sug.style.display='';
-  sug.innerHTML=matches.map(o=>
-    '<div onclick="autoFillCliente('+o.id+')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px" '+
+  sug.innerHTML=matches.map(function(m){
+    const o=m.pedidoRef;
+    return '<div onclick="autoFillCliente('+o.id+')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px" '+
     'onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'\'">'+
-    '<div style="font-weight:700">'+escHtml(o.cliente||'')+'</div>'+
+    '<div style="font-weight:700">'+escHtml(m.nombre||'')+'<span style="color:var(--text3);font-weight:400;font-size:11px"> ('+m.count+' pedidos)</span></div>'+
     '<div style="color:var(--text3)">📍 '+escHtml(o.direccion||'Sin dirección')+(o.gpsLat?' · 📡 GPS':'')+'</div>'+
-    '</div>'
-  ).join('');
+    '</div>';
+  }).join('');
+  // Listener de cierre al hacer click fuera — registrar solo una vez
+  if(!sug._clickOutsideRegistered){
+    sug._clickOutsideRegistered=true;
+    document.addEventListener('click',function(e){
+      if(!e.target.closest('#nCliSug')&&e.target.id!=='nCli'){
+        var d=$('nCliSug');if(d)d.style.display='none';
+      }
+    });
+  }
 }
 
 function autoFillCliente(pedidoId){
@@ -9730,6 +9748,61 @@ PAGES.analitica_vend=function(periodo){
           '</div>'
         ).join('')+
         '</div>'
+      )+
+    '</div>';
+  // ── Sección "Clientes recurrentes" ──
+  const _allVend=_ordersCache.filter(o=>String(o.vendedorId)===String(CU.id));
+  const _clienteMap={};
+  _allVend.forEach(function(o){
+    const k=(o.cliente||'').toLowerCase().trim();
+    if(!k)return;
+    if(!_clienteMap[k])_clienteMap[k]={count:0,ultima:''};
+    _clienteMap[k].count++;
+    if(!_clienteMap[k].ultima||o.fecha>_clienteMap[k].ultima)_clienteMap[k].ultima=o.fecha;
+  });
+  const _recurrentes=Object.entries(_clienteMap)
+    .filter(function(e){return e[1].count>1;})
+    .sort(function(a,b){return b[1].count-a[1].count;})
+    .slice(0,10);
+  html+=
+    '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:16px">'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">'+
+        '<div style="background:var(--purple,#8b5cf6);color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👥</div>'+
+        '<div>'+
+          '<div style="font-size:16px;font-weight:900;color:var(--text)">Clientes recurrentes</div>'+
+          '<div style="font-size:12px;color:var(--text2)">Clientes con más de 1 pedido (todos los períodos)</div>'+
+        '</div>'+
+        '<div style="margin-left:auto;background:var(--purple,#8b5cf6);color:#fff;border-radius:999px;min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;padding:0 10px">'+_recurrentes.length+'</div>'+
+      '</div>'+
+      (_recurrentes.length===0
+        ? '<div style="text-align:center;padding:24px 16px;color:var(--text3);font-size:13px">Aún no tenés clientes recurrentes. ¡Seguí vendiendo!</div>'
+        : '<div style="overflow-x:auto">'+
+            '<table style="width:100%;border-collapse:collapse;font-size:13px">'+
+              '<thead>'+
+                '<tr style="border-bottom:2px solid var(--border)">'+
+                  '<th style="text-align:left;padding:6px 10px;font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap">#</th>'+
+                  '<th style="text-align:left;padding:6px 10px;font-size:11px;font-weight:700;color:var(--text2)">Cliente</th>'+
+                  '<th style="text-align:center;padding:6px 10px;font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap">Pedidos</th>'+
+                  '<th style="text-align:right;padding:6px 10px;font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap">Última compra</th>'+
+                '</tr>'+
+              '</thead>'+
+              '<tbody>'+
+              _recurrentes.map(function(e,i){
+                const nombre=e[0].charAt(0).toUpperCase()+e[0].slice(1);
+                const datos=e[1];
+                const rowBg=i%2===0?'':'background:var(--bg2)';
+                return '<tr style="border-bottom:1px solid var(--border);'+rowBg+'">'+
+                  '<td style="padding:8px 10px;font-size:12px;color:var(--text3);font-weight:700">'+(i+1)+'</td>'+
+                  '<td style="padding:8px 10px;font-weight:700;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(nombre)+'</td>'+
+                  '<td style="padding:8px 10px;text-align:center">'+
+                    '<span style="background:var(--purple,#8b5cf6);color:#fff;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:800">'+datos.count+'</span>'+
+                  '</td>'+
+                  '<td style="padding:8px 10px;text-align:right;font-size:12px;color:var(--text2);white-space:nowrap">'+fmtDate(datos.ultima||'')+'</td>'+
+                '</tr>';
+              }).join('')+
+              '</tbody>'+
+            '</table>'+
+          '</div>'
       )+
     '</div>';
   $('ca').innerHTML=html;
