@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- M18 fix: interactive-widget=resizes-visual evita que el teclado virtual empuje el layout en mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
 <title>Iporãve Connect — Plataforma Integral de Comercio y Logística</title>
 <!-- Content-Security-Policy -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://api.mapbox.com https://unpkg.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https://iporave-api.iporaveparaguay.workers.dev https://api.mapbox.com https://*.supabase.co wss://*.supabase.co https://connect.facebook.net https://www.facebook.com; worker-src 'self' blob:; frame-ancestors 'none';">
@@ -13427,11 +13428,16 @@ async function importCSV(){
   reader.readAsText(f.files[0]);
 }
 async function exportCSV(){
+  // M29 fix: BOM para Excel + escape RFC 4180 (comillas internas → dobles)
+  const _q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
   const orders=getVisibleOrders();
   const header='id,fecha,cliente,cedula,telefono,direccion,zona,proveedor,producto,qty,precio,costo,estado,metodoCobro';
-  const rows=orders.map(o=>[o.id,o.fecha,'"'+o.cliente+'"',o.cedula||'',o.telefono||'','"'+(o.direccion||'')+'"',
-    _getZonaO(o).nombre,'"'+(o.proveedor||'')+'"','"'+o.producto+'"',o.qty,o.precio,o.costo,o.estado,o.metodoCobro||''].join(','));
-  const csv=[header,...rows].join('\n');
+  const rows=orders.map(o=>[
+    o.id,o.fecha,_q(o.cliente),o.cedula||'',o.telefono||'',_q(o.direccion||''),
+    _q(_getZonaO(o).nombre),_q(o.proveedor||''),_q(o.producto),
+    o.qty,o.precio,o.costo,o.estado,o.metodoCobro||''
+  ].join(','));
+  const csv='﻿'+[header,...rows].join('\n'); // BOM U+FEFF — Excel abre UTF-8 correctamente
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
