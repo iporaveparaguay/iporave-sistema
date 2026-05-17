@@ -7256,7 +7256,7 @@ PAGES.orders=PAGES.mispedidos=function(){
   const lupaIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>';
   $('tbActions').innerHTML=
     (canCreate?'<button id="btnNuevoPedido" class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
-    '<button class="btn btn-secondary" onclick="_abrirPanelPedidos()" title="Buscar y filtrar pedidos" style="display:inline-flex;align-items:center;gap:5px">'+lupaIcon+' Filtros</button>';
+    '<button class="topbar-icon-btn" onclick="_abrirPanelPedidos()" title="Buscar y filtrar pedidos" aria-label="Filtros">'+lupaIcon+'</button>';
   $('ca').innerHTML=
     '<div class="fbar">'+
     '<select id="fEst" onchange="filtrarReset()"><option value="">Todos los estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
@@ -16451,14 +16451,31 @@ PAGES.mapa=function(){
   window._mapaAutoUpdateEnabled=_autoOn;
   const autoToggle='<label class="map-btn" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer;user-select:none" title="Auto-actualizar el mapa cada 5 minutos (sin mover la cámara)"><input type="checkbox" id="mapaAutoUpdate" '+(_autoOn?'checked':'')+' onchange="_mapaToggleAutoUpdate(this)" style="margin:0"><span style="font-size:12px">Auto</span></label>';
   const _panelMenuIcon='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+  _sfpDestroy();
   if(esDelivery){
-    // Delivery: solo Ruta óptima visible + botón que abre panel con Turno y Zonas
-    $('tbActions').innerHTML=rutaBtn+'<button class="map-btn" onclick="_abrirPanelMapaDelivery()" title="Opciones">'+_panelMenuIcon+'</button>';
+    // Delivery: topbar vacío — solo los 4 iconos globales (🔔🌙🎓🔄)
+    $('tbActions').innerHTML='';
   } else if(esAdmin){
-    // Admin: todo visible directamente, sin ⋯
-    $('tbActions').innerHTML=zonaSel+vendSel+'<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>'+dlvBtn+autoToggle;
+    // Admin: zona + vendor + 4 pills (filtros). Resto en sfp.
+    $('tbActions').innerHTML=zonaSel+vendSel+'<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
+    _sfpInit({id:'mapa',titulo:'Opciones del mapa',buscarBtn:false,secciones:[
+      {tipo:'pills',label:'Deliveries',nombre:'dlvs',exclusivo:true,
+       items:[
+         {label:'Todos los pines',valor:'0',activo:!window._mapaShowDlvs},
+         {label:'Solo deliveries',valor:'1',activo:!!window._mapaShowDlvs}
+       ]},
+      {tipo:'divider'},
+      {tipo:'pills',label:'Auto-actualizar',nombre:'auto',exclusivo:true,
+       items:[
+         {label:'Activo',valor:'1',activo:window._mapaAutoUpdateEnabled!==false},
+         {label:'Pausado',valor:'0',activo:window._mapaAutoUpdateEnabled===false}
+       ]}
+    ],onCambio:function(s,sec,v){
+      if(sec==='dlvs'){window._mapaShowDlvs=(v==='1');_mapaCargar();}
+      if(sec==='auto'){window._mapaAutoUpdateEnabled=(v==='1');localStorage.setItem('mapa_auto',v);}
+    }});
   } else {
-    // Vendor/Drop/Prov: filtros directamente visibles
+    // Vendor/Drop/Prov: 3 pills directamente (Pendiente/En Ruta/Entregado)
     $('tbActions').innerHTML='<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
   }
   // FIX #6: sincronizar checkbox de auto-update con la preferencia actual
