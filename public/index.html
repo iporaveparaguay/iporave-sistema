@@ -13630,6 +13630,60 @@ function resetAll(){
 /* ─── MENSAJES PAGE ─── */
 let _msgConvPartner=null; // usuario con quien está abierta la conversación
 
+// Detecta si un mensaje es del sistema (notificación automática)
+function _esMsgSistema(m){
+  const txt=m.mensaje||'';
+  return /^(🛵|✅|🔔|⚠️|📦|🚴|EN RUTA:|ENTREGADO:|ASIGNADO:|CANCELADO:)/.test(txt);
+}
+
+// Renderiza la lista de conversaciones filtrada por tab
+function _renderMsgConvList(convs,filtro,fmtAgo){
+  let lista=convs;
+  if(filtro==='noleidos')lista=convs.filter(c=>c.unread>0);
+  else if(filtro==='sistema')lista=convs.filter(c=>_esMsgSistema(c.last));
+  else if(filtro==='personal')lista=convs.filter(c=>!_esMsgSistema(c.last));
+  const contenedor=$('mcConvListItems');
+  if(!contenedor)return;
+  if(!lista.length){
+    contenedor.innerHTML='<div class="mc-empty" style="padding:30px 20px;text-align:center">No hay conversaciones en esta categoría.</div>';
+    return;
+  }
+  contenedor.innerHTML=lista.map(c=>
+    '<div class="mc-conv-item" onclick="openConvThread('+c.pid+')" >'+
+    '<div class="mc-avatar" style="flex-shrink:0">'+escHtml((c.pnom||'?')[0].toUpperCase())+'</div>'+
+    '<div class="mc-info" style="min-width:0;flex:1;overflow:hidden">'+
+      '<div class="mc-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(c.pnom||'')+'</div>'+
+      '<div class="mc-preview">'+(c.last.de_id==CU.id?'Vos: ':'')+escHtml((c.last.mensaje||'').substring(0,80))+'</div>'+
+    '</div>'+
+    '<div class="mc-meta" style="flex-shrink:0">'+
+      '<div class="mc-time">'+fmtAgo(c.last.created_at)+'</div>'+
+      (c.unread?'<div class="mc-badge">'+c.unread+'</div>':'')+
+    '</div></div>'
+  ).join('');
+}
+
+// Cambia el tab activo de filtros
+function _switchMsgTab(filtro){
+  ['todos','noleidos','sistema','personal'].forEach(function(t){
+    const el=$('msgTab_'+t);
+    if(el)el.style.cssText=t===filtro
+      ?'font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);padding:6px 10px;cursor:pointer;white-space:nowrap;font-size:12px'
+      :'font-weight:400;color:var(--text3);border-bottom:2px solid transparent;padding:6px 10px;cursor:pointer;white-space:nowrap;font-size:12px';
+  });
+  if(window._msgConvs&&window._msgFmtAgo)_renderMsgConvList(window._msgConvs,filtro,window._msgFmtAgo);
+}
+
+// Marcar todos los mensajes como leídos desde el panel
+async function _marcarTodosLeidosMensajes(){
+  if(!_supaConnected)return;
+  await DL.markMensajesLeidos(CU.id);
+  _unreadMsgs=0;updateAIBadge();
+  // Refrescar contadores en convs en memoria
+  if(window._msgConvs)window._msgConvs.forEach(function(c){c.unread=0;});
+  _switchMsgTab('todos');
+  pushNotif('Todos los mensajes marcados como leídos.','s');
+}
+
 PAGES.mensajes=async function(){
   $('tbActions').innerHTML='';
   $('ca').classList.add('mc-page');
@@ -13661,31 +13715,45 @@ PAGES.mensajes=async function(){
   }
   // Agrupar por conversación (partner ID)
   const convMap={};
-  msgs.forEach(m=>{
+  msgs.forEach(function(m){
     const pid=m.de_id==CU.id?m.para_id:m.de_id;
     const pnom=m.de_id==CU.id?m.para_nombre:m.de_nombre;
     if(!convMap[pid]){convMap[pid]={pid,pnom,last:m,unread:0};}
     if(!m.leido&&m.para_id==CU.id)convMap[pid].unread++;
     if(new Date(m.created_at)>new Date(convMap[pid].last.created_at))convMap[pid].last=m;
   });
-  const convs=Object.values(convMap).sort((a,b)=>new Date(b.last.created_at)-new Date(a.last.created_at));
-  const fmtAgo=d=>{const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'ahora';if(s<3600)return Math.floor(s/60)+'min';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';};
+  const convs=Object.values(convMap).sort(function(a,b){return new Date(b.last.created_at)-new Date(a.last.created_at);});
+  const fmtAgo=function(d){const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'ahora';if(s<3600)return Math.floor(s/60)+'min';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';};
+  // Guardar en window para uso por tabs
+  window._msgConvs=convs;
+  window._msgFmtAgo=fmtAgo;
+  // Calcular total no leídos para mostrar en botón
+  const totalNoLeidos=convs.reduce(function(acc,c){return acc+c.unread;},0);
+  const markAllBtn=totalNoLeidos>0
+    ?'<button class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 10px" onclick="_marcarTodosLeidosMensajes()">✓ Marcar todos como leídos</button>'
+    :'';
+  // Tabs de filtro
+  const tabsHtml=
+    '<div style="display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 14px;overflow-x:auto">'+
+      '<span id="msgTab_todos" style="font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);padding:6px 10px;cursor:pointer;white-space:nowrap;font-size:12px" onclick="_switchMsgTab(\'todos\')">Todos</span>'+
+      '<span id="msgTab_noleidos" style="font-weight:400;color:var(--text3);border-bottom:2px solid transparent;padding:6px 10px;cursor:pointer;white-space:nowrap;font-size:12px" onclick="_switchMsgTab(\'noleidos\')">No leídos'+(totalNoLeidos?'<span class="mc-badge" style="margin-left:4px;vertical-align:middle">'+totalNoLeidos+'</span>':'')+'</span>'+
+      '<span id="msgTab_sistema" style="font-weight:400;color:var(--text3);border-bottom:2px solid transparent;padding:6px 10px;cursor:pointer;white-space:nowrap;font-size:12px" onclick="_switchMsgTab(\'sistema\')">Del sistema</span>'+
+      '<span id="msgTab_personal" style="font-weight:400;color:var(--text3);border-bottom:2px solid transparent;padding:6px 10px;cursor:pointer;white-space:nowrap;font-size:12px" onclick="_switchMsgTab(\'personal\')">Personales</span>'+
+    '</div>';
+  const headerRow=markAllBtn
+    ?'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px 4px">'+
+        '<span style="font-size:12px;color:var(--text3)">Conversaciones</span>'+
+        markAllBtn+
+      '</div>'
+    :'';
   $('ca').innerHTML='<div class="mc-wrap"><div class="mc-conv-list">'+
     nuevoMsgBtn+
     contactosBtn+
-    convs.map(c=>
-      '<div class="mc-conv-item" onclick="openConvThread('+c.pid+')" >'+
-      '<div class="mc-avatar" style="flex-shrink:0">'+escHtml((c.pnom||'?')[0].toUpperCase())+'</div>'+
-      '<div class="mc-info" style="min-width:0;flex:1;overflow:hidden">'+
-        '<div class="mc-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(c.pnom||'')+'</div>'+
-        '<div class="mc-preview">'+(c.last.de_id==CU.id?'Vos: ':'')+escHtml(c.last.mensaje||'')+'</div>'+
-      '</div>'+
-      '<div class="mc-meta" style="flex-shrink:0">'+
-        '<div class="mc-time">'+fmtAgo(c.last.created_at)+'</div>'+
-        (c.unread?'<div class="mc-badge">'+c.unread+'</div>':'')+
-      '</div></div>'
-    ).join('')+
+    headerRow+
+    tabsHtml+
+    '<div id="mcConvListItems"></div>'+
   '</div></div>';
+  _renderMsgConvList(convs,'todos',fmtAgo);
   if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredMensajes){
     window._onboardFiredMensajes = true;
     setTimeout(function(){
@@ -18801,9 +18869,9 @@ function toggleTheme(){
         return;
       }
       var html='';
-      function grupo(titulo, arr, off){
+      function grupo(emoji, titulo, arr, off){
         if(!arr.length) return '';
-        var s = '<div class="_gs-group-title">'+titulo+'</div>';
+        var s = '<div class="_gs-group-title">'+emoji+' '+titulo+' <span style="font-weight:400;opacity:.7">('+arr.length+')</span></div>';
         for(var i=0;i<arr.length;i++){
           var globalIdx = off+i;
           s += '<div class="_gs-item" data-idx="'+globalIdx+'"><span>'+_esc(arr[i].label)+'</span><small>'+_esc(arr[i].sub||'')+'</small></div>';
@@ -18811,9 +18879,9 @@ function toggleTheme(){
         return s;
       }
       var off = 0;
-      html += grupo('Pedidos', r.pedidos, off); off += r.pedidos.length;
-      html += grupo('Usuarios', r.usuarios, off); off += r.usuarios.length;
-      html += grupo('Productos', r.productos, off);
+      html += grupo('\u{1F4E6}', 'Pedidos', r.pedidos, off); off += r.pedidos.length;
+      html += grupo('\u{1F465}', 'Usuarios', r.usuarios, off); off += r.usuarios.length;
+      html += grupo('\u{1F3F7}', 'Productos', r.productos, off);
       resBox.innerHTML = html;
       _marcarSel();
       Array.prototype.forEach.call(resBox.querySelectorAll('._gs-item'), function(el){
@@ -18854,6 +18922,13 @@ function toggleTheme(){
 
   document.addEventListener('keydown', function(e){
     if(_esEditable(e.target)) return;
+    // Ctrl+K / Cmd+K — abrir busqueda global desde cualquier lugar
+    if((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'k' || e.key === 'K')){
+      if(_hayModalAbierto()) return;
+      e.preventDefault();
+      _abrirBusquedaGlobal();
+      return;
+    }
     if(e.ctrlKey || e.metaKey || e.altKey) return;
     if(e.key === '/'){
       if(_hayModalAbierto()) return;
