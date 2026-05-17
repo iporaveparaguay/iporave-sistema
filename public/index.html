@@ -2253,7 +2253,7 @@ document.addEventListener('click',function(e){
   if(!e.target.closest('.order-menu-wrap'))_closeCatMenus();
 });
 // Cerrar dropdowns al scrollear — evita que queden flotando con position:fixed
-if(!window._scrollDropGuard){window._scrollDropGuard=true;document.addEventListener('scroll',function(){_closeAllDropMenus();},{passive:true,capture:true});}
+if(!window._scrollDropGuard){window._scrollDropGuard=true;document.addEventListener('scroll',function(){_closeAllDropMenus();window._lastScrollTime=Date.now();},{passive:true,capture:true});}
 
 // Funcion segura para ejecutar acciones de notificacion
 function ejecutarAccionNotif(actionStr){
@@ -2276,7 +2276,14 @@ function ejecutarAccionNotif(actionStr){
         console.warn('Accion nav invalida o funcion nav no disponible:', actionStr);
       }
       break;
-    // Agrega otras acciones permitidas aqui si es necesario en el futuro
+    case 'order':
+      // Ejemplo: order('1234') — navega a pedidos y abre el pedido
+      const oMatch = argsStr.match(/^'?(\d+)'?$/);
+      if (oMatch) {
+        if(typeof nav==='function') nav('orders');
+        setTimeout(function(){ if(typeof editOrder==='function') editOrder(parseInt(oMatch[1],10)); },450);
+      }
+      break;
     default:
       console.warn('Accion de notificacion no permitida:', actionStr);
   }
@@ -2965,7 +2972,7 @@ function initRealtime(){
         const r=payload.new;
         // Solo admin/superadmin reciben notif de pedido nuevo
         if(isAdminLike(CU?.rol))
-          pushNotif('📦 Nuevo pedido #'+(r.id||'')+(r.cliente?' — '+r.cliente:''),'s',"nav('orders')");
+          pushNotif('📦 Nuevo pedido #'+(r.id||'')+(r.cliente?' — '+r.cliente:''),'s',"order('"+(r.id||'')+"')");
       })
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'pedidos'},async payload=>{
         await _rtRefreshOrders();
@@ -3013,7 +3020,7 @@ function initRealtime(){
         }
         // Debounce: evita spam si llegan múltiples UPDATEs seguidos
         clearTimeout(_rtNotifTimer);
-        (function(msg,type){_rtNotifTimer=setTimeout(function(){pushNotif(msg,type,"nav('orders')");},2000);})(notifMsg,notifType);
+        (function(msg,type,rid){var act=rid?("order('"+rid+"')"):"nav('orders')";_rtNotifTimer=setTimeout(function(){pushNotif(msg,type,act);},2000);})(notifMsg,notifType,r.id||'');
       })
       .on('postgres_changes',{event:'DELETE',schema:'public',table:'pedidos'},async payload=>{
         await _rtRefreshOrders();
@@ -7202,14 +7209,15 @@ function _abrirPanelPedidos(){
     titulo:'Buscar pedidos',
     autoClose:false,
     onBuscar:(vals)=>{
-      // Aplicar valores a los inputs del fbar para reutilizar filtrar()
       const setV=(id,v)=>{const el=$(id);if(el)el.value=v||'';};
       if(vals.busqueda!==undefined){const bg=$('busquedaGlobal');if(bg)bg.value=vals.busqueda||'';}
       setV('fEst',vals.estado||'');
       setV('fZona',vals.zona||'');
       if(vals.proveedor!==undefined)setV('fProv',vals.proveedor||'');
-      setV('fDesde',vals.rango_desde||vals.desde||'');
-      setV('fHasta',vals.rango_hasta||vals.hasta||'');
+      if(vals.vendedor!==undefined)window._filtroVendedorId=vals.vendedor||'';
+      if(vals.dropshipper!==undefined)window._filtroDropshipperId=vals.dropshipper||'';
+      setV('fDesde',vals.rango_desde||'');
+      setV('fHasta',vals.rango_hasta||'');
       window._oFechaDesde=gv('fDesde')||'';
       window._oFechaHasta=gv('fHasta')||'';
       filtrarReset();
@@ -7276,11 +7284,12 @@ function _setFechaRapida(tipo){
   window._oFechaDesde=desde;window._oFechaHasta=hasta;
   filtrarReset();
 }
-function clearF(){['fEst','fZona','fProv','fFecha','fDesde','fHasta'].forEach(id=>{const e=$(id);if(e)e.value='';});window._oFechaDesde='';window._oFechaHasta='';const bg=document.getElementById('busquedaGlobal');if(bg)bg.value='';_pedidosShown=_pedidosPageSize;filtrar();}
+function clearF(){['fEst','fZona','fProv','fFecha','fDesde','fHasta'].forEach(id=>{const e=$(id);if(e)e.value='';});window._oFechaDesde='';window._oFechaHasta='';window._filtroVendedorId='';window._filtroDropshipperId='';const bg=document.getElementById('busquedaGlobal');if(bg)bg.value='';_pedidosShown=_pedidosPageSize;filtrar();}
 function _ordersFilteredFromUI(){
   let orders=getVisibleOrders();
   const s=(gv('fSrch')||'').toLowerCase();
   const est=gv('fEst'),zona=gv('fZona'),prov=gv('fProv'),fecha=gv('fFecha'),desde=gv('fDesde'),hasta=gv('fHasta');
+  const fVend=window._filtroVendedorId||'',fDrop=window._filtroDropshipperId||'';
   if(s)orders=orders.filter(o=>o.cliente.toLowerCase().includes(s)||o.producto.toLowerCase().includes(s)||(o.id+'').includes(s)||(o.proveedor||'').toLowerCase().includes(s));
   if(est)orders=orders.filter(o=>o.estado===est);
   if(zona)orders=orders.filter(o=>o.zona==zona);
@@ -7288,6 +7297,8 @@ function _ordersFilteredFromUI(){
   if(fecha)orders=orders.filter(o=>o.fecha===fecha);
   if(desde)orders=orders.filter(o=>(o.fecha||'')>=desde);
   if(hasta)orders=orders.filter(o=>(o.fecha||'')<=hasta);
+  if(fVend)orders=orders.filter(o=>String(o.vendedorId)===String(fVend));
+  if(fDrop)orders=orders.filter(o=>String(o.dropId)===String(fDrop));
   return orders;
 }
 function _ordersForExport(){
@@ -16418,13 +16429,12 @@ PAGES.mapa=function(){
   const _autoOn=(localStorage.getItem('mapa_auto')!=='0');
   window._mapaAutoUpdateEnabled=_autoOn;
   const autoToggle='<label class="map-btn" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer;user-select:none" title="Auto-actualizar el mapa cada 5 minutos (sin mover la cámara)"><input type="checkbox" id="mapaAutoUpdate" '+(_autoOn?'checked':'')+' onchange="_mapaToggleAutoUpdate(this)" style="margin:0"><span style="font-size:12px">Auto-actualizar</span></label>';
-  const _recargarBtn='<button class="map-btn" onclick="_refreshActualPage()" title="Recargar mapa"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>';
   const _tresPuntosBtn='<button class="map-btn mapa-menu-btn" onclick="(function(b){var p=b.closest(\'.mapa-secundarios\').querySelector(\'.mapa-secundarios-panel\');p.classList.toggle(\'open\');b.textContent=p.classList.contains(\'open\')?\'✕\':\'⋯\';})(this)" title="Más opciones" style="font-size:18px;padding:4px 10px;line-height:1">⋯</button>';
   // Delivery: topbar limpio — solo zona, ruta óptima y turno. Sin ⋯ ni recarga (usa el refresh del topbar global)
   if(esDelivery){
     $('tbActions').innerHTML=zonaSel+rutaBtn+turnoBtn;
   } else {
-    $('tbActions').innerHTML=zonaSel+vendSel+_recargarBtn+'<span class="mapa-secundarios">'+_tresPuntosBtn+'<span class="mapa-secundarios-panel"><div id="mapaContadores"></div>'+dlvBtn+autoToggle+'</span></span>';
+    $('tbActions').innerHTML=zonaSel+vendSel+'<span class="mapa-secundarios">'+_tresPuntosBtn+'<span class="mapa-secundarios-panel"><div id="mapaContadores"></div>'+dlvBtn+autoToggle+'</span></span>';
   }
   // FIX #6: sincronizar checkbox de auto-update con la preferencia actual
   try{
@@ -19329,6 +19339,7 @@ function toggleTheme(){
     document.querySelectorAll('.order-dropdown.open,.dropdown.open,.search-combo-list.open').forEach(function(el){ el.classList.remove('open'); });
   });
   document.addEventListener('click', function(e){
+    if(window._lastScrollTime && Date.now()-window._lastScrollTime<350)return;
     var t = e.target;
     if(t && t.classList && t.classList.contains('moverlay')){
       var closeBtn = t.querySelector('.mclose, [onclick*="close"]');
