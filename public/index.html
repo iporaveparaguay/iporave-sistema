@@ -833,6 +833,29 @@ body:has(#appScreen.show) #aiPanel.open{display:flex !important;}
 .chat-bubble-wrap.right{align-items:flex-end;}
 .chat-footer{border-top:1px solid var(--border);padding:8px;display:flex;gap:6px;align-items:center;}
 .chat-footer input{flex:1;min-width:0;background:var(--bg2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;}
+/* CHAT EXTRAS: mention dropdown, image preview, reactions */
+.chat-mention-wrap{position:relative;flex:1;min-width:0;display:flex;align-items:center;}
+.chat-mention-wrap input{width:100%;}
+.chat-mention-dd{position:absolute;bottom:calc(100% + 4px);left:0;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.3);min-width:180px;max-height:160px;overflow-y:auto;z-index:200;display:none;}
+.chat-mention-dd.open{display:block;}
+.chat-mention-item{padding:6px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.chat-mention-item:hover{background:var(--bg3);}
+.chat-mention-item .cmr{font-size:10px;color:var(--text3);}
+.chat-attach-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text2);border-radius:6px;flex-shrink:0;line-height:1;}
+.chat-attach-btn:hover{background:var(--bg3);}
+.chat-img-preview-wrap{padding:0 8px 6px;display:none;}
+.chat-img-preview-wrap.show{display:block;}
+.chat-img-preview{max-width:120px;max-height:80px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);}
+.chat-bubble img.chat-img{max-width:140px;max-height:100px;border-radius:6px;display:block;margin-top:3px;cursor:pointer;}
+.chat-mention-tag{color:var(--accent);font-weight:700;}
+.chat-reactions-wrap{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap;}
+.chat-react-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;font-size:11px;padding:1px 6px;cursor:pointer;display:flex;align-items:center;gap:3px;}
+.chat-react-btn:hover,.chat-react-btn.active{background:rgba(245,166,35,.18);}
+.chat-react-quick{display:none;gap:3px;position:absolute;top:-34px;right:0;background:var(--bg4);border:1px solid var(--border2);border-radius:20px;padding:3px 8px;z-index:100;white-space:nowrap;}
+.chat-react-quick.show{display:flex;}
+.chat-react-quick span{font-size:16px;cursor:pointer;transition:transform .1s;}
+.chat-react-quick span:hover{transform:scale(1.3);}
+.chat-bubble-wrap{position:relative;}
 /* OFFLINE BADGE */
 .offline-badge{background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:var(--accent);font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;display:none;}
 .offline-badge.show{display:inline-flex;align-items:center;gap:4px;}
@@ -4810,6 +4833,7 @@ const NAV_CFG={
     ]},
     {s:'Analítica',items:[
       {id:'analitica_admin',l:'Analítica Ecosistema',ic:'chart'},
+      {id:'reportes',l:'Reportes Ejecutivos',ic:'chart'},
     ]},
     {s:'Comunicación',items:[
       {id:'mensajes',l:'Mensajes',ic:'chat'},
@@ -4837,6 +4861,7 @@ const NAV_CFG={
     ]},
     {s:'Analítica',items:[
       {id:'analitica_admin',l:'Analítica Ecosistema',ic:'chart'},
+      {id:'reportes',l:'Reportes Ejecutivos',ic:'chart'},
     ]},
     {s:'Comunicación',items:[
       {id:'mensajes',l:'Mensajes',ic:'chat'},
@@ -5007,6 +5032,7 @@ const PT={dashboard:'Dashboard',orders:'Pedidos',balance:'Balance',liquidacion:'
   analitica_prov:'Mi Analítica',analitica_vend:'Mi Analítica',
   analitica_drop:'Mi Analítica',analitica_admin:'Analítica Ecosistema',
   analitica_dlv:'Mi Analítica',
+  reportes:'Reportes Ejecutivos',
   clientes_recurrentes:'Clientes recurrentes',
   clientes_zonas:'Base de Clientes por Zona',
   facturas_b2b:'Facturas B2B',
@@ -5062,6 +5088,7 @@ const NAV_TIPS={
   cierre:'Cierre de jornada del día',
   estadisticas:'Estadísticas avanzadas del negocio',
   analitica_admin:'Analítica integral del ecosistema',
+  reportes:'Reportes ejecutivos mensuales del negocio',
   analitica_vend:'Mi analítica como vendedor',
   analitica_drop:'Mi analítica como dropshipper',
   analitica_prov:'Mi analítica como proveedor',
@@ -7458,8 +7485,17 @@ function viewOrder(id){
     ?'<div class="stitle">💬 Chat del pedido</div>'+
       '<div class="chat-wrap">'+
         '<div class="chat-msgs" id="chatMsgs_'+o.id+'"></div>'+
-        '<div class="chat-footer">'+
-          '<input type="text" id="chatInp_'+o.id+'" placeholder="Escribí un mensaje..." onkeydown="if(event.key===\'Enter\')sendOrderChatMsg('+o.id+')">'+
+        '<div class="chat-img-preview-wrap" id="chatImgPrev_'+o.id+'">'+
+          '<img class="chat-img-preview" id="chatImgThumb_'+o.id+'" src="" alt="preview" onclick="chatClearImg('+o.id+')">'+
+          '<span style="font-size:10px;color:var(--text3);margin-left:6px">Clic para quitar</span>'+
+        '</div>'+
+        '<div class="chat-footer" style="align-items:flex-start;flex-wrap:wrap;">'+
+          '<div class="chat-mention-wrap">'+
+            '<input type="text" id="chatInp_'+o.id+'" placeholder="Escribí un mensaje... (@nombre para mencionar)" oninput="chatMentionInput(this,'+o.id+')" onkeydown="chatMentionKeydown(event,'+o.id+')">'+
+            '<div class="chat-mention-dd" id="chatMentionDd_'+o.id+'"></div>'+
+          '</div>'+
+          '<input type="file" id="chatFileInp_'+o.id+'" accept="image/*" style="display:none" onchange="chatAttachImg(this,'+o.id+')">'+
+          '<button class="chat-attach-btn" onclick="$(\'chatFileInp_'+o.id+'\').click()" title="Adjuntar imagen">📎</button>'+
           '<button class="btn btn-primary btn-sm" onclick="sendOrderChatMsg('+o.id+')">Enviar</button>'+
         '</div>'+
       '</div>'
@@ -10474,6 +10510,120 @@ PAGES.analitica_admin=function(){
   },100);
 };
 
+/* ─── REPORTES EJECUTIVOS ─── */
+PAGES.reportes=function(){
+  if(!isAdminLike(CU.rol)){$('ca').innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:42px;margin-bottom:16px;opacity:.55">🔒</div><div style="font-size:16px;font-weight:800;margin-bottom:8px;color:var(--text)">Acceso restringido</div><div style="font-size:13px;color:var(--text3);max-width:320px;margin:0 auto 18px">Solo administradores pueden ver esta sección.</div><button class="btn btn-secondary btn-sm" onclick="nav(\'dashboard\')">← Volver al inicio</button></div>';return;}
+  $('tbActions').innerHTML='';
+  var orders=_ordersCache||[];
+  var mes=mesActual();
+  var now=new Date();
+  var dPrev=new Date(now.getFullYear(),now.getMonth()-1,1);
+  var mesPrev=_isoDate(dPrev).slice(0,7);
+  var ordMes=orders.filter(function(o){return (o.fecha||'').startsWith(mes);});
+  var ordPrev=orders.filter(function(o){return (o.fecha||'').startsWith(mesPrev);});
+  var entMes=ordMes.filter(function(o){return o.estado==='Entregado';});
+  var canMes=ordMes.filter(function(o){return ['Cancelado','Devuelto'].includes(o.estado);});
+  var procMes=ordMes.filter(function(o){return !['Entregado','Cancelado','Devuelto'].includes(o.estado);});
+  var tasaEnt=ordMes.length?Math.round(entMes.length/ordMes.length*100):0;
+  var totalRecMes=entMes.reduce(function(a,b){return a+(b.precio||0)*(b.qty||1);},0);
+  var ticketProm=entMes.length?Math.round(totalRecMes/entMes.length):0;
+  var tiemposEnt=entMes.filter(function(o){return o.fecha&&o.fechaEntrega;}).map(function(o){var d1=new Date(o.fecha+'T12:00');var d2=new Date(o.fechaEntrega+'T12:00');return Math.max(0,Math.round((d2-d1)/(1000*60*60*24)));});
+  var tiempoProm=tiemposEnt.length?Math.round(tiemposEnt.reduce(function(a,b){return a+b;},0)/tiemposEnt.length):null;
+  var entPrev=ordPrev.filter(function(o){return o.estado==='Entregado';});
+  var totalRecPrev=entPrev.reduce(function(a,b){return a+(b.precio||0)*(b.qty||1);},0);
+  var flechaPed=ordMes.length>=ordPrev.length?'↑':'↓';
+  var colorPed=ordMes.length>=ordPrev.length?'#22c55e':'#ef4444';
+  var flechaRec=totalRecMes>=totalRecPrev?'↑':'↓';
+  var colorRec=totalRecMes>=totalRecPrev?'#22c55e':'#ef4444';
+  var vendMap={};
+  entMes.forEach(function(o){var vid=String(o.vendedorId||'');if(!vid)return;if(!vendMap[vid])vendMap[vid]={monto:0,n:0};vendMap[vid].monto+=(o.precio||0)*(o.qty||1);vendMap[vid].n++;});
+  var topVend=Object.entries(vendMap).map(function(e){var id=e[0];var v=e[1];var u=(_usersCache||[]).find(function(u){return String(u.id)===id;});return{nombre:u?u.nombre:('Vendedor #'+id),monto:v.monto,n:v.n};}).sort(function(a,b){return b.monto-a.monto;}).slice(0,3);
+  var dlvMap={};
+  entMes.forEach(function(o){var did=String(o.deliveryId||'');if(!did)return;if(!dlvMap[did])dlvMap[did]=0;dlvMap[did]++;});
+  var topDlv=Object.entries(dlvMap).map(function(e){var id=e[0];var n=e[1];var u=(_usersCache||[]).find(function(u){return String(u.id)===id;});return{nombre:u?u.nombre:('Delivery #'+id),n:n};}).sort(function(a,b){return b.n-a.n;}).slice(0,3);
+  var prodMap={};
+  entMes.forEach(function(o){var k=o.producto||'Sin nombre';if(!prodMap[k])prodMap[k]=0;prodMap[k]+=(o.qty||1);});
+  var topProdR=Object.entries(prodMap).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+  var semanas=[{l:'Sem 1',n:0},{l:'Sem 2',n:0},{l:'Sem 3',n:0},{l:'Sem 4',n:0},{l:'Sem 5+',n:0}];
+  ordMes.forEach(function(o){var dia=parseInt((o.fecha||'').slice(8,10)||'1',10);var si=Math.min(Math.floor((dia-1)/7),4);semanas[si].n++;});
+  var maxSem=Math.max.apply(null,semanas.map(function(s){return s.n;}).concat([1]));
+  var mesesNombre=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var nomMes=mesesNombre[now.getMonth()]+' '+now.getFullYear();
+  var nomPrev=mesesNombre[dPrev.getMonth()]+' '+dPrev.getFullYear();
+  var medal=['🥇','🥈','🥉'];
+  var _rowR=function(items,fn){return items.length?items.map(function(it,i){return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)"><span style="font-size:18px;min-width:26px">'+medal[i]+'</span><div style="flex:1;min-width:0">'+fn(it,i)+'</div></div>';}).join(''):'<div style="color:var(--text3);font-size:12px;padding:8px 0">Sin datos este mes</div>';};
+  var html=
+    '<div class="stitle">Resumen del mes — '+escHtml(nomMes)+'</div>'+
+    '<div class="sgrid">'+
+      '<div class="sc ac"><div class="slabel">Total pedidos</div><div class="sval">'+ordMes.length+'</div></div>'+
+      '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+entMes.length+'</div><div class="ssub">'+tasaEnt+'% tasa éxito</div></div>'+
+      '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+canMes.length+'</div></div>'+
+      '<div class="sc bl"><div class="slabel">En proceso</div><div class="sval">'+procMes.length+'</div></div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:18px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--accent)">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:4px">Ticket promedio</div>'+
+        '<div style="font-size:17px;font-weight:800;color:var(--accent)">'+fmt(ticketProm)+'</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #22c55e">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:4px">Recaudación del mes</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#22c55e">'+fmt(totalRecMes)+'</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #3b82f6">'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:4px">Tiempo prom. entrega</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#3b82f6">'+(tiempoProm!==null?tiempoProm+' días':'N/D')+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="stitle">Top performers — '+escHtml(nomMes)+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:18px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">Top vendedores</div>'+
+        _rowR(topVend,function(v){return '<div style="font-weight:700;font-size:13px">'+escHtml(v.nombre)+'</div><div style="font-size:11px;color:var(--text2)">'+v.n+' entregas · '+fmt(v.monto)+'</div>';})+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">Top deliveries</div>'+
+        _rowR(topDlv,function(d){return '<div style="font-weight:700;font-size:13px">'+escHtml(d.nombre)+'</div><div style="font-size:11px;color:var(--text2)">'+d.n+' pedidos entregados</div>';})+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">Top productos</div>'+
+        _rowR(topProdR.map(function(x){return{p:x[0],n:x[1]};}),function(x){return '<div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(x.p)+'</div><div style="font-size:11px;color:var(--text2)">'+x.n+' unidades vendidas</div>';})+
+      '</div>'+
+    '</div>'+
+    '<div class="stitle">Tendencia semanal — '+escHtml(nomMes)+'</div>'+
+    '<div style="background:var(--card);border-radius:12px;padding:18px;margin-bottom:18px">'+
+      '<div style="display:flex;align-items:flex-end;gap:10px;height:120px">'+
+      semanas.map(function(s){
+        var h=Math.max(8,Math.round(s.n/maxSem*100));
+        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end">'+
+          '<div style="font-size:11px;font-weight:700;color:var(--text2)">'+s.n+'</div>'+
+          '<div style="width:100%;background:var(--accent);border-radius:6px 6px 0 0;height:'+h+'%;opacity:.85"></div>'+
+          '<div style="font-size:10px;color:var(--text3)">'+s.l+'</div>'+
+        '</div>';
+      }).join('')+
+      '</div>'+
+    '</div>'+
+    '<div class="stitle">Comparativo con '+escHtml(nomPrev)+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:18px">'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">Pedidos este mes</div>'+
+        '<div style="display:flex;align-items:baseline;gap:8px">'+
+          '<span style="font-size:22px;font-weight:800">'+ordMes.length+'</span>'+
+          '<span style="font-size:13px;color:var(--text3)">vs '+ordPrev.length+' en '+escHtml(nomPrev)+'</span>'+
+          '<span style="font-size:20px;font-weight:900;color:'+colorPed+'">'+flechaPed+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px">'+
+        '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">Recaudación este mes</div>'+
+        '<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">'+
+          '<span style="font-size:17px;font-weight:800;color:'+colorRec+'">'+fmt(totalRecMes)+'</span>'+
+          '<span style="font-size:20px;font-weight:900;color:'+colorRec+'">'+flechaRec+'</span>'+
+        '</div>'+
+        '<div style="font-size:11px;color:var(--text3);margin-top:4px">'+escHtml(nomPrev)+': '+fmt(totalRecPrev)+'</div>'+
+      '</div>'+
+    '</div>';
+  $('ca').innerHTML=html;
+};
+
 /* ─── USUARIOS ─── */
 PAGES.usuarios=async function(){
   _requireUserAuth(async function(){
@@ -12516,31 +12666,163 @@ function exportBalanceCSV(){
 /* ══════════════════════════════════════════════════
    ORDER CHAT
 ══════════════════════════════════════════════════ */
+
+// Resalta menciones @nombre en el texto ya escapado
+function _chatHighlightMentions(escapedText){
+  return escapedText.replace(/@([\wÀ-ɏ]+)/g,'<span class="chat-mention-tag">@$1</span>');
+}
+
+// Construye el HTML de reacciones para un mensaje
+function _chatReactionsHtml(msgIdx,orderId,reactions){
+  reactions=reactions||[];
+  const counts={};
+  reactions.forEach(function(r){counts[r.emoji]=(counts[r.emoji]||0)+1;});
+  const myReacts=reactions.filter(function(r){return r.userId===CU.id;}).map(function(r){return r.emoji;});
+  let html='<div class="chat-reactions-wrap">';
+  Object.keys(counts).forEach(function(em){
+    const active=myReacts.includes(em)?'active':'';
+    html+='<button class="chat-react-btn '+active+'" onclick="chatToggleReact('+orderId+','+msgIdx+',\''+em+'\')">'+em+' '+counts[em]+'</button>';
+  });
+  html+='<div class="chat-react-quick" id="chatRQ_'+orderId+'_'+msgIdx+'">'+
+    '<span onclick="chatToggleReact('+orderId+','+msgIdx+',\'👍\')">👍</span>'+
+    '<span onclick="chatToggleReact('+orderId+','+msgIdx+',\'✅\')">✅</span>'+
+    '<span onclick="chatToggleReact('+orderId+','+msgIdx+',\'❓\')">❓</span>'+
+  '</div>';
+  html+='</div>';
+  return html;
+}
+
 function renderOrderChat(orderId){
-  const o=_ordersCache.find(x=>x.id===orderId);
+  const o=_ordersCache.find(function(x){return x.id===orderId;});
   const msgs=(o&&o.chat)||[];
   const wrap=$('chatMsgs_'+orderId);if(!wrap)return;
-  if(!msgs.length){wrap.innerHTML='<div style="text-align:center;padding:32px 16px;color:var(--text2)"><div style="font-size:48px;margin-bottom:10px;opacity:.5">💬</div><div style="font-size:13px;font-weight:600;margin-bottom:4px">Sin mensajes aún</div><div style="font-size:11px;color:var(--text3)">Escribí abajo para iniciar la conversación</div></div>';return;}
-  wrap.innerHTML=msgs.map(m=>{
+  if(!msgs.length){
+    wrap.innerHTML='<div style="text-align:center;padding:32px 16px;color:var(--text2)"><div style="font-size:48px;margin-bottom:10px;opacity:.5">💬</div><div style="font-size:13px;font-weight:600;margin-bottom:4px">Sin mensajes aún</div><div style="font-size:11px;color:var(--text3)">Escribí abajo para iniciar la conversación</div></div>';
+    return;
+  }
+  wrap.innerHTML=msgs.map(function(m,idx){
     const isMe=m.userId===CU.id;
-    return '<div class="chat-msg">'+
+    // texto con menciones resaltadas
+    let bubbleContent=_chatHighlightMentions(escHtml(m.msg||''));
+    // imagen adjunta
+    if(m.img){bubbleContent+='<img class="chat-img" src="'+m.img+'" alt="img" onclick="chatViewImg(this.src)">';}
+    const reactHtml=_chatReactionsHtml(idx,orderId,m.reactions);
+    return '<div class="chat-msg" onmouseenter="chatShowRQ('+orderId+','+idx+')" onmouseleave="chatHideRQ('+orderId+','+idx+')">'+
       '<div class="chat-meta'+(isMe?' right':'')+'">'+
         '<b>'+escHtml(m.nombre||'')+'</b> <span style="color:var(--text3)">('+escHtml(capRole(m.rol))+')</span> · '+m.fecha+
       '</div>'+
       '<div class="chat-bubble-wrap'+(isMe?' right':'')+'">'+
-        '<div class="chat-bubble'+(isMe?' mine':'')+'">'+escHtml(m.msg)+'</div>'+
+        '<div class="chat-bubble'+(isMe?' mine':'')+'" style="position:relative">'+bubbleContent+'</div>'+
+        reactHtml+
       '</div>'+
     '</div>';
   }).join('');
   wrap.scrollTop=wrap.scrollHeight;
 }
+
+// Estado temporal de la imagen adjunta pendiente (key=orderId)
+var _chatPendingImg={};
+
 function sendOrderChatMsg(orderId){
-  const inp=$('chatInp_'+orderId);if(!inp||!inp.value.trim())return;
-  const msg=inp.value.trim();
-  const o=_ordersCache.find(x=>x.id===orderId);if(!o)return;
+  const inp=$('chatInp_'+orderId);
+  const txt=inp?inp.value.trim():'';
+  const img=_chatPendingImg[orderId]||null;
+  if(!txt&&!img)return;
+  const o=_ordersCache.find(function(x){return x.id===orderId;});if(!o)return;
   o.chat=o.chat||[];
-  o.chat.push({userId:CU.id,nombre:CU.nombre,rol:CU.rol,msg,fecha:nowStr()});
-  inp.value='';
+  const msgObj={userId:CU.id,nombre:CU.nombre,rol:CU.rol,msg:txt,fecha:nowStr(),reactions:[]};
+  if(img)msgObj.img=img;
+  o.chat.push(msgObj);
+  if(inp)inp.value='';
+  chatClearImg(orderId);
+  chatMentionClose(orderId);
+  renderOrderChat(orderId);
+  DL.saveOrder(o);
+}
+
+/* ---- Mention helpers ---- */
+function chatMentionInput(inp,orderId){
+  const val=inp.value;
+  const cursor=inp.selectionStart;
+  // buscar @ antes del cursor
+  const before=val.substring(0,cursor);
+  const m=before.match(/@([\wÀ-ɏ]*)$/);
+  if(!m){chatMentionClose(orderId);return;}
+  const query=m[1].toLowerCase();
+  const users=(_usersCache||[]).filter(function(u){
+    return u.id!==CU.id&&u.nombre&&u.nombre.toLowerCase().includes(query);
+  }).slice(0,8);
+  const dd=$('chatMentionDd_'+orderId);if(!dd)return;
+  if(!users.length){dd.classList.remove('open');return;}
+  dd.innerHTML=users.map(function(u){
+    return '<div class="chat-mention-item" onmousedown="chatMentionSelect(event,'+orderId+',\''+escAttr(u.nombre)+'\')">'+
+      escHtml(u.nombre)+' <span class="cmr">'+escHtml(capRole(u.rol))+'</span>'+
+    '</div>';
+  }).join('');
+  dd.classList.add('open');
+}
+function chatMentionSelect(e,orderId,nombre){
+  e.preventDefault();
+  const inp=$('chatInp_'+orderId);if(!inp)return;
+  const val=inp.value;
+  const cursor=inp.selectionStart;
+  const before=val.substring(0,cursor);
+  const after=val.substring(cursor);
+  const replaced=before.replace(/@([\wÀ-ɏ]*)$/,'@'+nombre+' ');
+  inp.value=replaced+after;
+  inp.focus();
+  const pos=replaced.length;
+  inp.setSelectionRange(pos,pos);
+  chatMentionClose(orderId);
+}
+function chatMentionClose(orderId){
+  const dd=$('chatMentionDd_'+orderId);if(dd)dd.classList.remove('open');
+}
+function chatMentionKeydown(e,orderId){
+  if(e.key==='Escape'){chatMentionClose(orderId);return;}
+  if(e.key==='Enter'){sendOrderChatMsg(orderId);e.preventDefault();}
+}
+
+/* ---- Image attach helpers ---- */
+function chatAttachImg(fileInp,orderId){
+  const file=fileInp.files&&fileInp.files[0];if(!file)return;
+  if(file.size>100*1024){pushNotif('Imagen muy grande (máx 100 KB)','w');fileInp.value='';return;}
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    _chatPendingImg[orderId]=ev.target.result;
+    const prev=$('chatImgPrev_'+orderId);
+    const thumb=$('chatImgThumb_'+orderId);
+    if(thumb)thumb.src=ev.target.result;
+    if(prev)prev.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+  fileInp.value='';
+}
+function chatClearImg(orderId){
+  delete _chatPendingImg[orderId];
+  const prev=$('chatImgPrev_'+orderId);if(prev)prev.classList.remove('show');
+  const thumb=$('chatImgThumb_'+orderId);if(thumb)thumb.src='';
+}
+function chatViewImg(src){
+  // abre imagen en ventana lightbox simple
+  const w=window.open('','_blank','width=600,height=500');
+  if(w){w.document.write('<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh"><img src="'+src.replace(/"/g,'%22')+'" style="max-width:100%;max-height:100%"></body>');w.document.close();}
+}
+
+/* ---- Reaction helpers ---- */
+function chatShowRQ(orderId,idx){
+  const el=$('chatRQ_'+orderId+'_'+idx);if(el)el.classList.add('show');
+}
+function chatHideRQ(orderId,idx){
+  const el=$('chatRQ_'+orderId+'_'+idx);if(el)el.classList.remove('show');
+}
+function chatToggleReact(orderId,msgIdx,emoji){
+  const o=_ordersCache.find(function(x){return x.id===orderId;});if(!o||!o.chat)return;
+  const m=o.chat[msgIdx];if(!m)return;
+  m.reactions=m.reactions||[];
+  const existing=m.reactions.findIndex(function(r){return r.userId===CU.id&&r.emoji===emoji;});
+  if(existing>=0){m.reactions.splice(existing,1);}
+  else{m.reactions.push({emoji:emoji,userId:CU.id});}
   renderOrderChat(orderId);
   DL.saveOrder(o);
 }
