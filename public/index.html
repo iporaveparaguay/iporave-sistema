@@ -5148,6 +5148,8 @@ function nav(page){
   $('tbTitle').textContent=PT[page]||page;
   $('tbActions').innerHTML='';
   $('ca').classList.remove('mc-page');
+  // M4 fix: clase body page-mapa para que los selectores CSS .page-mapa apliquen correctamente
+  document.body.classList.toggle('page-mapa', page==='mapa');
   _msgConvPartner=null;
   setTimeout(closeSidebar, 80);
   if(CU&&CU.rol!=='superadmin'){
