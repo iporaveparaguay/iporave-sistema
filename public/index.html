@@ -4125,6 +4125,28 @@ async function doLogin(){
       Onboard.enqueue('topbar_theme','#themeToggle','Alterna entre modo claro y oscuro de la interfaz, según su preferencia visual.');
       Onboard.enqueue('aiBtn_intro','#aiBtn','Asistente inteligente integrado. Permite consultar información, registrar acciones y obtener apoyo operativo en lenguaje natural.');
     }, 1500); }catch(_){}
+    // Tour diferenciado por rol — se dispara a 3000ms para que el dashboard y el sidebar estén renderizados.
+    // Usa IDs de coachmark únicos por rol: 'login_rol_*'. Solo se muestra si el usuario nunca los vio (onboard_v1_login_rol_*).
+    try{ setTimeout(function(){
+      if(!window.Onboard) return;
+      var _rol=(CU&&CU.rol)||'';
+      // Paso común a todos: barra de navegación lateral
+      Onboard.enqueue('login_rol_nav','#snav .ni:first-child, #snav','Esta es tu barra de navegación. Desde aquí accedés a todas las secciones del sistema según tu rol.');
+      if(_rol==='vendedor'||_rol==='dropshipper'){
+        Onboard.enqueue('login_rol_orders','#ni_orders','Aquí encontrás todos tus pedidos registrados. Podés filtrar por estado, fecha y zona.');
+        Onboard.enqueue('login_rol_nuevo_pedido','#btnNuevoPedido','Este botón crea un nuevo pedido. Completá los datos del cliente, productos y dirección de entrega.');
+        Onboard.enqueue('login_rol_catalogo','#ni_catalogo','El catálogo contiene todos los productos disponibles para vender. Consultá precios y stock antes de armar el pedido.');
+      } else if(_rol==='delivery'){
+        Onboard.enqueue('login_rol_entregas','#ni_entregas, #ni_orders','Aquí ves los pedidos asignados a vos. Actualizá el estado a medida que avanzás con las entregas.');
+        Onboard.enqueue('login_rol_mapa','#ni_mapa','El mapa muestra en tiempo real la ubicación de los pedidos asignados. Usalo para planificar tu ruta.');
+      } else if(_rol==='admin'||_rol==='superadmin'){
+        Onboard.enqueue('login_rol_orders_admin','#ni_orders','Listado completo de pedidos del sistema. Podés editar, reasignar o cambiar el estado de cualquier pedido.');
+        Onboard.enqueue('login_rol_usuarios','#ni_usuarios','Gestión de usuarios y roles del sistema. Creá, editá o suspendé cuentas desde aquí.');
+        Onboard.enqueue('login_rol_config','#ni_config','Configuración general del sistema. Ajustá tarifas, zonas, empresa y preferencias de la cuenta.');
+      }
+      // Último paso — igual para todos
+      Onboard.enqueue('login_rol_fin','#snav .snav-version, #snav .ni:last-of-type','¡Listo! Podés volver a ver este tutorial en cualquier momento desde Configuración → Tutorial guiado.');
+    }, 3000); }catch(_){}
     _checkUrgentOrders();
     initRealtime();
     if(window._ordersPolling)clearInterval(window._ordersPolling);
@@ -11980,7 +12002,7 @@ function _toggleHTMLMode(editorId){
     h.value=v.innerHTML;v.style.display='none';h.style.display='block';
     if(btn)btn.style.color='var(--accent)';
   }else{
-    v.innerHTML=h.value;h.style.display='none';v.style.display='block';
+    v.innerHTML=(typeof DOMPurify!=='undefined'?DOMPurify.sanitize(h.value):h.value);h.style.display='none';v.style.display='block';
     if(btn)btn.style.color='';
   }
 }
