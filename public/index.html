@@ -7778,20 +7778,21 @@ function openNewOrder(){
       '<label>Seleccioná la zona</label>'+
       '<select id="nZonaSelect" onchange="selZonaFromSelect(this.value)" style="width:100%">'+
         '<option value="">— Elegí la zona de entrega —</option>'+
-        _zonasCache.map(z=>'<option value="'+z.id+'">'+escHtml(z.nombre||'')+' — '+fmt(z.precio)+(z.extraDelivery>0?' (+'+fmtN(z.extraDelivery)+' delivery)':'')+'</option>').join('')+
+        [..._zonasCache].filter(z=>z.activa!==false).sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'','es')).map(z=>'<option value="'+z.id+'">'+escHtml(z.nombre||'')+' — '+fmt(z.precio)+(z.extraDelivery>0?' (+'+fmtN(z.extraDelivery)+' delivery)':'')+'</option>').join('')+
         '<option value="manual">Otra ubicación (ingresar manualmente)...</option>'+
       '</select>'+
     '</div>'+
-    '<div class="zgrid" id="zG">'+(_zonasCache.length===0
-      ?'<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:13px">No hay zonas configuradas. El admin debe crear zonas en <strong>Zonas de entrega</strong>, o ingresá la ubicación manualmente.</div>'
-      :_zonasCache.map(z=>
+    (()=>{const _zActivas=[..._zonasCache].filter(z=>z.activa!==false).sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'','es'));return '<div class="zgrid" id="zG">'+(_zActivas.length===0
+      ?'<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:13px">No hay zonas activas configuradas. El admin debe activar o crear zonas en <strong>Zonas de entrega</strong>, o ingresá la ubicación manualmente.</div>'
+      :_zActivas.map(z=>
         '<div class="zcard" data-zona-id="'+z.id+'" onclick="selZona('+z.id+',this)">'+
           '<div class="znm">'+escHtml(z.nombre||'')+'</div>'+
           '<div class="zpr">'+fmt(z.precio)+'</div>'+
           '<div class="zdsc">'+escHtml(z.desc||'')+'</div>'+
           '<div style="margin-top:3px;font-size:10px;color:var(--cyan)">⏱ '+escHtml(z.tiempoEntrega||'')+(z.extraDelivery>0?' · +'+fmtN(z.extraDelivery)+' delivery':'')+'</div>'+
         '</div>'
-      ).join(''))+'</div>'+
+      ).join(''))+'</div>';})()
++
     '<input type="hidden" id="nZona">'+
     '<div id="zonaManualDiv" style="display:none;padding:10px;background:var(--bg3);border-radius:8px;border:1px dashed var(--accent);margin-bottom:8px">'+
       '<div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">'+SVG.pencil+' Zona personalizada</div>'+
@@ -10754,13 +10755,23 @@ PAGES.zonas=function(){
   '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
   '<th>Zona</th><th class="col-hide">Ciudades</th><th>Tarifa</th>'+
   '<th class="col-hide">Extra delivery</th><th class="col-hide">Tiempo</th>'+
+  '<th>Estado</th>'+
   '<th>Acciones</th></tr></thead><tbody>'+
-  _zonasCache.map(z=>'<tr>'+
+  _zonasCache.map(z=>{
+    const enCurso=_ordersCache.filter(o=>String(o.zona)===String(z.id)&&o.estado!=='Entregado'&&o.estado!=='Cancelado').length;
+    const activa=(z.activa!==false);
+    return '<tr>'+
     '<td style="font-weight:700">'+escHtml(z.nombre||'')+'</td>'+
     '<td class="col-hide" style="font-size:11px;color:var(--text2);max-width:200px">'+escHtml(z.desc||'')+'</td>'+
     '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--green)">'+fmt(z.precio)+'</td>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;color:var(--purple)">'+(z.extraDelivery>0?fmt(z.extraDelivery):'—')+'</td>'+
     '<td class="col-hide" style="font-size:12px;color:var(--cyan)">'+escHtml(z.tiempoEntrega||'—')+'</td>'+
+    '<td style="white-space:nowrap;text-align:center">'+
+      (activa
+        ?'<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;background:rgba(34,197,94,.12);color:var(--green);border-radius:20px;padding:2px 8px;font-weight:600">● Activa</span>'
+        :'<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;background:rgba(239,68,68,.10);color:var(--red);border-radius:20px;padding:2px 8px;font-weight:600">● Inactiva</span>')+
+      (enCurso>0?'<br><span style="font-size:10px;color:var(--cyan);margin-top:3px;display:block">'+enCurso+' en curso</span>':'')
+    +'</td>'+
     '<td style="white-space:nowrap"><div class="order-menu-wrap">'+
       '<button class="order-menu-btn" onclick="_toggleZonaMenu(event,'+z.id+')" title="Acciones">⋮</button>'+
       '<div class="order-dropdown" id="zdrop-'+z.id+'">'+
@@ -10768,8 +10779,8 @@ PAGES.zonas=function(){
         '<div class="od-sep"></div>'+
         '<button onclick="_closeZonaMenus();delZona('+z.id+')" style="color:var(--red)">✕ Eliminar</button>'+
       '</div>'+
-    '</div></td></tr>'
-  ).join('')+'</tbody></table></div></div>';
+    '</div></td></tr>';
+  }).join('')+'</tbody></table></div></div>';
   if(typeof Onboard !== 'undefined' && Onboard.enqueue && !window._onboardFiredZonas && CU && ['admin','superadmin'].includes(CU.rol)){
     window._onboardFiredZonas = true;
     setTimeout(function(){
@@ -10789,6 +10800,10 @@ function openNewZona(){
     '<div class="fg"><label>Tarifa (Gs.)</label><input type="number" id="nzP" placeholder="0"></div>'+
     '<div class="fg"><label>Extra delivery (Gs.)</label><input type="number" id="nzE" placeholder="0" value="0"></div></div>'+
     '<div class="fg"><label>Tiempo de entrega estimado</label><input type="text" id="nzT" placeholder="Ej: 24-48 hs"></div>'+
+    '<div class="fg" style="display:flex;align-items:center;gap:10px;padding:8px 0">'+
+      '<input type="checkbox" id="nzActiva" checked style="width:16px;height:16px;cursor:pointer">'+
+      '<label for="nzActiva" style="margin:0;cursor:pointer;font-weight:500">Zona activa <span style="font-weight:400;color:var(--text3);font-size:11px">(las zonas inactivas no aparecen al crear pedidos)</span></label>'+
+    '</div>'+
     '<div id="nzAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveNewZona()">Crear</button>'
@@ -10807,7 +10822,8 @@ async function saveNewZona(){
   // Date.now() es único por milisegundo y extremadamente improbable de colisionar.
   const id=Date.now();
   const z={id,nombre:nom,desc:gv('nzD').trim(),precio:prec,
-    extraDelivery:parseFloat(gv('nzE'))||0,tiempoEntrega:gv('nzT').trim()};
+    extraDelivery:parseFloat(gv('nzE'))||0,tiempoEntrega:gv('nzT').trim(),
+    activa:document.getElementById('nzActiva')?document.getElementById('nzActiva').checked:true};
   closeA();
   // A11 fix: esperar confirmación de Supabase ANTES de mostrar éxito
   try{
@@ -10827,7 +10843,11 @@ function editZona(id){
     '<div class="frow">'+
     '<div class="fg"><label>Tarifa (Gs.)</label><input type="number" id="ezP" value="'+(z.precio||0)+'"></div>'+
     '<div class="fg"><label>Extra delivery (Gs.)</label><input type="number" id="ezE" value="'+(z.extraDelivery||0)+'"></div></div>'+
-    '<div class="fg"><label>Tiempo de entrega</label><input type="text" id="ezT" value="'+escAttr(z.tiempoEntrega)+'"></div>',
+    '<div class="fg"><label>Tiempo de entrega</label><input type="text" id="ezT" value="'+escAttr(z.tiempoEntrega||'')+'"></div>'+
+    '<div class="fg" style="display:flex;align-items:center;gap:10px;padding:8px 0">'+
+      '<input type="checkbox" id="ezActiva" '+(z.activa!==false?'checked':'')+' style="width:16px;height:16px;cursor:pointer">'+
+      '<label for="ezActiva" style="margin:0;cursor:pointer;font-weight:500">Zona activa <span style="font-weight:400;color:var(--text3);font-size:11px">(las zonas inactivas no aparecen al crear pedidos)</span></label>'+
+    '</div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveEditZona('+id+')">Guardar</button>'
   );
@@ -10839,6 +10859,8 @@ async function saveEditZona(id){
   if(gv('ezP'))z.precio=parseFloat(gv('ezP'));
   z.extraDelivery=parseFloat(gv('ezE'))||0;
   if(gv('ezT'))z.tiempoEntrega=gv('ezT');
+  const _ezActiva=document.getElementById('ezActiva');
+  if(_ezActiva)z.activa=_ezActiva.checked;
   // Render inmediato
   closeA();PAGES.zonas();
   pushNotif('Zona actualizada','s');
