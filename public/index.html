@@ -3133,6 +3133,7 @@ async function _syncPendingQueue(){
       else if(item.type==='saveZona')await DL.saveZona(item.data);
       else if(item.type==='saveUser')await DL.saveUser(item.data);
       else if(item.type==='saveProducto')await DL.saveProducto(item.data);
+      else if(item.type==='dlv_estado')await DL.saveOrder(item.data.o);
       ok++;
     }catch(e){console.warn('Sync item failed:',e);}
   }
@@ -6947,6 +6948,7 @@ PAGES.orders=PAGES.mispedidos=function(){
         '<button onclick="exportOrdersPDF();_closePedidosExport()" style="width:100%;padding:10px 14px;background:none;border:none;color:var(--text);font-size:13px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:8px">'+SVG.printer+' PDF</button>'+
         (['admin','superadmin'].includes(CU.rol)?'<button onclick="exportarCSV();_closePedidosExport()" style="width:100%;padding:10px 14px;background:none;border:none;color:var(--text);font-size:13px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:8px">'+SVG.arrowDown+' CSV completo</button>':'')+
         (['admin','superadmin'].includes(CU.rol)?'<button onclick="exportarCSVContable();_closePedidosExport()" style="width:100%;padding:10px 14px;background:none;border:none;color:var(--text);font-size:13px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:8px">📊 CSV Contable</button>':'')+
+        (['admin','superadmin'].includes(CU.rol)?'<button onclick="exportarJSON();_closePedidosExport()" style="width:100%;padding:10px 14px;background:none;border:none;color:var(--text);font-size:13px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:8px">📄 JSON</button>':'')+
         (['admin','superadmin'].includes(CU.rol)?'<button onclick="openCSV();_closePedidosExport()" style="width:100%;padding:10px 14px;background:none;border:none;color:var(--text);font-size:13px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:8px">⬆ Importar CSV</button>':'')+
         (['admin','superadmin'].includes(CU.rol)?'<button onclick="DL.exportBackup();_closePedidosExport()" style="width:100%;padding:10px 14px;background:none;border:none;color:var(--text);font-size:13px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:8px">'+SVG.db+' Backup</button>':'')+
       '</div>'+
@@ -7238,10 +7240,10 @@ function exportarCSV(){
     return false;
   });
   if(!orders.length){if(typeof pushNotif==='function')pushNotif('No hay pedidos para exportar','w');return;}
-  var headers=['ID','Fecha','Cliente','Teléfono','Producto','Qty','Precio','Estado','Vendedor','Delivery'];
+  var headers=['#Orden','Fecha','Cliente','Teléfono','Dirección','Zona','Producto','Presentación','Qty','Precio','Costo','Vendedor','Proveedor','Delivery','Estado','Estado_Pago','Tipo_Logística','Carrier','Fecha_Entrega','Etiquetas','Notas'];
   function _csvEsc(v){
     var s=v==null?'':String(v);
-    if(s.indexOf(',')!==-1||s.indexOf('"')!==-1||s.indexOf('\n')!==-1)s='"'+s.replace(/"/g,'""')+'"';
+    if(s.indexOf(';')!==-1||s.indexOf('"')!==-1||s.indexOf('\n')!==-1)s='"'+s.replace(/"/g,'""')+'"';
     return s;
   }
   function _getVendedorNombre(o){
@@ -7252,20 +7254,33 @@ function exportarCSV(){
     var u=typeof getUser==='function'?getUser(o.deliveryId):null;
     return(u&&u.nombre&&u.nombre!=='—')?u.nombre:(o.deliveryNombre||'');
   }
-  var lines=[headers.map(_csvEsc).join(',')];
+  var lines=[headers.map(_csvEsc).join(';')];
   orders.forEach(function(o){
+    var zona=(typeof _getZonaO==='function'?_getZonaO(o).nombre:null)||o.zonaCustomNombre||o.zona||'';
+    var etiquetas=(o.etiquetas&&o.etiquetas.length)?o.etiquetas.join(', '):'';
     lines.push([
       o.id,
       o.fecha||'',
       o.cliente||'',
       o.telefono||'',
+      o.direccion||'',
+      zona,
       o.producto||'',
+      o.presentacion||'',
       o.qty!=null?o.qty:1,
       o.precio!=null?o.precio:0,
-      o.estado||'',
+      o.costo!=null?o.costo:0,
       _getVendedorNombre(o),
-      _getDeliveryNombre(o)
-    ].map(_csvEsc).join(','));
+      o.proveedor||'',
+      _getDeliveryNombre(o),
+      o.estado||'',
+      o.estadoPago||'pendiente',
+      o.tipoLogistica||'propia',
+      o.logExternaNombre||'',
+      o.fechaEntrega||'',
+      etiquetas,
+      o.notas||''
+    ].map(_csvEsc).join(';'));
   });
   var bom='﻿';
   var blob=new Blob([bom+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
@@ -7335,6 +7350,65 @@ function exportarCSVContable(){
   a.click();
   setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},300);
   if(typeof pushNotif==='function')pushNotif('CSV contable exportado — '+orders.length+' pedidos del mes','s');
+}
+
+/* ─── EXPORTAR JSON ─── */
+function exportarJSON(){
+  var CU=window.CU||{};
+  var r=CU.rol||'';
+  if(r!=='admin'&&r!=='superadmin'){if(typeof pushNotif==='function')pushNotif('Sin permiso','e');return;}
+  var orders=(typeof _ordersForExport==='function'&&$('oContainer'))?_ordersForExport():(_ordersCache||[]);
+  if(!orders.length){if(typeof pushNotif==='function')pushNotif('No hay pedidos para exportar','w');return;}
+  var fecha=today().replace(/-/g,'');
+  var payload=JSON.stringify(orders,null,2);
+  var blob=new Blob([payload],{type:'application/json;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='pedidos_'+fecha+'.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},300);
+  if(typeof pushNotif==='function')pushNotif('JSON exportado — '+orders.length+' pedidos','s');
+}
+
+/* ─── EXPORTAR USUARIOS CSV ─── */
+function exportarUsuariosCSV(){
+  var CU=window.CU||{};
+  var r=CU.rol||'';
+  if(r!=='superadmin'){if(typeof pushNotif==='function')pushNotif('Solo superadmin puede exportar usuarios','e');return;}
+  var users=(_usersCache||[]);
+  if(!users.length){if(typeof pushNotif==='function')pushNotif('No hay usuarios para exportar','w');return;}
+  var headers=['ID','Nombre','Usuario','Rol','Email','Teléfono','Activo','Fecha_registro'];
+  function _csvEscU(v){
+    var s=v==null?'':String(v);
+    if(s.indexOf(';')!==-1||s.indexOf('"')!==-1||s.indexOf('\n')!==-1)s='"'+s.replace(/"/g,'""')+'"';
+    return s;
+  }
+  var lines=[headers.map(_csvEscU).join(';')];
+  users.forEach(function(u){
+    lines.push([
+      u.id,
+      u.nombre||'',
+      u.username||u.email||'',
+      u.rol||'',
+      u.email||'',
+      u.whatsapp||u.telefono||'',
+      u.activo!==false?'sí':'no',
+      u.created_at||u.fecha_registro||''
+    ].map(_csvEscU).join(';'));
+  });
+  var bom='﻿';
+  var blob=new Blob([bom+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  var fecha=today().replace(/-/g,'');
+  a.href=url;
+  a.download='usuarios_'+fecha+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},300);
+  if(typeof pushNotif==='function')pushNotif('CSV usuarios exportado — '+users.length+' registros','s');
 }
 
 /* ─── WA MENU ─── */
@@ -7844,11 +7918,19 @@ async function _ejecutarConfirmDlv(){
   if(_esDelivery&&['Despachado','En Ruta','Entregado'].includes(estado))pushNotif('Mensaje enviado al cliente','ok');
   if(['Cancelado','Devuelto','Reprogramado'].includes(_estadoFinal)){_gpsLoopStop();if(_estadoFinal==='Cancelado')_waAutoNotif(o,'Cancelado');}
   if(estado.startsWith('No contesta'))waNoContesta(o);
-  await DL.saveOrder(o);
-  await refreshCache();
-  closeA();filtrar();
-  const _msgNotif=(_estadoFinal!==estado)?'Pedido #'+id+' → '+_estadoFinal+' (auto-cancelado por 3 intentos fallidos)':'Pedido #'+id+' → '+estado;
-  pushNotif(_msgNotif,'s');
+  try{
+    await DL.saveOrder(o);
+    await refreshCache();
+    closeA();filtrar();
+    const _msgNotif=(_estadoFinal!==estado)?'Pedido #'+id+' → '+_estadoFinal+' (auto-cancelado por 3 intentos fallidos)':'Pedido #'+id+' → '+estado;
+    pushNotif(_msgNotif,'s');
+  }catch(_eNet){
+    // Error de red — encolar para sincronizar cuando vuelva la conexión
+    _queuePending('dlv_estado',{o,id,estado:_estadoFinal});
+    closeA();
+    pushNotif('📵 Guardado offline — se sincronizará automáticamente','w');
+    return;
+  }
   if(estado==='Entregado'&&o.deliveryId&&isAdminLike(CU.rol)){
     const dlv=getUser(o.deliveryId);
     if(dlv&&dlv.nombre)setTimeout(()=>_abrirCalificacion(id,o.deliveryId,'delivery',dlv.nombre),600);
@@ -10628,7 +10710,7 @@ PAGES.reportes=function(){
 PAGES.usuarios=async function(){
   _requireUserAuth(async function(){
     await refreshCache();
-    $('tbActions').innerHTML='<button id="btnNuevoUsuario" class="btn btn-primary" onclick="openNewUser()">+ Nuevo usuario</button>';
+    $('tbActions').innerHTML='<button id="btnNuevoUsuario" class="btn btn-primary" onclick="openNewUser()">+ Nuevo usuario</button>'+(CU.rol==='superadmin'?'<button class="btn btn-secondary" onclick="exportarUsuariosCSV()" style="margin-left:8px" title="Exportar lista de usuarios">⬇ CSV Usuarios</button>':'');
     const _visibleUsers=(CU.rol==='admin')?_usersCache.filter(u=>String(u.created_by)===String(CU.id)):_usersCache;
     $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Usuarios ('+_visibleUsers.length+')</span></div>'+
     '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
