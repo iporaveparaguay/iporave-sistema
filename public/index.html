@@ -9921,7 +9921,7 @@ PAGES.analitica_admin=function(){
   const now=new Date();const days30=[];const labels=[];
   for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const iso=_isoDate(d);days30.push(iso);labels.push(d.toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit'}));}
   const ingByDay={};const ganByDay={};days30.forEach(d=>{ingByDay[d]=0;ganByDay[d]=0;});
-  ent.forEach(o=>{if(days30.includes(o.fecha)){ingByDay[o.fecha]=(ingByDay[o.fecha]||0)+(o.precio||0)*(o.qty||1);ganByDay[o.fecha]=(ganByDay[o.fecha]||0)+ganVend(o);}});
+  ent.forEach(o=>{if(days30.includes(o.fecha)){ingByDay[o.fecha]=(ingByDay[o.fecha]||0)+(o.precio||0)*(o.qty||1);const ganNeta=ganVend(o)-(o.dropId?(o.comision||0)*(o.qty||1):0);ganByDay[o.fecha]=(ganByDay[o.fecha]||0)+ganNeta;}});
   const vendedores=_usersCache.filter(u=>['vendedor','dropshipper'].includes(u.rol));
   const rankVend=vendedores.map(v=>{
     const vO=ent.filter(o=>o.vendedorId===v.id||o.dropId===v.id);
