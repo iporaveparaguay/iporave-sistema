@@ -2222,6 +2222,9 @@ function markAllNotifRead(){
 document.addEventListener('click',function(e){
   const p=$('ntPanel'),b=$('ntBell');
   if(p&&b&&p.classList.contains('open')&&!p.contains(e.target)&&!b.contains(e.target))p.classList.remove('open');
+  // Cerrar panel de notificaciones (codexNotifPanel) al hacer clic fuera
+  const cp=$('codexNotifPanel'),cb=$('codexNotifBell');
+  if(cp&&cp.dataset.open==='1'&&!cp.contains(e.target)&&(!cb||!cb.contains(e.target)))_notifSessionToggle(false);
   // Cerrar kebab menus de pedidos, usuarios y catálogo al hacer clic fuera
   if(!e.target.closest('.order-menu-wrap'))_closeOrderMenus();
   if(!e.target.closest('.order-menu-wrap'))_closeUserMenus();
@@ -15026,7 +15029,8 @@ async function _geocodeAddr(addr){
 
 
 
-window._mapaFiltrosColapsados = window._mapaFiltrosColapsados || false;
+// Filtros colapsados por defecto: el mapa ocupa todo el alto disponible
+if(typeof window._mapaFiltrosColapsados === 'undefined') window._mapaFiltrosColapsados = true;
 function _mapaToggleFiltros(){
   window._mapaFiltrosColapsados = !window._mapaFiltrosColapsados;
   const bar = document.getElementById('mapaContadores');
