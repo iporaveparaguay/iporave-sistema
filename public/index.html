@@ -342,7 +342,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 @keyframes pgspin{to{transform:rotate(360deg);}}
 @keyframes pgfadein{from{opacity:0;}to{opacity:1;}}
 .main{margin-left:238px;flex:1;min-height:100vh;display:flex;flex-direction:column;}
-.topbar{padding:max(13px, env(safe-area-inset-top)) 24px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);position:sticky;top:0;z-index:50;box-shadow:0 1px 8px rgba(0,0,0,.3);}
+.topbar{padding:max(13px, env(safe-area-inset-top)) 24px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);position:sticky;top:0;z-index:500;box-shadow:0 1px 8px rgba(0,0,0,.3);}
 .tbtitle{font-size:17px;font-weight:700;}
 .tbactions{display:flex;align-items:center;gap:12px;flex:1;justify-content:center;margin:0 16px;flex-wrap:wrap;}
 .ca{padding:22px 24px;flex:1;}
@@ -981,7 +981,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   /* Fix: main en mobile como columna fija para que sticky topbar funcione bien */
   .main{margin-left:0;overflow-x:hidden;max-width:100vw;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
   /* Fix topbar: fija en mobile, no se superpone con contenido */
-  .topbar{padding:10px 14px;gap:8px;position:sticky;top:0;z-index:50;flex-shrink:0;}
+  .topbar{padding:10px 14px;gap:8px;position:sticky;top:0;z-index:500;flex-shrink:0;}
   .tbtitle{font-size:15px;}
   .tbactions{gap:5px;flex-wrap:wrap;}
   .tbactions .btn{padding:8px 13px;font-size:12px;}
@@ -1557,6 +1557,12 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
   #notifArea{ bottom: 80px !important; left: 12px !important; right: 12px !important; max-width: none !important; }
   /* GPS pill compact en mobile */
   #gpsStatusPill .gps-pill-text{ display: none; }
+  /* GLOB-3: tutorial más pequeño en mobile */
+  #onboardTip{max-width:min(210px,88vw)!important;font-size:12px!important;padding:8px 10px!important;}
+  #onboardTip .onboardTipTitle{font-size:11px!important;}
+  /* DEL-7: selector de zona en mapa más compacto */
+  #mapaZonaCombo{max-width:130px!important;}
+  #mapaZonaCombo .search-combo-input{font-size:11px!important;padding:5px 8px!important;}
   /* Stat cards 2 columnas en tablet, 1 en mobile chico */
   .sgrid{
     grid-template-columns: repeat(2, 1fr) !important;
@@ -5422,7 +5428,8 @@ function nextDocNum(){
     wrap.appendChild(inp);
     wrap.appendChild(dd);
     var fbar=document.querySelector('.fbar');
-    if(fbar){fbar.insertBefore(wrap,fbar.firstChild);}else{document.body.appendChild(wrap);}
+    if(fbar){fbar.insertBefore(wrap,fbar.firstChild);}
+    // No agregar al body si no hay fbar — aparecería al pie de la pantalla
   }
 
   window._bgNavPedido=_bgNavPedido;
@@ -6771,10 +6778,10 @@ function _renderDlvCard(o,dist){
     (entregado
       ?'<div style="text-align:center;padding:8px 0;font-size:13px;font-weight:700;color:var(--text2)">✅ Entregado</div>'
       :'<div style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap">'+
-        '<button onclick="dlvModal('+o.id+')" style="flex:1;min-width:110px;padding:12px;border:none;border-radius:10px;background:'+btnColor+';color:#fff;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;min-height:44px;touch-action:manipulation">'+btnLabel+'</button>'+
-        '<button onclick="navegarPedido('+o.id+')" style="padding:12px 16px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:14px;font-weight:800;cursor:pointer;min-height:44px;touch-action:manipulation">🗺️</button>'+
-        (tel?'<a href="tel:+'+tel+'" style="padding:12px 16px;border:none;border-radius:10px;background:#3b82f6;color:#fff;font-size:14px;font-weight:800;cursor:pointer;text-decoration:none;display:flex;align-items:center;min-height:44px;touch-action:manipulation">📞</a>':'')+
-        (tel?'<a href="https://wa.me/'+waNum+'" target="_blank" rel="noopener noreferrer" style="padding:12px 16px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:14px;font-weight:800;cursor:pointer;text-decoration:none;display:flex;align-items:center;min-height:44px;touch-action:manipulation">💬</a>':'')+
+        (tel?'<a href="tel:+'+tel+'" style="padding:10px 14px;border:2px solid '+(enRuta?'rgba(0,100,0,.6)':'rgba(255,255,255,.35)')+';border-radius:10px;background:transparent;color:'+(enRuta?'#004d00':'var(--text)')+';font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;min-height:44px;touch-action:manipulation">📞 Llamar</a>':'')+
+        (tel?'<a href="https://wa.me/'+waNum+'" target="_blank" rel="noopener noreferrer" style="padding:10px 16px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:14px;font-weight:800;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;min-height:44px;touch-action:manipulation">💬 WA</a>':'')+
+        '<button onclick="navegarPedido('+o.id+')" style="padding:10px 14px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:14px;font-weight:800;cursor:pointer;min-height:44px;touch-action:manipulation">🗺️</button>'+
+        '<button onclick="dlvModal('+o.id+')" style="flex:1;min-width:100px;padding:10px 12px;border:none;border-radius:10px;background:'+btnColor+';color:'+(enRuta?'#003300':'#fff')+';font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;min-height:44px;touch-action:manipulation">'+btnLabel+'</button>'+
       '</div>')+
   '</div>';
 }
@@ -6899,11 +6906,11 @@ function _posMenuDrop(e, drop){
   const rect=btn.getBoundingClientRect();
   const W=window.innerWidth, H=window.innerHeight;
   const dropW=184; // min-width del dropdown
-  // Posicionar justo debajo del botón, alineado a la derecha del botón
+  // Posicionar justo debajo del botón, abierto hacia la derecha por defecto
   let top=rect.bottom+4;
-  let left=rect.right-dropW;
+  let left=rect.left; // abre hacia la derecha
+  if(left+dropW>W-6)left=W-dropW-6; // si no entra a la derecha, ajusta
   if(left<6)left=6;
-  if(left+dropW>W-6)left=W-dropW-6;
   // Si no entra abajo, abrir hacia arriba
   const estH=Math.min(drop.childElementCount*42+12,280);
   if(top+estH>H-8){top=rect.top-estH-4;}
@@ -6911,7 +6918,7 @@ function _posMenuDrop(e, drop){
   drop.style.top=top+'px';
   drop.style.left=left+'px';
   drop.style.right='auto';
-  drop.style.zIndex='9990';
+  drop.style.zIndex='99999';
 }
 function _closeAllDropMenus(){
   document.querySelectorAll('.order-dropdown.open').forEach(function(d){
@@ -14278,11 +14285,12 @@ function _mapaAddMarker(map,o,lat,lng,exact){
   el.style.cssText='display:flex;flex-direction:column;align-items:center;cursor:pointer;opacity:'+opacity;
   el.innerHTML=
     '<div style="font-size:10px;font-weight:600;color:#f1f5f9;background:rgba(15,17,23,.88);padding:3px 7px;border-radius:5px;margin-bottom:3px;white-space:nowrap;backdrop-filter:blur(4px);letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.8);'+labelBorder+'">'+escHtml(shortName)+urgLabel+priorityLabel+'</div>'+
-    '<div class="'+pinClass+'" style="background:'+color+';color:#fff;width:44px;height:44px;border-radius:50%;'+
+    '<div class="'+pinClass+'" style="background:'+color+';color:#fff;width:40px;height:40px;border-radius:50%;'+
     'border:3px solid rgba(255,255,255,.95);box-shadow:0 2px 6px rgba(0,0,0,.5);'+(isPriority?'':urgAnim)+
     'display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;line-height:1.15;text-align:center">'+
     '<span style="font-size:9px">'+num+'</span><span style="font-size:8.5px">'+escHtml(abbr)+'</span>'+
-    '</div>';
+    '</div>'+
+    '<div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:12px solid '+color+';margin:0 auto;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));"></div>';
   const wa=o.telefono?'<a href="https://wa.me/595'+String(o.telefono).replace(/\D/g,'')+'" target="_blank" rel="noopener noreferrer" style="background:#25D366;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;text-decoration:none;font-weight:700">💬 WA</a>':'';
   const dlvNombre=(_usersCache.find(u=>u.id===o.deliveryId)||{}).nombre||'Sin asignar';
   const vendNombre=(_usersCache.find(u=>u.id===o.vendedorId)||{}).nombre||'—';
@@ -14308,7 +14316,7 @@ function _mapaAddMarker(map,o,lat,lng,exact){
     '</div>'+
     (exact?'':'<div style="font-size:10px;color:#64748b;margin-top:6px">⚠ Posición aproximada por dirección</div>')+
     '</div>';
-  const m=new mapboxgl.Marker(el).setLngLat([lng,lat]).setPopup(new mapboxgl.Popup({offset:30,maxWidth:'260px'}).setHTML(popupHtml)).addTo(map);
+  const m=new mapboxgl.Marker({element:el,anchor:'bottom'}).setLngLat([lng,lat]).setPopup(new mapboxgl.Popup({offset:12,maxWidth:'260px'}).setHTML(popupHtml)).addTo(map);
   if(window._mapMarkers[o.id]){try{const _old=window._mapMarkers[o.id];if(_old.getPopup){const _p=_old.getPopup();if(_p)_p.remove();}  _old.remove();}catch(_){}}
   window._mapMarkers[o.id]=m;
 }
@@ -16525,6 +16533,24 @@ PAGES.asistente = function(){
 
 window._asistHistorial = window._asistHistorial || [];
 
+function _ttsSpeak(text){
+  if(!CU||CU.rol!=='delivery')return;
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const clean=(text||'').replace(/<[^>]+>/g,'').replace(/[*_`#>~\[\]]+/g,'').replace(/\s+/g,' ').trim();
+  if(!clean)return;
+  const u=new SpeechSynthesisUtterance(clean);
+  u.lang='es';u.rate=1.1;u.volume=1.0;
+  window._ttsLastUtter=u;
+  window.speechSynthesis.speak(u);
+}
+// IA-3: reanudar TTS si la pantalla vuelve a estar visible
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden&&window.speechSynthesis&&window.speechSynthesis.paused){
+    window.speechSynthesis.resume();
+  }
+});
+
 function _asistAgregarMsg(role, content){
   window._asistHistorial.push({role:role, content:content});
   _asistRender();
@@ -16585,6 +16611,7 @@ async function _asistEnviar(){
     }
 
     _asistAgregarMsg('assistant', data.response || '(sin respuesta)');
+    _ttsSpeak(data.response||'');
 
     if(data.tools_executed && data.tools_executed.length){
       for(const t of data.tools_executed){
@@ -16661,6 +16688,7 @@ async function _asistConfirmar(elemId){
     if(th) th.remove();
     _aiAvatarThinking(false);
     _asistAgregarMsg('assistant', (data && data.response) || 'OK');
+    _ttsSpeak((data&&data.response)||'OK');
     if(data && data.tools_executed && data.tools_executed.length){
       for(const t of data.tools_executed){
         if(t.result && t.result.requires_confirmation){
