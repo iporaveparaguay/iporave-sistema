@@ -15943,14 +15943,19 @@ async function _cargarComprobantesDePagos(pagosIds){
   return window._comprobantesCache;
 }
 
+// L4 fix: evita duplicar el dominio si downloadUrl ya es una URL absoluta
+function _buildFileUrl(url){
+  if(!url)return'';
+  return(/^https?:\/\//i.test(url))?url:(WORKER_URL+(url.startsWith('/')?url:'/'+url));
+}
 function _verComprobante(pagoId){
   const items=(window._comprobantesCache&&window._comprobantesCache[pagoId])||[];
   if(!items.length){ pushNotif('Sin comprobantes','w'); return; }
   if(items.length===1){
-    window.open(WORKER_URL + items[0].downloadUrl, '_blank');
+    window.open(_buildFileUrl(items[0].downloadUrl), '_blank');
   } else {
     const html=items.map(function(i){
-      return '<a href="'+WORKER_URL+escAttr(i.downloadUrl)+'" target="_blank" rel="noopener noreferrer" style="display:block;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;color:var(--text);text-decoration:none">📎 '+escHtml(i.nombre_archivo)+'</a>';
+      return '<a href="'+escAttr(_buildFileUrl(i.downloadUrl))+'" target="_blank" rel="noopener noreferrer" style="display:block;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;color:var(--text);text-decoration:none">📎 '+escHtml(i.nombre_archivo)+'</a>';
     }).join('');
     openA('Comprobantes', html, '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>');
   }
