@@ -4675,6 +4675,12 @@ function doLogout(){
   const cpanel=$('codexNotifPanel');if(cpanel)cpanel.remove();
   _aiHistory=[];
   window._asistHistorial=[];
+  // Limpiar callbacks de auth sensible para evitar ejecución de sesión anterior
+  window._sensitiveAuthCallback=null;
+  window._userAuthCallback=null;
+  // Resetear flags de listeners para que se rebindeen limpio en próximo login
+  window._notifSessionSwBound=false;
+  window._bellScrollBound=false;
   try{_cleanAllAppStorage();}catch(_){ }
 }
 
