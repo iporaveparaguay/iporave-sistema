@@ -4786,6 +4786,7 @@ function doLogout(){
   try{if(window._trackRefreshTimer){clearInterval(window._trackRefreshTimer);window._trackRefreshTimer=null;}}catch(_){}
   _ordersCache=[];_usersCache=[];_zonasCache=[];_catalogoCache=[];
   _shownMsgIds=new Set();
+  window._asistHistorial=[];
   _sessionStart='';
   _supa=null;_supaConnected=false;
   updateConnUI(false);
