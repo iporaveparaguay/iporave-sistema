@@ -2567,7 +2567,7 @@ const DL = {
       if(o.vendedorId&&String(o.vendedorId)!==_meId)_targets.add(o.vendedorId);
       if(o.created_by&&String(o.created_by)!==_meId)_targets.add(o.created_by);
       if(o.dropId&&String(o.dropId)!==_meId)_targets.add(o.dropId);
-      const _estadoEmoji={Despachado:SVG.pkg,'En ruta':SVG.carRoute,'En Ruta':SVG.carRoute,Entregado:SVG.checkCircle,Cancelado:SVG.xCircle,Devuelto:SVG.rotateCcw||'↩️',Pendiente:SVG.clock};
+      const _estadoEmoji={Despachado:SVG?.pkg,'En ruta':SVG?.carRoute,'En Ruta':SVG?.carRoute,Entregado:SVG?.checkCircle,Cancelado:SVG?.xCircle,Devuelto:SVG?.rotateCcw||'↩️',Pendiente:SVG?.clock};
       const _emoji=_estadoEmoji[o.estado]||'📋';
       _targets.forEach(uid=>{
         _fetchWithTimeout(WORKER_URL+'/api/push-send',{
@@ -4116,7 +4116,6 @@ async function doLogin(){
       }else{
         showAlert('loginAlert','e',data.error||'Email o contraseña incorrectos');
       }
-      if(btn)btn.textContent='Ingresar al sistema';
       return;
     }
     CU=data.user;
@@ -4189,6 +4188,7 @@ async function doLogin(){
     }
   }catch(e){
     showAlert('loginAlert','e','Error al iniciar sesión: '+e.message);
+  }finally{
     if(btn)btn.textContent='Ingresar al sistema';
   }
 }
@@ -6071,7 +6071,7 @@ PAGES.dashboard=async function(){
     html+='<div class="sc bl" style="text-align:center"><div class="slabel">Pedidos creados</div><div class="sval" style="font-size:24px">'+pedHoy.length+'</div></div>';
     html+='<div class="sc gr" style="text-align:center"><div class="slabel">Entregados hoy</div><div class="sval" style="font-size:24px">'+entHoy.length+'</div></div>';
     html+='<div class="sc" style="border-top:2px solid var(--accent);text-align:center"><div class="slabel" style="color:var(--accent)">Recaudación hoy</div><div class="sval" style="font-size:16px;color:var(--accent)">'+fmt(recHoy)+'</div></div>';
-    html+='<div class="sc ac" style="text-align:center"><div class="slabel">En ruta ahora</div><div class="sval" style="font-size:24px">'+enRuta.length+'</div></div>';
+    html+='<div class="sc" style="border-top:2px solid var(--cyan);text-align:center"><div class="slabel" style="color:var(--cyan)">En ruta ahora</div><div class="sval" style="font-size:24px;color:var(--cyan)">'+enRuta.length+'</div></div>';
     html+='</div></div>';
     // ── Accesos rápidos ──
     html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">';
@@ -6164,10 +6164,10 @@ PAGES.dashboard=async function(){
       '<div class="sc bl"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.calendar+'<span>Hoy</span></div><div class="sval">'+hoyV+'</div></div>'+
       '<div class="sc ac"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.pkg+'<span>Total pedidos</span></div><div class="sval">'+mine.length+'</div></div>'+
       '<div class="sc gr"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.checkCircle+'<span>Entregados</span></div><div class="sval">'+ent.length+'</div><div class="ssub">'+(mine.length?Math.round(ent.length/mine.length*100):0)+'% éxito</div></div>'+
-      '<div class="sc bl"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.truck+'<span>En tránsito</span></div><div class="sval">'+mine.filter(o=>['Despachado','En Ruta'].includes(o.estado)).length+'</div></div>'+
-      '<div class="sc ac"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.clock+'<span>Pendientes</span></div><div class="sval">'+mine.filter(o=>o.estado==='Pendiente').length+'</div></div>'+
+      '<div class="sc" style="border-top:2px solid var(--cyan)"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px;color:var(--cyan)">'+SVG.truck+'<span>En tránsito</span></div><div class="sval" style="color:var(--cyan)">'+mine.filter(o=>['Despachado','En Ruta'].includes(o.estado)).length+'</div></div>'+
+      '<div class="sc" style="border-top:2px solid var(--purple)"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px;color:var(--purple)">'+SVG.clock+'<span>Pendientes</span></div><div class="sval" style="color:var(--purple)">'+mine.filter(o=>o.estado==='Pendiente').length+'</div></div>'+
       '<div class="sc re"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.xCircle+'<span>Cancelados/Dev.</span></div><div class="sval">'+mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
-      '<div class="sc gr"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px">'+SVG.trendingUp+'<span>Ganancia neta</span></div><div class="sval" style="font-size:15px">'+fmt(ing-cos-tar)+'</div></div>'+
+      '<div class="sc" style="border-top:2px solid #10b981"><div class="slabel" style="display:inline-flex;align-items:center;gap:4px;color:#10b981">'+SVG.trendingUp+'<span>Ganancia neta</span></div><div class="sval" style="color:#10b981;font-size:15px">'+fmt(ing-cos-tar)+'</div></div>'+
       '</div>';
     // ── Usuarios activos por rol (solo admin/superadmin) ──
     if(['admin','superadmin'].includes(CU.rol)&&Array.isArray(_usersCache)&&_usersCache.length){
@@ -6185,10 +6185,9 @@ PAGES.dashboard=async function(){
       });
       html+='</div></div>';
     }
-    // ── Acciones rápidas (admin/superadmin) ──
+    // ── Links rápidos secundarios (admin/superadmin) ──
     if(['admin','superadmin'].includes(CU.rol)){
       html+='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">'+
-        '<button class="btn btn-primary btn-sm" onclick="nav(\'neworder\')">'+SVG.plus+' Nuevo pedido</button>'+
         '<button class="btn btn-secondary btn-sm" onclick="nav(\'usuarios\')">'+SVG.users+' Gestionar usuarios</button>'+
         '<button class="btn btn-secondary btn-sm" onclick="nav(\'orders\')">'+SVG.clipboard+' Todos los pedidos</button>'+
       '</div>';
@@ -6640,7 +6639,7 @@ function _renderCharts(){
       type:'bar',
       data:{
         labels:topZonas.length?topZonas.map(([z])=>z.length>14?z.substring(0,13)+'…':z):['Sin datos'],
-        datasets:[{label:'Pedidos',data:topZonas.length?topZonas.map(([,c])=>c):[0],backgroundColor:gradBar,borderRadius:8,borderSkipped:false,borderWidth:0,hoverBackgroundColor:'rgba(99,102,241,1)'}]
+        datasets:[{label:'Pedidos',data:topZonas.length?topZonas.map(([,c])=>c):[0],backgroundColor:['#6366f1','#f59e0b','#22c55e','#ef4444','#a855f7','#06b6d4'].slice(0,topZonas.length||1),borderRadius:8,borderSkipped:false,borderWidth:0,hoverBackgroundColor:['#818cf8','#fbbf24','#4ade80','#f87171','#c084fc','#22d3ee'].slice(0,topZonas.length||1)}]
       },
       options:{
         responsive:true,
