@@ -3350,7 +3350,8 @@ function _waAutoNotif(o,estadoNuevo){
   var msgs={
     'En Ruta':'🚚 Tu pedido #'+o.id+' está en camino. Llegará pronto.\n🔗 Rastreá tu pedido en tiempo real: '+trackUrl+' — Iporãve',
     'Entregado':'✅ Tu pedido #'+o.id+' fue entregado. ¡Gracias por tu compra! — Iporãve',
-    'Cancelado':'❌ Tu pedido #'+o.id+' fue cancelado. Contactanos para más info. — Iporãve'
+    'Cancelado':'❌ Tu pedido #'+o.id+' fue cancelado. Contactanos para más info. — Iporãve',
+    'Devuelto':'↩️ Tu pedido #'+o.id+' fue devuelto. Contactanos para coordinar nueva entrega. — Iporãve'
   };
   var msg=msgs[estadoNuevo];
   if(!msg)return;
@@ -3380,6 +3381,15 @@ async function notifEntregadoVendedor(o){
   await _supa.from('mensajes').insert([{
     de_id:CU.id,de_nombre:CU.nombre||CU.username,para_id:o.vendedorId,mensaje:msg
   }]).catch(e=>console.warn('notifEntregadoVendedor:',e.message));
+}
+async function _notifEstadoAdminVend(o,emoji,label){
+  if(!_supa)return;
+  const {data:admins}=await _supa.from('usuarios').select('id').in('rol',['admin','superadmin']);
+  const destinos=new Set((admins||[]).map(a=>a.id));
+  if(o.vendedorId){const vend=_usersCache.find(u=>String(u.id)===String(o.vendedorId));if(vend&&vend.rol!=='delivery')destinos.add(o.vendedorId);}
+  destinos.delete(CU.id);
+  const msgs=[...destinos].map(para_id=>({de_id:CU.id,de_nombre:CU.nombre||CU.username,para_id,mensaje:emoji+' '+label+': Pedido #'+o.id+' — '+o.cliente}));
+  if(msgs.length)await _supa.from('mensajes').insert(msgs).catch(()=>{});
 }
 
 /* ══════════════════════════════════════════════════
@@ -7929,11 +7939,11 @@ async function _ejecutarConfirmDlv(){
   if(_newLat&&_newLng){o.gpsLat=_newLat;o.gpsLng=_newLng;}
   const _esDelivery=CU&&CU.rol==='delivery';
   if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;const _gL=gv('gpsLat'),_gN=gv('gpsLng');if(_gL&&_gN){o.gpsLat=_gL;o.gpsLng=_gN;o.gpsTimestamp=nowStr();}await DL.incCupo(CU.id);if(!_esDelivery)waEntregado(o);else _waAutoNotif(o,'Entregado');notifEntregaAdmin(o);notifEntregadoVendedor(o);_gpsLoopStop();}
-  if(estado==='Despachado'){if(!_esDelivery)waDespachado(o);}
+  if(estado==='Despachado'){if(!_esDelivery)waDespachado(o);_notifEstadoAdminVend(o,'📦','DESPACHADO');}
   if(estado==='En Ruta'){if(!_esDelivery)waEnRuta(o);else _waAutoNotif(o,'En Ruta');notifEnRutaAdmin(o);_gpsLoopStart(o);}
   if(_esDelivery&&['Despachado','En Ruta','Entregado'].includes(estado))pushNotif('Mensaje enviado al cliente','ok');
-  if(['Cancelado','Devuelto','Reprogramado'].includes(_estadoFinal)){_gpsLoopStop();if(_estadoFinal==='Cancelado')_waAutoNotif(o,'Cancelado');}
-  if(estado.startsWith('No contesta'))waNoContesta(o);
+  if(['Cancelado','Devuelto','Reprogramado'].includes(_estadoFinal)){_gpsLoopStop();if(['Cancelado','Devuelto'].includes(_estadoFinal))_waAutoNotif(o,_estadoFinal);const _emoji=_estadoFinal==='Cancelado'?'❌':_estadoFinal==='Devuelto'?'↩️':'🔄';_notifEstadoAdminVend(o,_emoji,_estadoFinal.toUpperCase());}
+  if(estado.startsWith('No contesta')){waNoContesta(o);_notifEstadoAdminVend(o,'📵','NO CONTESTA');}
   try{
     await DL.saveOrder(o);
     await refreshCache();
