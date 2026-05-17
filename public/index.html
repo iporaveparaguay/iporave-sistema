@@ -10211,7 +10211,7 @@ PAGES.analitica_vend=function(periodo){
 /* ─── ANALÍTICA DROPSHIPPER ─── */
 PAGES.analitica_drop=function(){
   $('tbActions').innerHTML='';
-  const mine=_ordersCache.filter(o=>o.dropId===CU.id);
+  const mine=_ordersCache.filter(o=>String(o.dropId)===String(CU.id));
   const ent=mine.filter(o=>o.estado==='Entregado');
   const act=mine.filter(o=>!['Entregado','Cancelado','Devuelto'].includes(o.estado));
   const canc=mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado));
@@ -18739,8 +18739,9 @@ function toggleTheme(){
     if(item.id && wasSeen(item.id)){ _drainQueue(); return; }
     var ok = show(item.targetSel, item.mensaje, item.opts);
     if(!ok){
-      // si el target no apareció, simplemente continuar
-      setTimeout(_drainQueue, 200);
+      // target no existe — marcar como visto y pasar al siguiente sin delay visible
+      if(item.id) markSeen(item.id);
+      _drainQueue();
     }
   }
 
