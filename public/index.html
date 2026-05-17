@@ -6138,7 +6138,9 @@ function _styleDashboardStats(){
   const ca=$('ca');if(!ca)return;
   const grid=ca.querySelector('.sgrid');if(!grid)return;
   Array.from(grid.querySelectorAll('.sc')).forEach(card=>{
-    // Preservar HTML (incluye SVG ya inyectado). NO usar textContent que destruye los SVG.
+    // No pisar tarjetas que ya tienen color asignado (clase o border-top inline)
+    if(/\b(ac|gr|re|bl|yw|cy|pu)\b/.test(card.className))return;
+    if((card.getAttribute('style')||'').includes('border-top'))return;
     const slabelEl=card.querySelector('.slabel');
     const svalEl=card.querySelector('.sval');
     const ssubEl=card.querySelector('.ssub');
@@ -6149,11 +6151,13 @@ function _styleDashboardStats(){
     const subHTML=ssubEl?ssubEl.innerHTML:'';
     let color='var(--accent)';
     if(labelText.includes('entregado'))color='var(--green)';
-    else if(labelText.includes('tr')||labelText.includes('camino')||labelText.includes('asignado'))color='var(--blue)';
-    if(labelText.includes('pendiente'))color='#f59e0b';
-    if(labelText.includes('cancelado')||labelText.includes('dev'))color='var(--red)';
-    if(labelText.includes('ganancia')||labelText.includes('recaudado'))color='var(--green)';
+    else if(labelText.includes('asignado'))color='var(--blue)';
+    if(labelText.includes('pendiente'))color='#eab308';
+    if(labelText.includes('cancelado')||labelText.includes('devuelto'))color='var(--red)';
+    if(labelText.includes('ganancia'))color='#eab308';
+    if(labelText.includes('recaudado'))color='#d97706';
     if(labelText.includes('comisi'))color='#8b5cf6';
+    if(labelText.includes('tránsito')||labelText.includes('en ruta')||labelText.includes('camino'))color='#0d9488';
     card.setAttribute('style','border-top:3px solid '+color+';display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:16px 10px;min-height:118px;gap:0');
     card.innerHTML=
       '<div class="slabel" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);display:inline-flex;align-items:center;justify-content:center;gap:4px;margin-bottom:6px">'+labelHTML+'</div>'+
@@ -10216,9 +10220,9 @@ PAGES.analitica_prov=function(){
       '<div class="sc re"><div class="slabel">Canceladas/Dev.</div><div class="sval">'+canc.length+'</div></div>'+
     '</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px">'+
-      '<div style="background:var(--card);border-radius:12px;padding:16px;border-left:4px solid #22c55e">'+
+      '<div style="background:var(--card);border-radius:12px;padding:16px;border-left:4px solid #d97706">'+
         '<div style="font-size:11px;color:var(--text2);margin-bottom:4px">💰 Para cobrar ya</div>'+
-        '<div style="font-size:18px;font-weight:800;color:#22c55e">'+fmt(cobrar)+'</div>'+
+        '<div style="font-size:18px;font-weight:800;color:#d97706">'+fmt(cobrar)+'</div>'+
         '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+ent.length+' pedidos entregados</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:16px;border-left:4px solid #3b82f6">'+
@@ -10408,9 +10412,9 @@ PAGES.analitica_vend=function(periodo){
       '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+mine.filter(o=>['Cancelado','Devuelto'].includes(o.estado)).length+'</div></div>'+
     '</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:16px">'+
-      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #22c55e">'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #d97706">'+
         '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">💰 Ventas brutas</div>'+
-        '<div style="font-size:17px;font-weight:800;color:#22c55e">'+fmt(vBruta)+'</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#d97706">'+fmt(vBruta)+'</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #ef4444">'+
         '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">📦 Costo proveedor</div>'+
@@ -10604,9 +10608,9 @@ PAGES.analitica_drop=function(){
       '<div class="sc re"><div class="slabel">Cancelados/Dev.</div><div class="sval">'+canc.length+'</div></div>'+
     '</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'+
-      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #22c55e">'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #d97706">'+
         '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">💰 Comisión cobrada</div>'+
-        '<div style="font-size:18px;font-weight:800;color:#22c55e">Gs. '+fmtN(totalComision)+'</div>'+
+        '<div style="font-size:18px;font-weight:800;color:#d97706">Gs. '+fmtN(totalComision)+'</div>'+
         '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+ent.length+' pedidos entregados</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid var(--accent)">'+
@@ -10866,9 +10870,9 @@ PAGES.analitica_admin=function(){
     '</div>'+
     '<div class="stitle"><span style="display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Flujo Financiero — pedidos entregados</span></span></div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:16px">'+
-      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #22c55e">'+
+      '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #d97706">'+
         '<div style="font-size:11px;color:var(--text2);margin-bottom:3px;display:inline-flex;align-items:center;gap:4px">'+SVG.dollar+'<span>Ingresos brutos</span></div>'+
-        '<div style="font-size:17px;font-weight:800;color:#22c55e">'+fmt(tIng)+'</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#d97706">'+fmt(tIng)+'</div>'+
       '</div>'+
       '<div style="background:var(--card);border-radius:12px;padding:14px;border-left:4px solid #ef4444">'+
         '<div style="font-size:11px;color:var(--text2);margin-bottom:3px;display:inline-flex;align-items:center;gap:4px">'+SVG.pkg+'<span>Costo proveedores</span></div>'+
