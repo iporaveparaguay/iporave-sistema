@@ -3980,7 +3980,8 @@ async function sendAI(){
     removeAITyping();
     if(finalReply){
       _aiHistory.push({role:'assistant',content:finalReply});
-      addAIMsg(escHtml(finalReply),'bot');
+      // M23: renderizar markdown en respuestas del asistente
+      addAIMsg(escMd(finalReply),'bot');
     }
     try{if(typeof filtrar==='function')filtrar();}catch(e){}
 
@@ -8852,183 +8853,6 @@ function _boletaHTML(o){
     '</div>'};
 }
 
-// ---- BLOQUE LEGACY (no usado, mantenido como referencia inerte) ----
-function _boletaHTML_legacy_unused(o){
-  const emp=_getEmpresa();
-  const zona=_getZonaO(o);
-  const total=(o.precio||0)*(o.qty||1);
-  const flete=zona.precio;
-  const totalFact=total+flete;
-  const tasaNum=parseFloat(o.tipoIva)||0;
-  const iva=(o.tipoIva==='Exento'||tasaNum===0)?0:Math.round(totalFact/((100+tasaNum)/tasaNum));
-  const base=totalFact-iva;
-  const _empColor=emp.colorPrimario||'#f5a623';
-  const _empSec=emp.colorSecundario||'#1f2937';
-  const _empNom=escHtml(emp.nombre||'IPORAVE');
-  const _empLogo='';
-  const _timb=escHtml(emp.timbrado||EMPRESA.timbrado||'SIN TIMBRADO');
-  const _iva10 = (o.tipoIva==='Exento'||o.tipoIva==='5%') ? 0 : iva;
-  const _iva5  = (o.tipoIva==='5%') ? iva : 0;
-  const _exenta= (o.tipoIva==='Exento') ? totalFact : 0;
-  const _pagada = (o.estado==='Entregado' || !!o.metodoCobro);
-  const _badgeClass = _pagada ? 'pagada' : 'pendiente';
-  const _badgeText  = _pagada ? 'PAGADA' : 'PENDIENTE';
-  const _fivaCss =
-    '<style>'+
-    '.factura-iva-wrap{padding:24px;background:transparent;min-height:100%}'+
-    '.factura-iva{max-width:780px;margin:0 auto;padding:32px 40px;background:#fff !important;color:#1a1a1a !important;font-family:"DM Sans","Helvetica Neue",system-ui,sans-serif;font-size:13px;line-height:1.55;border:1px solid #e5e5e5;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15)}'+
-    '.factura-iva *{color:inherit}'+
-    '.factura-iva-actions{display:flex;gap:8px;margin:0 auto 16px;justify-content:flex-end;max-width:780px}'+
-    '.factura-iva-header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:20px;border-bottom:2px solid #1a1a1a;margin-bottom:24px}'+
-    '.factura-iva-empresa{flex:1;min-width:0}'+
-    '.factura-iva-empresa h1{margin:0 0 4px 0;font-size:22px;font-weight:800;letter-spacing:0.2px;color:#1a1a1a}'+
-    '.factura-iva-empresa .fiscal{font-size:11px;color:#444;margin-top:2px;font-family:"JetBrains Mono",monospace}'+
-    '.factura-iva-empresa .contacto{font-size:11px;color:#666;margin-top:6px;line-height:1.5}'+
-    '.factura-iva-meta{text-align:right;min-width:200px;flex-shrink:0}'+
-    '.factura-iva-meta .tipo{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:2px}'+
-    '.factura-iva-meta .num{font-size:18px;font-weight:700;color:#c47a1a;font-family:"JetBrains Mono",monospace}'+
-    '.factura-iva-meta .fecha{color:#666;font-size:12px;margin-top:2px}'+
-    '.factura-iva-badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-top:8px}'+
-    '.factura-iva-badge.pagada{background:#d4f4dd;color:#0d7344}'+
-    '.factura-iva-badge.pendiente{background:#fef3cd;color:#854d0e}'+
-    '.factura-iva-cliente{background:#f8f7f4;border-left:3px solid #c47a1a;padding:14px 18px;border-radius:0 8px 8px 0;margin-bottom:20px}'+
-    '.factura-iva-cliente .label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600}'+
-    '.factura-iva-cliente .nombre{font-weight:700;font-size:15px;color:#1a1a1a;margin-bottom:6px}'+
-    '.factura-iva-cliente .data{font-size:12px;color:#444;line-height:1.7}'+
-    '.factura-iva-meta-extra{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#666;margin-bottom:16px;padding:8px 12px;background:#fafaf8;border-radius:6px;flex-wrap:wrap;gap:8px}'+
-    '.factura-iva-tabla{width:100%;border-collapse:collapse;margin-bottom:20px}'+
-    '.factura-iva-tabla th{text-align:left;padding:10px;background:#1a1a1a;color:#fff;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0}'+
-    '.factura-iva-tabla th:not(:first-child){text-align:right}'+
-    '.factura-iva-tabla td{padding:11px 10px;border-bottom:1px solid #eee;vertical-align:top;font-variant-numeric:tabular-nums}'+
-    '.factura-iva-tabla td:not(:first-child):not(.desc){text-align:right}'+
-    '.factura-iva-tabla tbody tr:nth-child(even){background:#fafaf8}'+
-    '.factura-iva-tabla td.desc small{color:#999;font-size:10px}'+
-    '.factura-iva-totales{display:flex;justify-content:flex-end;margin-bottom:24px}'+
-    '.factura-iva-totales table{min-width:300px;font-size:13px;border-collapse:collapse}'+
-    '.factura-iva-totales td{padding:5px 0;font-variant-numeric:tabular-nums}'+
-    '.factura-iva-totales td:first-child{color:#666;padding-right:32px}'+
-    '.factura-iva-totales td:last-child{text-align:right;font-weight:600;color:#1a1a1a}'+
-    '.factura-iva-totales tr.total td{font-size:18px;font-weight:800;padding-top:10px;padding-bottom:4px;border-top:3px double #1a1a1a;color:#1a1a1a}'+
-    '.factura-iva-footer{margin-top:28px;padding-top:16px;border-top:1px dashed #ccc;text-align:center;font-size:11px;color:#888}'+
-    '.factura-iva-footer .gracias{font-size:14px;color:#1a1a1a;font-weight:600;margin-bottom:6px;font-style:italic}'+
-    '.factura-iva-footer .sistema{margin-top:6px;font-size:10px;color:#999}'+
-    '.factura-iva-footer .legal{margin-top:4px;font-size:9px;color:#aaa}'+
-    '@media print{'+
-      'body *{visibility:hidden}'+
-      '.factura-iva-wrap,.factura-iva-wrap *{visibility:visible}'+
-      '.factura-iva-wrap{position:absolute;left:0;top:0;width:100%;padding:0;background:#fff}'+
-      '.factura-iva{border:none !important;box-shadow:none !important;padding:0 !important;max-width:none !important;border-radius:0 !important;margin:0 !important}'+
-      '.factura-iva-tabla thead{display:table-header-group}'+
-      '.factura-iva-tabla tr,.factura-iva-tabla td,.factura-iva-tabla th{page-break-inside:avoid}'+
-      '.factura-iva-actions{display:none !important}'+
-      '@page{margin:14mm}'+
-    '}'+
-    '@media (max-width:640px){'+
-      '.factura-iva-wrap{padding:12px}'+
-      '.factura-iva{padding:18px 16px !important;font-size:12px !important;max-width:100% !important}'+
-      '.factura-iva-header{flex-direction:column !important;gap:12px !important}'+
-      '.factura-iva-meta{text-align:left !important;min-width:0 !important}'+
-      '.factura-iva-empresa h1{font-size:18px}'+
-      '.factura-iva-tabla{font-size:11px !important}'+
-      '.factura-iva-tabla th,.factura-iva-tabla td{padding:6px 4px !important}'+
-      '.factura-iva-totales table{min-width:100% !important}'+
-      '.factura-iva-totales tr.total td{font-size:15px}'+
-    '}'+
-    '</style>';
-  return {zona,total,flete,totalFact,iva,base,
-    html: _fivaCss +
-    '<div class="factura-iva-wrap">'+
-    '<div class="factura-iva-actions">'+
-      '<button class="btn btn-secondary" onclick="window.print()">'+SVG.printer+' Imprimir</button>'+
-      '<button class="btn btn-primary" onclick="printBoleta('+(o.id||0)+')">'+SVG.arrowDown+' Descargar PDF</button>'+
-    '</div>'+
-    '<div class="factura-iva boleta" id="boletaDiv">'+
-    /* === HEADER === */
-    '<div class="factura-iva-header">'+
-      '<div class="factura-iva-empresa">'+
-        _empLogo+
-        '<h1>'+_empNom+'</h1>'+
-        ((emp.ruc||_timb)?'<div class="fiscal">'+(emp.ruc?'RUC: '+escHtml(emp.ruc):'')+((emp.ruc&&_timb)?' &nbsp;·&nbsp; ':'')+(_timb?'Timbrado: '+_timb:'')+'</div>':'')+
-        '<div class="contacto">'+
-          (emp.dir?escHtml(emp.dir)+'<br>':'')+
-          (emp.tel?'Tel: '+escHtml(emp.tel):'')+
-          ((emp.tel&&emp.email)?' &nbsp;·&nbsp; ':'')+
-          (emp.email?escHtml(emp.email):'')+
-          (((emp.tel||emp.email)&&emp.web)?'<br>':'')+
-          (emp.web?escHtml(emp.web):'')+
-        '</div>'+
-      '</div>'+
-      '<div class="factura-iva-meta">'+
-        '<div class="tipo">Factura electrónica</div>'+
-        '<div class="num">N° '+escHtml(o.numDoc||o.boletaNum||'')+'</div>'+
-        '<div class="fecha">Emisión: '+fmtDate(o.fecha)+'</div>'+
-        '<div><span class="factura-iva-badge '+_badgeClass+'">'+_badgeText+'</span></div>'+
-      '</div>'+
-    '</div>'+
-    /* === CLIENTE === */
-    '<div class="factura-iva-cliente">'+
-      '<div class="label">Facturar a</div>'+
-      '<div class="nombre">'+escHtml(o.razonSocial||o.cliente||'—')+'</div>'+
-      '<div class="data">'+
-        (o.ruc?'<b>RUC:</b> '+escHtml(o.ruc)+'<br>':(o.cedula?'<b>CI:</b> '+escHtml(o.cedula)+'<br>':''))+
-        (o.direccion?escHtml(o.direccion)+'<br>':'')+
-        (o.telefono?'Tel: '+escHtml(o.telefono):'')+
-        ((o.telefono&&o.email)?' &nbsp;·&nbsp; ':'')+
-        (o.email?escHtml(o.email):'')+
-      '</div>'+
-    '</div>'+
-    /* === META extra: condición + entrega + vendedor === */
-    '<div class="factura-iva-meta-extra">'+
-      '<div><b>Condición:</b> Contado'+(getUser(o.vendedorId)?.nombre?' &nbsp;·&nbsp; <b>Vendedor:</b> '+escHtml(getUser(o.vendedorId).nombre):'')+'</div>'+
-      '<div><b>Entrega:</b> '+escHtml(zona.nombre||'—')+(zona.tiempoEntrega?' ('+escHtml(zona.tiempoEntrega)+')':'')+'</div>'+
-    '</div>'+
-    /* === TABLA ITEMS === */
-    '<table class="factura-iva-tabla">'+
-      '<thead><tr>'+
-        '<th style="width:60px;text-align:left">Cant.</th>'+
-        '<th style="text-align:left">Descripción</th>'+
-        '<th style="width:110px">Precio unit.</th>'+
-        '<th style="width:70px">IVA</th>'+
-        '<th style="width:130px">Subtotal</th>'+
-      '</tr></thead>'+
-      '<tbody>'+
-        '<tr>'+
-          '<td>'+o.qty+'</td>'+
-          '<td class="desc">'+escHtml(o.producto||'')+(o.proveedor?'<br><small>Prov: '+escHtml(o.proveedor)+'</small>':'')+'</td>'+
-          '<td>Gs. '+fmtN(o.precio)+'</td>'+
-          '<td>'+escHtml(o.tipoIva||'10%')+'</td>'+
-          '<td><b>Gs. '+fmtN((o.precio||0)*(o.qty||1))+'</b></td>'+
-        '</tr>'+
-        '<tr>'+
-          '<td>1</td>'+
-          '<td class="desc">Flete — Zona '+escHtml(zona.nombre||'')+'</td>'+
-          '<td>Gs. '+fmtN(flete)+'</td>'+
-          '<td>'+escHtml(o.tipoIva||'10%')+'</td>'+
-          '<td><b>Gs. '+fmtN(flete)+'</b></td>'+
-        '</tr>'+
-      '</tbody>'+
-    '</table>'+
-    /* === TOTALES === */
-    '<div class="factura-iva-totales">'+
-      '<table>'+
-        '<tr><td>Subtotal (base):</td><td>Gs. '+fmtN(base)+'</td></tr>'+
-        '<tr><td>IVA 10% incluido:</td><td>Gs. '+fmtN(_iva10)+'</td></tr>'+
-        '<tr><td>IVA 5% incluido:</td><td>Gs. '+fmtN(_iva5)+'</td></tr>'+
-        '<tr><td>Exenta:</td><td>Gs. '+fmtN(_exenta)+'</td></tr>'+
-        '<tr class="total"><td>TOTAL</td><td>Gs. '+fmtN(totalFact)+'</td></tr>'+
-      '</table>'+
-    '</div>'+
-    /* === FOOTER === */
-    '<div class="factura-iva-footer">'+
-      '<div class="gracias">Gracias por su preferencia</div>'+
-      (o.metodoCobro?'<div>Cobrado vía '+escHtml(o.metodoCobro)+'</div>':'')+
-      '<div class="sistema">Iporãve Connect · iporaveparaguay.com</div>'+
-      '<div class="legal">'+_empNom+(_timb?' · Timbrado '+_timb:'')+' · Comprobante válido según Ley N° 125/91</div>'+
-    '</div>'+
-    '</div>'+
-    '</div>'};
-}
-
 function openBoleta(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
   const b=_boletaHTML(o);
@@ -12081,6 +11905,25 @@ function sendOrderChatMsg(orderId){
   DL.saveOrder(o);
 }
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// M23 fix: renderiza markdown básico para respuestas del asistente IA — primero escapa HTML, luego aplica patrones seguros
+function escMd(s){
+  let t=escHtml(s||'');
+  // bloques de código triple-tildes
+  t=t.replace(/```([\s\S]*?)```/g,'<pre style="background:var(--bg2);padding:8px;border-radius:6px;overflow-x:auto;font-size:12px"><code>$1</code></pre>');
+  // **bold**
+  t=t.replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>');
+  // *italic* (cuidado: no afectar inicio de líneas con * de lista)
+  t=t.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g,'$1<i>$2</i>');
+  // `code` inline
+  t=t.replace(/`([^`\n]+)`/g,'<code style="background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:12px">$1</code>');
+  // links [texto](url)
+  t=t.replace(/\[([^\]]+)\]\((https?:[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  // bullets simples al inicio de línea
+  t=t.replace(/^(?:- |\* )(.+)$/gm,'• $1');
+  // newlines
+  t=t.replace(/\n/g,'<br>');
+  return t;
+}
 
 // SEGURIDAD: escape para HTML attribute (value="..." etc.) — incluye comillas
 function escAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -16605,9 +16448,11 @@ function _asistRender(){
   if(!cont) return;
   const html = window._asistHistorial.map(function(m){
     const isUser = m.role === 'user';
+    // M23: usuario se escapa simple; asistente se renderiza con markdown
+    const body = isUser ? escHtml(m.content) : escMd(m.content);
     return ''+
       '<div class="asist-msg '+(isUser?'asist-user':'asist-bot')+'">'+
-        '<div class="asist-bubble">'+escHtml(m.content)+'</div>'+
+        '<div class="asist-bubble">'+body+'</div>'+
       '</div>';
   }).join('');
   cont.innerHTML = html;
