@@ -1927,11 +1927,17 @@ async function loadServerConfig(token){
   try{
     const headers=token?{'Authorization':'Bearer '+token}:{};
     const r=await fetch(WORKER_URL+'/api/config',{headers});
-    if(!r.ok)return;
+    if(!r.ok){
+      // FIX A6: marcar fallo para que cualquier inicializador de mapa pueda detectarlo
+      window._serverConfigFailed=true;
+      console.warn('[loadServerConfig] Respuesta no OK del worker:',r.status);
+      return;
+    }
     const cfg=await r.json();
     if(cfg.supabaseUrl){DEF_CONFIG.supabaseUrl=cfg.supabaseUrl;}
     if(cfg.supabaseKey){DEF_CONFIG.supabaseKey=cfg.supabaseKey;}
-    if(cfg.mapboxToken){mapboxgl.accessToken=cfg.mapboxToken;}
+    if(cfg.mapboxToken){mapboxgl.accessToken=cfg.mapboxToken;window._serverConfigFailed=false;}
+    else{window._serverConfigFailed=true;}
     // Solo guardar en localStorage si el servidor devolvió claves (superadmin)
     if(cfg.supabaseUrl||cfg.supabaseKey){
       try{
@@ -1941,7 +1947,14 @@ async function loadServerConfig(token){
         localStorage.setItem('ipv5_cfg',JSON.stringify(saved));
       }catch(_){}
     }
-  }catch(e){console.warn('No se pudo cargar config del servidor:',e.message);}
+  }catch(e){
+    window._serverConfigFailed=true;
+    console.warn('No se pudo cargar config del servidor:',e.message);
+  }
+}
+// FIX A6: helper para chequear si Mapbox está listo antes de inicializar un mapa
+function _mapboxReady(){
+  return !!(window.mapboxgl && mapboxgl.accessToken && typeof mapboxgl.accessToken==='string' && mapboxgl.accessToken.length>10);
 }
 
 /* ══════════════════════════════════════════════════
@@ -3191,6 +3204,12 @@ async function initAddressAutocomplete(inputId,latId,lngId,statusId){
 async function showDeliveryMap(containerId,orderAddr,gpsLat,gpsLng){
   const container=$(containerId);if(!container)return;
   container.style.height='220px';container.style.borderRadius='8px';container.style.overflow='hidden';
+  // FIX A6: verificar que Mapbox tenga token antes de crear el mapa
+  if(!_mapboxReady()){
+    container.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;background:var(--bg2,#1f2937);color:var(--text2,#cbd5e1);font-size:12px;text-align:center;padding:10px">Mapa no disponible — error de configuración</div>';
+    if(typeof pushNotif==='function')pushNotif('Mapa no disponible — error de configuración','e');
+    return;
+  }
   try{
     const token=mapboxgl.accessToken;
     let destLat=-25.2867,destLng=-57.647;
@@ -6680,7 +6699,7 @@ function _renderDeliveryOperativo(){
           '<div style="font-weight:800;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">✅ '+escHtml(o.cliente||'Cliente')+'</div>'+
           '<div style="font-size:11px;color:var(--text3);white-space:nowrap;flex-shrink:0">'+(o.fecha?fmtDate(o.fecha):'—')+'</div>'+
         '</div>'+
-        (o.producto?'<div style="font-size:12px;color:var(--text2);margin-bottom:2px">📦 '+escHtml(o.producto)+(o.qty>1?' × '+o.qty:'')+(o.precio?' · <span style="color:var(--green);font-weight:700">₲ '+fmt(o.precio*(o.qty||1))+'</span>':'')+'</div>':'')+
+        (o.producto?'<div style="font-size:12px;color:var(--text2);margin-bottom:2px">📦 '+escHtml(o.producto)+(o.qty>1?' × '+o.qty:'')+(o.precio?' · <span style="color:var(--green);font-weight:700">₲ '+fmt((o.precio||0)*(o.qty||1))+'</span>':'')+'</div>':'')+
         '<div style="font-size:12px;color:var(--text3);line-height:1.35">📍 '+escHtml((o.direccion||'Sin dirección').length>50?(o.direccion||'').substring(0,48)+'…':(o.direccion||'Sin dirección'))+'</div>'+
       '</div>'
     ).join('');
@@ -8653,8 +8672,10 @@ function filtrarBoletas(){
   const hasta=($('bFH')||{}).value||'';
   const estado=($('bEst')||{}).value||'';
   let orders=getVisibleOrders();
-  if(desde)orders=orders.filter(o=>(o.fecha||'')>=desde);
-  if(hasta)orders=orders.filter(o=>(o.fecha||'')<=hasta+'T23:59:59');
+  // FIX M19: normalizar fechas a YYYY-MM-DD antes de comparar (Supabase devuelve ISO con hora, los inputs son YYYY-MM-DD).
+  // Antes: comparar ISO completo vs YYYY-MM-DD causaba falsos negativos en el día "hasta".
+  if(desde)orders=orders.filter(o=>((o.fecha||'').slice(0,10))>=desde);
+  if(hasta)orders=orders.filter(o=>((o.fecha||'').slice(0,10))<=hasta);
   if(estado)orders=orders.filter(o=>o.estado===estado);
   const el=$('boletasBody');if(!el)return;
   if(!orders.length){el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text2)">Sin boletas en el período seleccionado</div>';return;}
@@ -8818,6 +8839,10 @@ function _boletaHTML(o){
           '<td class="bcell bnum">'+fmtN(flete)+'</td>'+
         '</tr>':'')+
         /* SUBTOTAL */
+        // FIX-M20-PENDIENTE: el flete se suma a la tasa del producto (5% o 10%) en este subtotal,
+        // pero la fila individual de flete arriba lo asigna SIEMPRE a la columna 10%.
+        // Inconsistencia: si el producto es 5%, el subtotal mostrará flete dentro del 5% pero la fila detalle muestra el flete en 10%.
+        // No se toca la lógica fiscal — verificar con contador la tasa correcta del flete de zona.
         '<tr>'+
           '<td class="bcell bhead" colspan="5" style="text-align:right">SUBTOTAL:</td>'+
           '<td class="bcell bnum">'+fmtN(baseExenta)+'</td>'+
@@ -12422,7 +12447,7 @@ function imprimirTicket(id){
       +'</div>'
       +'<div class="tk-pro">'
         +'<div><div class="pq">Producto</div><div class="pn">'+escHtml(o.producto||'')+' &times;'+(o.qty||1)+'</div></div>'
-        +'<div style="text-align:right"><span class="pml">A cobrar</span><span class="pm">'+fmt(o.precio*(o.qty||1))+'</span></div>'
+        +'<div style="text-align:right"><span class="pml">A cobrar</span><span class="pm">'+fmt((o.precio||0)*(o.qty||1))+'</span></div>'
       +'</div>'
       +'<div class="tk-meta">'
         +'<div><span class="tk-lbl">Delivery</span><b>'+escHtml(dlv.nombre||'Sin asignar')+'</b></div>'
@@ -13542,6 +13567,13 @@ async function _initTrackingPublico(){
   await loadServerConfig(null);
   // Inicializar mapa Mapbox
   await new Promise(r=>setTimeout(r,100));
+  // FIX A6: verificar token antes de inicializar
+  if(!_mapboxReady()){
+    const tm=document.getElementById('trackMap');
+    if(tm)tm.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#1f2937;color:#cbd5e1;font-size:13px;text-align:center;padding:20px">Mapa no disponible — error de configuración</div>';
+    if(typeof pushNotif==='function')pushNotif('Mapa no disponible — error de configuración','e');
+    return;
+  }
   _trackMapInst=new mapboxgl.Map({
     container:'trackMap',
     style:'mapbox://styles/mapbox/dark-v11',
@@ -14151,8 +14183,12 @@ async function _mapaCargar(map){
   for(const o of orders){
     if(!o.gpsLat||!o.gpsLng)continue;
     const lat=parseFloat(o.gpsLat),lng=parseFloat(o.gpsLng);
-    _mapaAddMarker(map,o,lat,lng,true);
-    bbox.extend([lng,lat]);hasBounds=true;
+    // FIX A7: filtrar coords inválidas (NaN, 0) ANTES de marcar para evitar TypeError que rompa todos los marcadores
+    if(isNaN(lat)||isNaN(lng)||lat===0||lng===0)continue;
+    try{
+      _mapaAddMarker(map,o,lat,lng,true);
+      bbox.extend([lng,lat]);hasBounds=true;
+    }catch(e){console.warn('[mapa] marker fallido pedido #'+o.id,e);}
   }
   if(!window._mapaSkipCameraMove){
     if(hasBounds)map.fitBounds(bbox,{padding:60,maxZoom:14,animate:true});
@@ -14166,8 +14202,14 @@ async function _mapaCargar(map){
     const addr=(o.direccion||'')+' '+(z.nombre||'')+' Paraguay';
     const coords=await _geocodeAddr(addr);
     if(coords){
-      _mapaAddMarker(map,o,coords[0],coords[1],false);
-      bbox.extend([coords[1],coords[0]]);hasBounds=true;
+      // FIX A7: validar coords antes de marcar
+      const cLat=parseFloat(coords[0]),cLng=parseFloat(coords[1]);
+      if(!isNaN(cLat)&&!isNaN(cLng)&&cLat!==0&&cLng!==0){
+        try{
+          _mapaAddMarker(map,o,cLat,cLng,false);
+          bbox.extend([cLng,cLat]);hasBounds=true;
+        }catch(e){console.warn('[mapa] marker geocode fallido pedido #'+o.id,e);}
+      }
     }
     await new Promise(r=>setTimeout(r,1100));
   }
@@ -14615,6 +14657,8 @@ function _mapaCargarDlvs(map){
       if(!recent.length)continue;
       lat=parseFloat(recent[0].gpsLat);lng=parseFloat(recent[0].gpsLng);posLabel='Última dirección conocida';
     }
+    // FIX A7: validar coords (NaN, 0) antes de continuar para evitar romper marcadores de otros deliveries
+    if(isNaN(lat)||isNaN(lng)||lat===0||lng===0)continue;
     // Pedidos activos del delivery
     const activos=_ordersCache.filter(o=>o.deliveryId===dlv.id&&!['Entregado','Cancelado','Devuelto'].includes(o.estado));
     const trackTime=dlv.tracking_at?new Date(dlv.tracking_at).toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'}):'—';
@@ -14653,8 +14697,11 @@ function _mapaCargarDlvs(map){
       '<span style="color:'+(online?'#4ade80':'#64748b')+';font-size:11px">'+posLabel+(online?' · últ: '+trackTime:'')+'</span>'+
       '<div style="margin-top:6px">'+pedidosHtml+'</div>'+
       '</div>';
-    const m=new mapboxgl.Marker(el).setLngLat([lng,lat]).setPopup(new mapboxgl.Popup({offset:28,maxWidth:'290px'}).setHTML(popupHtml)).addTo(map);
-    window._dlvMapMarkers[dlv.id]=m;
+    // FIX A7: try/catch para que un marker fallido no rompa todos los demás deliveries
+    try{
+      const m=new mapboxgl.Marker(el).setLngLat([lng,lat]).setPopup(new mapboxgl.Popup({offset:28,maxWidth:'290px'}).setHTML(popupHtml)).addTo(map);
+      window._dlvMapMarkers[dlv.id]=m;
+    }catch(e){console.warn('[mapa] marker delivery fallido '+dlv.id,e);}
   }
 }
 
@@ -14923,6 +14970,13 @@ PAGES.mapa=function(){
     },100);
   }
   setTimeout(function(){
+    // FIX A6: verificar token antes de inicializar mapa (evita crash si loadServerConfig falló)
+    if(!_mapboxReady()){
+      const om=document.getElementById('ordersMap');
+      if(om)om.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;background:var(--bg2,#1f2937);color:var(--text2,#cbd5e1);font-size:14px;text-align:center;padding:20px">Mapa no disponible — error de configuración. Recargá la página o avisá al admin.</div>';
+      if(typeof pushNotif==='function')pushNotif('Mapa no disponible — error de configuración','e');
+      return;
+    }
     const map=new mapboxgl.Map({
       container:'ordersMap',
       style:_MAPA_ESTILO_URLS[_mapaEstilo]||_MAPA_ESTILO_URLS.oscuro,
