@@ -10194,7 +10194,18 @@ async function saveEditUser(id){
   const newEmail=gv('euEmail').trim();if(newEmail)u.email=newEmail;
   const newPass=gv('euPass').trim();if(newPass)u.password=newPass;
   if(gv('euRol')&&u.rol!=='superadmin')u.rol=gv('euRol');
-  u.vehiculo=gv('euVeh');u.patente=gv('euPat');u.whatsapp=gv('euWa');
+  u.vehiculo=gv('euVeh');u.patente=gv('euPat');
+  // M1 fix: validar formato WhatsApp antes de guardar (acepta 595XXXXXXXX o 0XXXXXXXX)
+  const waRaw=(gv('euWa')||'').trim();
+  if(waRaw){
+    const waClean=waRaw.replace(/\D/g,'');
+    // Normalizar: 0XXXXXXXX → 595XXXXXXXX; ya 595... → ok
+    const waNorm=waClean.startsWith('595')?waClean:'595'+waClean.replace(/^0/,'');
+    if(!/^595[0-9]{8,9}$/.test(waNorm)){
+      showAlert('euAlert','e','WhatsApp inválido. Ingresá formato 0981XXXXXX o 595981XXXXXX');return;
+    }
+    u.whatsapp=waNorm;
+  } else { u.whatsapp=''; }
   if(!u.contactos)u.contactos=[];
   // Método de pago (solo si el rol resultante es 'delivery')
   if(u.rol==='delivery'){
@@ -10377,7 +10388,10 @@ async function saveNewZona(){
   if(_zonasCache.some(z=>(z.nombre||'').toLowerCase()===nomLower)){
     showAlert('nzAlert','e','Ya existe una zona con ese nombre');return;
   }
-  const id=Math.max(..._zonasCache.map(z=>z.id),0)+1;
+  // M24 fix: usar timestamp como ID local en vez de Math.max()+1.
+  // Math.max genera el mismo ID en sesiones concurrentes → el segundo upsert sobreescribe al primero.
+  // Date.now() es único por milisegundo y extremadamente improbable de colisionar.
+  const id=Date.now();
   const z={id,nombre:nom,desc:gv('nzD').trim(),precio:prec,
     extraDelivery:parseFloat(gv('nzE'))||0,tiempoEntrega:gv('nzT').trim()};
   closeA();
@@ -14757,6 +14771,7 @@ function _gpsHaversine(lat1,lng1,lat2,lng2){
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
+let _gpsSendErrCount=0; // M3: contador de errores de red al enviar posición
 async function _gpsSendPos(lat,lng){
   try{
     await fetch(WORKER_URL+'/api/tracking',{
@@ -14764,10 +14779,18 @@ async function _gpsSendPos(lat,lng){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_sessionToken||'')},
       body:JSON.stringify({lat,lng})
     });
+    _gpsSendErrCount=0; // reset en cualquier respuesta válida del servidor
     if(window._mapInstance&&window._dlvMapMarkers[CU.id]){
       window._dlvMapMarkers[CU.id].setLngLat([lng,lat]);
     }
-  }catch(e){console.warn('GPS send:',e.message);}
+  }catch(e){
+    // M3 fix: notificar al delivery después de 3 fallos consecutivos (sin conexión)
+    console.warn('GPS send:',e.message);
+    _gpsSendErrCount++;
+    if(_gpsSendErrCount===3){
+      pushNotif('⚠️ Sin conexión — tu posición no está siendo compartida','w');
+    }
+  }
 }
 let _gpsErrCount=0;
 function _gpsLoopTick(){
