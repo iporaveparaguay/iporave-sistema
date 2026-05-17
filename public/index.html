@@ -15529,9 +15529,10 @@ function _rutaOptima(){
     const c=_MAPA_COLORS[s.o.estado]||'#6b7280';
     html+='<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;padding:10px;background:var(--bg3);border-radius:8px">'+
       '<div style="min-width:28px;height:28px;border-radius:50%;background:'+c+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px">'+(i+1)+'</div>'+
-      '<div style="flex:1"><div style="font-weight:700">#'+s.o.id+' — '+s.o.cliente+'</div>'+
-      '<div style="font-size:12px;color:var(--text2)">📍 '+s.o.direccion+'</div>'+
-      '<div style="font-size:11px;color:var(--text3)">~'+Math.round(s.dist/1000*10)/10+' km · <span style="background:'+c+';color:#fff;padding:1px 6px;border-radius:8px">'+s.o.estado+'</span></div></div>'+
+      '<div style="flex:1"><div style="font-weight:700">#'+s.o.id+' — '+escHtml(s.o.cliente||'')+'</div>'+
+      // SEC2 fix: escapar cliente/dirección (vienen de DB sin escape)
+      '<div style="font-size:12px;color:var(--text2)">📍 '+escHtml(s.o.direccion||'')+'</div>'+
+      '<div style="font-size:11px;color:var(--text3)">~'+Math.round(s.dist/1000*10)/10+' km · <span style="background:'+c+';color:#fff;padding:1px 6px;border-radius:8px">'+escHtml(s.o.estado||'')+'</span></div></div>'+
       '<a href="https://www.google.com/maps/dir/?api=1&destination='+s.o.gpsLat+','+s.o.gpsLng+'" target="_blank" rel="noopener noreferrer" style="background:#ea4335;color:#fff;border-radius:6px;padding:5px 8px;font-size:11px;text-decoration:none;font-weight:700;white-space:nowrap">📍 Nav</a>'+
     '</div>';
   });
@@ -16941,7 +16942,8 @@ function openRegistrarPago(targetUserId,montoPreRellenado){
   const pre=Number(montoPreRellenado)>0?Math.round(Number(montoPreRellenado)):'';
   // TAREA 4 — Limpieza del modal entre usos
   const _mBody=$('mABody'); if(_mBody) _mBody.innerHTML='';
-  openA('Registrar Pago a '+nombre,
+  // SEC2 fix: escapar nombre del destinatario (viene de DB sin escape) en título del modal
+  openA('Registrar Pago a '+escHtml(nombre||''),
     '<div class="fg"><label>Monto (Gs.) *</label><input type="number" id="pagoMonto" min="1" step="1" inputmode="numeric" placeholder="100000" value="'+pre+'" oninput="_actualizarSaldoLive('+saldoActual+')"></div>'+
     '<div id="pagoSaldoLive" class="pagoSaldoLive" style="display:none"></div>'+
     '<div class="fg"><label>Método</label><select id="pagoMetodo">'+
