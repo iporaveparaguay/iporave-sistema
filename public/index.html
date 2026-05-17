@@ -472,6 +472,9 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .td-actions .btn, .act-btns .btn { margin: 0 !important; }
 /* BADGES */
 .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;}
+.etiq-chip{display:inline-flex;align-items:center;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s;}
+.etiq-chip:hover{border-color:var(--accent);color:var(--accent);}
+.etiq-chip-on{background:var(--accent);color:#fff;border-color:var(--accent);}
 .bp{background:rgba(245,166,35,.14);color:var(--accent);}
 .bdisp{background:rgba(59,130,246,.18);color:#93c5fd;}
 .br{background:rgba(6,182,212,.14);color:var(--cyan);}
@@ -3292,7 +3295,7 @@ function waEntregado(o){
 function waEnRuta(o){
   const cfg=getCfg();if(!cfg.waEnabled)return;
   const tel=o.telefono;if(!tel)return;
-  const trackUrl='https://iporave-sistema.vercel.app/track.html?id='+o.id;
+  const trackUrl=(window.location.origin+window.location.pathname).replace(/\/+$/,'')+'?track='+o.id;
   const msg=(cfg.waMsgEnRuta||DEF_CONFIG.waMsgEnRuta)
     .replace('{id}',o.id).replace('{cliente}',o.cliente).replace('{trackUrl}',trackUrl);
   waSend(tel,msg);
@@ -3307,8 +3310,9 @@ function waDespachado(o){
 /* ─── WA AUTO NOTIF (para delivery: EnRuta, Entregado, Cancelado) ─── */
 function _waAutoNotif(o,estadoNuevo){
   if(!o||!o.telefono)return;
+  var trackUrl=(window.location.origin+window.location.pathname).replace(/\/+$/,'')+'?track='+o.id;
   var msgs={
-    'En Ruta':'🚚 Tu pedido #'+o.id+' está en camino. Llegará pronto. — Iporãve',
+    'En Ruta':'🚚 Tu pedido #'+o.id+' está en camino. Llegará pronto.\n🔗 Rastreá tu pedido en tiempo real: '+trackUrl+' — Iporãve',
     'Entregado':'✅ Tu pedido #'+o.id+' fue entregado. ¡Gracias por tu compra! — Iporãve',
     'Cancelado':'❌ Tu pedido #'+o.id+' fue cancelado. Contactanos para más info. — Iporãve'
   };
@@ -7076,7 +7080,7 @@ function renderTable(orders,title,showActs,highlightChanges){
     '<td class="col-hide" style="font-size:12px;color:var(--text2)">'+escHtml(o.proveedor||'—')+'</td>'+
     '<td class="col-hide" style="font-size:12px">'+escHtml(_getZonaO(o).nombre||'')+'</td>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--green)">'+fmt((o.precio||0)*(o.qty||1))+'</td>'+
-    '<td class="col-hide">'+bE(o.estado)+(o.intentosFallidos>0?'<br><span class="badge" style="background:#ea580c;color:#fff;font-size:10px;margin-top:3px">&#9888; '+o.intentosFallidos+' intento(s) fallido(s)</span>':'')+'</td>'+
+    '<td class="col-hide">'+bE(o.estado)+(o.intentosFallidos>0?'<br><span class="badge" style="background:#ea580c;color:#fff;font-size:10px;margin-top:3px">&#9888; '+o.intentosFallidos+' intento(s) fallido(s)</span>':'')+(o.etiquetas&&o.etiquetas.indexOf('🔥 Urgente')!==-1?'<br><span class="badge" style="background:#dc2626;color:#fff;font-size:10px;margin-top:3px">🔥 Urgente</span>':'')+'</td>'+
     (showActs?'<td style="white-space:nowrap"><div class="order-menu-wrap">'+
       '<button class="order-menu-btn" onclick="_toggleOrderMenu(event,'+o.id+')" title="Acciones">⋮</button>'+
       '<div class="order-dropdown" id="odrop-'+o.id+'">'+
@@ -7406,6 +7410,7 @@ function viewOrder(id){
       (o.metodoCobro?'<span class="badge be">'+MICON[o.metodoCobro]+' '+escHtml(o.metodoCobro)+'</span>':'')+
       (o.fotoEntrega&&canSeeFoto?'<span class="badge be">📷 Foto OK</span>':'')+
       (o.gpsLat?'<span class="badge br">📍 GPS OK</span>':'')+
+      (['admin','superadmin','vendedor'].includes(CU.rol)&&o.etiquetas&&o.etiquetas.length?o.etiquetas.map(function(tag){return '<span class="badge" style="background:var(--bg3);color:var(--text);border:1px solid var(--border2)">'+escHtml(tag)+'</span>';}).join(''):'')+
     '</div>'+
     dlvCard+
     fotoSection+
@@ -7499,11 +7504,21 @@ function editOrder(id){
     '<div class="fg"><label>RUC</label><input type="text" id="eRuc" value="'+escAttr(o.ruc)+'"></div></div>'+
     '<div class="fg"><label>Tipo IVA</label><select id="eIva"><option '+(o.tipoIva==='10%'?'selected':'')+'>10%</option><option '+(o.tipoIva==='5%'?'selected':'')+'>5%</option><option '+(o.tipoIva==='Exento'?'selected':'')+'>Exento</option></select></div>'+
     '<div class="fg"><label>Notas / Observación</label><textarea id="eNotas">'+escHtml(o.notas||'')+'</textarea></div>'+
+    (['admin','superadmin','vendedor'].includes(CU.rol)?
+      '<div class="stitle">Etiquetas</div>'+
+      '<div id="eEtiqContainer" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">'+
+      ['🔥 Urgente','💰 Cobrado','🔄 Cambio','⚠️ Problema','🎁 Regalo','📦 Bulto extra','⭐ VIP'].map(function(tag){
+        var act=(o.etiquetas&&o.etiquetas.indexOf(tag)!==-1);
+        return '<button type="button" class="etiq-chip'+(act?' etiq-chip-on':'')+'" onclick="_toggleEtiq(this,\''+tag+'\')" data-etiq="'+escAttr(tag)+'">'+escHtml(tag)+'</button>';
+      }).join('')+
+      '</div>'
+    :'')+
     '<div id="eAlert"></div>',
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-primary" onclick="saveEditOrder('+id+')">Guardar cambios</button>'
   );
 }
+function _toggleEtiq(el,tag){el.classList.toggle('etiq-chip-on');}
 async function saveEditOrder(id){
   const o=_ordersCache.find(x=>x.id===id);if(!o)return;
   const ns=gv('eEst').trim(),obs=gv('eNotas').trim();
@@ -7561,6 +7576,10 @@ async function saveEditOrder(id){
   o.tipoLogistica=gv('eTipoLogistica')||o.tipoLogistica||'propia';
   o.logExternaNombre=(gv('eLogExternaNombre')||'').trim()||o.logExternaNombre||null;
   o.estadoPago=gv('eEstadoPago')||o.estadoPago||'pendiente';
+  if(['admin','superadmin','vendedor'].includes(CU.rol)){
+    var _etiqEls=document.querySelectorAll('#eEtiqContainer .etiq-chip-on');
+    o.etiquetas=_etiqEls.length?Array.from(_etiqEls).map(function(el){return el.getAttribute('data-etiq');}):[];
+  }
   if(ns!==_prevEstado&&['En Ruta','Entregado','Cancelado'].includes(ns))_waAutoNotif(o,ns);
   await DL.saveOrder(o);
   await refreshCache();
@@ -13865,6 +13884,37 @@ function _trackUpdateUI(data){
   const ec=_TRACK_ESTADO_COLOR[data.estado]||'#64748b';
   const ei=_TRACK_ESTADO_ICON[data.estado]||'📦';
   const card=$('trackCard');if(!card)return;
+  // Barra de progreso: Recibido→En Preparación→Despachado→En Ruta→Entregado
+  const _PASOS=['Recibido','En Preparación','Despachado','En Ruta','Entregado'];
+  const _PASOS_ICON=['📋','⚙️','📦','🛵','✅'];
+  const _EST_A_PASO={'Pendiente':0,'En Preparación':1,'Despachado':2,'En Ruta':3,'Entregado':4};
+  const _esCancelado=data.estado==='Cancelado'||data.estado==='Devuelto';
+  const _pasoActual=_EST_A_PASO[data.estado]!==undefined?_EST_A_PASO[data.estado]:(_esCancelado?-1:0);
+  var progressHtml='';
+  if(!_esCancelado){
+    var _lineFillPct=_pasoActual===0?0:Math.round((_pasoActual/(_PASOS.length-1))*80+10);
+    var stepsHtml='';
+    for(var _si=0;_si<_PASOS.length;_si++){
+      var _act=_si<=_pasoActual;
+      var _cur=_si===_pasoActual;
+      var _cbg=_act?(_cur?ec:'#16a34a'):'#e2e8f0';
+      var _ccol=_act?'#fff':'#94a3b8';
+      var _lcol=_cur?'#0f172a':(_act?'#475569':'#94a3b8');
+      var _lw=_cur?'700':'400';
+      var _shadow=_cur?';box-shadow:0 0 0 3px '+ec+'33':'';
+      stepsHtml+=
+        '<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative;z-index:2">'+
+          '<div style="width:28px;height:28px;border-radius:50%;background:'+_cbg+';display:flex;align-items:center;justify-content:center;font-size:13px;color:'+_ccol+';border:2px solid '+(_act?_cbg:'#cbd5e1')+_shadow+';transition:all .3s">'+(_act?_PASOS_ICON[_si]:'')+'</div>'+
+          '<div style="font-size:9.5px;color:'+_lcol+';font-weight:'+_lw+';margin-top:4px;text-align:center;line-height:1.2;max-width:52px">'+_PASOS[_si]+'</div>'+
+        '</div>';
+    }
+    progressHtml=
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin:16px 0 4px;position:relative">'+
+        '<div style="position:absolute;top:14px;left:10%;right:10%;height:3px;background:#e2e8f0;border-radius:2px;z-index:0"></div>'+
+        '<div style="position:absolute;top:14px;left:10%;height:3px;background:#16a34a;border-radius:2px;z-index:1;transition:width .5s;width:'+_lineFillPct+'%"></div>'+
+        stepsHtml+
+      '</div>';
+  }
   card.innerHTML=
     '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">'+
       '<div style="font-size:36px">'+ei+'</div>'+
@@ -13874,11 +13924,13 @@ function _trackUpdateUI(data){
         '<div style="font-size:13px;color:#475569;margin-top:2px">📦 '+escHtml(data.producto||'')+'</div>'+
       '</div>'+
     '</div>'+
-    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+    progressHtml+
+    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">'+
       '<span style="background:'+ec+';color:#fff;font-size:13px;font-weight:700;padding:4px 14px;border-radius:20px">'+ei+' '+escHtml(data.estado||'')+'</span>'+
       (data.delivery?'<span style="font-size:12px;color:#64748b">🛵 '+escHtml(data.delivery.nombre||'')+'</span>':'')+
     '</div>'+
-    (data.direccion?'<div style="margin-top:8px;font-size:12px;color:#64748b">📍 '+escHtml(data.direccion)+'</div>':'')+
+    (data.zona?'<div style="margin-top:6px;font-size:12px;color:#64748b">📍 Zona: '+escHtml(data.zona)+'</div>':'')+
+    (data.direccion?'<div style="margin-top:4px;font-size:12px;color:#64748b">🏠 '+escHtml(data.direccion)+'</div>':'')+
     (data.delivery&&data.delivery.at?'<div style="margin-top:6px;font-size:11px;color:#94a3b8">GPS actualizado '+_trackMinsAgo(data.delivery.at)+'</div>':'');
 
   if(!_trackMapInst)return;
