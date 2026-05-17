@@ -303,6 +303,31 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .mapa-locate-btn{position:absolute;bottom:4px;right:4px;z-index:5;width:36px;height:36px;border-radius:10px;background:rgba(20,22,28,0.85);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.18);transition:transform .15s var(--ease-out,ease-out), background .15s var(--ease-out,ease-out), border-color .15s var(--ease-out,ease-out);}
 .mapa-locate-btn:hover{background:rgba(20,22,28,0.95);transform:translateY(-1px);border-color:var(--accent);box-shadow:0 6px 16px rgba(0,0,0,0.25), 0 0 0 1px rgba(245,166,35,0.2);}
 .mapa-locate-btn svg{width:18px;height:18px;stroke-width:1.8;}
+/* SFP — Side Filter Panel */
+.sfp-tab{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:800;width:22px;height:56px;background:var(--accent);border-radius:8px 0 0 8px;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:-2px 0 10px rgba(0,0,0,.3);transition:width .15s ease;}
+.sfp-tab:hover{width:28px;}
+.sfp-tab-icon{font-size:11px;color:#000;font-weight:900;pointer-events:none;line-height:1;}
+.sfp-panel{position:fixed;right:-300px;top:0;height:100%;width:min(280px,85vw);background:var(--bg2);border-left:1px solid var(--border2);z-index:900;transition:right .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:14px 12px;box-shadow:-4px 0 20px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:0;}
+.sfp-panel.open{right:0;}
+.sfp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:899;display:none;}
+.sfp-overlay.show{display:block;}
+.sfp-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:12px;flex-shrink:0;}
+.sfp-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text);}
+.sfp-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.sfp-close:hover{border-color:var(--accent);color:var(--accent);}
+.sfp-section{margin-bottom:12px;}
+.sfp-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:6px;}
+.sfp-pills{display:flex;flex-wrap:wrap;gap:5px;}
+.sfp-pill{padding:5px 11px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:12px;cursor:pointer;transition:background .12s,border-color .12s,color .12s;line-height:1.3;}
+.sfp-pill:hover{border-color:var(--accent);color:var(--accent);}
+.sfp-pill.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600;}
+.sfp-pill.btn-danger{background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#b91c1c;color:#fff;}
+.sfp-pill.btn-success{background:linear-gradient(180deg,#22c55e,#16a34a);border-color:#15803d;color:#fff;}
+.sfp-divider{height:1px;background:var(--border);margin:10px 0;}
+.sfp-select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;cursor:pointer;}
+.sfp-select:focus{outline:none;border-color:var(--accent);}
+.sfp-buscar{width:100%;margin-top:6px;padding:10px 14px;border-radius:8px;background:var(--accent);border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;}
+.sfp-buscar:hover{opacity:.88;}
 :root[data-theme="light"] .mapa-locate-btn,
 :root[data-theme="light-soft"] .mapa-locate-btn{background:rgba(255,255,255,0.92);color:#1a1a1a;border:1px solid rgba(0,0,0,0.1);}
 .mapa-estilo-fade #ordersMap{transition:opacity .2s ease;opacity:.0;}
@@ -864,9 +889,8 @@ body:has(#appScreen.show) #codexNotifBell{display:flex !important;}
 body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px;flex-shrink:1;}
 #codexNotifBell{transition:opacity .25s ease;}
 @media(max-width:639px){
-  /* 🌙 y 🔔 siempre visibles en mobile; 🔄 y 🎓 siguen en kebab */
-  #refreshBtn{display:none!important;}
-  body:has(#appScreen.show) #topbarKebab{display:flex!important;}
+  /* 🔔🌙🎓🔄 siempre visibles en mobile — kebab eliminado */
+  #topbarKebab{display:none!important;}
 }
 #codexNotifBell.scroll-faded{opacity:0.3;}
 /* Campanita en topbar — ajuste mobile */
@@ -1131,9 +1155,9 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .lcard2{padding:14px 14px 14px 20px;}
   /* Tablas con borde amarillo (.tc): mismo espacio interno que .lcard2 */
   .tc{padding-left:20px;}
-  /* Topbar mobile: título arriba en fila propia, ☰ + botones en fila 2 */
-  .topbar{flex-wrap:wrap;gap:0;padding:8px 14px;}
-  .tbtitle{order:-1;flex:0 0 100%;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:0 0 7px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+  /* Topbar mobile: fila única compacta */
+  .topbar{gap:4px;padding:6px 12px;}
+  .tbtitle{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   #menuBtn{order:0;flex-shrink:0;margin-top:2px;}
   .tbactions{order:1;flex:1;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-start;margin-top:2px;}
   /* Fix botón ⋮ kebab siempre alineado a la derecha en cualquier contexto */
@@ -19704,6 +19728,145 @@ function toggleTheme(){
     }
   });
 })();
+
+/* ============================================================
+   SFP — Side Filter Panel (pestaña naranja persistente)
+   _sfpInit(cfg) · _sfpOpen() · _sfpClose() · _sfpToggle() · _sfpDestroy()
+   ============================================================ */
+var _sfpActiveId=null;
+
+function _sfpDestroy(){
+  if(!_sfpActiveId)return;
+  ['sfpTab','sfpPanel','sfpOverlay'].forEach(function(p){
+    var el=document.getElementById(p+_sfpActiveId);
+    if(el)el.remove();
+  });
+  _sfpActiveId=null;
+}
+
+function _sfpClose(){
+  if(!_sfpActiveId)return;
+  var panel=document.getElementById('sfpPanel'+_sfpActiveId);
+  var overlay=document.getElementById('sfpOverlay'+_sfpActiveId);
+  if(panel)panel.classList.remove('open');
+  if(overlay)overlay.style.display='none';
+}
+
+function _sfpOpen(){
+  if(!_sfpActiveId)return;
+  var panel=document.getElementById('sfpPanel'+_sfpActiveId);
+  var overlay=document.getElementById('sfpOverlay'+_sfpActiveId);
+  if(panel)panel.classList.add('open');
+  if(overlay)overlay.style.display='block';
+}
+
+function _sfpToggle(){
+  if(!_sfpActiveId)return;
+  var panel=document.getElementById('sfpPanel'+_sfpActiveId);
+  if(panel&&panel.classList.contains('open'))_sfpClose();else _sfpOpen();
+}
+
+function _sfpInit(cfg){
+  _sfpDestroy();
+  var id=cfg.id||'sfp';
+  _sfpActiveId=id;
+
+  var tab=document.createElement('div');
+  tab.className='sfp-tab';
+  tab.id='sfpTab'+id;
+  tab.style.display='flex';
+  tab.setAttribute('role','button');
+  tab.setAttribute('aria-label','Abrir panel');
+  tab.innerHTML='<span class="sfp-tab-icon">&#9776;</span>';
+  tab.onclick=_sfpToggle;
+  document.body.appendChild(tab);
+
+  var overlay=document.createElement('div');
+  overlay.className='sfp-overlay';
+  overlay.id='sfpOverlay'+id;
+  overlay.onclick=_sfpClose;
+  document.body.appendChild(overlay);
+
+  var panel=document.createElement('div');
+  panel.className='sfp-panel';
+  panel.id='sfpPanel'+id;
+  panel._sfpCfg=cfg;
+  panel._sfpState={};
+  _sfpRenderPanel(panel);
+  document.body.appendChild(panel);
+}
+
+function _sfpRenderPanel(panel){
+  var cfg=panel._sfpCfg;
+  var state=panel._sfpState;
+  var h='<div class="sfp-header"><span class="sfp-title">'+escHtml(cfg.titulo||'Opciones')+'</span>'
+       +'<button class="sfp-close" onclick="_sfpClose()" aria-label="Cerrar">&#10005;</button></div>';
+  (cfg.secciones||[]).forEach(function(sec){
+    if(sec.tipo==='divider'){h+='<div class="sfp-divider"></div>';return;}
+    h+='<div class="sfp-section">';
+    if(sec.label)h+='<div class="sfp-section-label">'+escHtml(sec.label)+'</div>';
+    if(sec.tipo==='pills'){
+      h+='<div class="sfp-pills">';
+      (sec.items||[]).forEach(function(it){
+        var cur=state[sec.nombre];
+        var activo=(cur!==undefined)?cur===it.valor:!!it.activo;
+        h+='<button class="sfp-pill'+(activo?' active':'')+(it.cls?' '+it.cls:'')+'"'
+          +' onclick="_sfpPillClick(this,\''+escHtml(String(sec.nombre))+'\',\''+escHtml(String(it.valor))+'\','+(sec.exclusivo!==false)+')"'
+          +' data-sfp-sec="'+escHtml(String(sec.nombre))+'"'
+          +' data-sfp-val="'+escHtml(String(it.valor))+'">'+escHtml(it.label)+'</button>';
+      });
+      h+='</div>';
+    } else if(sec.tipo==='select'){
+      var cur=state[sec.nombre]!==undefined?state[sec.nombre]:(sec.valorActual||'');
+      h+='<select class="sfp-select" onchange="_sfpSelectChange(this,\''+escHtml(String(sec.nombre))+'\')">';
+      (sec.items||[]).forEach(function(it){
+        h+='<option value="'+escHtml(String(it.valor))+'"'+(String(it.valor)===String(cur)?' selected':'')+'>'+escHtml(it.label)+'</option>';
+      });
+      h+='</select>';
+    }
+    h+='</div>';
+  });
+  if(cfg.buscarBtn!==false){
+    h+='<button class="sfp-buscar" onclick="_sfpBuscar()">'+escHtml(cfg.buscarBtnLabel||'BUSCAR')+'</button>';
+  }
+  panel.innerHTML=h;
+  panel._sfpCfg=cfg;
+  panel._sfpState=state;
+}
+
+function _sfpPillClick(btn,secNombre,valor,exclusivo){
+  var panel=document.getElementById('sfpPanel'+_sfpActiveId);
+  if(!panel)return;
+  var state=panel._sfpState;
+  var cfg=panel._sfpCfg;
+  if(exclusivo){
+    state[secNombre]=valor;
+    panel.querySelectorAll('[data-sfp-sec="'+secNombre+'"]').forEach(function(b){
+      b.classList.toggle('active',b.getAttribute('data-sfp-val')===valor);
+    });
+  } else {
+    if(!Array.isArray(state[secNombre]))state[secNombre]=[];
+    var idx=state[secNombre].indexOf(valor);
+    if(idx>=0)state[secNombre].splice(idx,1);else state[secNombre].push(valor);
+    btn.classList.toggle('active',state[secNombre].indexOf(valor)>=0);
+  }
+  if(typeof cfg.onCambio==='function')cfg.onCambio(state,secNombre,valor);
+}
+
+function _sfpSelectChange(sel,secNombre){
+  var panel=document.getElementById('sfpPanel'+_sfpActiveId);
+  if(!panel)return;
+  var state=panel._sfpState;
+  var cfg=panel._sfpCfg;
+  state[secNombre]=sel.value;
+  if(typeof cfg.onCambio==='function')cfg.onCambio(state,secNombre,sel.value);
+}
+
+function _sfpBuscar(){
+  var panel=document.getElementById('sfpPanel'+_sfpActiveId);
+  if(!panel)return;
+  if(typeof panel._sfpCfg.onBuscar==='function')panel._sfpCfg.onBuscar(panel._sfpState);
+}
 
 /* Global error handlers — protegido contra duplicados */
 if(!window._globalErrorHandlersInstalled){
