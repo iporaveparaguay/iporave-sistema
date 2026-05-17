@@ -1162,6 +1162,8 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .page-mapa .tbtitle{font-size:12px;padding-bottom:4px;}
   /* tbactions general: cuando hay botones del mapa, NO wrappear */
   .tbactions:has(.map-btn){flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  /* MOB2 — área táctil mínima Apple 44px en btn-sm */
+  .btn-sm{min-height:44px;padding:8px 12px;}
 }
 @media(max-width:600px){input,select,textarea{font-size:16px !important;}}
 /* En desktop: ocultar elementos que solo deben verse en mobile */
