@@ -349,7 +349,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .ca{padding:22px 24px;flex:1;}
 /* STATS */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:20px;}
-.sc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 16px 14px;position:relative;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.16);transition:box-shadow .2s,transform .18s;}
+.sc{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:16px 16px 14px;position:relative;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.16);transition:box-shadow .2s,transform .18s;}
 .sc:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.18),0 0 0 1px rgba(245,166,35,.2);transition:all .2s var(--ease-out);}
 .sc::before{content:'';position:absolute;top:-10px;right:-10px;width:90px;height:90px;border-radius:50%;opacity:.10;}
 .sc.ac::before{background:var(--accent);}.sc.gr::before{background:var(--green);}
@@ -4796,6 +4796,7 @@ function doLogout(){
   try{if(window._trackRefreshTimer){clearInterval(window._trackRefreshTimer);window._trackRefreshTimer=null;}}catch(_){}
   _ordersCache=[];_usersCache=[];_zonasCache=[];_catalogoCache=[];
   _shownMsgIds=new Set();
+  try{if(CU&&CU.id)localStorage.removeItem('_asistHist_'+CU.id);}catch(_){}
   window._asistHistorial=[];
   _sessionStart='';
   _supa=null;_supaConnected=false;
@@ -10824,7 +10825,7 @@ async function saveNewUser(){
   const nom=gv('nuNom').trim(),email=gv('nuEmail').trim(),pass=gv('nuPass').trim(),rol=gv('nuRol');
   if(!nom||!email||!pass){showAlert('nuAlert','e','Completá todos los campos');return;}
   if(pass.length<6){showAlert('nuAlert','e','La contraseña debe tener al menos 6 caracteres');return;}
-  if(_usersCache.find(u=>u.email===email)){showAlert('nuAlert','e','El email ya está registrado');return;}
+  if((_usersCache||[]).find(u=>u.email===email)){showAlert('nuAlert','e','El email ya está registrado');return;}
   window._saveNewUserBusy=true;
   const username=email.split('@')[0];
   // Sin id local — el servidor asigna el id real vía INSERT SERIAL para evitar colisiones
@@ -16192,6 +16193,7 @@ PAGES.mapa=function(){
       }
     }catch(_){}
     map.on('load',function(){
+      map.resize();
       _mapaRenderSelects();
       initOrdersLayer(map);
       // Admin: mostrar pines de deliverys automáticamente
@@ -17808,28 +17810,34 @@ PAGES.asistente = function(){
 
   const cont = $('asistMessages');
   const nombre = (typeof CU!=='undefined' && CU && CU.nombre) ? CU.nombre : '';
-  cont.innerHTML = ''+
-    '<div class="asist-msg asist-bot">'+
-      '<div class="asist-bubble">'+
-        '¡Hola '+escHtml(nombre)+'! Soy tu asistente. Puedo ayudarte a:'+
-        '<ul style="margin:8px 0;padding-left:20px">'+
-          '<li>Consultar tus pedidos</li>'+
-          '<li>Cambiar estados (con confirmación)</li>'+
-          '<li>Buscar clientes</li>'+
-          '<li>Ver métricas</li>'+
-        '</ul>'+
-        '¿En qué te ayudo?'+
-      '</div>'+
-    '</div>';
+  // Cargar historial guardado de localStorage
+  try{
+    const _savedH=localStorage.getItem('_asistHist_'+(CU&&CU.id||''));
+    if(_savedH)window._asistHistorial=JSON.parse(_savedH);
+  }catch(_){}
   if(window._asistHistorial && window._asistHistorial.length){
     _asistRender();
+  }else{
+    cont.innerHTML = ''+
+      '<div class="asist-msg asist-bot">'+
+        '<div class="asist-bubble">'+
+          '¡Hola '+escHtml(nombre)+'! Soy tu asistente. Puedo ayudarte a:'+
+          '<ul style="margin:8px 0;padding-left:20px">'+
+            '<li>Consultar tus pedidos</li>'+
+            '<li>Cambiar estados (con confirmación)</li>'+
+            '<li>Buscar clientes</li>'+
+            '<li>Ver métricas</li>'+
+          '</ul>'+
+          '¿En qué te ayudo?'+
+        '</div>'+
+      '</div>';
   }
 };
 
 window._asistHistorial = window._asistHistorial || [];
 
 function _ttsSpeak(text){
-  if(!CU||CU.rol!=='delivery')return;
+  if(!CU)return;
   if(!window.speechSynthesis)return;
   window.speechSynthesis.cancel();
   const clean=(text||'').replace(/<[^>]+>/g,'').replace(/[*_`#>~\[\]]+/g,'').replace(/\s+/g,' ').trim();
@@ -17848,6 +17856,7 @@ document.addEventListener('visibilitychange',function(){
 
 function _asistAgregarMsg(role, content){
   window._asistHistorial.push({role:role, content:content});
+  try{localStorage.setItem('_asistHist_'+(CU&&CU.id||''),JSON.stringify(window._asistHistorial.slice(-60)));}catch(_){}
   _asistRender();
 }
 
