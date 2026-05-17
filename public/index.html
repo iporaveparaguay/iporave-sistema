@@ -3639,7 +3639,8 @@ const AI_TOOL_EXEC={
       notas:args.notas||'',boletaNum:'B-'+String(newId).padStart(4,'0'),numDoc:nextDocNum(),
       razonSocial:'',ruc:'',tipoIva:'10%',
       historial:[{estado:'Pendiente',usuario:CU.nombre,fecha:nowStr(),obs:'Creado por asistente IA'}]};
-    await DL.saveOrder(o);_ordersCache.push(o);
+    try{await DL.saveOrder(o);_ordersCache.push(o);}
+    catch(e){pushNotif('Error al guardar pedido: '+e.message,'e');return{ok:false,error:e.message};}
     pushNotif('Pedido #'+newId+' creado por asistente IA','s');
     return`Pedido #${newId} creado exitosamente para ${args.cliente}.`;
   },
@@ -3656,7 +3657,8 @@ const AI_TOOL_EXEC={
     o.historial=o.historial||[];
     o.historial.push({estado:args.estado,usuario:CU.nombre,fecha:nowStr(),obs:args.notas||'Actualizado por asistente IA'});
     if(args.delivery_id)o.deliveryId=args.delivery_id;
-    await DL.saveOrder(o);
+    try{await DL.saveOrder(o);}
+    catch(e){o.estado=prev;pushNotif('Error al actualizar pedido: '+e.message,'e');return{ok:false,error:e.message};}
     pushNotif(`Pedido #${args.pedido_id}: ${prev} → ${args.estado}`,'s');
     return`Pedido #${args.pedido_id} actualizado de "${prev}" a "${args.estado}".`;
   },
@@ -3667,8 +3669,9 @@ const AI_TOOL_EXEC={
       if(o.vendedorId!==CU.id)return'Solo podés eliminar tus propios pedidos.';
       if(o.estado!=='Pendiente')return'Solo podés eliminar pedidos en estado Pendiente.';
     }else if(!isAdminLike(CU.rol))return'Sin permisos para eliminar pedidos.';
+    try{await DL.deleteOrder(args.pedido_id);}
+    catch(e){pushNotif('Error al eliminar pedido: '+e.message,'e');return{ok:false,error:e.message};}
     _ordersCache=_ordersCache.filter(x=>x.id!==args.pedido_id);
-    await DL.deleteOrder(args.pedido_id);
     pushNotif(`Pedido #${args.pedido_id} eliminado por asistente IA`,'w');
     return`Pedido #${args.pedido_id} eliminado.`;
   },
@@ -3678,7 +3681,8 @@ const AI_TOOL_EXEC={
     const id=Math.max(..._usersCache.map(u=>u.id),0)+1;
     const u={id,username:args.username,password:args.password,nombre:args.nombre,rol:args.rol,
       vehiculo:args.vehiculo||'',patente:args.patente||'',whatsapp:args.whatsapp||''};
-    _usersCache=[..._usersCache,u];await DL.saveUser(u);
+    try{await DL.saveUser(u);_usersCache=[..._usersCache,u];}
+    catch(e){pushNotif('Error al crear usuario: '+e.message,'e');return{ok:false,error:e.message};}
     pushNotif('Usuario "'+args.username+'" creado por asistente IA','s');
     return`Usuario "${args.nombre}" creado con rol ${args.rol}.`;
   },
@@ -3711,7 +3715,8 @@ const AI_TOOL_EXEC={
     const id=Math.max(..._zonasCache.map(z=>z.id),0)+1;
     const z={id,nombre:args.nombre,desc:args.desc||'',precio:args.precio,
       extraDelivery:args.extraDelivery||0,tiempoEntrega:args.tiempoEntrega||''};
-    _zonasCache=[..._zonasCache,z];await DL.saveZona(z);
+    try{await DL.saveZona(z);_zonasCache=[..._zonasCache,z];}
+    catch(e){pushNotif('Error al crear zona: '+e.message,'e');return{ok:false,error:e.message};}
     return`Zona "${args.nombre}" creada con tarifa Gs. ${args.precio.toLocaleString('es-PY')}.`;
   },
   async editar_zona(args){
