@@ -3319,6 +3319,16 @@ async function notifEnRutaAdmin(o){
   }));
   if(msgs.length)await _supa.from('mensajes').insert(msgs);
 }
+async function notifEntregadoVendedor(o){
+  if(!_supa||!o.vendedorId)return;
+  if(CU&&String(CU.id)===String(o.vendedorId))return;
+  const vend=_usersCache.find(u=>String(u.id)===String(o.vendedorId));
+  if(!vend||vend.rol==='delivery')return;
+  const msg='✅ ENTREGADO: Tu pedido #'+o.id+' — '+o.cliente+' fue entregado por '+CU.nombre;
+  await _supa.from('mensajes').insert([{
+    de_id:CU.id,de_nombre:CU.nombre||CU.username,para_id:o.vendedorId,mensaje:msg
+  }]).catch(e=>console.warn('notifEntregadoVendedor:',e.message));
+}
 
 /* ══════════════════════════════════════════════════
    AI AGENT — Function Calling + Permisos por Perfil
@@ -7022,8 +7032,11 @@ function renderTable(orders,title,showActs,highlightChanges){
       (o.direccion?'<div class="col-show-mobile" style="font-size:10px;color:var(--text3);margin-top:2px">📍 '+escHtml(o.direccion.length>40?o.direccion.substring(0,38)+'…':o.direccion)+'</div>':'')+
       '<div class="col-show-mobile" style="font-size:11px;color:var(--text2);margin-top:1px">'+escHtml(o.producto||'')+(o.qty>1?' ×'+o.qty:'')+'</div>'+
       '<div class="col-show-mobile" style="font-size:11px;color:var(--accent)">'+bE(o.estado)+'</div>'+
+      (o.fechaEntrega?'<div style="font-size:10px;color:var(--text3);margin-top:2px">📅 Entrega: '+escHtml(o.fechaEntrega)+(o.horaVentana?' '+escHtml(o.horaVentana):'')+'</div>':'')+
     '</td>'+
-    '<td class="col-hide"><div>'+escHtml(o.producto||'')+'</div><div style="font-size:11px;color:var(--text2)">x'+o.qty+'</div></td>'+
+    '<td class="col-hide"><div>'+escHtml(o.producto||'')+'</div><div style="font-size:11px;color:var(--text2)">x'+o.qty+'</div>'+
+      (o.fechaEntrega?'<div style="font-size:10px;color:var(--text3);margin-top:1px">📅 '+escHtml(o.fechaEntrega)+(o.horaVentana?' '+escHtml(o.horaVentana):'')+'</div>':'')+
+    '</td>'+
     '<td class="col-hide" style="font-size:12px;color:var(--text2)">'+escHtml(o.proveedor||'—')+'</td>'+
     '<td class="col-hide" style="font-size:12px">'+escHtml(_getZonaO(o).nombre||'')+'</td>'+
     '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--green)">'+fmt((o.precio||0)*(o.qty||1))+'</td>'+
@@ -7031,11 +7044,11 @@ function renderTable(orders,title,showActs,highlightChanges){
     (showActs?'<td style="white-space:nowrap"><div class="order-menu-wrap">'+
       '<button class="order-menu-btn" onclick="_toggleOrderMenu(event,'+o.id+')" title="Acciones">⋮</button>'+
       '<div class="order-dropdown" id="odrop-'+o.id+'">'+
-        '<button onclick="_closeOrderMenus();viewOrder('+o.id+')">👁 Ver</button>'+
+        '<button onclick="_closeOrderMenus();viewOrder('+o.id+')">'+SVG.search+' Ver</button>'+
         (canEdit&&(CU.rol!=='vendedor'||!o.deliveryId)?'<button onclick="_closeOrderMenus();editOrder('+o.id+')">'+SVG.pencil+' Editar</button>':'')+
-        (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button onclick="_closeOrderMenus();dlvModal('+o.id+')">📦 Actualizar estado</button>':'')+
-        '<button onclick="_closeOrderMenus();waMenu('+o.id+')">💬 WhatsApp</button>'+
-        '<button onclick="_closeOrderMenus();navegarPedido('+o.id+')" style="color:#2563eb">📍 Navegar</button>'+
+        (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button onclick="_closeOrderMenus();dlvModal('+o.id+')">'+SVG.truck+' Actualizar estado</button>':'')+
+        '<button onclick="_closeOrderMenus();waMenu('+o.id+')">'+SVG.chat+' WhatsApp</button>'+
+        '<button onclick="_closeOrderMenus();navegarPedido('+o.id+')" style="color:#2563eb">'+SVG.map+' Navegar</button>'+
         '<div class="od-sep"></div>'+
         '<button onclick="_closeOrderMenus();openBoleta('+o.id+')">'+SVG.fileText+' Boleta IVA</button>'+
         '<button onclick="_closeOrderMenus();imprimirGuia('+o.id+')">'+SVG.printer+' Guía</button>'+
@@ -7274,12 +7287,20 @@ function viewOrder(id){
       '<div style="margin-bottom:10px"><div class="slabel">Tiempo estimado</div><div style="color:var(--cyan)">'+escHtml(zona.tiempoEntrega||'')+'</div></div>'+
     '</div>'+
     '<div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Producto x Qty</div><div style="font-weight:600">'+escHtml(o.producto||'')+' x'+o.qty+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Producto x Qty</div><div style="font-weight:600">'+escHtml(o.producto||'')+(o.presentacion?' <span style="color:var(--text2);font-weight:400;font-size:12px">— '+escHtml(o.presentacion)+'</span>':'')+' x'+o.qty+'</div></div>'+
       '<div style="margin-bottom:10px"><div class="slabel">Proveedor</div><div>'+escHtml(o.proveedor||'—')+'</div></div>'+
       '<div style="margin-bottom:10px"><div class="slabel">Precio venta</div><div style="color:var(--green)">'+fmt((o.precio||0)*(o.qty||1))+'</div></div>'+
       (['admin','vendedor'].includes(CU.rol)?'<div style="margin-bottom:10px"><div class="slabel">Costo proveedor</div><div style="color:var(--red)">'+fmt((o.costo||0)*(o.qty||1))+'</div></div>'+
-      '<div style="margin-bottom:10px"><div class="slabel">Logística</div><div style="color:var(--blue)">'+fmt(zona.precio)+'</div></div>'+
+      '<div style="margin-bottom:10px"><div class="slabel">Logística ('+escHtml(o.tipoLogistica==='externa'?'Externa: '+(o.logExternaNombre||'carrier'):'Propia')+')</div><div style="color:var(--blue)">'+fmt(zona.precio)+'</div></div>'+
       '<div style="margin-bottom:10px"><div class="slabel">Ganancia vendedor</div><div style="color:var(--accent);font-weight:700">'+fmt(gan)+'</div></div>':'')+
+      (['admin','superadmin'].includes(CU.rol)?(function(){var _pv=(o.precio||0)*(o.qty||1);var _cp=(o.costo||0)*(o.qty||1);var _log=zona.precio||0;var _mn=_pv-_cp-_log;return'<div style="margin-top:6px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius)">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Desglose financiero</div>'+
+        '<div style="font-size:12px;display:grid;gap:3px">'+
+          '<div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Precio cobrado</span><span style="color:var(--green);font-weight:600">'+fmt(_pv)+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">(−) Costo proveedor</span><span style="color:var(--red)">'+fmt(_cp)+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">(−) Tarifa logística</span><span style="color:var(--blue)">'+fmt(_log)+'</span></div>'+
+          '<div style="border-top:1px solid var(--border2);margin-top:4px;padding-top:4px;display:flex;justify-content:space-between"><span style="font-weight:700">= Margen neto</span><span style="font-weight:700;color:'+(_mn>=0?'var(--green)':'var(--red)')+'">'+fmt(_mn)+'</span></div>'+
+        '</div></div>';})():'')+
     '</div></div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+
       bE(o.estado)+
@@ -7301,6 +7322,8 @@ function viewOrder(id){
     '<div class="stitle">'+SVG.clipboard+' Historial de cambios</div>'+histHtml,
     '<button class="btn btn-secondary" onclick="closeB()">Cerrar</button>'+
     '<button class="btn btn-blue" onclick="waMenu('+o.id+')">WA</button>'+
+    (['admin','superadmin','vendedor'].includes(CU.rol)&&(CU.rol!=='vendedor'||!o.deliveryId)?'<button class="btn btn-primary" onclick="closeB();editOrder('+o.id+')">'+SVG.pencil+' Editar</button>':'')+
+    (['delivery','admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="closeB();dlvModal('+o.id+')">'+SVG.truck+' Cambiar estado</button>':'')+
     '<button class="btn btn-primary" onclick="closeB();openBoleta('+o.id+')">Ver Boleta</button>'
   );
   if(isMoving)setTimeout(()=>showDeliveryMap('viewMap',o.direccion,o.gpsLat,o.gpsLng),300);
@@ -7557,7 +7580,7 @@ async function _ejecutarConfirmDlv(){
   const _newLat=gv('gpsLat'),_newLng=gv('gpsLng');
   if(_newLat&&_newLng){o.gpsLat=_newLat;o.gpsLng=_newLng;}
   const _esDelivery=CU&&CU.rol==='delivery';
-  if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;await DL.incCupo(CU.id);if(!_esDelivery)waEntregado(o);notifEntregaAdmin(o);_gpsLoopStop();}
+  if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;await DL.incCupo(CU.id);if(!_esDelivery)waEntregado(o);notifEntregaAdmin(o);notifEntregadoVendedor(o);_gpsLoopStop();}
   if(estado==='Despachado'){if(!_esDelivery)waDespachado(o);}
   if(estado==='En Ruta'){if(!_esDelivery)waEnRuta(o);notifEnRutaAdmin(o);_gpsLoopStart(o);}
   if(_esDelivery&&['Despachado','En Ruta','Entregado'].includes(estado))pushNotif('Mensaje enviado al cliente','ok');
@@ -7617,6 +7640,7 @@ function openNewOrder(){
     '<button type="button" class="btn btn-secondary btn-sm" onclick="openProductoPicker()" title="Seleccionar del catálogo" style="flex-shrink:0;white-space:nowrap;margin-top:2px">📦 Catálogo</button>'+
     '</div>'+
     '</div></div>'+
+    '<div class="fg"><label>Presentación <span style="font-weight:400;color:var(--text3);font-size:11px">(opcional)</span></label><input type="text" id="nPresentacion" placeholder="Ej: 1 unidad, Docena, Caja x24..."></div>'+
     '<div class="frow3"><div class="fg"><label>Cantidad</label><input type="number" id="nQty" value="1" min="1" onchange="calcNT()"></div>'+
     '<div class="fg"><label>Precio venta *</label><input type="number" id="nPrec" placeholder="0" onchange="calcNT()"></div>'+
     '<div class="fg"><label>Costo proveedor *</label><input type="number" id="nCost" placeholder="0" onchange="calcNT()"></div></div>'+
@@ -7889,7 +7913,10 @@ async function saveNewOrder(){
   if(!Number.isFinite(costo)||costo<=0)faltantes.push('Costo proveedor');
   if(!esManual&&!zona)faltantes.push('Zona de entrega');
   if(esManual&&!zonaCustomNombre)faltantes.push('Nombre de zona (manual)');
+  if(!(gv('nTel')||'').trim().replace(/\D/g,'').length>=6)faltantes.push('Teléfono (mín. 6 dígitos)');
   if(faltantes.length){showAlert('noAlert','e','⚠️ Campos obligatorios faltantes: '+faltantes.join(', '));return;}
+  const dirVal=(gv('nDir')||'').trim();
+  if(!dirVal)showAlert('noAlert','w','⚠️ Dirección vacía — el delivery puede tener dificultades para encontrar al cliente.');
   const orders=_ordersCache;
   const _ids=orders.map(o=>parseInt(o.id)||0).filter(n=>n>0);
   const newId=(_ids.length?Math.max(..._ids):1000)+1;
@@ -7908,7 +7935,7 @@ async function saveNewOrder(){
   const o={
     id:newId,fecha:gv('nFecha')||today(),cliente:cli,
     telefono:(gv('nTel')||'').trim(),direccion:gv('nDir'),zona,zonaCustomNombre,zonaCustomPrecio,
-    proveedor:prov,proveedorId:provId,producto:prod,
+    proveedor:prov,proveedorId:provId,producto:prod,presentacion:(gv('nPresentacion')||'').trim()||null,
     qty:Math.max(1,parseInt(gv('nQty'))||1),precio,costo,estado:estadoInicial,
     vendedorId:vendedorIdSel,created_by:CU.id,
     dropId:dropIdSel,deliveryId:parseInt(gv('nDlv'))||null,
@@ -11786,7 +11813,7 @@ function openProductoPicker(){
         ?p.presentaciones.map(pr=>{
             const pV=pr.precioVendedor||0,pD=pr.precioDropshipper||0,pP=pr.precioProveedor||0;
             const rolPrice=CU.rol==='vendedor'&&pV>0?pV:CU.rol==='dropshipper'&&pD>0?pD:CU.rol==='proveedor'&&pP>0?pP:(pr.precio||0);
-            return '<button class="btn btn-secondary btn-sm" style="display:flex;flex-direction:column;align-items:flex-start;height:auto;padding:6px 10px;gap:1px" onclick="selProductoCatalogo(\''+escQ(p.nombre)+'\',\''+escQ(pr.nombre)+'\','+(pr.precio||0)+','+pV+','+pD+','+pP+')">'+
+            return '<button class="btn btn-secondary btn-sm" style="display:flex;flex-direction:column;align-items:flex-start;height:auto;padding:6px 10px;gap:1px" onclick="selProductoCatalogo(\''+escQ(p.nombre)+'\',\''+escQ(pr.nombre)+'\','+(pr.precio||0)+','+pV+','+pD+','+pP+',\''+escQ(p.proveedorNombre||'')+'\')">'+
               '<span style="font-weight:700">'+pr.nombre+'</span>'+
               (rolPrice>0?'<span style="font-size:10px;color:var(--accent)">'+fmt(rolPrice)+'</span>':'<span style="font-size:10px;color:var(--text3)">Sin precio</span>')+
               '</button>';
@@ -12697,16 +12724,18 @@ function imprimirGuia(id){
   if(w){w.document.write(html);w.document.close();}
   else pushNotif('Permití popups para imprimir la guía','w');
 }
-function selProductoCatalogo(nombre,presentacion,precioBase,precioVendedor,precioDropshipper,precioProveedor){
+function selProductoCatalogo(nombre,presentacion,precioBase,precioVendedor,precioDropshipper,precioProveedor,proveedorNombre){
   const full=presentacion?nombre+' — '+presentacion:nombre;
   const inp=$('nProd');
   if(inp){inp.value=full;inp.style.borderColor='var(--accent)';}
-  // Seleccionar precio según rol
   let precio=precioBase;
   if(CU.rol==='vendedor'&&precioVendedor>0)precio=precioVendedor;
   else if(CU.rol==='dropshipper'&&precioDropshipper>0)precio=precioDropshipper;
   else if(CU.rol==='proveedor'&&precioProveedor>0)precio=precioProveedor;
-  if(precio>0&&$('nPrec')){$('nPrec').value=precio;calcNT();}
+  if(precio>0&&$('nPrec'))$('nPrec').value=precio;
+  if(precioProveedor>0&&$('nCost'))$('nCost').value=precioProveedor;
+  if(proveedorNombre){const _pm=_usersCache.find(u=>u.rol==='proveedor'&&(u.nombre||'')===proveedorNombre);if(_pm&&$('nProv'))$('nProv').value=_pm.id;}
+  calcNT();
   closeC();
 }
 
@@ -15379,6 +15408,76 @@ async function _savePrefWaEnRuta(val){
 /* ══════════════════════════════════════════════════
    PAGES.pagos — Gestión de pagos a usuarios
 ══════════════════════════════════════════════════ */
+
+// Renderiza la sección "Desglose por pedido" en #pagosDesglose (solo admin)
+function _renderDesgloseXPedido(mes, orders){
+  const box=document.getElementById('pagosDesglose');
+  if(!box) return;
+  const entMes=(orders||[]).filter(function(o){return o.estado==='Entregado'&&(o.fecha||'').startsWith(mes);});
+  const open=window._desgloseOpen||false;
+  const btnLabel=open?'▲ Ocultar desglose':'▼ Desglose por pedido ('+entMes.length+')';
+
+  let tableHtml='';
+  if(open){
+    if(entMes.length===0){
+      tableHtml='<div style="padding:16px;color:var(--text3);font-size:13px;text-align:center">Sin pedidos entregados en '+mes+'</div>';
+    } else {
+      const filas=entMes.map(function(o,i){
+        const qty=o.qty||1;
+        const precio=(o.precio||0)*qty;
+        const costo=(o.costo||0)*qty;
+        const logistica=_getZonaO(o).precio||0;
+        const comision=ganVend(o);
+        const margen=precio-costo-logistica;
+        const cliente=escHtml(o.cliente||'—');
+        const vendedor=escHtml(getUser(o.vendedorId).nombre||'—');
+        const proveedor=escHtml(o.proveedor||getUser(o.proveedorId).nombre||'—');
+        const fecha=(o.fecha||'').slice(0,10);
+        const margenColor=margen>=0?'#22c55e':'#ef4444';
+        return '<tr>'+
+          '<td class="td" style="text-align:center;color:var(--text3)">'+(i+1)+'</td>'+
+          '<td class="td">'+escHtml(fecha)+'</td>'+
+          '<td class="td">'+cliente+'</td>'+
+          '<td class="td">'+vendedor+'</td>'+
+          '<td class="td">'+proveedor+'</td>'+
+          '<td class="td" style="text-align:right">'+fmt(precio)+'</td>'+
+          '<td class="td" style="text-align:right">'+fmt(costo)+'</td>'+
+          '<td class="td" style="text-align:right">'+fmt(logistica)+'</td>'+
+          '<td class="td" style="text-align:right">'+fmt(comision)+'</td>'+
+          '<td class="td" style="text-align:right;color:'+margenColor+';font-weight:700">'+fmt(margen)+'</td>'+
+        '</tr>';
+      }).join('');
+      tableHtml=
+        '<div style="overflow-x:auto;margin-top:10px">'+
+        '<table class="tbl" style="width:100%;border-collapse:collapse;font-size:12px">'+
+          '<thead><tr>'+
+            '<th class="th" style="width:36px">#</th>'+
+            '<th class="th">Fecha</th>'+
+            '<th class="th">Cliente</th>'+
+            '<th class="th">Vendedor</th>'+
+            '<th class="th">Proveedor</th>'+
+            '<th class="th" style="text-align:right">Precio</th>'+
+            '<th class="th" style="text-align:right">Costo</th>'+
+            '<th class="th" style="text-align:right">Log\xedstica</th>'+
+            '<th class="th" style="text-align:right">Comisi\xf3n</th>'+
+            '<th class="th" style="text-align:right">Margen</th>'+
+          '</tr></thead>'+
+          '<tbody>'+filas+'</tbody>'+
+        '</table>'+
+        '</div>';
+    }
+  }
+
+  box.innerHTML=
+    '<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:4px">'+
+      '<button onclick="window._desgloseOpen=!window._desgloseOpen;_renderDesgloseXPedido(\''+escAttr(mes)+'\',_ordersCache||[])" '+
+        'style="width:100%;background:var(--bg2);border:none;padding:12px 16px;text-align:left;cursor:pointer;color:var(--text1);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px">'+
+        '<span>'+btnLabel+'</span>'+
+      '</button>'+
+      (open ? '<div style="padding:0 12px 12px">'+tableHtml+'</div>' : '')+
+    '</div>';
+}
+
 function _ganadoPorUsuarioMes(user,orders){
   const mes=mesActual();
   const ordsMes=(orders||[]).filter(o=>o.estado==='Entregado'&&(o.fecha||'').startsWith(mes));
@@ -15554,6 +15653,20 @@ PAGES.pagos=function(){
     const mes=mesActual();
 
     if(esAdmin){
+      // ── ESTADO FINANCIERO GLOBAL ─────────────────────────────────────────
+      // Pedidos Entregado del mes para cálculo de resumen global
+      const entMes=(orders||[]).filter(o=>o.estado==='Entregado'&&(o.fecha||'').startsWith(mes));
+      let _gTotalRecaudado=0, _gTotalCostos=0, _gTotalComisiones=0, _gTotalLogistica=0;
+      entMes.forEach(function(o){
+        const qty=o.qty||1;
+        _gTotalRecaudado  += (o.precio||0)*qty;
+        _gTotalCostos     += (o.costo||0)*qty;
+        _gTotalComisiones += ganVend(o);
+        _gTotalLogistica  += (_getZonaO(o).precio||0);
+      });
+      const _gMargenNeto = _gTotalRecaudado - _gTotalCostos - _gTotalLogistica;
+      // ────────────────────────────────────────────────────────────────────
+
       // Lista todos los usuarios con saldo
       const rolesPagables=['vendedor','dropshipper','proveedor','delivery'];
       const targetUsers=(users||[]).filter(u=>rolesPagables.includes(u.rol)&&u.activo!==false);
@@ -15644,6 +15757,16 @@ PAGES.pagos=function(){
           '<button class="btn btn-secondary btn-sm" onclick="exportarTodosSaldosCSV()" style="display:inline-flex;align-items:center;gap:6px">'+SVG.arrowDown+'<span>Exportar saldos a CSV</span></button>'+
           '<button class="btn btn-secondary btn-sm" onclick="imprimirBalanceGeneral()">'+SVG.printer+' Imprimir balance general</button>'+
         '</div>'+
+        '<div class="stitle" style="margin-top:14px;margin-bottom:6px;font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Estado financiero global — '+mes+'</div>'+
+        '<div class="sgrid" style="margin-bottom:6px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">'+
+          '<div class="sc gr"><div class="slabel">Recaudado</div><div class="sval">'+fmt(_gTotalRecaudado)+'</div></div>'+
+          '<div class="sc bl"><div class="slabel">Pagado a proveedores</div><div class="sval">'+fmt(_gTotalCostos)+'</div></div>'+
+          '<div class="sc" style="background:linear-gradient(135deg,#1d4e6322,#0e374422);border:1px solid #1d4e6344"><div class="slabel">Comisiones vendedores</div><div class="sval" style="color:#38bdf8">'+fmt(_gTotalComisiones)+'</div></div>'+
+          '<div class="sc" style="background:linear-gradient(135deg,#5b21b622,#3b0d6622);border:1px solid #5b21b644"><div class="slabel">Log\xedstica</div><div class="sval" style="color:#a78bfa">'+fmt(_gTotalLogistica)+'</div></div>'+
+          '<div class="sc '+(_gMargenNeto>=0?'gr':'re')+'"><div class="slabel">Margen neto</div><div class="sval">'+fmt(_gMargenNeto)+'</div></div>'+
+        '</div>'+
+        '<div style="height:1px;background:var(--border);margin:10px 0 14px"></div>'+
+        '<div class="stitle" style="margin-top:0;margin-bottom:4px;font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Saldos a pagar — '+mes+'</div>'+
         '<div class="sgrid" style="margin-bottom:14px">'+
           '<div class="sc gr"><div class="slabel">Total ganado mes</div><div class="sval">'+fmt(totalGanado)+'</div></div>'+
           '<div class="sc bl"><div class="slabel">Total pagado</div><div class="sval">'+fmt(totalPagado)+'</div></div>'+
@@ -15665,8 +15788,10 @@ PAGES.pagos=function(){
           chip('proveedores','Proveedores')+
           chip('deliveries','Deliveries')+
         '</div>'+
-        '<div id="pagosListaBox" class="pago-fade"></div>';
+        '<div id="pagosListaBox" class="pago-fade"></div>'+
+        '<div id="pagosDesglose" style="margin-top:16px"></div>';
       _renderPagosLista();
+      _renderDesgloseXPedido(mes, orders);
       // FIX flash: una sola vez por sesión (evita re-encolado en re-renders).
       try{ if(!window._onboardFiredPagos){ window._onboardFiredPagos = true; setTimeout(function(){
         if(!window.Onboard) return;
