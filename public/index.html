@@ -2595,11 +2595,13 @@ const DL = {
   // ZONAS
   _mapToSupaZona(z){
     return{id:z.id,nombre:z.nombre,descripcion:z.desc||'',precio:z.precio,
-      extra_delivery:z.extraDelivery||0,tiempo_entrega:z.tiempoEntrega||''};
+      extra_delivery:z.extraDelivery||0,tiempo_entrega:z.tiempoEntrega||'',
+      activa:z.activa!==false};
   },
   _mapFromSupaZona(r){
     return{id:r.id,nombre:r.nombre,desc:r.descripcion||'',precio:r.precio,
-      extraDelivery:r.extra_delivery||0,tiempoEntrega:r.tiempo_entrega||''};
+      extraDelivery:r.extra_delivery||0,tiempoEntrega:r.tiempo_entrega||'',
+      activa:r.activa!==false};
   },
   async getZonas(){
     if(_supaConnected){
