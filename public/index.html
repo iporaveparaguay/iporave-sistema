@@ -7762,6 +7762,10 @@ function calcNT(){
   if($('cGan')){$('cGan').textContent=fmt(gan);$('cGan').style.color=gan>=0?'var(--accent)':'var(--red)';}
 }
 async function saveNewOrder(){
+  const _btn=document.querySelector('[onclick="saveNewOrder()"]');
+  if(_btn&&_btn.disabled)return;
+  if(_btn)_btn.disabled=true;
+  try{
   const cli=gv('nCli').trim(),prod=gv('nProd').trim();
   const provId=parseInt(gv('nProv'))||null;
   const provObj=provId?_usersCache.find(u=>u.id===provId):null;
@@ -7797,13 +7801,13 @@ async function saveNewOrder(){
   const dropIdSel=CU.rol==='dropshipper'?CU.id:(parseInt(gv('nDrop'))||null);
   const estadoInicial=CU.rol==='dropshipper'?'Confirmado':'Pendiente';
   const o={
-    id:newId,fecha:gv('nFecha')||today(),cliente:cli,cedula:gv('nCed'),
-    telefono:gv('nTel'),direccion:gv('nDir'),zona,zonaCustomNombre,zonaCustomPrecio,
+    id:newId,fecha:gv('nFecha')||today(),cliente:cli,cedula:(gv('nCed')||'').trim(),
+    telefono:(gv('nTel')||'').trim(),direccion:gv('nDir'),zona,zonaCustomNombre,zonaCustomPrecio,
     proveedor:prov,proveedorId:provId,producto:prod,
-    qty:parseInt(gv('nQty'))||1,precio,costo,estado:estadoInicial,
+    qty:Math.max(1,parseInt(gv('nQty'))||1),precio,costo,estado:estadoInicial,
     vendedorId:vendedorIdSel,created_by:CU.id,
     dropId:dropIdSel,deliveryId:parseInt(gv('nDlv'))||null,
-    metodoCobro:null,fotoEntrega:false,gpsLat,gpsLng,sitio:gv('nSitio')||null,notas:gv('nNotas'),
+    metodoCobro:null,fotoEntrega:false,gpsLat,gpsLng,sitio:(gv('nSitio')||'').trim()||null,notas:(gv('nNotas')||'').trim(),
     boletaNum:'B-'+String(newId).padStart(4,'0'),numDoc:nextDocNum(),
     razonSocial:gv('nRazon'),ruc:gv('nRuc'),tipoIva:gv('nIva')||'10%',
     historial:[{estado:estadoInicial,usuario:CU.nombre,fecha:nowStr(),obs:'Pedido creado'}],
@@ -7812,6 +7816,9 @@ async function saveNewOrder(){
   await refreshCache();
   closeB();nav('orders');
   pushNotif('Pedido #'+newId+' creado','s');
+  }finally{
+    if(_btn)_btn.disabled=false;
+  }
 }
 
 /* ─── BALANCE ─── */
@@ -14326,6 +14333,7 @@ function _mapaAddMarker(map,o,lat,lng,exact){
     (exact?'':'<div style="font-size:10px;color:#64748b;margin-top:6px">⚠ Posición aproximada por dirección</div>')+
     '</div>';
   const m=new mapboxgl.Marker(el).setLngLat([lng,lat]).setPopup(new mapboxgl.Popup({offset:30,maxWidth:'260px'}).setHTML(popupHtml)).addTo(map);
+  if(window._mapMarkers[o.id]){try{const _old=window._mapMarkers[o.id];if(_old.getPopup){const _p=_old.getPopup();if(_p)_p.remove();}  _old.remove();}catch(_){}}
   window._mapMarkers[o.id]=m;
 }
 
@@ -14796,6 +14804,7 @@ function _gpsLoopTick(){
       const _gm={1:'GPS: permiso denegado. El turno seguirá activo pero sin tracking.',2:'GPS: señal no disponible.',3:'GPS: timeout.'};
       pushNotif((_gm[err.code]||'Error GPS')+' (intento '+_gpsErrCount+')','w');
     }
+    if(_gpsErrCount>=10){_gpsLoopStop();pushNotif('GPS detenido tras 10 fallos consecutivos','e');}
   },{enableHighAccuracy:true,timeout:8000,maximumAge:0});
 }
 let _gpsBannerTimer=null;
