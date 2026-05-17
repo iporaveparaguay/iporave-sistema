@@ -3304,6 +3304,18 @@ function waDespachado(o){
     .replace('{id}',o.id).replace('{cliente}',o.cliente);
   waSend(tel,msg);
 }
+/* ─── WA AUTO NOTIF (para delivery: EnRuta, Entregado, Cancelado) ─── */
+function _waAutoNotif(o,estadoNuevo){
+  if(!o||!o.telefono)return;
+  var msgs={
+    'En Ruta':'🚚 Tu pedido #'+o.id+' está en camino. Llegará pronto. — Iporãve',
+    'Entregado':'✅ Tu pedido #'+o.id+' fue entregado. ¡Gracias por tu compra! — Iporãve',
+    'Cancelado':'❌ Tu pedido #'+o.id+' fue cancelado. Contactanos para más info. — Iporãve'
+  };
+  var msg=msgs[estadoNuevo];
+  if(!msg)return;
+  waSend(o.telefono,msg);
+}
 async function notifEnRutaAdmin(o){
   if(!_supa)return;
   const {data:admins}=await _supa.from('usuarios').select('id').in('rol',['admin','superadmin']);
@@ -7474,6 +7486,7 @@ async function saveEditOrder(id){
   const cli=gv('eCli').trim(),prod=gv('eProd').trim();
   if(!cli||!prod){showAlert('eAlert','e','Cliente y Producto son obligatorios');return;}
   if(ESTADOS_REQ_OBS.has(ns)&&!obs){showAlert('eAlert','e','La observación es obligatoria para este estado');return;}
+  const _prevEstado=o.estado;
   if(ns!==o.estado){
     o.historial=o.historial||[];
     o.historial.push({estado:ns,usuario:CU.nombre,fecha:nowStr(),obs});
@@ -7524,6 +7537,7 @@ async function saveEditOrder(id){
   o.tipoLogistica=gv('eTipoLogistica')||o.tipoLogistica||'propia';
   o.logExternaNombre=(gv('eLogExternaNombre')||'').trim()||o.logExternaNombre||null;
   o.estadoPago=gv('eEstadoPago')||o.estadoPago||'pendiente';
+  if(ns!==_prevEstado&&['En Ruta','Entregado','Cancelado'].includes(ns))_waAutoNotif(o,ns);
   await DL.saveOrder(o);
   await refreshCache();
   closeA();filtrar();
@@ -7638,11 +7652,11 @@ async function _ejecutarConfirmDlv(){
   const _newLat=gv('gpsLat'),_newLng=gv('gpsLng');
   if(_newLat&&_newLng){o.gpsLat=_newLat;o.gpsLng=_newLng;}
   const _esDelivery=CU&&CU.rol==='delivery';
-  if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;const _gL=gv('gpsLat'),_gN=gv('gpsLng');if(_gL&&_gN){o.gpsLat=_gL;o.gpsLng=_gN;o.gpsTimestamp=nowStr();}await DL.incCupo(CU.id);if(!_esDelivery)waEntregado(o);notifEntregaAdmin(o);notifEntregadoVendedor(o);_gpsLoopStop();}
+  if(estado==='Entregado'){o.metodoCobro=metodo;o.fotoEntrega=_fotoBase64||true;const _gL=gv('gpsLat'),_gN=gv('gpsLng');if(_gL&&_gN){o.gpsLat=_gL;o.gpsLng=_gN;o.gpsTimestamp=nowStr();}await DL.incCupo(CU.id);if(!_esDelivery)waEntregado(o);else _waAutoNotif(o,'Entregado');notifEntregaAdmin(o);notifEntregadoVendedor(o);_gpsLoopStop();}
   if(estado==='Despachado'){if(!_esDelivery)waDespachado(o);}
-  if(estado==='En Ruta'){if(!_esDelivery)waEnRuta(o);notifEnRutaAdmin(o);_gpsLoopStart(o);}
+  if(estado==='En Ruta'){if(!_esDelivery)waEnRuta(o);else _waAutoNotif(o,'En Ruta');notifEnRutaAdmin(o);_gpsLoopStart(o);}
   if(_esDelivery&&['Despachado','En Ruta','Entregado'].includes(estado))pushNotif('Mensaje enviado al cliente','ok');
-  if(['Cancelado','Devuelto','Reprogramado'].includes(estado))_gpsLoopStop();
+  if(['Cancelado','Devuelto','Reprogramado'].includes(estado)){_gpsLoopStop();if(estado==='Cancelado')_waAutoNotif(o,'Cancelado');}
   if(estado.startsWith('No contesta'))waNoContesta(o);
   await DL.saveOrder(o);
   await refreshCache();
@@ -11125,7 +11139,7 @@ function _renderProductoCard(p,canEdit,canOrder=false){
         (presActivas.length?'<span class="prod-precio-actual">'+fmt(_getPrecioRol(presActivas[0],CU.rol))+'</span>':'<span style="font-size:12px;color:var(--text3)">Sin precio</span>')+
       '</div>'+
       (esAdmin&&presActivas.length?'<div class="prod-precio-mayor">Mayorista: '+fmt(presActivas[0].precioProveedor||0)+'</div>':'')+
-      ((p.stock||0)>0?'<div class="prod-stock">📦 Stock: '+p.stock+'</div>':'')+
+      ((p.stock!==undefined&&p.stock<=5&&p.stock>=0)?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#fff;background:#dc2626;border-radius:4px;padding:1px 7px;margin-top:3px">⚠️ Stock: '+p.stock+'</div>':((p.stock||0)>0?'<div class="prod-stock">📦 Stock: '+p.stock+'</div>':''))+
       presHtml+
       '<div class="prod-actions">'+
         (canOrder&&presActivas.length?'<button class="btn btn-primary btn-sm btn-full" style="font-size:12px" onclick="crearPedidoDesdeProducto('+p.id+')">'+SVG.shoppingCart+' Crear pedido</button>':'')+
@@ -11285,8 +11299,12 @@ function openNuevoProducto(){
     '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Precios</span></div>'+
     // FILA A: Stock + Precio anterior tachado (mitad cada uno)
     '<div class="frow">'+
-      '<div class="fg"><label>Stock</label><input type="number" id="npStock" placeholder="0" min="0"></div>'+
+      '<div class="fg"><label>Stock disponible</label><input type="number" id="npStock" placeholder="0" min="0"></div>'+
       '<div class="fg"><label>Precio anterior (tachado) <span style="font-size:10px;color:var(--text3)">— precio "antes"</span></label><input type="number" id="npPrecioComp" placeholder="0" min="0"></div>'+
+    '</div>'+
+    '<div class="frow">'+
+      '<div class="fg"><label>Presentación <span style="font-size:10px;color:var(--text3)">— unidad de venta</span></label><input type="text" id="npPresentacion" placeholder="Ej: Caja x12, Bolsa 1kg, Unidad..."></div>'+
+      '<div class="fg" style="display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:4px"><label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="npAutoPausar" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);flex-shrink:0;margin-top:2px"><span>Auto-pausar si se agota el stock<br><span style="font-size:10px;color:var(--text3);font-weight:400">El producto se marcará como inactivo automáticamente al llegar a 0</span></span></label></div>'+
     '</div>'+
     // FILA B: Proveedor + Vendedor (mitad cada uno)
     ((provs||vends)?'<div class="frow">'+
@@ -11341,6 +11359,8 @@ async function saveNuevoProducto(){
     descripcion_html:_getRichContent('npDesc')||'',
     precio_comparacion:parseFloat(gv('npPrecioComp'))||0,
     stock:parseInt(gv('npStock'))||0,
+    presentacion:(gv('npPresentacion')||'').trim()||null,
+    autoPausarSinStock:!!$('npAutoPausar')?.checked,
     publicar_tienda:!!$('npPublicar')?.checked,
     foto:fotoUrl,
     fotos:fotoUrl?[fotoUrl]:[],
@@ -11443,7 +11463,11 @@ async function editProducto(id){
     '<div class="fg"><label>Descripción del producto</label>'+_richEditorHTML('epDesc')+'</div>'+
     '<div class="frow">'+
       '<div class="fg"><label>Precio anterior (tachado)</label><input type="number" id="epPrecioComp" value="'+(p.precio_comparacion||0)+'" min="0"></div>'+
-      '<div class="fg"><label>Stock</label><input type="number" id="epStock" value="'+(p.stock||0)+'" min="0"></div>'+
+      '<div class="fg"><label>Stock disponible</label><input type="number" id="epStock" value="'+(p.stock||0)+'" min="0"></div>'+
+    '</div>'+
+    '<div class="frow">'+
+      '<div class="fg"><label>Presentación <span style="font-size:10px;color:var(--text3)">— unidad de venta</span></label><input type="text" id="epPresentacion" value="'+escAttr(p.presentacion||'')+'" placeholder="Ej: Caja x12, Bolsa 1kg, Unidad..."></div>'+
+      '<div class="fg" style="display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:4px"><label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;font-weight:500"><input type="checkbox" id="epAutoPausar" '+(p.autoPausarSinStock?'checked':'')+' style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);flex-shrink:0;margin-top:2px"><span>Auto-pausar si se agota el stock<br><span style="font-size:10px;color:var(--text3);font-weight:400">El producto se marcará como inactivo automáticamente al llegar a 0</span></span></label></div>'+
     '</div>'+
     '<div class="fg"><label>Proveedor asignado</label>'+
       '<select id="epProv"><option value="" '+((!p.proveedorNombre)?'selected':'')+'>Sin asignar</option>'+provs+'</select></div>'+
@@ -11491,6 +11515,8 @@ async function saveEditProducto(id){
   p.descripcion_html=_getRichContent('epDesc')||'';
   p.precio_comparacion=parseFloat(gv('epPrecioComp'))||0;
   p.stock=parseInt(gv('epStock'))||0;
+  p.presentacion=(gv('epPresentacion')||'').trim()||null;
+  p.autoPausarSinStock=!!$('epAutoPausar')?.checked;
   p.publicar_tienda=!!$('epPublicar')?.checked;
   if(window._presEdit){
     // Conservar presentaciones eliminadas (soft delete) y reemplazar las activas con las editadas
