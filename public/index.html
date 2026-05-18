@@ -1979,7 +1979,7 @@ body.alta-visibilidad select{
     </div>
     <div id="subMenuOverlay" onclick="toggleSubMenuActions()"></div>
     <!-- Pestaña fina (borde derecho, draggable verticalmente) -->
-    <div id="subMenuToggleTab" role="button" aria-label="Abrir herramientas" title="Herramientas de la página">
+    <div id="subMenuToggleTab" role="button" aria-label="Abrir herramientas" title="Herramientas de la página" onclick="toggleSubMenuActions()">
         <span id="subMenuTabIcon">☰</span>
     </div>
     <script>
@@ -2040,11 +2040,9 @@ body.alta-visibilidad select{
                 function _up(e){
                     if(!dragging)return;
                     dragging=false;tab.classList.remove('dragging');
-                    if(moved){
-                        if(e&&e.preventDefault)e.preventDefault();
-                    }else{
-                        toggleSubMenuActions();
-                    }
+                    if(moved&&e&&e.preventDefault)e.preventDefault();
+                    moved=false;
+                    // toggleSubMenuActions lo maneja el onclick del elemento
                 }
                 tab.addEventListener('mousedown',e=>{_down(e.clientY);});
                 document.addEventListener('mousemove',e=>{if(dragging)_move(e.clientY);});
@@ -2060,6 +2058,11 @@ body.alta-visibilidad select{
             };
 
             document.addEventListener('DOMContentLoaded',()=>{
+                // Mover fuera de .main para que position:fixed funcione bien en iOS Safari
+                ['subMenuActions','subMenuOverlay','subMenuToggleTab'].forEach(id=>{
+                    const el=document.getElementById(id);
+                    if(el&&el.parentElement!==document.body)document.body.appendChild(el);
+                });
                 _smInitDrag();
                 const tb=document.getElementById('tbActions');
                 if(tb){
