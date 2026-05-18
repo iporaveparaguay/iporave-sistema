@@ -17268,7 +17268,7 @@ function _calcularContrapartes(userId, userRol){
 // Estado de filtros admin pagos
 window._pagosFiltro=window._pagosFiltro||{q:'',rol:'todos',orden:'saldo_desc'};
 
-function _setPagosRolFiltro(r){ window._pagosFiltro.rol=r; _renderPagosLista(); }
+function _setPagosRolFiltro(r){ window._pagosFiltro.rol=r; document.querySelectorAll('.pagosChip').forEach(b=>{b.classList.toggle('active', b.dataset.rol===r);}); _renderPagosLista(); }
 function _setPagosOrden(o){ window._pagosFiltro.orden=o; _renderPagosLista(); }
 function _setPagosBusqueda(v){ window._pagosFiltro.q=v||''; _renderPagosLista(); }
 
@@ -17401,7 +17401,7 @@ PAGES.pagos=function(){
 
       window._pagosData={filas:filasData};
       const f=window._pagosFiltro;
-      const chip=(id,label)=>'<button class="pagosChip'+(f.rol===id?' active':'')+'" onclick="_setPagosRolFiltro(\''+id+'\')">'+label+'</button>';
+      const chip=(id,label)=>'<button class="pagosChip'+(f.rol===id?' active':'')+'" data-rol="'+id+'" onclick="_setPagosRolFiltro(\''+id+'\')">'+label+'</button>';
 
       $('tbActions').innerHTML=
         '<button class="btn btn-secondary btn-sm" onclick="exportarTodosSaldosCSV()" style="display:inline-flex;align-items:center;gap:6px">'+SVG.arrowDown+'<span>Exportar CSV</span></button>'+
