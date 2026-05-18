@@ -359,7 +359,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 @keyframes pgfadein{from{opacity:0;}to{opacity:1;}}
 .main{margin-left:238px;flex:1;min-height:100vh;display:flex;flex-direction:column;}
 .topbar{padding:max(13px, env(safe-area-inset-top)) 24px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);position:sticky;top:0;z-index:500;box-shadow:0 1px 8px rgba(0,0,0,.3);}
-.tbtitle{font-size:17px;font-weight:700;}
+.tbtitle{font-size:17px;font-weight:700;user-select:none;-webkit-user-select:none;}
 .tbactions{display:flex;align-items:center;gap:12px;flex:1;justify-content:center;margin:0 16px;flex-wrap:wrap;}
 .ca{padding:22px 24px;flex:1;}
 /* STATS */
@@ -1171,11 +1171,12 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .sc{box-sizing:border-box;min-width:0;word-break:break-word;}
   /* BUG-U5: order explícito en topbar para evitar mezcla de filas en mobile */
   #menuBtn{order:0;}
-  .tbtitle,#tbTitle{order:3;flex:1 1 auto;text-align:right!important;justify-content:flex-end!important;margin-left:auto!important;padding-left:0!important;padding-right:8px!important;}
-  .tbactions,#tbActions{order:1;flex:0 0 auto;}
-  #gpsStatusPill{order:3;}
-  #refreshBtn,#tutorialToggleBtn,#themeToggleBtn,#codexNotifBell{order:2;}
-  #topbarKebab{order:2;}
+  .tbtitle,#tbTitle{order:1;flex:0 1 auto;text-align:left!important;justify-content:flex-start!important;margin-left:0!important;padding-left:6px!important;padding-right:0!important;font-size:9px!important;max-width:calc(100vw - 200px)!important;min-width:0!important;}
+  #tbTitleText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex-shrink:1;}
+  .tbactions,#tbActions{order:2;flex:0 0 auto;}
+  #gpsStatusPill{order:1;flex-shrink:0;}
+  #refreshBtn,#tutorialToggleBtn,#themeToggleBtn,#codexNotifBell{order:3;}
+  #topbarKebab{order:3;}
   #offlineBadge{order:5;}
 }
 /* FIX mobile mapa: 2 filas en topbar — botones fila 1, combos fila 2 */
@@ -1943,11 +1944,13 @@ body.alta-visibilidad select{
         .sm-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text);}
         .sm-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;}
         .sm-close:hover{border-color:var(--accent);color:var(--accent);}
-        /* Botones uniformes dentro del submenú (todos al mismo tamaño) */
-        #tbActions{display:flex;flex-direction:column;gap:8px;align-items:stretch;flex-wrap:nowrap;overflow-y:auto;}
-        #tbActions > button, #tbActions > .btn, #tbActions > .map-btn{width:100%!important;min-height:42px!important;padding:10px 12px!important;font-size:13px!important;display:flex!important;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;white-space:normal!important;text-align:center!important;}
-        #tbActions > .search-combo, #tbActions > input, #tbActions > select{width:100%!important;box-sizing:border-box;}
-        #tbActions hr, #tbActions .sm-divider{width:100%;height:1px;background:var(--border);border:none;margin:6px 0;}
+        /* Botones uniformes dentro del submenú — SOLO MOBILE para no romper layout horizontal de PC */
+        @media (max-width:768px){
+            #tbActions{display:flex;flex-direction:column;gap:8px;align-items:stretch;flex-wrap:nowrap;overflow-y:auto;}
+            #tbActions > button, #tbActions > .btn, #tbActions > .map-btn{width:100%!important;min-height:42px!important;padding:10px 12px!important;font-size:13px!important;display:flex!important;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;white-space:normal!important;text-align:center!important;}
+            #tbActions > .search-combo, #tbActions > input, #tbActions > select{width:100%!important;box-sizing:border-box;}
+            #tbActions hr, #tbActions .sm-divider{width:100%;height:1px;background:var(--border);border:none;margin:6px 0;}
+        }
         /* Oculto totalmente en PC y para usuarios no autenticados */
         @media (min-width:769px){
             #subMenuActions,#subMenuOverlay,#subMenuToggleTab{display:none!important;}
@@ -2033,7 +2036,7 @@ body.alta-visibilidad select{
                         toggleSubMenuActions();
                     }
                 }
-                tab.addEventListener('mousedown',e=>{_down(e.clientY);e.preventDefault();});
+                tab.addEventListener('mousedown',e=>{_down(e.clientY);});
                 document.addEventListener('mousemove',e=>{if(dragging)_move(e.clientY);});
                 document.addEventListener('mouseup',_up);
                 tab.addEventListener('touchstart',e=>{if(e.touches.length===1)_down(e.touches[0].clientY);},{passive:true});
@@ -2068,7 +2071,7 @@ body.alta-visibilidad select{
       <button id="menuBtn" onclick="toggleSidebar()" aria-label="Menú">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <span class="tbtitle" id="tbTitle" style="flex:1; text-align:left; padding-left:12px; display:flex; align-items:center; gap:8px;">Dashboard <button id="gpsStatusPill" class="gps-pill" type="button" onclick="_gpsToggleFromPill()" aria-label="Compartiendo ubicacion" style="margin:0;"><span class="gps-pill-dot"></span><span class="gps-pill-text">GPS activo</span><span class="gps-pill-time"></span></button></span>
+      <span class="tbtitle" id="tbTitle" style="display:inline-flex; align-items:center; gap:6px; min-width:0; flex-shrink:1;"><span id="tbTitleText" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">Dashboard</span><button id="gpsStatusPill" class="gps-pill" type="button" onclick="_gpsToggleFromPill()" aria-label="Compartiendo ubicacion" style="margin:0; flex-shrink:0;"><span class="gps-pill-dot"></span><span class="gps-pill-text">GPS activo</span><span class="gps-pill-time"></span></button></span>
       
       <!-- Iconos Globales -->
       <div style="display:flex; align-items:center; gap:4px;">
@@ -5475,7 +5478,7 @@ function nav(page){
   const n=$('ni_'+page);if(n)n.classList.add('active');
   // Reset flag de animación de Estadísticas al salir de la página (próxima entrada anima de nuevo)
   if(page!=='estadisticas'){try{window._estadisticasAnimated=false;}catch(_){}}
-  $('tbTitle').textContent=PT[page]||page;
+  $('tbTitleText').textContent=PT[page]||page;
   $('tbActions').innerHTML='';
   try{_sfpDestroy();}catch(_){}
   $('ca').classList.remove('mc-page');
@@ -6155,7 +6158,7 @@ async function _saveFacturaB2B(){
   }
 }
 PAGES.facturas_b2b=function(){
-  $('tbTitle').textContent='Facturas B2B';
+  $('tbTitleText').textContent='Facturas B2B';
   $('tbActions').innerHTML='<button class="btn btn-primary" onclick="_openFacturaB2B()">Nueva factura +</button>';
   $('ca').innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">'+
     '<div style="font-size:18px;font-weight:900;margin-bottom:4px">'+SVG.fileText+' Facturas</div>'+
@@ -7183,7 +7186,7 @@ function _decorateNotifPanel(){
   }
 })();
 PAGES.entregas=function(){
-  $('tbTitle').textContent='Mis Entregas';
+  $('tbTitleText').textContent='Mis Entregas';
   let _pushBtn='';
   try{
     const _pushOk=Notification?.permission==='granted';
@@ -7283,7 +7286,7 @@ function _deliveryCardPedido(o){
 }
 function _renderDeliveryOperativo(){
   const did=_deliveryUserId();
-  $('tbTitle').textContent='Mis Entregas';
+  $('tbTitleText').textContent='Mis Entregas';
   $('tbActions').innerHTML='<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">Actualizar</button>';
   const mine=(_ordersCache||[]).filter(o=>String(o.deliveryId)===String(did) && ['Despachado','En ruta','En Ruta','Entregado'].includes(o.estado));
   const asignados=mine.filter(o=>!['Entregado','Cancelado'].includes(o.estado));
@@ -12413,7 +12416,7 @@ PAGES.catalogo=function(q=''){
 // Vista admin: todos los catálogos agrupados por usuario
 PAGES.catalogo_todos=function(q=''){
   $('tbActions').innerHTML='<button class="btn btn-secondary" onclick="PAGES.catalogo()">← Mi catálogo</button>';
-  $('tbTitle').textContent='Todos los catálogos';
+  $('tbTitleText').textContent='Todos los catálogos';
   _catalogoCache.forEach(p=>{if(!p.owner_id){p.owner_id=1;p.owner_nombre='Administrador';}});
   const filtrados=q?_catalogoCache.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())):_catalogoCache;
   // Agrupar por owner
@@ -16604,7 +16607,7 @@ PAGES.mapa=function(){
   if(esDelivery&&!window._mapaFiltroDelivery)window._mapaFiltroDelivery=String(CU.id);
   if(esLimitado&&!window._mapaFiltroVend)window._mapaFiltroVend=String(CU.id);
   const turnoActivo=esDelivery?!!(CU&&CU.turno_activo):false;
-  $('tbTitle').textContent=esDelivery?'Mis pedidos — Mapa':'Mapa de Pedidos';
+  $('tbTitleText').textContent=esDelivery?'Mis pedidos — Mapa':'Mapa de Pedidos';
   // Combo de Zona disponible para todos los roles (incluyendo delivery) para filtrar por zona.
   const zonaSel='<div id="mapaZonaCombo" class="search-combo"></div>';
   const vendSel=esDelivery
