@@ -1170,13 +1170,15 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   /* Fix: elementos que se corten por overflow */
   .sgrid{overflow:hidden;}
   .sc{box-sizing:border-box;min-width:0;word-break:break-word;}
-  /* BUG-U5: order explícito en topbar para evitar mezcla de filas en mobile */
-  #menuBtn{order:0;}
-  .tbtitle,#tbTitle{order:1;flex:0 1 auto;text-align:left!important;justify-content:flex-start!important;margin-left:0!important;padding-left:6px!important;padding-right:0!important;font-size:9px!important;max-width:calc(100vw - 200px)!important;min-width:0!important;}
-  #tbTitleText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex-shrink:1;}
+  /* BUG-U5: order explícito en topbar — ☰ | título (izquierda) | iconos (derecha) */
+  #menuBtn{order:0;flex-shrink:0;}
+  .tbtitle,#tbTitle{order:1;flex:1 1 auto;text-align:left!important;justify-content:flex-start!important;margin-left:0!important;padding-left:6px!important;padding-right:6px!important;font-size:12px!important;min-width:0!important;}
+  #tbTitleText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex-shrink:1;display:inline-block;max-width:100%;}
+  /* En mobile el GPS pill muestra solo el dot, no el texto largo */
+  #gpsStatusPill{order:1;flex-shrink:0;padding:4px 6px!important;}
+  #gpsStatusPill .gps-pill-text, #gpsStatusPill .gps-pill-time{display:none!important;}
   .tbactions,#tbActions{order:2;flex:0 0 auto;}
-  #gpsStatusPill{order:1;flex-shrink:0;}
-  #refreshBtn,#tutorialToggleBtn,#themeToggleBtn,#codexNotifBell{order:3;}
+  #codexNotifBell,#themeToggleBtn,#tutorialToggleBtn,#refreshBtn{order:3;flex-shrink:0;min-width:38px;min-height:38px;}
   #topbarKebab{order:3;}
   #offlineBadge{order:5;}
 }
@@ -5296,6 +5298,12 @@ function _toggleKebab(){
 }
 /* ── SIDEBAR MOBILE ── */
 function toggleSidebar(){
+  // En PC (≥769px), el botón ☰ colapsa/expande la sidebar fija
+  if(window.innerWidth>=769){
+    try{ toggleSidebarCollapse(); }catch(_){ }
+    return;
+  }
+  // En mobile, abre/cierra el overlay
   const s=document.querySelector('.sidebar');
   const o=$('sideOverlay');
   if(!s)return;
@@ -5304,10 +5312,10 @@ function toggleSidebar(){
   else{
     s.classList.add('open');o.classList.add('show');
     const panel = document.getElementById('subMenuActions');
-    const icon = document.getElementById('subMenuTabIcon');
-    if(panel && panel.style.left === '0px') {
-        panel.style.left = '-240px';
-        if(icon) icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+    if(panel && panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        const ov=document.getElementById('subMenuOverlay');
+        if(ov)ov.classList.remove('show');
     }
   }
 }
