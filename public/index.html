@@ -614,11 +614,11 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
   #mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:36px!important;min-height:36px!important;max-height:36px!important;box-sizing:border-box}
 }
 /* FIX: placeholder real "Día/Mes/Año" dentro de inputs type=date vacíos */
-.date-wrap{position:relative;display:block;width:100%;box-sizing:border-box}
-.date-wrap input[type="date"]{width:100%;box-sizing:border-box}
+.date-wrap{position:relative;display:block;width:100%;box-sizing:border-box;height:44px}
+.date-wrap input[type="date"]{width:100%;box-sizing:border-box;height:44px!important;min-height:44px!important;max-height:44px!important;padding:0 12px!important;font-size:16px!important;line-height:1!important;border-radius:8px!important}
 .date-wrap input[type="date"]:required:invalid::-webkit-datetime-edit{color:transparent}
 .date-wrap input[type="date"]:required:focus::-webkit-datetime-edit,.date-wrap input[type="date"]:required:valid::-webkit-datetime-edit{color:var(--text)}
-.date-wrap::after{content:'Día/Mes/Año';position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text2);font-size:12px;font-weight:500;white-space:nowrap}
+.date-wrap::after{content:'Día/Mes/Año';position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text2);font-size:13px;font-weight:500;white-space:nowrap}
 .date-wrap:has(input:focus)::after,.date-wrap:has(input:valid)::after{display:none}
 /* Combobox delivery más fino (desktop) */
 #dlvSearchCombo .search-combo-input,#dlvSearchInput{padding:7px 32px 7px 36px !important;height:36px !important;font-size:12px !important;border-radius:10px !important}
@@ -1285,10 +1285,11 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .userPagoRow .saldo.ok{color:#22c55e}
 .userPagoRow .saldo .label{font-size:10px;color:var(--text2);font-weight:600;display:block;text-transform:uppercase}
 .userPagoRow .acciones{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;width:100%}
+.userPagoRow .acciones > button{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;justify-content:center}
 .btnPagado{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,#10b981 0%,#16a34a 55%,#059669 100%);color:#fff;border:1px solid rgba(16,185,129,.55);font-size:11px;font-weight:800;letter-spacing:.01em;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,.32),0 0 22px rgba(34,197,94,.18),inset 0 1px 0 rgba(255,255,255,.22);transition:all .2s cubic-bezier(.2,.8,.2,1);position:relative;text-shadow:0 1px 1px rgba(0,0,0,.18)}
 .btnPagado:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(16,185,129,.5),0 0 32px rgba(34,197,94,.35),inset 0 1px 0 rgba(255,255,255,.28)}
 .btnPagado:active{transform:translateY(1px);box-shadow:0 2px 8px rgba(16,185,129,.35)}
-.btnPagado:disabled,.btnPagado[disabled]{box-shadow:none;filter:saturate(.4)}
+.btnPagado:disabled,.btnPagado[disabled]{box-shadow:0 2px 6px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.12);filter:saturate(.4);opacity:.85}
 .btnPagado.alto{box-shadow:0 0 0 3px rgba(245,158,11,.45),0 6px 18px rgba(16,185,129,.45),0 0 26px rgba(34,197,94,.28)}
 .btnPagado.urgente{animation:pulseUrg 1.5s infinite;box-shadow:0 0 0 0 rgba(239,68,68,.55),0 6px 18px rgba(16,185,129,.45),0 0 26px rgba(34,197,94,.28)}
 @keyframes pulseUrg{
@@ -1313,10 +1314,11 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .pagosControls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
 .pagosSearchInput{flex:1;min-width:200px;padding:9px 14px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:13px}
 .pagosSearchInput:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(245,158,11,.15)}
-.pagosFilterChips{display:flex;gap:6px;flex-wrap:wrap}
-.pagosChip{padding:7px 12px;border-radius:999px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s ease}
-.pagosChip:hover{transform:translateY(-1px);border-color:var(--accent)}
-.pagosChip.active{background:linear-gradient(180deg,var(--accent) 0%,#d97706 100%);color:#fff;border-color:#d97706;box-shadow:0 3px 8px rgba(245,158,11,.3)}
+.pagosFilterChips{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pagosFilterChips > button:nth-child(5){grid-column:1/-1}
+.pagosChip{padding:10px 14px;min-height:44px;border-radius:8px;background:linear-gradient(180deg,var(--bg2),var(--bg3));border:1px solid var(--accent);color:var(--text);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s ease;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.3px;box-sizing:border-box;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.pagosChip:hover{background:var(--accent);color:#000}
+.pagosChip.active{background:linear-gradient(180deg,var(--accent) 0%,#d97706 100%);color:#000;border-color:#d97706;box-shadow:0 3px 8px rgba(245,158,11,.3)}
 .pagosOrderSel{padding:9px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:700;cursor:pointer}
 /* ── Histórico mensual (Bloque 5) ── */
 .historico-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px}
