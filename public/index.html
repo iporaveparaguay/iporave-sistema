@@ -1170,16 +1170,18 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   /* Fix: elementos que se corten por overflow */
   .sgrid{overflow:hidden;}
   .sc{box-sizing:border-box;min-width:0;word-break:break-word;}
-  /* BUG-U5: order explícito en topbar — ☰ | título (izquierda) | iconos (derecha) */
+  /* Topbar mobile: ☰ | título (izq) | 4 iconos compactos (der) — una sola línea */
   #menuBtn{order:0;flex-shrink:0;}
-  .tbtitle,#tbTitle{order:1;flex:1 1 auto;text-align:left!important;justify-content:flex-start!important;margin-left:0!important;padding-left:6px!important;padding-right:6px!important;font-size:12px!important;min-width:0!important;}
+  .tbtitle,#tbTitle{order:1;flex:1 1 auto;text-align:left!important;justify-content:flex-start!important;margin-left:0!important;padding-left:6px!important;padding-right:6px!important;font-size:13px!important;min-width:0!important;}
   #tbTitleText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex-shrink:1;display:inline-block;max-width:100%;}
   /* En mobile el GPS pill muestra solo el dot, no el texto largo */
   #gpsStatusPill{order:1;flex-shrink:0;padding:4px 6px!important;}
   #gpsStatusPill .gps-pill-text, #gpsStatusPill .gps-pill-time{display:none!important;}
   .tbactions,#tbActions{order:2;flex:0 0 auto;}
-  #codexNotifBell,#themeToggleBtn,#tutorialToggleBtn,#refreshBtn{order:3;flex-shrink:0;min-width:38px;min-height:38px;}
-  #topbarKebab{order:3;}
+  /* #tbGlobalBtns va a la derecha (order:3) — sin esto quedaba order:0 y aparecía entre ☰ y el título */
+  #tbGlobalBtns{order:3;flex-shrink:0;gap:3px!important;}
+  #tbGlobalBtns .topbar-icon-btn{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;border-radius:8px!important;margin-right:0!important;}
+  #topbarKebab{order:4;}
   #offlineBadge{order:5;}
 }
 /* FIX mobile mapa: 2 filas en topbar — botones fila 1, combos fila 2 */
@@ -1670,8 +1672,8 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
   .mapBar .mapBtn{ font-size: 11px; padding: 6px 9px; min-height: 32px; }
   /* Combobox compactos */
   .search-combo{ max-width: 100% !important; }
-  /* Topbar compacto */
-  .topbar-icon-btn{ width: 40px !important; height: 40px !important; }
+  /* Topbar compacto — tamaño base para botones fuera de #tbGlobalBtns */
+  .topbar-icon-btn{ width: 32px; height: 32px; }
   /* Cards margen minimo */
   .sc, .mcard, .zcard, .ranking-row{
     padding: 12px !important;
