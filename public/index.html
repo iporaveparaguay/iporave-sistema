@@ -561,6 +561,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .mclose{cursor:pointer;color:var(--text2);font-size:20px;line-height:1;transition:color .15s;padding:2px 4px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;touch-action:manipulation;}
 .mclose:hover{color:var(--red);}
 .mbody{padding:22px;}.mfoot{padding:13px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center;position:sticky;bottom:0;background:var(--bg2);}
+.modal-btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%}
+.modal-btn-grid > button:last-child:nth-child(odd){grid-column:1/-1}
 .mfoot-alert{width:100%;margin-bottom:2px;}
 /* MAPA LABELS */
 .mapboxgl-popup-content{background:#1e293b!important;color:#e2e8f0!important;border-radius:10px!important;padding:12px 14px!important;box-shadow:0 4px 20px rgba(0,0,0,.5)!important;border:1px solid rgba(255,255,255,.08)!important;}
@@ -6549,11 +6551,11 @@ PAGES.dashboard=async function(){
     html+='<div class="sc" style="border-top:2px solid #0d9488;text-align:center"><div class="slabel" style="color:#0d9488">En ruta ahora</div><div class="sval" style="font-size:24px;color:#0d9488">'+enRuta.length+'</div></div>';
     html+='</div></div>';
     // ── Accesos rápidos ──
-    html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">';
-    html+='<button class="btn btn-primary" onclick="openNewOrder()" style="flex:1;min-width:130px">&#10133; Nuevo pedido</button>';
-    html+='<button class="btn btn-secondary" onclick="nav(\'orders\')" style="flex:1;min-width:130px">&#128230; Despachar pendientes</button>';
-    html+='<button class="btn btn-secondary" onclick="nav(\'pagos\')" style="flex:1;min-width:130px">&#128176; Ver pagos</button>';
-    html+='<button class="btn btn-secondary" onclick="nav(\'analitica\')" style="flex:1;min-width:130px">&#128202; Ver analítica</button>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">';
+    html+='<button class="btn btn-primary btn-sm" onclick="openNewOrder()" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">&#10133; Nuevo pedido</button>';
+    html+='<button class="btn btn-secondary btn-sm" onclick="nav(\'orders\')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">&#128230; Despachar</button>';
+    html+='<button class="btn btn-secondary btn-sm" onclick="nav(\'pagos\')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">&#128176; Ver pagos</button>';
+    html+='<button class="btn btn-secondary btn-sm" onclick="nav(\'analitica\')" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">&#128202; Ver analítica</button>';
     html+='</div>';
   }
 
@@ -7719,10 +7721,10 @@ function renderTable(orders,title,showActs,highlightChanges){
   '<th class="col-hide">Precio</th><th>Estado</th>'+
   (showActs?'<th>Acciones</th>':'')+
   '</tr></thead><tbody>'+
-  orders.map(o=>'<tr'+(highlightChanges?' style="'+_orderStateRowStyle(o)+'"':'')+'>'+
+  orders.map(o=>'<tr onclick="viewOrder('+o.id+')" style="cursor:pointer;'+(highlightChanges?_orderStateRowStyle(o):'')+'">'+
     '<td class="col-hide"><span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">#'+o.id+'</span></td>'+
     '<td class="col-hide">'+fmtDate(o.fecha)+'</td>'+
-    '<td><div class="hover-underline" onclick="viewOrder('+o.id+')" style="font-weight:600;line-height:1.3;margin:0;cursor:pointer;color:var(--accent);">'+escHtml(o.cliente||'')+'</div>'+
+    '<td><div style="font-weight:600;line-height:1.3;margin:0;color:var(--accent);">'+escHtml(o.cliente||'')+'</div>'+
       '<div style="font-size:11px;color:var(--text2)">'+escHtml(o.telefono||'')+'</div>'+
       (o.direccion?'<div class="col-show-mobile" style="font-size:10px;color:var(--text3);margin-top:2px">📍 '+escHtml(o.direccion.length>40?o.direccion.substring(0,38)+'…':o.direccion)+'</div>':'')+
       '<div class="col-show-mobile" style="font-size:11px;color:var(--text2);margin-top:1px">'+escHtml(o.producto||'')+(o.qty>1?' ×'+o.qty:'')+'</div>'+
@@ -8154,11 +8156,13 @@ function viewOrder(id){
     (o.notas?'<div class="lcard2"><div class="stitle">Notas</div><div style="font-size:13px">'+escHtml(o.notas)+'</div></div>':'')+
     chatSection+
     '<div class="stitle">'+SVG.clipboard+' Historial de cambios</div>'+histHtml,
-    '<button class="btn btn-secondary" onclick="closeB()">Cerrar</button>'+
-    '<button class="btn btn-blue" onclick="waMenu('+o.id+')">WA</button>'+
-    (['admin','superadmin','vendedor'].includes(CU.rol)&&(CU.rol!=='vendedor'||!o.deliveryId)?'<button class="btn btn-primary" onclick="closeB();editOrder('+o.id+')">'+SVG.pencil+' Editar</button>':'')+
-    (['delivery','admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary" onclick="closeB();dlvModal('+o.id+')">'+SVG.truck+' Cambiar estado</button>':'')+
-    '<button class="btn btn-primary" onclick="closeB();openBoleta('+o.id+')">Ver Boleta</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeB()">Cerrar</button>'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="waMenu('+o.id+')">'+SVG.chat+' WhatsApp</button>'+
+      (['admin','superadmin','vendedor'].includes(CU.rol)&&(CU.rol!=='vendedor'||!o.deliveryId)?'<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeB();editOrder('+o.id+')">'+SVG.pencil+' Editar</button>':'')+
+      (['delivery','admin','superadmin'].includes(CU.rol)?'<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeB();dlvModal('+o.id+')">'+SVG.truck+' Cambiar estado</button>':'')+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeB();openBoleta('+o.id+')">'+SVG.fileText+' Ver Boleta</button>'+
+    '</div>'
   );
   if(isMoving)setTimeout(()=>showDeliveryMap('viewMap',o.direccion,o.gpsLat,o.gpsLng),300);
   if(canChat)setTimeout(()=>renderOrderChat(o.id),50);

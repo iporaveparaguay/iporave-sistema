@@ -6,7 +6,7 @@
 //  - Push y notificationclick preservados
 //  - Background Sync: dispara mensaje a clientes para drenar cola offline
 
-const CACHE_VERSION = 'v39';
+const CACHE_VERSION = 'v40';
 const CACHE_STATIC = 'iporave-static-' + CACHE_VERSION;
 const CACHE_API = 'iporave-api-cache-v1';
 const CACHE_TILES = 'iporave-tiles-v1';
