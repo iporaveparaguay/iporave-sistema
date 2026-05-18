@@ -1915,10 +1915,8 @@ body.alta-visibilidad select{
     
     <!-- SUBMENÚ DE HERRAMIENTAS (Izquierdo) -->
     <style>
-        .tbtitle { font-size: 13px !important; font-weight: 700; }
-        #tbTitleText { font-size: inherit; max-width: 100%; }
-        @media (max-width: 640px) { .tbtitle { font-size: 11px !important; letter-spacing: .3px; } }
-        @media (max-width: 380px) { .tbtitle { font-size: 10px !important; } }
+        .tbtitle { font-size: 15px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        @media (max-width: 480px) { .tbtitle { max-width: 140px; font-size: 14px !important; } }
         div:has(> .etiq-chip) { flex-wrap: nowrap !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; padding-bottom: 6px; }
         .hover-underline:hover { text-decoration: underline !important; }
         #tbActions { overflow-x: hidden !important; padding: 12px !important; gap: 8px !important; }
@@ -1960,20 +1958,21 @@ body.alta-visibilidad select{
         }
         document.addEventListener('DOMContentLoaded', () => {
             const tb = document.getElementById('tbActions');
-            const PLACEHOLDER = '<div data-placeholder="1" style="padding:18px 14px; text-align:center; color:var(--text2); font-size:12px; font-style:italic;">Esta página no tiene herramientas adicionales.</div>';
+            const tab = document.getElementById('subMenuToggleTab');
 
-            // Si #tbActions está vacío, mostrar placeholder. Si tiene contenido real, dejarlo.
-            function _syncPlaceholder() {
-                if(!tb) return;
-                const real = tb.querySelector(':scope > *:not([data-placeholder])');
-                if(!real && !tb.querySelector('[data-placeholder]')) {
-                    tb.innerHTML = PLACEHOLDER;
-                } else if(real && tb.querySelector('[data-placeholder]')) {
-                    tb.querySelector('[data-placeholder]').remove();
+            // Mostrar/ocultar pestaña naranja según si #tbActions tiene contenido
+            function _syncTab() {
+                if(!tb || !tab) return;
+                const tiene = tb.innerHTML.trim().length > 0;
+                tab.style.display = tiene ? 'flex' : 'none';
+                if(!tiene) {
+                    const panel = document.getElementById('subMenuActions');
+                    if(panel) panel.style.left = '-240px';
                 }
             }
             if(tb) {
-                new MutationObserver(_syncPlaceholder).observe(tb, { childList: true });
+                new MutationObserver(_syncTab).observe(tb, { childList: true, subtree: true, characterData: true });
+                // Cerrar submenú con delay al hacer clic en un elemento interactivo
                 tb.addEventListener('click', (e) => {
                     if(e.target.closest('button') || e.target.closest('.etiq-chip') || e.target.closest('.map-btn') || e.target.closest('.search-combo-list li')) {
                         setTimeout(() => {
@@ -1986,7 +1985,7 @@ body.alta-visibilidad select{
                     }
                 });
             }
-            _syncPlaceholder();
+            _syncTab();
         });
     </script>
 
@@ -1994,7 +1993,7 @@ body.alta-visibilidad select{
       <button id="menuBtn" onclick="toggleSidebar()" aria-label="Menú">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <span class="tbtitle" id="tbTitle" style="flex:1 1 auto; min-width:0; text-align:left; padding-left:10px; display:flex; align-items:center; gap:6px;"><span id="tbTitleText" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; max-width:100%;">Dashboard</span><button id="gpsStatusPill" class="gps-pill" type="button" onclick="_gpsToggleFromPill()" aria-label="Compartiendo ubicacion" style="margin:0; flex-shrink:0;"><span class="gps-pill-dot"></span><span class="gps-pill-text">GPS activo</span><span class="gps-pill-time"></span></button></span>
+      <span class="tbtitle" id="tbTitle" style="flex:1; text-align:left; padding-left:12px; display:flex; align-items:center; gap:8px;">Dashboard <button id="gpsStatusPill" class="gps-pill" type="button" onclick="_gpsToggleFromPill()" aria-label="Compartiendo ubicacion" style="margin:0;"><span class="gps-pill-dot"></span><span class="gps-pill-text">GPS activo</span><span class="gps-pill-time"></span></button></span>
       
       <!-- Iconos Globales: campanita → tema → tutorial → refresh -->
       <div id="tbGlobalBtns">
@@ -5398,7 +5397,7 @@ function nav(page){
   const n=$('ni_'+page);if(n)n.classList.add('active');
   // Reset flag de animación de Estadísticas al salir de la página (próxima entrada anima de nuevo)
   if(page!=='estadisticas'){try{window._estadisticasAnimated=false;}catch(_){}}
-  $('tbTitleText').textContent=PT[page]||page;
+  $('tbTitle').textContent=PT[page]||page;
   $('tbActions').innerHTML='';
   try{_sfpDestroy();}catch(_){}
   $('ca').classList.remove('mc-page');
@@ -6078,7 +6077,7 @@ async function _saveFacturaB2B(){
   }
 }
 PAGES.facturas_b2b=function(){
-  $('tbTitleText').textContent='Facturas B2B';
+  $('tbTitle').textContent='Facturas B2B';
   $('tbActions').innerHTML='<button class="btn btn-primary" onclick="_openFacturaB2B()">Nueva factura +</button>';
   $('ca').innerHTML='<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">'+
     '<div style="font-size:18px;font-weight:900;margin-bottom:4px">'+SVG.fileText+' Facturas</div>'+
@@ -7106,7 +7105,7 @@ function _decorateNotifPanel(){
   }
 })();
 PAGES.entregas=function(){
-  $('tbTitleText').textContent='Mis Entregas';
+  $('tbTitle').textContent='Mis Entregas';
   let _pushBtn='';
   try{
     const _pushOk=Notification?.permission==='granted';
@@ -7206,7 +7205,7 @@ function _deliveryCardPedido(o){
 }
 function _renderDeliveryOperativo(){
   const did=_deliveryUserId();
-  $('tbTitleText').textContent='Mis Entregas';
+  $('tbTitle').textContent='Mis Entregas';
   $('tbActions').innerHTML='<button class="btn btn-secondary btn-sm" onclick="PAGES.entregas()">Actualizar</button>';
   const mine=(_ordersCache||[]).filter(o=>String(o.deliveryId)===String(did) && ['Despachado','En ruta','En Ruta','Entregado'].includes(o.estado));
   const asignados=mine.filter(o=>!['Entregado','Cancelado'].includes(o.estado));
@@ -12335,7 +12334,7 @@ PAGES.catalogo=function(q=''){
 // Vista admin: todos los catálogos agrupados por usuario
 PAGES.catalogo_todos=function(q=''){
   $('tbActions').innerHTML='<button class="btn btn-secondary" onclick="PAGES.catalogo()">← Mi catálogo</button>';
-  $('tbTitleText').textContent='Todos los catálogos';
+  $('tbTitle').textContent='Todos los catálogos';
   _catalogoCache.forEach(p=>{if(!p.owner_id){p.owner_id=1;p.owner_nombre='Administrador';}});
   const filtrados=q?_catalogoCache.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())):_catalogoCache;
   // Agrupar por owner
@@ -16526,7 +16525,7 @@ PAGES.mapa=function(){
   if(esDelivery&&!window._mapaFiltroDelivery)window._mapaFiltroDelivery=String(CU.id);
   if(esLimitado&&!window._mapaFiltroVend)window._mapaFiltroVend=String(CU.id);
   const turnoActivo=esDelivery?!!(CU&&CU.turno_activo):false;
-  $('tbTitleText').textContent=esDelivery?'Mis pedidos — Mapa':'Mapa de Pedidos';
+  $('tbTitle').textContent=esDelivery?'Mis pedidos — Mapa':'Mapa de Pedidos';
   // Combo de Zona disponible para todos los roles (incluyendo delivery) para filtrar por zona.
   const zonaSel='<div id="mapaZonaCombo" class="search-combo"></div>';
   const vendSel=esDelivery
