@@ -4831,8 +4831,10 @@ function _confirmRemoveAccount(uid){
   openA('Quitar cuenta',
     '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Quitar esta cuenta del selector?</div>'+
     '<div style="font-size:12px;color:var(--text3);margin-top:6px">Vas a tener que volver a iniciar sesión para usarla.</div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_removeAccount('+uid+')">Quitar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_removeAccount('+uid+')">Quitar</button>'+
+    '</div>'
   );
 }
 window._confirmRemoveAccount=_confirmRemoveAccount;
@@ -7972,8 +7974,10 @@ function confirmDeleteOrder(id){
       '<div style="font-size:15px;font-weight:700;color:var(--red)">¿Seguro que deseas eliminar este pedido?</div>'+
       '<div style="font-size:12px;color:var(--text2);margin-top:6px">Esta acción no se puede deshacer.</div>'+
     '</div>'+info,
-    '<button class="btn btn-secondary" onclick="closeA()" style="flex:1">Cancelar</button>'+
-    '<button class="btn btn-danger" onclick="closeA();deleteOrder('+id+')" style="flex:1">Eliminar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();deleteOrder('+id+')">Eliminar</button>'+
+    '</div>'
   );
 }
 async function deleteOrder(id){
@@ -8252,8 +8256,10 @@ function editOrder(id){
       '</div>'
     :'')+
     '<div id="eAlert"></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveEditOrder('+id+')">Guardar cambios</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveEditOrder('+id+')">Guardar cambios</button>'+
+    '</div>'
   );
 }
 function _toggleEtiq(el,tag){el.classList.toggle('etiq-chip-on');}
@@ -8350,8 +8356,10 @@ function dlvModal(id){
       '<input type="hidden" id="dFotoOk" value="0">'+
     '</div>'+
     '<div class="fg" style="margin-top:12px"><label>Observación <span id="dlvOR" style="color:var(--red)"></span></label><textarea id="dNotas" placeholder="Escribí una observación..."></textarea></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-success" onclick="confirmDlv('+id+')">Confirmar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-success btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="confirmDlv('+id+')">Confirmar</button>'+
+    '</div>'
   );
   startGPS();toggleDlvF();
 }
@@ -8586,8 +8594,10 @@ function openNewOrder(){
     '<div id="cGanWarn" style="display:none;font-size:11px;color:var(--red);font-weight:600;margin-top:4px;padding:5px 8px;background:rgba(255,60,60,.08);border-radius:6px;border-left:3px solid var(--red)"></div>'+
     '<div class="fg" style="margin-top:8px"><label>Notas</label><textarea id="nNotas"></textarea></div>',
     '<div id="noAlert" class="mfoot-alert"></div>'+
-    '<button class="btn btn-secondary" onclick="cancelNewOrder()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveNewOrder()">Crear pedido</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="cancelNewOrder()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveNewOrder()">Crear pedido</button>'+
+    '</div>'
   );
   setTimeout(()=>{
     initAddressAutocomplete('nDir','nGpsLat','nGpsLng','nGpsStatus');
@@ -9672,8 +9682,10 @@ function _abrirConfigDelivery(userId){
       '<textarea id="cdNotas" rows="3" maxlength="500" style="resize:vertical" placeholder="Ej: Acuerdo revisable cada 3 meses.">'+escHtml(notas)+'</textarea>'+
     '</div>'+
     '<div id="cdAlert"></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="_guardarConfigDelivery('+userId+')">Guardar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="_guardarConfigDelivery('+userId+')">Guardar</button>'+
+    '</div>'
   );
   setTimeout(()=>_renderCamposMetodoPago(met, u.pago_config||{}),80);
 }
@@ -9964,9 +9976,11 @@ function openBoleta(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
   const b=_boletaHTML(o);
   openC('Boleta IVA — '+escHtml(o.boletaNum||''), b.html,
-    '<button class="btn btn-secondary" onclick="closeC()">Cerrar</button>'+
-    '<button class="btn btn-secondary" onclick="waBoleta('+o.id+')" style="background:#25d366;border-color:#25d366;color:#fff">📲 WhatsApp</button>'+
-    '<button class="btn btn-primary" onclick="printBoleta('+o.id+')">'+SVG.arrowDown+' PDF / Imprimir</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeC()">Cerrar</button>'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#25d366;border-color:#25d366;color:#fff" onclick="waBoleta('+o.id+')">📲 WhatsApp</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="printBoleta('+o.id+')">'+SVG.arrowDown+' PDF / Imprimir</button>'+
+    '</div>'
   );
 }
 
@@ -11385,8 +11399,10 @@ function openNewUser(){
     '<div class="fg"><label>WhatsApp (con código país: 595...)</label><input type="text" id="nuWa" placeholder="595981XXXXXX"></div>'+
     '</div>'+
     '<div id="nuAlert"></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveNewUser()">Crear</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveNewUser()">Crear</button>'+
+    '</div>'
   );
 }
 function toggleDlvF2(){const r=gv('nuRol');const f=$('dlvXF');if(f)f.style.display=r==='delivery'?'block':'none';}
@@ -11458,8 +11474,10 @@ function editUser(id){
     '<div class="fg"><label>WhatsApp</label><input type="text" id="euWa" value="'+escAttr(u.whatsapp)+'"></div>'+
     pagoSectionHtml+
     '<div id="euAlert"></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveEditUser('+id+')">Guardar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveEditUser('+id+')">Guardar</button>'+
+    '</div>'
   );
   try{ _renderPagoConfig(pagoMetodo, u.pago_config||{}); }catch(_){}
 }
@@ -11603,8 +11621,10 @@ function delUser(id){
       '</div>'+
       '<div style="font-size:12px;color:var(--text2)">Esta acción no se puede deshacer.</div>'+
     '</div>',
-    '<button class="btn btn-secondary" onclick="closeA()" style="flex:1">Cancelar</button>'+
-    '<button class="btn btn-danger" onclick="closeA();doDelUser('+id+')" style="flex:1">Eliminar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();doDelUser('+id+')">Eliminar</button>'+
+    '</div>'
   );
 }
 async function doDelUser(id){
@@ -11752,8 +11772,10 @@ function openNewZona(){
       '<label for="nzActiva" style="margin:0;cursor:pointer;font-weight:500">Zona activa <span style="font-weight:400;color:var(--text3);font-size:11px">(las zonas inactivas no aparecen al crear pedidos)</span></label>'+
     '</div>'+
     '<div id="nzAlert"></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveNewZona()">Crear</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveNewZona()">Crear</button>'+
+    '</div>'
   );
 }
 async function saveNewZona(){
@@ -11795,8 +11817,10 @@ function editZona(id){
       '<input type="checkbox" id="ezActiva" '+(z.activa!==false?'checked':'')+' style="width:16px;height:16px;cursor:pointer">'+
       '<label for="ezActiva" style="margin:0;cursor:pointer;font-weight:500">Zona activa <span style="font-weight:400;color:var(--text3);font-size:11px">(las zonas inactivas no aparecen al crear pedidos)</span></label>'+
     '</div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveEditZona('+id+')">Guardar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveEditZona('+id+')">Guardar</button>'+
+    '</div>'
   );
 }
 async function saveEditZona(id){
@@ -11820,7 +11844,7 @@ function _doDelZona(id){
   DL.deleteZona(id);
 }
 async function delZona(id){
-  openA('Eliminar zona','<div style="padding:8px 4px">¿Eliminar esta zona?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doDelZona('+id+')">Eliminar</button>');
+  openA('Eliminar zona','<div style="padding:8px 4px">¿Eliminar esta zona?</div>','<div class="modal-btn-grid"><button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button><button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_doDelZona('+id+')">Eliminar</button></div>');
 }
 
 /* ─── CATÁLOGO DE PRODUCTOS ─── */
@@ -12565,8 +12589,10 @@ function openNuevoProducto(){
     // PUBLICAR
     (isAdminLike(CU.rol)?'<hr style="border:0;border-top:1px solid var(--border2);margin:18px 0 14px"><div class="fg" style="padding:4px 0"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:500"><input type="checkbox" id="npPublicar" style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"> <span>Publicar en tienda pública</span></label></div>':'')+
     '<div id="npAlert"></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveNuevoProducto()">Crear producto</button>',
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveNuevoProducto()">Crear producto</button>'+
+    '</div>',
     'lg'
   );
   window._presEdit=[];
@@ -12725,8 +12751,10 @@ async function editProducto(id){
     sharesHTML+
     (isAdminLike(CU.rol)?'<hr style="border:0;border-top:1px solid var(--border2);margin:18px 0 14px"><div class="fg" style="padding:4px 0"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:500"><input type="checkbox" id="epPublicar" '+(p.publicar_tienda?'checked':'')+' style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"> <span>Publicar en tienda pública</span></label></div>':'')+
     '<div id="epAlert"></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveEditProducto('+id+')">Guardar</button>',
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveEditProducto('+id+')">Guardar</button>'+
+    '</div>',
     'lg'
   );
   window._presEdit=JSON.parse(JSON.stringify((p.presentaciones||[]).filter(pr=>!pr._eliminado)));
@@ -12793,7 +12821,7 @@ function _doDelProducto(id){
 async function delProducto(id){
   const p=_catalogoCache.find(x=>x.id===id);if(!p)return;
   // AUD-XSS-3 fix: escapar p.nombre — producto con nombre malicioso podía ejecutar JS en modal eliminar
-  openA('Eliminar producto','<div style="padding:8px 4px">¿Eliminar "<b>'+escHtml(p.nombre||'')+'</b>" y todas sus presentaciones?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doDelProducto('+id+')">Eliminar</button>');
+  openA('Eliminar producto','<div style="padding:8px 4px">¿Eliminar "<b>'+escHtml(p.nombre||'')+'</b>" y todas sus presentaciones?</div>','<div class="modal-btn-grid"><button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button><button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_doDelProducto('+id+')">Eliminar</button></div>');
 }
 
 /* ─── EDITOR DE DESCRIPCIÓN ENRIQUECIDA ─── */
@@ -13013,8 +13041,10 @@ function openNuevaPresentacion(prodId){
       '</div>'+
     '</div>'+
     '<div id="nprAlert" style="margin-top:10px"></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>'+
-    '<button class="btn btn-primary" onclick="saveNuevaPresentacion('+prodId+')">+ Agregar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cerrar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveNuevaPresentacion('+prodId+')">+ Agregar</button>'+
+    '</div>'
   );
   setTimeout(()=>{const e=$('nprNom');if(e)e.focus();},100);
 }
@@ -13049,8 +13079,10 @@ function editPresentacion(prodId,presId){
       '<div class="fg"><label>Precio dropshipper (Gs.)</label><input type="number" id="eprPrecioD" value="'+(pr.precioDropshipper||0)+'" min="0"></div>'+
       '<div class="fg"><label>Precio proveedor (Gs.)</label><input type="number" id="eprPrecioP" value="'+(pr.precioProveedor||0)+'" min="0"></div>'+
     '</div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-primary" onclick="saveEditPresentacion('+prodId+','+presId+')">Guardar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveEditPresentacion('+prodId+','+presId+')">Guardar</button>'+
+    '</div>'
   );
   setTimeout(()=>{const e=$('eprNom');if(e){e.focus();e.select();}},100);
 }
@@ -13084,8 +13116,10 @@ async function delPresentacion(prodId,presId){
   openA('Eliminar presentación',
     '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Eliminar la presentación "<strong>'+escHtml(pr.nombre||'sin nombre')+'</strong>"?</div>'+
     '<div style="font-size:12px;color:var(--text3);margin-top:6px">Podrá restaurarla desde "Presentaciones eliminadas" dentro del producto.</div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doDelPresentacion(\''+prodId+'\',\''+presId+'\')">Eliminar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_doDelPresentacion(\''+prodId+'\',\''+presId+'\')">Eliminar</button>'+
+    '</div>'
   );
 }
 async function restaurarPresentacion(prodId,presId){
@@ -15528,7 +15562,7 @@ async function _doAprobarDispositivo(id){
   else showAlert&&showAlert('','e',d.error||'Error');
 }
 async function aprobarDispositivo(id){
-  openA('Autorizar dispositivo','<div style="padding:8px 4px">¿Autorizar este dispositivo?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doAprobarDispositivo('+id+')">Autorizar</button>');
+  openA('Autorizar dispositivo','<div style="padding:8px 4px">¿Autorizar este dispositivo?</div>','<div class="modal-btn-grid"><button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button><button class="btn btn-success btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_doAprobarDispositivo('+id+')">Autorizar</button></div>');
 }
 async function _doRechazarDispositivo(id){
   const r=await fetch(WORKER_URL+'/api/rechazar-dispositivo',{
@@ -15541,7 +15575,7 @@ async function _doRechazarDispositivo(id){
   else showAlert&&showAlert('','e',d.error||'Error');
 }
 async function rechazarDispositivo(id){
-  openA('Rechazar dispositivo','<div style="padding:8px 4px">¿Rechazar y eliminar este dispositivo?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doRechazarDispositivo('+id+')">Rechazar</button>');
+  openA('Rechazar dispositivo','<div style="padding:8px 4px">¿Rechazar y eliminar este dispositivo?</div>','<div class="modal-btn-grid"><button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button><button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_doRechazarDispositivo('+id+')">Rechazar</button></div>');
 }
 
 /* ─── MAPA EN TIEMPO REAL ─────────────────────────────────────────────────── */
@@ -16637,7 +16671,7 @@ async function _doMapaCambiarEstado(id,nuevoEstado){
 async function _mapaCambiarEstado(id,nuevoEstado){
   const o=_ordersCache.find(x=>x.id===id);if(!o)return;
   if(o.estado==='Entregado'){pushNotif('El pedido ya está Entregado y no se puede modificar','e');return;}
-  openA('Cambiar estado','<div style="padding:8px 4px">¿Cambiar pedido <b>#'+id+'</b> a "<b>'+nuevoEstado+'</b>"?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doMapaCambiarEstado('+id+',&quot;'+nuevoEstado+'&quot;)" >Confirmar</button>');
+  openA('Cambiar estado','<div style="padding:8px 4px">¿Cambiar pedido <b>#'+id+'</b> a "<b>'+nuevoEstado+'</b>"?</div>','<div class="modal-btn-grid"><button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button><button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_doMapaCambiarEstado('+id+',&quot;'+nuevoEstado+'&quot;)">Confirmar</button></div>');
 }
 
 async function _toggleTurnoConfirmado(){
@@ -17621,8 +17655,10 @@ function openRegistrarPago(targetUserId,montoPreRellenado){
       '<small id="pagoComprobanteInfo" style="color:var(--text2);font-size:11px;display:block;margin-top:4px">Imagen o PDF · máx 5MB</small>'+
     '</div>'+
     '<div class="fg"><label>Fecha</label><input type="date" id="pagoFecha" value="'+hoy+'"></div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btnPagado" onclick="confirmarRegistroPago(\''+escAttr(targetUserId)+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Registrar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-success btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="confirmarRegistroPago(\''+escAttr(targetUserId)+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Registrar</button>'+
+    '</div>'
   );
   // Trigger inicial del cálculo en vivo
   setTimeout(function(){ _actualizarSaldoLive(saldoActual); },50);
@@ -17753,7 +17789,7 @@ async function confirmarRegistroPago(targetUserId){
   }
   const saldoActual=calcularSaldoUsuario(targetUserId);
   if(monto>saldoActual){
-    openA('Pago mayor al saldo','<div style="padding:8px 4px">Estás registrando un pago de <b>'+fmt(monto)+'</b> cuando el saldo es <b>'+fmt(saldoActual)+'</b>. ¿Continuar?</div>','<button class="btn btn-secondary" onclick="closeA()">Cancelar</button><button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doRegistrarPagoForzado('+targetUserId+')">Sí, registrar</button>');
+    openA('Pago mayor al saldo','<div style="padding:8px 4px">Estás registrando un pago de <b>'+fmt(monto)+'</b> cuando el saldo es <b>'+fmt(saldoActual)+'</b>. ¿Continuar?</div>','<div class="modal-btn-grid"><button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button><button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_doRegistrarPagoForzado('+targetUserId+')">Sí, registrar</button></div>');
     return;
   }
   _doRegistrarPagoForzado(targetUserId);
@@ -17789,8 +17825,10 @@ function _buildFileUrl(url){
 async function _deleteComprobante(compId,pagoId){
   openA('Eliminar comprobante',
     '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Eliminar este comprobante? La acción no se puede deshacer.</div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-danger" onclick="closeA();_doDeleteComprobante('+Number(compId)+','+Number(pagoId)+')">Eliminar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_doDeleteComprobante('+Number(compId)+','+Number(pagoId)+')">Eliminar</button>'+
+    '</div>'
   );
 }
 async function _doDeleteComprobante(compId,pagoId){
@@ -17855,7 +17893,7 @@ async function verHistorialPagos(targetUserId){
   const saldoPend=typeof calcularSaldoUsuario==='function'?calcularSaldoUsuario(targetUserId):0;
   const esAdmin=CU&&(CU.rol==='admin'||CU.rol==='superadmin');
   const btnNuevoPago=(esAdmin&&saldoPend>0)
-    ? '<button class="btn btn-primary" onclick="closeA();openRegistrarPago(\''+escAttr(targetUserId)+'\')">💵 Registrar pago</button>'
+    ? '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();openRegistrarPago(\''+escAttr(targetUserId)+'\')">💵 Registrar pago</button>'
     : '';
   const headerHtml=
     '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">'+
@@ -17876,8 +17914,11 @@ async function verHistorialPagos(targetUserId){
     '</tr></thead><tbody>'+
       (filas||'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Sin pagos registrados</td></tr>')+
     '</tbody></table></div>',
-    btnNuevoPago+(esAdmin?'<button class="btn btn-secondary btn-sm" onclick="_imprimirLiquidacionUsuario(\''+escAttr(targetUserId)+'\')">'+SVG.printer+' Imprimir liquidación</button>':'')+
-    '<button class="btn btn-secondary" onclick="closeA()">Cerrar</button>'
+    '<div class="modal-btn-grid">'+
+      btnNuevoPago+
+      (esAdmin?'<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="_imprimirLiquidacionUsuario(\''+escAttr(targetUserId)+'\')">'+SVG.printer+' Imprimir liquidación</button>':'')+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cerrar</button>'+
+    '</div>'
   );
 }
 
