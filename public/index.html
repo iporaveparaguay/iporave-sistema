@@ -1617,7 +1617,7 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
     min-height: 44px;
     padding: 8px 14px;
   }
-  .btn-sm{ min-height: 44px; padding: 10px 14px; }
+  .btn-sm,.btnPagado{ min-height: 44px; padding: 10px 14px; }
   /* Inputs anti-zoom iOS */
   input[type="text"], input[type="email"], input[type="password"],
   input[type="tel"], input[type="number"], input[type="search"],
@@ -18203,12 +18203,12 @@ PAGES.pago_usuario=function(){
         (filasPag||'<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:20px">Sin pagos en el período</td></tr>')+
       '</tbody></table></div>'+
       // Acciones
-      (esAdmin?'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:24px 0">'+
-        '<button class="btn btn-primary" onclick="openRegistrarPago(\''+escAttr(user.id)+'\')">💵 Pago Parcial</button>'+
-        '<button class="btnPagado" onclick="abrirPagoCompleto(\''+escAttr(user.id)+'\')">✅ Marcar Pagado</button>'+
-        '<button class="btn btn-secondary" onclick="imprimirEstadoCuenta(\''+escAttr(user.id)+'\',\''+periodo+'\')">'+SVG.printer+' Imprimir</button>'+
-        '<button class="btn btn-secondary" onclick="exportarEstadoPDF(\''+escAttr(user.id)+'\',\''+periodo+'\')">📥 Exportar PDF</button>'+
-        '<button class="btn btn-secondary" onclick="exportarEstadoCSV(\''+escAttr(user.id)+'\',\''+periodo+'\')">'+SVG.fileSpreadsheet+' Exportar CSV</button>'+
+      (esAdmin?'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:24px 0">'+
+        '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="openRegistrarPago(\''+escAttr(user.id)+'\')">💵 Pago Parcial</button>'+
+        '<button class="btnPagado" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="abrirPagoCompleto(\''+escAttr(user.id)+'\')">✅ Marcar Pagado</button>'+
+        '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="imprimirEstadoCuenta(\''+escAttr(user.id)+'\',\''+periodo+'\')">'+SVG.printer+' Imprimir</button>'+
+        '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="exportarEstadoPDF(\''+escAttr(user.id)+'\',\''+periodo+'\')">📥 Exportar PDF</button>'+
+        '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;grid-column:1/-1" onclick="exportarEstadoCSV(\''+escAttr(user.id)+'\',\''+periodo+'\')">'+SVG.fileSpreadsheet+' Exportar CSV</button>'+
       '</div>':'')+
       // Bloque 5 — Histórico mensual
       _renderHistoricoMensual(userId);
