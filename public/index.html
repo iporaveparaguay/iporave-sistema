@@ -1960,14 +1960,6 @@ body.alta-visibilidad select{
         }
         body.no-auth #subMenuActions,body.no-auth #subMenuOverlay,body.no-auth #subMenuToggleTab{display:none!important;}
         /* page-mapa: el submenú general SÍ aparece (reemplaza al sfp del mapa) */
-        /* Navegación en submenú: cuadrícula 2 col compacta */
-        .sm-nav-wrap{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-bottom:4px;}
-        .sm-nav-sec{grid-column:1/-1;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);padding:6px 0 2px;margin-top:2px;}
-        .sm-nav-btn{width:100%;min-height:30px;padding:4px 6px;font-size:10px;display:flex;align-items:center;justify-content:center;gap:3px;box-sizing:border-box;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;transition:border-color .12s,color .12s;}
-        .sm-nav-btn:hover,.sm-nav-btn:active{border-color:var(--accent);color:var(--accent);}
-        .sm-nav-btn svg{flex-shrink:0;width:11px!important;height:11px!important;}
-        .sm-nav-btn span{overflow:hidden;text-overflow:ellipsis;}
-        #smNavDivider{margin:6px 0 8px;border:none;height:1px;background:var(--border);}
     </style>
     <!-- Submenú lateral (mobile only, abre desde la derecha) -->
     <div id="subMenuActions">
@@ -1975,9 +1967,6 @@ body.alta-visibilidad select{
             <span class="sm-title">Herramientas</span>
             <button class="sm-close" onclick="toggleSubMenuActions()" aria-label="Cerrar">✕</button>
         </div>
-        <!-- Navegación: se llena desde _smBuildNav() después del login -->
-        <div id="smNavSection" class="sm-nav-wrap"></div>
-        <hr id="smNavDivider" style="display:none">
         <div id="tbActions"><!-- Los botones de la página se inyectan acá --></div>
     </div>
     <div id="subMenuOverlay" onclick="toggleSubMenuActions()"></div>
@@ -2002,7 +1991,6 @@ body.alta-visibilidad select{
             function _smOpen(){
                 const p=_smPanel(),o=_smOverlay();
                 if(!p||!o)return;
-                try{if(typeof _smBuildNav==='function')_smBuildNav();}catch(_){}
                 _ensurePlaceholder();
                 p.classList.add('open');o.classList.add('show');
                 _smRestartTimer();
@@ -5428,23 +5416,6 @@ function buildNav(){
     }
   }catch(_){}
   updateNavBadges();
-  try{if(typeof _smBuildNav==='function')_smBuildNav();}catch(_){}
-}
-function _smBuildNav(){
-  const sec=document.getElementById('smNavSection');
-  const div=document.getElementById('smNavDivider');
-  if(!sec||typeof CU==='undefined'||!CU||!CU.rol)return;
-  const groups=(typeof NAV_CFG!=='undefined'?NAV_CFG[CU.rol]:[])||[];
-  if(!groups.length){sec.innerHTML='';if(div)div.style.display='none';return;}
-  sec.innerHTML=groups.map(function(g){
-    return '<div class="sm-nav-sec">'+escHtml(g.s)+'</div>'+
-      g.items.map(function(it){
-        return '<button class="sm-nav-btn" onclick="nav(\''+it.id+'\');toggleSubMenuActions()">'+
-          (typeof SVG!=='undefined'&&SVG[it.ic]?SVG[it.ic]:'')+
-          '<span>'+escHtml(it.l)+'</span></button>';
-      }).join('');
-  }).join('');
-  if(div)div.style.display='block';
 }
 function updateNavBadges(){
   // Defensa: si CU no está cargado (race condition durante login), abortar.
