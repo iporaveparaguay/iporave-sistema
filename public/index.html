@@ -1929,16 +1929,7 @@ body.alta-visibilidad select{
         /* Reglas que SOLO aplican en mobile (no rompen layout PC) */
         @media (max-width: 768px) {
             .tbtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            #tbActions { overflow-x: hidden !important; padding: 12px !important; gap: 8px !important; }
-            #tbActions > div, #tbActions > button, #tbActions > .search-combo {
-                width: 100% !important; max-width: 100% !important;
-                margin: 0 !important; box-sizing: border-box !important;
-            }
-            #tbActions button.btn {
-                justify-content: center !important; font-size: 11px !important; padding: 8px 10px !important; height: auto !important; white-space: normal !important; text-align: center !important;
-            }
             #tbActions input, #tbActions select { font-size: 12px !important; width: 100% !important; }
-            /* Wrapper de iconos globales: order:3 para que vaya a la derecha del título */
             #tbGlobalBtns { order: 3 !important; }
         }
         /* SUBMENÚ LATERAL (mobile only) — estilo inspirado en _sfp de Antigravity */
@@ -1955,12 +1946,21 @@ body.alta-visibilidad select{
         .sm-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text);}
         .sm-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;}
         .sm-close:hover{border-color:var(--accent);color:var(--accent);}
-        /* Botones uniformes dentro del submenú — SOLO MOBILE para no romper layout horizontal de PC */
+        /* #tbActions: grid 2 col — botones compactos uniformes, combos/dividers ancho completo */
         @media (max-width:768px){
-            #tbActions{display:flex;flex-direction:column;gap:8px;align-items:stretch;flex-wrap:nowrap;overflow-y:auto;}
-            #tbActions > button, #tbActions > .btn, #tbActions > .map-btn{width:100%!important;min-height:42px!important;padding:10px 12px!important;font-size:13px!important;display:flex!important;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;white-space:normal!important;text-align:center!important;}
-            #tbActions > .search-combo, #tbActions > input, #tbActions > select{width:100%!important;box-sizing:border-box;}
-            #tbActions hr, #tbActions .sm-divider{width:100%;height:1px;background:var(--border);border:none;margin:6px 0;}
+            #tbActions{display:grid!important;grid-template-columns:1fr 1fr;gap:5px!important;padding:0!important;overflow-y:auto;align-items:start;}
+            /* Botones — 2 por fila, tamaño uniforme y compacto */
+            #tbActions > button,#tbActions > .btn,#tbActions > .map-btn{
+                width:100%!important;min-height:32px!important;padding:5px 6px!important;
+                font-size:11px!important;display:flex!important;align-items:center;
+                justify-content:center;gap:4px;box-sizing:border-box;
+                white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;margin:0!important;
+            }
+            /* Combos, inputs, selects, dividers y secciones — ancho completo (2 columnas) */
+            #tbActions > .search-combo,#tbActions > input,#tbActions > select,
+            #tbActions > hr,#tbActions > .sm-divider,#tbActions > div,
+            #tbActions > [data-placeholder]{grid-column:1 / -1;width:100%!important;box-sizing:border-box;margin:0!important;}
+            #tbActions hr,#tbActions .sm-divider{height:1px;background:var(--border);border:none;margin:3px 0!important;}
         }
         /* Oculto totalmente en PC y para usuarios no autenticados */
         @media (min-width:769px){
