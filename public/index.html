@@ -7409,8 +7409,8 @@ function _abrirPanelPedidos(){
   const items=[
     {tipo:'texto',titulo:'Buscar cliente / dirección',nombre:'busqueda',placeholder:'Nombre, teléfono, dirección...',valorActual:(()=>{const bg=$('busquedaGlobal');return bg?bg.value:'';})()},
     {tipo:'separador'},
-    {tipo:'select',titulo:'Estado',nombre:'estado',valorActual:curEst,opciones:[{label:'Todos los estados',valor:''},...ESTADOS.map(e=>({label:e,valor:e}))]},
-    {tipo:'select',titulo:'Zona',nombre:'zona',valorActual:curZona,opciones:[{label:'Todas las zonas',valor:''},...zonas]},
+    {tipo:'select',titulo:'Estado',nombre:'estado',valorActual:curEst,opciones:[{label:'Todos los Estados',valor:''},...ESTADOS.map(e=>({label:e,valor:e}))]},
+    {tipo:'select',titulo:'Zona',nombre:'zona',valorActual:curZona,opciones:[{label:'Todas las Zonas',valor:''},...zonas]},
     ...(isAdmin&&vendors.length?[{tipo:'select',titulo:'Vendedor',nombre:'vendedor',valorActual:(gv('fVend')||''),opciones:[{label:'Todos',valor:''},...vendors]}]:[]),
     ...(isAdmin&&provs.length?[{tipo:'select',titulo:'Proveedor',nombre:'proveedor',valorActual:(gv('fProv')||''),opciones:[{label:'Todos',valor:''},...provs]}]:[]),
     ...(isAdmin&&drops.length?[{tipo:'select',titulo:'Dropshipper',nombre:'dropshipper',valorActual:(gv('fDrop')||''),opciones:[{label:'Todos',valor:''},...drops]}]:[]),
