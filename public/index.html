@@ -1966,8 +1966,7 @@ body.alta-visibilidad select{
             #subMenuActions,#subMenuOverlay,#subMenuToggleTab{display:none!important;}
         }
         body.no-auth #subMenuActions,body.no-auth #subMenuOverlay,body.no-auth #subMenuToggleTab{display:none!important;}
-        /* Ocultar también en página mapa para comparar contra _sfp original */
-        body.page-mapa #subMenuToggleTab{display:none!important;}
+        /* page-mapa: el submenú general sí aparece (reemplaza al sfp del mapa) */
     </style>
     <!-- Submenú lateral (mobile only, abre desde la derecha) -->
     <div id="subMenuActions">
@@ -16646,22 +16645,19 @@ PAGES.mapa=function(){
   } else if(esAdmin){
     // Admin: zona + vendor + 4 pills (filtros). Resto en sfp.
     $('tbActions').innerHTML=zonaSel+vendSel+'<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
-    _sfpInit({id:'mapa',titulo:'Opciones del mapa',buscarBtn:false,secciones:[
-      {tipo:'pills',label:'Deliveries',nombre:'dlvs',exclusivo:true,
-       items:[
-         {label:'Todos los pines',valor:'0',activo:!window._mapaShowDlvs},
-         {label:'Solo deliveries',valor:'1',activo:!!window._mapaShowDlvs}
-       ]},
-      {tipo:'divider'},
-      {tipo:'pills',label:'Auto-actualizar',nombre:'auto',exclusivo:true,
-       items:[
-         {label:'Activo',valor:'1',activo:window._mapaAutoUpdateEnabled!==false},
-         {label:'Pausado',valor:'0',activo:window._mapaAutoUpdateEnabled===false}
-       ]}
-    ],onCambio:function(s,sec,v){
-      if(sec==='dlvs'){window._mapaShowDlvs=(v==='1');_mapaCargar();}
-      if(sec==='auto'){window._mapaAutoUpdateEnabled=(v==='1');localStorage.setItem('mapa_auto',v);}
-    }});
+    // Filtros de mapa admin → submenú general (reemplaza _sfpInit)
+    const _tbA=$('tbActions');
+    if(_tbA){
+      _tbA.innerHTML+=
+        '<hr class="sm-divider">'+
+        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px">Deliveries</div>'+
+        '<button id="mapaFiltPines" class="btn btn-sm '+(window._mapaShowDlvs?'btn-secondary':'btn-primary')+'" onclick="window._mapaShowDlvs=false;_mapaCargar();document.getElementById(\'mapaFiltPines\').className=\'btn btn-sm btn-primary\';document.getElementById(\'mapaFiltDlv\').className=\'btn btn-sm btn-secondary\'">Todos los pines</button>'+
+        '<button id="mapaFiltDlv" class="btn btn-sm '+(window._mapaShowDlvs?'btn-primary':'btn-secondary')+'" onclick="window._mapaShowDlvs=true;_mapaCargar();document.getElementById(\'mapaFiltPines\').className=\'btn btn-sm btn-secondary\';document.getElementById(\'mapaFiltDlv\').className=\'btn btn-sm btn-primary\'">Solo deliveries</button>'+
+        '<hr class="sm-divider">'+
+        '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px">Auto-actualizar</div>'+
+        '<button id="mapaAutoAct" class="btn btn-sm '+(window._mapaAutoUpdateEnabled!==false?'btn-primary':'btn-secondary')+'" onclick="window._mapaAutoUpdateEnabled=true;localStorage.setItem(\'mapa_auto\',\'1\');this.className=\'btn btn-sm btn-primary\';document.getElementById(\'mapaAutoPau\').className=\'btn btn-sm btn-secondary\'">Activo</button>'+
+        '<button id="mapaAutoPau" class="btn btn-sm '+(window._mapaAutoUpdateEnabled===false?'btn-primary':'btn-secondary')+'" onclick="window._mapaAutoUpdateEnabled=false;localStorage.setItem(\'mapa_auto\',\'0\');this.className=\'btn btn-sm btn-primary\';document.getElementById(\'mapaAutoAct\').className=\'btn btn-sm btn-secondary\'">Pausado</button>';
+    }
   } else {
     // Vendor/Drop/Prov: 3 pills directamente (Pendiente/En Ruta/Entregado)
     $('tbActions').innerHTML='<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
