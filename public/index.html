@@ -1170,16 +1170,18 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   /* Fix: elementos que se corten por overflow */
   .sgrid{overflow:hidden;}
   .sc{box-sizing:border-box;min-width:0;word-break:break-word;}
-  /* BUG-U5: order explícito en topbar — ☰ | título (izquierda) | iconos (derecha) */
+  /* Topbar mobile: ☰ | título (izq) | 4 iconos compactos (der) — una sola línea */
   #menuBtn{order:0;flex-shrink:0;}
-  .tbtitle,#tbTitle{order:1;flex:1 1 auto;text-align:left!important;justify-content:flex-start!important;margin-left:0!important;padding-left:6px!important;padding-right:6px!important;font-size:12px!important;min-width:0!important;}
+  .tbtitle,#tbTitle{order:1;flex:1 1 auto;text-align:left!important;justify-content:flex-start!important;margin-left:0!important;padding-left:6px!important;padding-right:6px!important;font-size:13px!important;min-width:0!important;}
   #tbTitleText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex-shrink:1;display:inline-block;max-width:100%;}
   /* En mobile el GPS pill muestra solo el dot, no el texto largo */
   #gpsStatusPill{order:1;flex-shrink:0;padding:4px 6px!important;}
   #gpsStatusPill .gps-pill-text, #gpsStatusPill .gps-pill-time{display:none!important;}
   .tbactions,#tbActions{order:2;flex:0 0 auto;}
-  #codexNotifBell,#themeToggleBtn,#tutorialToggleBtn,#refreshBtn{order:3;flex-shrink:0;min-width:38px;min-height:38px;}
-  #topbarKebab{order:3;}
+  /* #tbGlobalBtns va a la derecha (order:3) — sin esto quedaba order:0 y aparecía entre ☰ y el título */
+  #tbGlobalBtns{order:3;flex-shrink:0;gap:3px!important;}
+  #tbGlobalBtns .topbar-icon-btn{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;border-radius:8px!important;margin-right:0!important;}
+  #topbarKebab{order:4;}
   #offlineBadge{order:5;}
 }
 /* FIX mobile mapa: 2 filas en topbar — botones fila 1, combos fila 2 */
@@ -1662,8 +1664,8 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
   .mapBar .mapBtn{ font-size: 11px; padding: 6px 9px; min-height: 32px; }
   /* Combobox compactos */
   .search-combo{ max-width: 100% !important; }
-  /* Topbar compacto */
-  .topbar-icon-btn{ width: 40px !important; height: 40px !important; }
+  /* Topbar compacto — tamaño base para botones fuera de #tbGlobalBtns */
+  .topbar-icon-btn{ width: 32px; height: 32px; }
   /* Cards margen minimo */
   .sc, .mcard, .zcard, .ranking-row{
     padding: 12px !important;
@@ -1919,24 +1921,16 @@ body.alta-visibilidad select{
         /* Reglas que SOLO aplican en mobile (no rompen layout PC) */
         @media (max-width: 768px) {
             .tbtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            #tbActions { overflow-x: hidden !important; padding: 12px !important; gap: 8px !important; }
-            #tbActions > div, #tbActions > button, #tbActions > .search-combo {
-                width: 100% !important; max-width: 100% !important;
-                margin: 0 !important; box-sizing: border-box !important;
-            }
-            #tbActions button.btn {
-                justify-content: center !important; font-size: 11px !important; padding: 8px 10px !important; height: auto !important; white-space: normal !important; text-align: center !important;
-            }
             #tbActions input, #tbActions select { font-size: 12px !important; width: 100% !important; }
-            /* Wrapper de iconos globales: order:3 para que vaya a la derecha del título */
             #tbGlobalBtns { order: 3 !important; }
         }
         /* SUBMENÚ LATERAL (mobile only) — estilo inspirado en _sfp de Antigravity */
-        #subMenuActions{position:fixed;right:-320px;top:0;height:100vh;width:min(280px,85vw);background:var(--bg2);border-left:1px solid var(--border2);z-index:9000;transition:right .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:14px 12px;box-shadow:-4px 0 20px rgba(0,0,0,.4);display:flex;flex-direction:column;}
+        /* will-change:transform fuerza capa GPU propia → queda encima del canvas WebGL de Mapbox */
+        #subMenuActions{position:fixed;right:-320px;top:0;height:100vh;width:min(280px,85vw);background:var(--bg2);border-left:1px solid var(--border2);z-index:9000;transition:right .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:14px 12px;box-shadow:-4px 0 20px rgba(0,0,0,.4);display:flex;flex-direction:column;will-change:transform;isolation:isolate;}
         #subMenuActions.open{right:0;}
-        #subMenuOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8999;display:none;}
+        #subMenuOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8999;display:none;will-change:transform;}
         #subMenuOverlay.show{display:block;}
-        #subMenuToggleTab{position:fixed;right:0;top:50vh;transform:translateY(-50%);z-index:8800;width:22px;height:56px;background:var(--accent);border-radius:8px 0 0 8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#000;box-shadow:-2px 0 10px rgba(0,0,0,.3);transition:width .15s ease;user-select:none;touch-action:none;}
+        #subMenuToggleTab{position:fixed;right:0;top:50vh;transform:translateY(-50%);z-index:8800;width:22px;height:56px;background:var(--accent);border-radius:8px 0 0 8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#000;box-shadow:-2px 0 10px rgba(0,0,0,.3);transition:width .15s ease;user-select:none;touch-action:none;will-change:transform;}
         #subMenuToggleTab:hover{width:28px;}
         #subMenuToggleTab.dragging{transition:none;opacity:.7;}
         #subMenuTabIcon{font-size:13px;font-weight:900;line-height:1;pointer-events:none;}
@@ -1948,7 +1942,11 @@ body.alta-visibilidad select{
         @media (max-width:768px){
             #tbActions{display:grid!important;grid-template-columns:1fr 1fr;gap:5px!important;padding:10px!important;overflow-y:auto;align-items:start;}
             #tbActions > button,#tbActions > .btn,#tbActions > .map-btn{width:100%!important;min-height:32px!important;padding:5px 8px!important;font-size:11px!important;display:flex!important;align-items:center;justify-content:center;gap:4px;box-sizing:border-box;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;margin:0!important;}
-            #tbActions > .search-combo,#tbActions > input,#tbActions > select,#tbActions > hr,#tbActions > .sm-divider,#tbActions > div:not(.search-combo){grid-column:1/-1!important;width:100%!important;box-sizing:border-box;}
+            /* Search-combos: 2 por fila, compactos */
+            #tbActions > .search-combo{width:100%!important;box-sizing:border-box;margin:0!important;}
+            #tbActions > .search-combo .search-combo-input{min-height:30px!important;height:30px!important;font-size:11px!important;padding:3px 8px!important;}
+            /* Dividers, inputs sueltos, labels y placeholder — ancho completo */
+            #tbActions > input,#tbActions > select,#tbActions > hr,#tbActions > .sm-divider,#tbActions > div:not(.search-combo),#tbActions > [data-placeholder]{grid-column:1/-1!important;width:100%!important;box-sizing:border-box;margin:0!important;}
             #tbActions hr,#tbActions .sm-divider{height:1px;background:var(--border);border:none;margin:3px 0!important;}
             /* mapBtn (estado/tipo) en mapaContadores: cuadrícula 2 col compacta */
             #mapaContadores{display:grid!important;grid-template-columns:1fr 1fr;gap:5px!important;width:100%!important;box-sizing:border-box!important;align-items:start;}
@@ -1984,7 +1982,7 @@ body.alta-visibilidad select{
     </div>
     <div id="subMenuOverlay" onclick="toggleSubMenuActions()"></div>
     <!-- Pestaña fina (borde derecho, draggable verticalmente) -->
-    <div id="subMenuToggleTab" role="button" aria-label="Abrir herramientas" title="Herramientas de la página">
+    <div id="subMenuToggleTab" role="button" aria-label="Abrir herramientas" title="Herramientas de la página" onclick="toggleSubMenuActions()">
         <span id="subMenuTabIcon">☰</span>
     </div>
     <script>
@@ -2046,11 +2044,9 @@ body.alta-visibilidad select{
                 function _up(e){
                     if(!dragging)return;
                     dragging=false;tab.classList.remove('dragging');
-                    if(moved){
-                        if(e&&e.preventDefault)e.preventDefault();
-                    }else{
-                        toggleSubMenuActions();
-                    }
+                    if(moved&&e&&e.preventDefault)e.preventDefault();
+                    moved=false;
+                    // toggleSubMenuActions lo maneja el onclick del elemento
                 }
                 tab.addEventListener('mousedown',e=>{_down(e.clientY);});
                 document.addEventListener('mousemove',e=>{if(dragging)_move(e.clientY);});
@@ -2066,6 +2062,11 @@ body.alta-visibilidad select{
             };
 
             document.addEventListener('DOMContentLoaded',()=>{
+                // Mover fuera de .main para que position:fixed funcione bien en iOS Safari
+                ['subMenuActions','subMenuOverlay','subMenuToggleTab'].forEach(id=>{
+                    const el=document.getElementById(id);
+                    if(el&&el.parentElement!==document.body)document.body.appendChild(el);
+                });
                 _smInitDrag();
                 const tb=document.getElementById('tbActions');
                 if(tb){
@@ -16684,7 +16685,8 @@ PAGES.mapa=function(){
   window._mapaAutoUpdateEnabled=_autoOn;
   const autoToggle='<label class="map-btn" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer;user-select:none" title="Auto-actualizar el mapa cada 5 minutos (sin mover la cámara)"><input type="checkbox" id="mapaAutoUpdate" '+(_autoOn?'checked':'')+' onchange="_mapaToggleAutoUpdate(this)" style="margin:0"><span style="font-size:12px">Auto</span></label>';
   const _panelMenuIcon='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
-  _sfpDestroy();
+  // Eliminar SFP del mapa (Antigravity) — limpieza forzada por si _sfpActiveId era null
+  _sfpActiveId='mapa';_sfpDestroy();
   ['sfpTabmapa','sfpPanelmapa','sfpOverlaymapa'].forEach(function(id){var el=document.getElementById(id);if(el)el.remove();});
   if(esDelivery){
     // Delivery: Ruta óptima + Turno + Zona en el submenú lateral
