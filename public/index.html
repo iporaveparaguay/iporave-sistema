@@ -608,6 +608,18 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 [data-theme="light"] #mapaZonaCombo .search-combo-input,[data-theme="light"] #mapaVendCombo .search-combo-input,[data-theme="light-soft"] #mapaZonaCombo .search-combo-input,[data-theme="light-soft"] #mapaVendCombo .search-combo-input{background:linear-gradient(180deg,#ffffff 0%,#f3f4f6 100%);color:#1a1f2c;border-color:#d1d5db;box-shadow:0 1px 3px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.6)}
 [data-theme="light"] #mapaZonaCombo::after,[data-theme="light"] #mapaVendCombo::after,[data-theme="light-soft"] #mapaZonaCombo::after,[data-theme="light-soft"] #mapaVendCombo::after{border-color:#4b5563}
 @media(max-width:640px){#mapaZonaCombo,#mapaVendCombo{max-width:150px;width:150px}#mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:32px;font-size:11px;padding:6px 26px 6px 12px}}
+/* FIX: mapa combos misma altura forzada en mobile (Todo Paraguay = Todos los Usuarios) */
+@media(max-width:768px){
+  #mapaZonaCombo,#mapaVendCombo{height:38px!important;min-height:38px!important;max-height:38px!important;max-width:100%!important;width:100%!important;box-sizing:border-box}
+  #mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:36px!important;min-height:36px!important;max-height:36px!important;box-sizing:border-box}
+}
+/* FIX: placeholder real "Día/Mes/Año" dentro de inputs type=date vacíos */
+.date-wrap{position:relative;display:block;width:100%;box-sizing:border-box}
+.date-wrap input[type="date"]{width:100%;box-sizing:border-box}
+.date-wrap input[type="date"]:required:invalid::-webkit-datetime-edit{color:transparent}
+.date-wrap input[type="date"]:required:focus::-webkit-datetime-edit,.date-wrap input[type="date"]:required:valid::-webkit-datetime-edit{color:var(--text)}
+.date-wrap::after{content:'Día/Mes/Año';position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text2);font-size:12px;font-weight:500;white-space:nowrap}
+.date-wrap:has(input:focus)::after,.date-wrap:has(input:valid)::after{display:none}
 /* Combobox delivery más fino (desktop) */
 #dlvSearchCombo .search-combo-input,#dlvSearchInput{padding:7px 32px 7px 36px !important;height:36px !important;font-size:12px !important;border-radius:10px !important}
 #dlvSearchCombo .search-combo-icon,#dlvSearchInput + .search-combo-icon{width:14px !important;height:14px !important;left:12px !important}
@@ -1200,7 +1212,7 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   /* Zona + Usuarios: lado a lado en la misma fila (cada uno 1 columna del grid 2-col) */
   #mapaZonaCombo{order:0!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;}
   #mapaVendCombo{order:1!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;}
-  #mapaVendCombo .search-combo-input{height:32px!important;min-height:32px!important;padding:6px 26px 6px 12px!important;}
+  #mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:36px!important;min-height:36px!important;max-height:36px!important;padding:6px 26px 6px 12px!important;}
   /* Contenedor contadores: flex-wrap + ancho completo para que dlvSearchCombo quepa */
   #mapaContadores{display:flex!important;flex-wrap:wrap!important;width:100%!important;box-sizing:border-box!important;gap:4px!important;}
   /* Buscador delivery dentro de contadores: ancho completo, compacto como los botones */
@@ -1639,9 +1651,9 @@ body.sidebarCollapsed .sidebarCollapseBtn .arrow{transform:rotate(180deg);}
   /* GLOB-3: tutorial más pequeño en mobile */
   #onboardTip{max-width:min(210px,88vw)!important;font-size:12px!important;padding:8px 10px!important;}
   #onboardTip .onboardTipTitle{font-size:11px!important;}
-  /* DEL-7: selector de zona en mapa más compacto */
-  #mapaZonaCombo{max-width:130px!important;}
-  #mapaZonaCombo .search-combo-input{font-size:11px!important;padding:5px 8px!important;}
+  /* DEL-7: combos mapa (zona y vend) idénticos en mobile — mismo ancho, mismo font-size, mismo padding */
+  #mapaZonaCombo,#mapaVendCombo{max-width:100%!important;width:100%!important;}
+  #mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{font-size:12px!important;padding:6px 26px 6px 12px!important;}
   /* Stat cards 2 columnas en tablet, 1 en mobile chico */
   .sgrid{
     grid-template-columns: repeat(2, 1fr) !important;
@@ -1925,9 +1937,9 @@ body.alta-visibilidad select{
         }
         /* SUBMENÚ LATERAL (mobile only) — estilo inspirado en _sfp de Antigravity */
         /* will-change:transform fuerza capa GPU propia → queda encima del canvas WebGL de Mapbox */
-        #subMenuActions{position:fixed;right:-320px;top:0;height:100vh;width:min(280px,85vw);background:var(--bg2);border-left:1px solid var(--border2);z-index:9000;transition:right .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:14px 12px;box-shadow:-4px 0 20px rgba(0,0,0,.4);display:flex;flex-direction:column;will-change:transform;isolation:isolate;}
+        #subMenuActions{position:fixed;right:-320px;top:0;height:100vh;width:min(280px,85vw);background:var(--bg2);border-left:1px solid var(--border2);z-index:99999;transition:right .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:14px 12px;box-shadow:-4px 0 20px rgba(0,0,0,.4);display:flex;flex-direction:column;will-change:transform;isolation:isolate;}
         #subMenuActions.open{right:0;}
-        #subMenuOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8999;display:none;will-change:transform;}
+        #subMenuOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99998;display:none;will-change:transform;}
         #subMenuOverlay.show{display:block;}
         #subMenuToggleTab{position:fixed;right:0;top:50vh;transform:translateY(-50%);z-index:8800;width:22px;height:56px;background:var(--accent);border-radius:8px 0 0 8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#000;box-shadow:-2px 0 10px rgba(0,0,0,.3);transition:width .15s ease;user-select:none;touch-action:none;will-change:transform;}
         #subMenuToggleTab:hover{width:28px;}
@@ -7469,9 +7481,9 @@ PAGES.orders=PAGES.mispedidos=function(){
     (['admin','superadmin'].includes(CU.rol)?'<select id="fDrop" onchange="window._filtroDropshipperId=this.value;filtrarReset()" style="background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;cursor:pointer;width:100%"><option value="">Todos los Dropshippers</option>'+_usersCache.filter(function(u){return u.rol==='dropshipper';}).map(function(u){return '<option value="'+u.id+'">'+escHtml(u.nombre||u.email||'')+'</option>';}).join('')+'</select>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<select id="fVend" onchange="window._filtroVendedorId=this.value;filtrarReset()" style="background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;cursor:pointer;width:100%"><option value="">Todos los Vendedores</option>'+_usersCache.filter(function(u){return u.rol==='vendedor';}).map(function(u){return '<option value="'+u.id+'">'+escHtml(u.nombre||u.email||'')+'</option>';}).join('')+'</select>':'')+
     '<hr class="sm-divider">'+
-    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)"><span style="min-width:42px;display:inline-block">Hoy</span><input type="date" id="fFecha" onchange="filtrarReset()" placeholder="Día/Mes/Año" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1;min-width:0" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
-    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)"><span style="min-width:42px;display:inline-block">Desde</span><input type="date" id="fDesde" oninput="_syncFechaGlobal()" onchange="filtrarReset()" placeholder="Día/Mes/Año" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1;min-width:0" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
-    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)"><span style="min-width:42px;display:inline-block">Hasta</span><input type="date" id="fHasta" oninput="_syncFechaGlobal()" onchange="filtrarReset()" placeholder="Día/Mes/Año" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1;min-width:0" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
+    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)"><span style="min-width:42px;display:inline-block">Hoy</span><span class="date-wrap" style="flex:1;min-width:0"><input type="date" id="fFecha" required onchange="filtrarReset()" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;width:100%;box-sizing:border-box" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></span></label>'+
+    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)"><span style="min-width:42px;display:inline-block">Desde</span><span class="date-wrap" style="flex:1;min-width:0"><input type="date" id="fDesde" required oninput="_syncFechaGlobal()" onchange="filtrarReset()" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;width:100%;box-sizing:border-box" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></span></label>'+
+    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)"><span style="min-width:42px;display:inline-block">Hasta</span><span class="date-wrap" style="flex:1;min-width:0"><input type="date" id="fHasta" required oninput="_syncFechaGlobal()" onchange="filtrarReset()" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;width:100%;box-sizing:border-box" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></span></label>'+
     '<button class="btn btn-secondary" onclick="_setFechaRapida(\'hoy\')">Hoy</button>'+
     '<button class="btn btn-secondary" onclick="_setFechaRapida(\'semana\')">Esta semana</button>'+
     '<button class="btn btn-secondary" onclick="_setFechaRapida(\'mes\')">Este mes</button>'+
@@ -9714,18 +9726,16 @@ async function _guardarConfigDelivery(userId){
 
 /* ─── BOLETAS ─── */
 PAGES.boletas=function(){
-  const hoy=today();
-  const primerDia=hoy.slice(0,8)+'01';
-  const inpStyle='background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;width:100%';
+  const inpStyle='background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;width:100%;box-sizing:border-box';
   $('tbActions').innerHTML=
     '<div style="display:flex;gap:5px;grid-column:1/-1;width:100%;box-sizing:border-box;">'+
       '<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">'+
         '<span style="font-size:11px;color:var(--text2);padding-left:2px">Desde</span>'+
-        '<input type="date" id="bFD" value="'+primerDia+'" onchange="filtrarBoletas()" placeholder="Día/Mes/Año" style="'+inpStyle+'" onclick="try{this.showPicker&&this.showPicker()}catch(e){}">'+
+        '<span class="date-wrap"><input type="date" id="bFD" required onchange="filtrarBoletas()" style="'+inpStyle+'" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></span>'+
       '</div>'+
       '<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">'+
         '<span style="font-size:11px;color:var(--text2);padding-left:2px">Hasta</span>'+
-        '<input type="date" id="bFH" value="'+hoy+'" onchange="filtrarBoletas()" placeholder="Día/Mes/Año" style="'+inpStyle+'" onclick="try{this.showPicker&&this.showPicker()}catch(e){}">'+
+        '<span class="date-wrap"><input type="date" id="bFH" required onchange="filtrarBoletas()" style="'+inpStyle+'" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></span>'+
       '</div>'+
     '</div>'+
     '<select id="bEst" onchange="filtrarBoletas()" style="'+inpStyle+'">'+
