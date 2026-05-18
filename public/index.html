@@ -1196,12 +1196,17 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   /* Botones de acción del mapa: fluyen en orden DOM */
   .page-mapa #tbActions .map-btn{order:0;flex-shrink:0;}
   /* Zona: primera del submenú, ancho completo */
-  #mapaZonaCombo{order:0!important;grid-column:1/-1!important;flex:1 1 100%!important;max-width:100%!important;min-width:0!important;}
-  /* Delivery: última del submenú, compacto, ancho completo */
-  #mapaVendCombo{order:99!important;grid-column:1/-1!important;flex:1 1 100%!important;max-width:100%!important;min-width:0!important;}
-  #mapaVendCombo .search-combo-input{min-height:30px!important;height:30px!important;padding:4px 28px 4px 8px!important;font-size:11px!important;}
+  #mapaZonaCombo{order:0!important;grid-column:1/-1!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;}
+  /* Usuarios (Delivery): última del submenú, mismo ancho que zona */
+  #mapaVendCombo{order:99!important;grid-column:1/-1!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;}
+  #mapaVendCombo .search-combo-input{height:32px!important;min-height:32px!important;padding:6px 26px 6px 12px!important;}
+  /* Contenedor contadores: flex-wrap + ancho completo para que dlvSearchCombo quepa */
+  #mapaContadores{display:flex!important;flex-wrap:wrap!important;width:100%!important;box-sizing:border-box!important;gap:4px!important;}
+  /* Buscador delivery dentro de contadores: ancho completo, compacto como los botones */
+  #dlvSearchCombo{width:100%!important;flex:1 1 100%!important;box-sizing:border-box!important;margin:0!important;}
+  #dlvSearchCombo .search-combo-input,#dlvSearchInput{height:32px!important;min-height:32px!important;padding:6px 28px 6px 36px!important;}
   /* Dropdown combos: posición dinámica vía JS (evita clipping overflow subMenuActions) */
-  #mapaZonaCombo .search-combo-list,#mapaVendCombo .search-combo-list{z-index:9999!important;}
+  #mapaZonaCombo .search-combo-list,#mapaVendCombo .search-combo-list,#dlvSearchCombo .search-combo-list{z-index:9999!important;}
   /* Botones del mapa más compactos en mobile */
   .map-btn{padding:5px 8px!important;font-size:11px!important;gap:3px!important;flex-shrink:0;white-space:nowrap;}
   /* Topbar title: solo una línea en mapa */
