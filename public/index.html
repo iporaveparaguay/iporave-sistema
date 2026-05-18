@@ -596,8 +596,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 #mapaZonaCombo,#mapaVendCombo{min-width:0;max-width:180px;width:180px;vertical-align:middle}
 #mapaVendCombo{max-width:200px;width:200px}
 #mapaVendCombo .search-combo-input{font-size:11px !important}
-@media(max-width:768px){#mapaVendCombo{max-width:100%;width:100%}#mapaVendCombo .search-combo-input{font-size:12px !important}}
-#mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:36px;padding:7px 30px 7px 14px;font:600 12px var(--font,inherit);border-radius:10px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border:1px solid var(--border);box-shadow:0 2px 4px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.05);cursor:pointer;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+@media(max-width:768px){#mapaVendCombo,#mapaZonaCombo{max-width:100%;width:100%}#mapaVendCombo .search-combo-input{font-size:12px !important}}
+#mapaZonaCombo .search-combo-input,#mapaVendCombo .search-combo-input{height:36px;padding:7px 30px 7px 14px;font:600 12px var(--font,inherit);border-radius:10px;background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);border:1px solid var(--accent);box-shadow:0 2px 4px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.05);cursor:pointer;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
 #mapaZonaCombo .search-combo-input:hover,#mapaVendCombo .search-combo-input:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08)}
 #mapaZonaCombo .search-combo-input:focus,#mapaVendCombo .search-combo-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.25),inset 0 1px 0 rgba(255,255,255,.05)}
 #mapaZonaCombo .search-combo-emoji,#mapaVendCombo .search-combo-emoji{font-size:12px;left:11px}
@@ -7469,9 +7469,9 @@ PAGES.orders=PAGES.mispedidos=function(){
     (['admin','superadmin'].includes(CU.rol)?'<select id="fDrop" onchange="window._filtroDropshipperId=this.value;filtrarReset()" style="background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;cursor:pointer;width:100%"><option value="">Todos los Dropshippers</option>'+_usersCache.filter(function(u){return u.rol==='dropshipper';}).map(function(u){return '<option value="'+u.id+'">'+escHtml(u.nombre||u.email||'')+'</option>';}).join('')+'</select>':'')+
     (['admin','superadmin'].includes(CU.rol)?'<select id="fVend" onchange="window._filtroVendedorId=this.value;filtrarReset()" style="background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;cursor:pointer;width:100%"><option value="">Todos los Vendedores</option>'+_usersCache.filter(function(u){return u.rol==='vendedor';}).map(function(u){return '<option value="'+u.id+'">'+escHtml(u.nombre||u.email||'')+'</option>';}).join('')+'</select>':'')+
     '<hr class="sm-divider">'+
-    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)">Hoy <input type="date" id="fFecha" onchange="filtrarReset()" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
-    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)">Desde <input type="date" id="fDesde" oninput="_syncFechaGlobal()" onchange="filtrarReset()" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
-    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)">Hasta <input type="date" id="fHasta" oninput="_syncFechaGlobal()" onchange="filtrarReset()" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
+    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)"><span style="min-width:42px;display:inline-block">Hoy</span><input type="date" id="fFecha" onchange="filtrarReset()" placeholder="Día/Mes/Año" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1;min-width:0" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
+    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)"><span style="min-width:42px;display:inline-block">Desde</span><input type="date" id="fDesde" oninput="_syncFechaGlobal()" onchange="filtrarReset()" placeholder="Día/Mes/Año" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1;min-width:0" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
+    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)"><span style="min-width:42px;display:inline-block">Hasta</span><input type="date" id="fHasta" oninput="_syncFechaGlobal()" onchange="filtrarReset()" placeholder="Día/Mes/Año" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1;min-width:0" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
     '<button class="btn btn-secondary" onclick="_setFechaRapida(\'hoy\')">Hoy</button>'+
     '<button class="btn btn-secondary" onclick="_setFechaRapida(\'semana\')">Esta semana</button>'+
     '<button class="btn btn-secondary" onclick="_setFechaRapida(\'mes\')">Este mes</button>'+
@@ -9715,8 +9715,14 @@ PAGES.boletas=function(){
   const inpStyle='background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;width:100%';
   $('tbActions').innerHTML=
     '<div style="display:flex;gap:5px;grid-column:1/-1;width:100%;box-sizing:border-box;">'+
-      '<label style="font-size:12px;display:flex;align-items:center;gap:4px;flex:1;min-width:0;color:var(--text2)">Desde <input type="date" id="bFD" value="'+primerDia+'" onchange="filtrarBoletas()" style="'+inpStyle+'" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
-      '<label style="font-size:12px;display:flex;align-items:center;gap:4px;flex:1;min-width:0;color:var(--text2)">Hasta <input type="date" id="bFH" value="'+hoy+'" onchange="filtrarBoletas()" style="'+inpStyle+'" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
+      '<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">'+
+        '<span style="font-size:11px;color:var(--text2);padding-left:2px">Desde</span>'+
+        '<input type="date" id="bFD" value="'+primerDia+'" onchange="filtrarBoletas()" placeholder="Día/Mes/Año" style="'+inpStyle+'" onclick="try{this.showPicker&&this.showPicker()}catch(e){}">'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">'+
+        '<span style="font-size:11px;color:var(--text2);padding-left:2px">Hasta</span>'+
+        '<input type="date" id="bFH" value="'+hoy+'" onchange="filtrarBoletas()" placeholder="Día/Mes/Año" style="'+inpStyle+'" onclick="try{this.showPicker&&this.showPicker()}catch(e){}">'+
+      '</div>'+
     '</div>'+
     '<select id="bEst" onchange="filtrarBoletas()" style="'+inpStyle+'">'+
       '<option value="">Todos los Estados</option><option>Entregado</option><option>En Ruta</option><option>Despachado</option><option>Nuevo</option><option>Cancelado</option>'+
@@ -16668,8 +16674,8 @@ PAGES.mapa=function(){
       '<button id="mapaAutoPau" class="map-btn'+(window._mapaAutoUpdateEnabled===false?' active':'')+'" onclick="window._mapaAutoUpdateEnabled=false;localStorage.setItem(\'mapa_auto\',\'0\');var a=document.getElementById(\'mapaAutoAct\'),b=document.getElementById(\'mapaAutoPau\');if(b)b.classList.add(\'active\');if(a)a.classList.remove(\'active\')">Auto Pausado</button>'+
       '<hr class="sm-divider">'+
       '<div style="display:flex;gap:5px;grid-column:1/-1;width:100%;box-sizing:border-box;min-width:0;">'+
-        '<div id="mapaZonaCombo" class="search-combo" style="flex:1;min-width:0;min-height:38px;"></div>'+
-        '<div id="mapaVendCombo" class="search-combo" style="flex:1;min-width:0;min-height:38px;"></div>'+
+        '<div id="mapaZonaCombo" class="search-combo" style="flex:1;min-width:0;height:38px;overflow:hidden;"></div>'+
+        '<div id="mapaVendCombo" class="search-combo" style="flex:1;min-width:0;height:38px;overflow:hidden;"></div>'+
       '</div>'+
       '<hr class="sm-divider">'+
       '<div id="mapaContadores" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;box-sizing:border-box;align-items:start;grid-column:1/-1"></div>';
@@ -17382,8 +17388,8 @@ PAGES.pagos=function(){
       const chip=(id,label)=>'<button class="pagosChip'+(f.rol===id?' active':'')+'" onclick="_setPagosRolFiltro(\''+id+'\')">'+label+'</button>';
 
       $('tbActions').innerHTML=
-        '<button class="btn btn-secondary btn-sm" onclick="exportarTodosSaldosCSV()" style="display:inline-flex;align-items:center;gap:6px">'+SVG.arrowDown+'<span>Exportar saldos a CSV</span></button>'+
-        '<button class="btn btn-secondary btn-sm" onclick="imprimirBalanceGeneral()">'+SVG.printer+' Imprimir balance general</button>';
+        '<button class="btn btn-secondary btn-sm" onclick="exportarTodosSaldosCSV()" style="display:inline-flex;align-items:center;gap:6px">'+SVG.arrowDown+'<span>Exportar CSV</span></button>'+
+        '<button class="btn btn-secondary btn-sm" onclick="imprimirBalanceGeneral()" style="display:inline-flex;align-items:center;gap:6px">'+SVG.printer+'<span>Imprimir</span></button>';
       $('ca').innerHTML=
         '<div class="stitle" style="margin-top:0;display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Pagos del sistema — '+mes+'</span></div>'+
         '<div class="stitle" style="margin-top:14px;margin-bottom:6px;font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Estado financiero global — '+mes+'</div>'+
