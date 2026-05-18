@@ -1917,6 +1917,10 @@ body.alta-visibilidad select{
     
     <!-- SUBMENÚ DE HERRAMIENTAS (Izquierdo) -->
     <style>
+        .tbtitle { font-size: 15px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        @media (max-width: 480px) { .tbtitle { max-width: 140px; font-size: 14px !important; } }
+        div:has(> .etiq-chip) { flex-wrap: nowrap !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; padding-bottom: 6px; }
+        .hover-underline:hover { text-decoration: underline !important; }
         #tbActions { overflow-x: hidden !important; padding: 12px !important; gap: 8px !important; }
         #tbActions > div, #tbActions > button, #tbActions > .search-combo {
             width: 100% !important; max-width: 100% !important;
@@ -1928,7 +1932,7 @@ body.alta-visibilidad select{
         #tbActions input, #tbActions select { font-size: 12px !important; width: 100% !important; }
         #subMenuToggleTab { position: fixed !important; top: 50vh !important; transform: translateY(-50%) !important; right: -22px; transition: right 0.3s; }
     </style>
-    <div id="subMenuActions" style="position:fixed; left:-240px; top:60px; width:240px; height:max-content; max-height:calc(100vh - 80px); background:var(--bg2); border-right:1px solid var(--border); border-bottom:1px solid var(--border); border-radius:0 0 12px 0; z-index:400; transition:left 0.3s; display:flex; flex-direction:column; box-shadow:4px 4px 15px rgba(0,0,0,0.3);">
+    <div id="subMenuActions" style="position:fixed; left:-240px; top:60px; width:240px; height:max-content; max-height:calc(100vh - 80px); background:var(--bg2); border-right:1px solid var(--border); border-bottom:1px solid var(--border); border-radius:0 0 12px 0; z-index:9999; transition:left 0.3s; display:flex; flex-direction:column; box-shadow:4px 4px 15px rgba(0,0,0,0.3);">
         <div style="padding:10px 14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
             <strong style="font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--text2);">Herramientas</strong>
             <button onclick="toggleSubMenuActions()" class="topbar-icon-btn" style="width:26px; height:26px; margin:0;">✕</button>
@@ -1959,8 +1963,13 @@ body.alta-visibilidad select{
             if(tb) {
                 tb.addEventListener('click', (e) => {
                     if(e.target.closest('button') || e.target.closest('.etiq-chip') || e.target.closest('.map-btn') || e.target.closest('.search-combo-list li')) {
-                        document.getElementById('subMenuActions').style.left = '-240px';
-                        document.getElementById('subMenuTabIcon').innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+                        setTimeout(() => {
+                            const panel = document.getElementById('subMenuActions');
+                            if(panel && panel.style.left === '0px') {
+                                panel.style.left = '-240px';
+                                document.getElementById('subMenuTabIcon').innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+                            }
+                        }, 2500); // 2.5 second delay before closing
                     }
                 });
             }
@@ -6137,16 +6146,15 @@ function _clientesRecurrentesPage(){
     (clientes.length?
       '<div class="tc"><div class="th2"><span class="tt">👥 Clientes recurrentes</span></div>'+
       '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
-      '<th>Cliente</th><th style="text-align:center">Pedidos</th><th>Último estado</th><th class="col-hide">Último pedido</th><th style="text-align:right">Total gastado</th><th></th>'+
+      '<th>Cliente</th><th style="text-align:center">Pedidos</th><th>Último estado</th><th class="col-hide">Último pedido</th><th style="text-align:right">Total gastado</th>'+
       '</tr></thead><tbody>'+
       clientes.map(c=>
         '<tr>'+
-        '<td><div style="font-weight:700;line-height:1.3;margin:0">'+escHtml(c.nombre)+'</div><div style="font-size:11px;color:var(--text2)">'+escHtml(c.telefono||'')+'</div></td>'+
+        '<td><div class="hover-underline" onclick="viewOrder('+c.ultimoId+')" style="font-weight:700;line-height:1.3;margin:0;cursor:pointer;color:var(--accent);">'+escHtml(c.nombre)+'</div><div style="font-size:11px;color:var(--text2)">'+escHtml(c.telefono||'')+'</div></td>'+
         '<td style="text-align:center"><span class="badge '+(c.pedidos>1?'be':'bp')+'">'+c.pedidos+'</span></td>'+
         '<td>'+bE(c.ultimoEstado)+'</td>'+
         '<td class="col-hide">'+(c.ultimoFecha?fmtDate(c.ultimoFecha):'—')+'</td>'+
         '<td style="text-align:right;color:var(--green);font-weight:800">'+fmt(c.total)+'</td>'+
-        '<td><button class="btn btn-secondary btn-sm" onclick="viewOrder('+c.ultimoId+')">Último</button></td>'+
         '</tr>'
       ).join('')+
       '</tbody></table></div></div>':
@@ -7565,7 +7573,7 @@ function renderTable(orders,title,showActs,highlightChanges){
   orders.map(o=>'<tr'+(highlightChanges?' style="'+_orderStateRowStyle(o)+'"':'')+'>'+
     '<td class="col-hide"><span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">#'+o.id+'</span></td>'+
     '<td class="col-hide">'+fmtDate(o.fecha)+'</td>'+
-    '<td><div style="font-weight:600;line-height:1.3;margin:0">'+escHtml(o.cliente||'')+'</div>'+
+    '<td><div class="hover-underline" onclick="viewOrder('+o.id+')" style="font-weight:600;line-height:1.3;margin:0;cursor:pointer;color:var(--accent);">'+escHtml(o.cliente||'')+'</div>'+
       '<div style="font-size:11px;color:var(--text2)">'+escHtml(o.telefono||'')+'</div>'+
       (o.direccion?'<div class="col-show-mobile" style="font-size:10px;color:var(--text3);margin-top:2px">📍 '+escHtml(o.direccion.length>40?o.direccion.substring(0,38)+'…':o.direccion)+'</div>':'')+
       '<div class="col-show-mobile" style="font-size:11px;color:var(--text2);margin-top:1px">'+escHtml(o.producto||'')+(o.qty>1?' ×'+o.qty:'')+'</div>'+
@@ -7582,7 +7590,6 @@ function renderTable(orders,title,showActs,highlightChanges){
     (showActs?'<td style="white-space:nowrap"><div class="order-menu-wrap">'+
       '<button class="order-menu-btn" onclick="_toggleOrderMenu(event,'+o.id+')" title="Acciones">⋮</button>'+
       '<div class="order-dropdown" id="odrop-'+o.id+'">'+
-        '<button onclick="_closeOrderMenus();viewOrder('+o.id+')">'+SVG.search+' Ver</button>'+
         (canEdit&&(CU.rol!=='vendedor'||!o.deliveryId)?'<button onclick="_closeOrderMenus();editOrder('+o.id+')">'+SVG.pencil+' Editar</button>':'')+
         (isDel&&!['Entregado','Cancelado','Devuelto'].includes(o.estado)?'<button onclick="_closeOrderMenus();dlvModal('+o.id+')">'+SVG.truck+' Actualizar estado</button>':'')+
         '<button onclick="_closeOrderMenus();waMenu('+o.id+')">'+SVG.chat+' WhatsApp</button>'+
@@ -9601,19 +9608,18 @@ function filtrarBoletas(){
   el.innerHTML='<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
   '<th>Boleta</th><th class="col-hide">Doc N°</th><th>Fecha</th>'+
   '<th>Cliente</th><th>Producto</th><th>Total</th>'+
-  '<th class="col-hide">IVA</th><th>Estado</th><th></th></tr></thead><tbody>'+
+  '<th class="col-hide">IVA</th><th>Estado</th></tr></thead><tbody>'+
   orders.map(o=>{
     const t=(o.precio||0)*(o.qty||1);
     const tasaNum=parseFloat(o.tipoIva)||0;
     const iva=(o.tipoIva==='Exento'||tasaNum===0)?0:Math.round(t/((100+tasaNum)/tasaNum));
     return '<tr>'+
-      '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px">'+escHtml(o.boletaNum||'')+'</td>'+
+      '<td class="hover-underline" onclick="openBoleta('+o.id+')" style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:11px;cursor:pointer;font-weight:700">'+escHtml(o.boletaNum||'')+'</td>'+
       '<td class="col-hide" style="font-family:\'JetBrains Mono\',monospace;font-size:11px">'+escHtml(o.numDoc||'—')+'</td>'+
       '<td>'+fmtDate(o.fecha)+'</td><td>'+escHtml(o.cliente||'')+'</td><td>'+escHtml(o.producto||'')+'</td>'+
       '<td style="color:var(--green)">'+fmt(t)+'</td>'+
       '<td class="col-hide" style="color:var(--cyan)">'+fmt(iva)+'</td>'+
       '<td>'+bE(o.estado)+'</td>'+
-      '<td><button class="btn btn-secondary btn-sm" onclick="openBoleta('+o.id+')">Ver</button></td>'+
     '</tr>';
   }).join('')+'</tbody></table></div>';
 }
@@ -9864,8 +9870,7 @@ PAGES.cierre=function(){
     html+='<div class="stitle">Historial de cierres</div>';
     jornadas.slice().reverse().forEach(j=>{
       html+='<div class="lcard2"><div style="display:flex;justify-content:space-between;margin-bottom:7px">'+
-        '<span style="font-weight:700">Cierre del '+fmtDate(j.fecha)+'</span>'+
-        '<button class="btn btn-secondary btn-sm" onclick="verCierre(\''+j.fecha+'\')">Ver</button></div>'+
+        '<span class="hover-underline" onclick="verCierre(\''+j.fecha+'\')" style="font-weight:700;color:var(--accent);cursor:pointer;">Cierre del '+fmtDate(j.fecha)+'</span></div>'+
         '<div class="lrow"><span class="llbl">Entregados</span><span>'+j.entregados+'</span></div>'+
         '<div class="lrow"><span class="llbl">Ingresos</span><span style="color:var(--green)">'+fmt(j.ingresos)+'</span></div>'+
         '<div class="lrow"><span class="llbl">Ganancia</span><span style="color:var(--accent)">'+fmt(j.ganancia)+'</span></div>'+
