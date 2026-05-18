@@ -939,8 +939,8 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
 .desc-html p{margin-bottom:8px;}
 .desc-html h1,.desc-html h2,.desc-html h3{margin-bottom:6px;margin-top:12px;}
 /* PRINT */
-/* Botón hamburger oculto en desktop, visible solo en mobile */
-#menuBtn{display:none;}
+/* Botón hamburger: visible siempre. La sidebar fija de desktop no lo invalida — sirve para abrir/cerrar el overlay también ahí */
+#menuBtn{display:flex;align-items:center;justify-content:center;}
 /* ── Account Switcher (multi-rol tipo TikTok) ── */
 .account-switcher{position:relative;display:inline-block;width:100%}
 .account-current{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border2);border-radius:99px;cursor:pointer;transition:all .15s ease-out;}
@@ -1171,11 +1171,11 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   .sc{box-sizing:border-box;min-width:0;word-break:break-word;}
   /* BUG-U5: order explícito en topbar para evitar mezcla de filas en mobile */
   #menuBtn{order:0;}
-  .tbtitle,#tbTitle{order:1;flex:1 1 auto;}
-  .tbactions,#tbActions{order:2;flex:0 0 auto;}
+  .tbtitle,#tbTitle{order:3;flex:1 1 auto;text-align:right!important;justify-content:flex-end!important;margin-left:auto!important;padding-left:0!important;padding-right:8px!important;}
+  .tbactions,#tbActions{order:1;flex:0 0 auto;}
   #gpsStatusPill{order:3;}
-  #refreshBtn,#tutorialToggleBtn,#themeToggleBtn,#codexNotifBell{order:4;}
-  #topbarKebab{order:4;}
+  #refreshBtn,#tutorialToggleBtn,#themeToggleBtn,#codexNotifBell{order:2;}
+  #topbarKebab{order:2;}
   #offlineBadge{order:5;}
 }
 /* FIX mobile mapa: 2 filas en topbar — botones fila 1, combos fila 2 */
@@ -1930,72 +1930,136 @@ body.alta-visibilidad select{
             justify-content: center !important; font-size: 11px !important; padding: 8px 10px !important; height: auto !important; white-space: normal !important; text-align: center !important;
         }
         #tbActions input, #tbActions select { font-size: 12px !important; width: 100% !important; }
-        /* Pestaña naranja del submenú: SIEMPRE visible en el borde izquierdo */
-        #subMenuToggleTab { position: fixed !important; top: 50vh !important; transform: translateY(-50%) !important; left: 0 !important; z-index: 9998 !important; transition: left 0.3s ease !important; }
-        body.no-auth #subMenuToggleTab, body.no-auth #subMenuActions { display: none !important; }
+        /* SUBMENÚ LATERAL (mobile only) — estilo inspirado en _sfp de Antigravity */
+        #subMenuActions{position:fixed;right:-320px;top:0;height:100vh;width:min(280px,85vw);background:var(--bg2);border-left:1px solid var(--border2);z-index:9000;transition:right .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:14px 12px;box-shadow:-4px 0 20px rgba(0,0,0,.4);display:flex;flex-direction:column;}
+        #subMenuActions.open{right:0;}
+        #subMenuOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8999;display:none;}
+        #subMenuOverlay.show{display:block;}
+        #subMenuToggleTab{position:fixed;right:0;top:50vh;transform:translateY(-50%);z-index:8800;width:22px;height:56px;background:var(--accent);border-radius:8px 0 0 8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#000;box-shadow:-2px 0 10px rgba(0,0,0,.3);transition:width .15s ease;user-select:none;touch-action:none;}
+        #subMenuToggleTab:hover{width:28px;}
+        #subMenuToggleTab.dragging{transition:none;opacity:.7;}
+        #subMenuTabIcon{font-size:13px;font-weight:900;line-height:1;pointer-events:none;}
+        .sm-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:12px;flex-shrink:0;}
+        .sm-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text);}
+        .sm-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;}
+        .sm-close:hover{border-color:var(--accent);color:var(--accent);}
+        /* Botones uniformes dentro del submenú (todos al mismo tamaño) */
+        #tbActions{display:flex;flex-direction:column;gap:8px;align-items:stretch;flex-wrap:nowrap;overflow-y:auto;}
+        #tbActions > button, #tbActions > .btn, #tbActions > .map-btn{width:100%!important;min-height:42px!important;padding:10px 12px!important;font-size:13px!important;display:flex!important;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;white-space:normal!important;text-align:center!important;}
+        #tbActions > .search-combo, #tbActions > input, #tbActions > select{width:100%!important;box-sizing:border-box;}
+        #tbActions hr, #tbActions .sm-divider{width:100%;height:1px;background:var(--border);border:none;margin:6px 0;}
+        /* Oculto totalmente en PC y para usuarios no autenticados */
+        @media (min-width:769px){
+            #subMenuActions,#subMenuOverlay,#subMenuToggleTab{display:none!important;}
+        }
+        body.no-auth #subMenuActions,body.no-auth #subMenuOverlay,body.no-auth #subMenuToggleTab{display:none!important;}
+        /* Ocultar también en página mapa para comparar contra _sfp original */
+        body.page-mapa #subMenuToggleTab{display:none!important;}
     </style>
-    <!-- Submenú lateral (panel deslizable izquierdo) -->
-    <div id="subMenuActions" style="position:fixed; left:-260px; top:60px; width:240px; height:max-content; max-height:calc(100vh - 80px); background:var(--bg2); border-right:1px solid var(--border); border-bottom:1px solid var(--border); border-radius:0 0 12px 0; z-index:9999; transition:left 0.3s ease; display:flex; flex-direction:column; box-shadow:4px 4px 15px rgba(0,0,0,0.3);">
-        <div style="padding:10px 14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-            <strong style="font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--text2);">Herramientas</strong>
-            <button onclick="toggleSubMenuActions()" class="topbar-icon-btn" style="width:26px; height:26px; margin:0;">✕</button>
+    <!-- Submenú lateral (mobile only, abre desde la derecha) -->
+    <div id="subMenuActions">
+        <div class="sm-header">
+            <span class="sm-title">Herramientas</span>
+            <button class="sm-close" onclick="toggleSubMenuActions()" aria-label="Cerrar">✕</button>
         </div>
-        <div class="tbactions" id="tbActions" style="display:flex; flex-direction:column; overflow-y:auto; flex-wrap:nowrap; align-items:stretch; padding:8px;">
-           <!-- Los botones de la página se inyectan acá -->
-        </div>
+        <div id="tbActions"><!-- Los botones de la página se inyectan acá --></div>
     </div>
-    <!-- Pestaña Naranja (independiente del panel, siempre visible) -->
-    <div id="subMenuToggleTab" onclick="toggleSubMenuActions()" style="width:24px; height:48px; background:var(--accent); border-radius:0 8px 8px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#000; box-shadow:2px 0 8px rgba(0,0,0,0.4);" title="Abrir herramientas de la página">
-        <svg id="subMenuTabIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    <div id="subMenuOverlay" onclick="toggleSubMenuActions()"></div>
+    <!-- Pestaña fina (borde derecho, draggable verticalmente) -->
+    <div id="subMenuToggleTab" role="button" aria-label="Abrir herramientas" title="Herramientas de la página">
+        <span id="subMenuTabIcon">☰</span>
     </div>
     <script>
-        function toggleSubMenuActions() {
-            const panel = document.getElementById('subMenuActions');
-            const tab = document.getElementById('subMenuToggleTab');
-            const icon = document.getElementById('subMenuTabIcon');
-            if(!panel || !tab || !icon) return;
-            const abierto = panel.style.left === '0px';
-            if(abierto) {
-                panel.style.left = '-260px';
-                tab.style.left = '0';
-                icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
-            } else {
-                panel.style.left = '0px';
-                tab.style.left = '240px';
-                icon.innerHTML = '<polyline points="15 18 9 12 15 6"></polyline>';
-                _ensureSubMenuPlaceholder();
+        (function(){
+            let _smTimer=null;
+            const AUTO_CLOSE_MS=5000;
+
+            function _smPanel(){return document.getElementById('subMenuActions');}
+            function _smOverlay(){return document.getElementById('subMenuOverlay');}
+            function _smTab(){return document.getElementById('subMenuToggleTab');}
+
+            window.toggleSubMenuActions=function(){
+                const p=_smPanel(),o=_smOverlay();
+                if(!p||!o)return;
+                if(p.classList.contains('open'))_smClose();else _smOpen();
+            };
+            function _smOpen(){
+                const p=_smPanel(),o=_smOverlay();
+                if(!p||!o)return;
+                _ensurePlaceholder();
+                p.classList.add('open');o.classList.add('show');
+                _smRestartTimer();
             }
-        }
-        function _ensureSubMenuPlaceholder() {
-            const tb = document.getElementById('tbActions');
-            if(!tb) return;
-            const real = tb.querySelector(':scope > *:not([data-placeholder])');
-            if(!real && !tb.querySelector('[data-placeholder]')) {
-                tb.innerHTML = '<div data-placeholder="1" style="padding:24px 14px; text-align:center; color:var(--text2); font-size:12px; font-style:italic; line-height:1.5;">Esta página no tiene herramientas adicionales.</div>';
-            } else if(real && tb.querySelector('[data-placeholder]')) {
-                tb.querySelector('[data-placeholder]').remove();
+            function _smClose(){
+                const p=_smPanel(),o=_smOverlay();
+                if(!p||!o)return;
+                p.classList.remove('open');o.classList.remove('show');
+                if(_smTimer){clearTimeout(_smTimer);_smTimer=null;}
             }
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            const tb = document.getElementById('tbActions');
-            if(tb) {
-                // Limpiar placeholder si entra contenido real, agregarlo si queda vacío
-                new MutationObserver(_ensureSubMenuPlaceholder).observe(tb, { childList: true });
-                tb.addEventListener('click', (e) => {
-                    if(e.target.closest('button') || e.target.closest('.etiq-chip') || e.target.closest('.map-btn') || e.target.closest('.search-combo-list li')) {
-                        setTimeout(() => {
-                            const panel = document.getElementById('subMenuActions');
-                            const tab = document.getElementById('subMenuToggleTab');
-                            if(panel && panel.style.left === '0px') {
-                                panel.style.left = '-260px';
-                                if(tab) tab.style.left = '0';
-                                document.getElementById('subMenuTabIcon').innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
-                            }
-                        }, 2500);
+            function _smRestartTimer(){
+                if(_smTimer)clearTimeout(_smTimer);
+                _smTimer=setTimeout(_smClose,AUTO_CLOSE_MS);
+            }
+            function _ensurePlaceholder(){
+                const tb=document.getElementById('tbActions');
+                if(!tb)return;
+                const real=tb.querySelector(':scope > *:not([data-placeholder])');
+                if(!real&&!tb.querySelector('[data-placeholder]')){
+                    tb.innerHTML='<div data-placeholder="1" style="padding:24px 14px;text-align:center;color:var(--text2);font-size:12px;font-style:italic;line-height:1.5;">Esta página no tiene herramientas adicionales.</div>';
+                }else if(real&&tb.querySelector('[data-placeholder]')){
+                    tb.querySelector('[data-placeholder]').remove();
+                }
+            }
+
+            // Drag vertical de la pestaña — el usuario puede moverla si molesta
+            function _smInitDrag(){
+                const tab=_smTab();if(!tab)return;
+                let startY=0,startTop=0,dragging=false,moved=false;
+                const TAB_KEY='subMenuTabTop';
+                const saved=localStorage.getItem(TAB_KEY);
+                if(saved){tab.style.top=saved;tab.style.transform='translateY(-50%)';}
+                function _down(y){startY=y;startTop=tab.getBoundingClientRect().top+tab.offsetHeight/2;dragging=true;moved=false;tab.classList.add('dragging');}
+                function _move(y){
+                    if(!dragging)return;
+                    const dy=y-startY;
+                    if(Math.abs(dy)>4)moved=true;
+                    const newTop=Math.max(40,Math.min(window.innerHeight-40,startTop+dy));
+                    tab.style.top=newTop+'px';
+                }
+                function _up(e){
+                    if(!dragging)return;
+                    dragging=false;tab.classList.remove('dragging');
+                    if(moved){
+                        localStorage.setItem(TAB_KEY,tab.style.top);
+                        if(e&&e.preventDefault)e.preventDefault();
+                    }else{
+                        toggleSubMenuActions();
                     }
-                });
+                }
+                tab.addEventListener('mousedown',e=>{_down(e.clientY);e.preventDefault();});
+                document.addEventListener('mousemove',e=>{if(dragging)_move(e.clientY);});
+                document.addEventListener('mouseup',_up);
+                tab.addEventListener('touchstart',e=>{if(e.touches.length===1)_down(e.touches[0].clientY);},{passive:true});
+                document.addEventListener('touchmove',e=>{if(dragging&&e.touches.length===1)_move(e.touches[0].clientY);},{passive:true});
+                document.addEventListener('touchend',_up);
             }
-        });
+
+            document.addEventListener('DOMContentLoaded',()=>{
+                _smInitDrag();
+                const tb=document.getElementById('tbActions');
+                if(tb){
+                    new MutationObserver(()=>{_ensurePlaceholder();if(_smPanel().classList.contains('open'))_smRestartTimer();}).observe(tb,{childList:true});
+                    tb.addEventListener('click',e=>{
+                        if(e.target.closest('button,.etiq-chip,.map-btn,.search-combo-list li')){
+                            setTimeout(_smClose,400);
+                        }
+                    });
+                    // Reiniciar timer si el usuario interactúa con el panel
+                    _smPanel().addEventListener('mousemove',_smRestartTimer);
+                    _smPanel().addEventListener('touchstart',_smRestartTimer,{passive:true});
+                }
+            });
+        })();
     </script>
 
     <div class="topbar">
