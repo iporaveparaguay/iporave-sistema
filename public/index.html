@@ -1197,10 +1197,9 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   }
   /* Botones de acción del mapa: fluyen en orden DOM */
   .page-mapa #tbActions .map-btn{order:0;flex-shrink:0;}
-  /* Zona: primera del submenú, ancho completo */
-  #mapaZonaCombo{order:0!important;grid-column:1/-1!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;}
-  /* Usuarios (Delivery): última del submenú, mismo ancho que zona */
-  #mapaVendCombo{order:99!important;grid-column:1/-1!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;}
+  /* Zona + Usuarios: lado a lado en la misma fila (cada uno 1 columna del grid 2-col) */
+  #mapaZonaCombo{order:0!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;}
+  #mapaVendCombo{order:1!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;}
   #mapaVendCombo .search-combo-input{height:32px!important;min-height:32px!important;padding:6px 26px 6px 12px!important;}
   /* Contenedor contadores: flex-wrap + ancho completo para que dlvSearchCombo quepa */
   #mapaContadores{display:flex!important;flex-wrap:wrap!important;width:100%!important;box-sizing:border-box!important;gap:4px!important;}
@@ -16663,17 +16662,17 @@ PAGES.mapa=function(){
     const turnoBtn='<button class="btn '+(turnoActivo?'btn-danger':'btn-success')+'" onclick="_toggleTurno()">'+(turnoActivo?'⏹ Finalizar turno':'▶ Iniciar turno')+'</button>';
     $('tbActions').innerHTML=rutaBtn+turnoBtn+zonaSel+'<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
   } else if(esAdmin){
-    // Admin: filtros en el submenú general (sin SFP Antigravity)
+    // Admin: zona + usuarios lado a lado, luego filtros y auto-update
     $('tbActions').innerHTML=
       zonaSel+
+      vendSel+
       '<hr class="sm-divider">'+
-      '<button class="map-btn'+(window._mapaShowDlvs?'':' active')+'" onclick="window._mapaShowDlvs=false;_mapaCargar()">Todos los pines</button>'+
-      '<button class="map-btn'+(window._mapaShowDlvs?' active':'')+'" onclick="window._mapaShowDlvs=true;_mapaCargar()">Solo deliveries</button>'+
+      '<button id="mapaFiltPines" class="map-btn'+(window._mapaShowDlvs?'':' active')+'" onclick="window._mapaShowDlvs=false;_mapaCargar();var a=document.getElementById(\'mapaFiltPines\'),b=document.getElementById(\'mapaFiltDlv\');if(a)a.classList.add(\'active\');if(b)b.classList.remove(\'active\')">Todos los pines</button>'+
+      '<button id="mapaFiltDlv" class="map-btn'+(window._mapaShowDlvs?' active':'')+'" onclick="window._mapaShowDlvs=true;_mapaCargar();var a=document.getElementById(\'mapaFiltPines\'),b=document.getElementById(\'mapaFiltDlv\');if(b)b.classList.add(\'active\');if(a)a.classList.remove(\'active\')">Solo deliveries</button>'+
       '<hr class="sm-divider">'+
-      '<button class="map-btn'+(window._mapaAutoUpdateEnabled!==false?' active':'')+'" onclick="window._mapaAutoUpdateEnabled=true;localStorage.setItem(\'mapa_auto\',\'1\')">Auto Activo</button>'+
-      '<button class="map-btn'+(window._mapaAutoUpdateEnabled===false?' active':'')+'" onclick="window._mapaAutoUpdateEnabled=false;localStorage.setItem(\'mapa_auto\',\'0\')">Auto Pausado</button>'+
-      '<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>'+
-      vendSel;
+      '<button id="mapaAutoAct" class="map-btn'+(window._mapaAutoUpdateEnabled!==false?' active':'')+'" onclick="window._mapaAutoUpdateEnabled=true;localStorage.setItem(\'mapa_auto\',\'1\');var a=document.getElementById(\'mapaAutoAct\'),b=document.getElementById(\'mapaAutoPau\');if(a)a.classList.add(\'active\');if(b)b.classList.remove(\'active\')">Auto Activo</button>'+
+      '<button id="mapaAutoPau" class="map-btn'+(window._mapaAutoUpdateEnabled===false?' active':'')+'" onclick="window._mapaAutoUpdateEnabled=false;localStorage.setItem(\'mapa_auto\',\'0\');var a=document.getElementById(\'mapaAutoAct\'),b=document.getElementById(\'mapaAutoPau\');if(b)b.classList.add(\'active\');if(a)a.classList.remove(\'active\')">Auto Pausado</button>'+
+      '<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
   } else {
     // Vendor/Drop/Prov: 3 pills directamente (Pendiente/En Ruta/Entregado)
     $('tbActions').innerHTML='<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
