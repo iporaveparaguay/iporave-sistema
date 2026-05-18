@@ -1919,21 +1919,26 @@ body.alta-visibilidad select{
 
   <div class="main" id="mainContent">
     
-    <!-- SUBMENÚ DE HERRAMIENTAS (Izquierdo) -->
+    <!-- SUBMENÚ DE HERRAMIENTAS (mobile only) -->
     <style>
-        .tbtitle { font-size: 15px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-        @media (max-width: 480px) { .tbtitle { max-width: 140px; font-size: 14px !important; } }
+        /* Reglas globales (NO afectan layout PC) */
         div:has(> .etiq-chip) { flex-wrap: nowrap !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; padding-bottom: 6px; }
         .hover-underline:hover { text-decoration: underline !important; }
-        #tbActions { overflow-x: hidden !important; padding: 12px !important; gap: 8px !important; }
-        #tbActions > div, #tbActions > button, #tbActions > .search-combo {
-            width: 100% !important; max-width: 100% !important;
-            margin: 0 !important; box-sizing: border-box !important;
+        /* Reglas que SOLO aplican en mobile (no rompen layout PC) */
+        @media (max-width: 768px) {
+            .tbtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            #tbActions { overflow-x: hidden !important; padding: 12px !important; gap: 8px !important; }
+            #tbActions > div, #tbActions > button, #tbActions > .search-combo {
+                width: 100% !important; max-width: 100% !important;
+                margin: 0 !important; box-sizing: border-box !important;
+            }
+            #tbActions button.btn {
+                justify-content: center !important; font-size: 11px !important; padding: 8px 10px !important; height: auto !important; white-space: normal !important; text-align: center !important;
+            }
+            #tbActions input, #tbActions select { font-size: 12px !important; width: 100% !important; }
+            /* Wrapper de iconos globales: order:3 para que vaya a la derecha del título */
+            #tbGlobalBtns { order: 3 !important; }
         }
-        #tbActions button.btn {
-            justify-content: center !important; font-size: 11px !important; padding: 8px 10px !important; height: auto !important; white-space: normal !important; text-align: center !important;
-        }
-        #tbActions input, #tbActions select { font-size: 12px !important; width: 100% !important; }
         /* SUBMENÚ LATERAL (mobile only) — estilo inspirado en _sfp de Antigravity */
         #subMenuActions{position:fixed;right:-320px;top:0;height:100vh;width:min(280px,85vw);background:var(--bg2);border-left:1px solid var(--border2);z-index:9000;transition:right .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:14px 12px;box-shadow:-4px 0 20px rgba(0,0,0,.4);display:flex;flex-direction:column;}
         #subMenuActions.open{right:0;}
@@ -2076,8 +2081,8 @@ body.alta-visibilidad select{
       </button>
       <span class="tbtitle" id="tbTitle" style="display:inline-flex; align-items:center; gap:6px; min-width:0; flex-shrink:1;"><span id="tbTitleText" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">Dashboard</span><button id="gpsStatusPill" class="gps-pill" type="button" onclick="_gpsToggleFromPill()" aria-label="Compartiendo ubicacion" style="margin:0; flex-shrink:0;"><span class="gps-pill-dot"></span><span class="gps-pill-text">GPS activo</span><span class="gps-pill-time"></span></button></span>
       
-      <!-- Iconos Globales -->
-      <div style="display:flex; align-items:center; gap:4px;">
+      <!-- Iconos Globales: refresh → tutorial → tema → campanita -->
+      <div id="tbGlobalBtns" style="display:flex; align-items:center; gap:4px;">
         <button id="refreshBtn" type="button" onclick="_refreshActualPage()" class="topbar-icon-btn" title="Actualizar página" aria-label="Actualizar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
         <button id="tutorialToggleBtn" type="button" onclick="_topbarToggleTutorial()" class="topbar-icon-btn" title="Tutorial activado (click para desactivar)" aria-label="Tutorial"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/><line id="tutorialOffLine" x1="3" y1="3" x2="21" y2="21" stroke-width="2.4" style="display:none"/></svg></button>
         <button id="themeToggleBtn" type="button" onclick="toggleTheme()" class="topbar-icon-btn theme-btn" title="Cambiar tema" aria-label="Cambiar tema"><svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
