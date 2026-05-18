@@ -1916,16 +1916,28 @@ body.alta-visibilidad select{
   <div class="main" id="mainContent">
     
     <!-- SUBMENÚ DE HERRAMIENTAS (Izquierdo) -->
+    <style>
+        #tbActions { overflow-x: hidden !important; padding: 12px !important; gap: 8px !important; }
+        #tbActions > div, #tbActions > button, #tbActions > .search-combo {
+            width: 100% !important; max-width: 100% !important;
+            margin: 0 !important; box-sizing: border-box !important;
+        }
+        #tbActions button.btn {
+            justify-content: center !important; font-size: 11px !important; padding: 8px 10px !important; height: auto !important; white-space: normal !important; text-align: center !important;
+        }
+        #tbActions input, #tbActions select { font-size: 12px !important; width: 100% !important; }
+        #subMenuToggleTab { position: fixed !important; top: 50vh !important; transform: translateY(-50%) !important; right: -22px; transition: right 0.3s; }
+    </style>
     <div id="subMenuActions" style="position:fixed; left:-240px; top:60px; width:240px; height:max-content; max-height:calc(100vh - 80px); background:var(--bg2); border-right:1px solid var(--border); border-bottom:1px solid var(--border); border-radius:0 0 12px 0; z-index:400; transition:left 0.3s; display:flex; flex-direction:column; box-shadow:4px 4px 15px rgba(0,0,0,0.3);">
         <div style="padding:10px 14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
             <strong style="font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--text2);">Herramientas</strong>
             <button onclick="toggleSubMenuActions()" class="topbar-icon-btn" style="width:26px; height:26px; margin:0;">✕</button>
         </div>
-        <div class="tbactions" id="tbActions" style="padding:14px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; flex-wrap:nowrap; align-items:stretch;">
+        <div class="tbactions" id="tbActions" style="display:flex; flex-direction:column; overflow-y:auto; flex-wrap:nowrap; align-items:stretch;">
            <!-- Los botones de la pagina se inyectan acá -->
         </div>
         <!-- Pestaña Naranja (siempre visible en el borde izquierdo) -->
-        <div id="subMenuToggleTab" onclick="toggleSubMenuActions()" style="position:absolute; right:-22px; top:40px; width:22px; height:38px; background:var(--accent); border-radius:0 6px 6px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#000; box-shadow:3px 0 6px rgba(0,0,0,0.3);">
+        <div id="subMenuToggleTab" onclick="toggleSubMenuActions()" style="width:22px; height:38px; background:var(--accent); border-radius:0 6px 6px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#000; box-shadow:3px 0 6px rgba(0,0,0,0.3);">
             <svg id="subMenuTabIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
     </div>
@@ -1933,6 +1945,7 @@ body.alta-visibilidad select{
         function toggleSubMenuActions() {
             const panel = document.getElementById('subMenuActions');
             const icon = document.getElementById('subMenuTabIcon');
+            const tab = document.getElementById('subMenuToggleTab');
             if(panel.style.left === '0px') {
                 panel.style.left = '-240px';
                 icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
@@ -5186,7 +5199,15 @@ function toggleSidebar(){
   if(!s)return;
   const isOpen=s.classList.contains('open');
   if(isOpen){s.classList.remove('open');o.classList.remove('show');}
-  else{s.classList.add('open');o.classList.add('show');}
+  else{
+    s.classList.add('open');o.classList.add('show');
+    const panel = document.getElementById('subMenuActions');
+    const icon = document.getElementById('subMenuTabIcon');
+    if(panel && panel.style.left === '0px') {
+        panel.style.left = '-240px';
+        if(icon) icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+    }
+  }
 }
 function closeSidebar(){
   const s=document.querySelector('.sidebar');
