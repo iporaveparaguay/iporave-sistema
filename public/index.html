@@ -1169,10 +1169,12 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
   /* Fix: elementos que se corten por overflow */
   .sgrid{overflow:hidden;}
   .sc{box-sizing:border-box;min-width:0;word-break:break-word;}
-  /* BUG-U5: order explícito en topbar — menú | título | iconos globales */
+  /* BUG-U5: order explícito en topbar para evitar mezcla de filas en mobile */
   #menuBtn{order:0;}
   .tbtitle,#tbTitle{order:1;flex:1 1 auto;}
-  #tbGlobalBtns{order:3;display:flex!important;align-items:center;gap:4px;}
+  .tbactions,#tbActions{order:2;flex:0 0 auto;}
+  #gpsStatusPill{order:3;}
+  #refreshBtn,#tutorialToggleBtn,#themeToggleBtn,#codexNotifBell{order:4;}
   #topbarKebab{order:4;}
   #offlineBadge{order:5;}
 }
@@ -1958,21 +1960,7 @@ body.alta-visibilidad select{
         }
         document.addEventListener('DOMContentLoaded', () => {
             const tb = document.getElementById('tbActions');
-            const tab = document.getElementById('subMenuToggleTab');
-
-            // Mostrar/ocultar pestaña naranja según si #tbActions tiene contenido
-            function _syncTab() {
-                if(!tb || !tab) return;
-                const tiene = tb.innerHTML.trim().length > 0;
-                tab.style.display = tiene ? 'flex' : 'none';
-                if(!tiene) {
-                    const panel = document.getElementById('subMenuActions');
-                    if(panel) panel.style.left = '-240px';
-                }
-            }
             if(tb) {
-                new MutationObserver(_syncTab).observe(tb, { childList: true, subtree: true, characterData: true });
-                // Cerrar submenú con delay al hacer clic en un elemento interactivo
                 tb.addEventListener('click', (e) => {
                     if(e.target.closest('button') || e.target.closest('.etiq-chip') || e.target.closest('.map-btn') || e.target.closest('.search-combo-list li')) {
                         setTimeout(() => {
@@ -1981,11 +1969,10 @@ body.alta-visibilidad select{
                                 panel.style.left = '-240px';
                                 document.getElementById('subMenuTabIcon').innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
                             }
-                        }, 2500);
+                        }, 2500); // 2.5 second delay before closing
                     }
                 });
             }
-            _syncTab();
         });
     </script>
 
@@ -1995,12 +1982,12 @@ body.alta-visibilidad select{
       </button>
       <span class="tbtitle" id="tbTitle" style="flex:1; text-align:left; padding-left:12px; display:flex; align-items:center; gap:8px;">Dashboard <button id="gpsStatusPill" class="gps-pill" type="button" onclick="_gpsToggleFromPill()" aria-label="Compartiendo ubicacion" style="margin:0;"><span class="gps-pill-dot"></span><span class="gps-pill-text">GPS activo</span><span class="gps-pill-time"></span></button></span>
       
-      <!-- Iconos Globales: campanita → tema → tutorial → refresh -->
-      <div id="tbGlobalBtns">
-        <button id="codexNotifBell" type="button" onclick="_notifSessionToggle()" class="topbar-icon-btn" style="display:inline-flex" aria-label="Notificaciones"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="codexNotifBadge"></span></button>
-        <button id="themeToggleBtn" type="button" onclick="toggleTheme()" class="topbar-icon-btn theme-btn" title="Cambiar tema" aria-label="Cambiar tema"><svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
-        <button id="tutorialToggleBtn" type="button" onclick="_topbarToggleTutorial()" class="topbar-icon-btn" title="Tutorial activado (click para desactivar)" aria-label="Tutorial"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/><line id="tutorialOffLine" x1="3" y1="3" x2="21" y2="21" stroke-width="2.4" style="display:none"/></svg></button>
+      <!-- Iconos Globales -->
+      <div style="display:flex; align-items:center; gap:4px;">
         <button id="refreshBtn" type="button" onclick="_refreshActualPage()" class="topbar-icon-btn" title="Actualizar página" aria-label="Actualizar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+        <button id="tutorialToggleBtn" type="button" onclick="_topbarToggleTutorial()" class="topbar-icon-btn" title="Tutorial activado (click para desactivar)" aria-label="Tutorial"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/><line id="tutorialOffLine" x1="3" y1="3" x2="21" y2="21" stroke-width="2.4" style="display:none"/></svg></button>
+        <button id="themeToggleBtn" type="button" onclick="toggleTheme()" class="topbar-icon-btn theme-btn" title="Cambiar tema" aria-label="Cambiar tema"><svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+        <button id="codexNotifBell" type="button" onclick="_notifSessionToggle()" class="topbar-icon-btn" style="display:inline-flex" aria-label="Notificaciones"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="codexNotifBadge"></span></button>
       </div>
       <div id="topbarKebab" style="display:none;position:relative">
         <button type="button" class="topbar-icon-btn" onclick="_toggleKebab()" aria-label="Más opciones" title="Más opciones">⋮</button>
