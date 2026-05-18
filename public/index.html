@@ -7460,30 +7460,29 @@ PAGES.orders=PAGES.mispedidos=function(){
   if(!CU) return; // FIX SEC-2
   _pedidosShown=_pedidosPageSize;
   const canCreate=['admin','superadmin','vendedor','proveedor','dropshipper'].includes(CU.rol);
-  const lupaIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>';
+  // Todos los controles van al submenú (#tbActions), #ca queda solo con la lista
   $('tbActions').innerHTML=
     (canCreate?'<button id="btnNuevoPedido" class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
-    '<button class="topbar-icon-btn" onclick="_abrirPanelPedidos()" title="Buscar y filtrar pedidos" aria-label="Filtros">'+lupaIcon+'</button>';
-  $('ca').innerHTML=
-    '<div class="fbar">'+
+    '<hr class="sm-divider">'+
     '<select id="fEst" onchange="filtrarReset()"><option value="">Todos los estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
     '<select id="fZona" onchange="filtrarReset()"><option value="">Todas las zonas</option>'+_zonasCache.map(z=>'<option value="'+z.id+'">'+escHtml(z.nombre||'')+'</option>').join('')+'</select>'+
     '<select id="fProv" onchange="filtrarReset()"><option value="">Todos los proveedores</option>'+[...new Set(getVisibleOrders().map(o=>o.proveedor).filter(Boolean))].map(p=>'<option value="'+escAttr(p)+'">'+escHtml(p)+'</option>').join('')+'</select>'+
-    '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Fecha exacta <input type="date" id="fFecha" onchange="filtrarReset()" title="Filtra pedidos de un día específico"></label>'+
-    '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Desde <input type="date" id="fDesde" oninput="_syncFechaGlobal()" onchange="filtrarReset()" title="Fecha inicio del rango"></label>'+
-    '<label style="font-size:11px;display:inline-flex;align-items:center;gap:4px;color:var(--text2)">Hasta <input type="date" id="fHasta" oninput="_syncFechaGlobal()" onchange="filtrarReset()" title="Fecha fin del rango"></label>'+
-    '<span id="fFechaRapida" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">'+
-      '<button class="btn btn-secondary" style="font-size:11px;min-height:44px;padding:6px 12px;" onclick="_setFechaRapida(\'hoy\')">Hoy</button>'+
-      '<button class="btn btn-secondary" style="font-size:11px;min-height:44px;padding:6px 12px;" onclick="_setFechaRapida(\'semana\')">Esta semana</button>'+
-      '<button class="btn btn-secondary" style="font-size:11px;min-height:44px;padding:6px 12px;" onclick="_setFechaRapida(\'mes\')">Este mes</button>'+
-    '</span>'+
-    '<button class="btn btn-secondary" onclick="clearF()">Limpiar</button>'+
-    '</div>'+
-    '<div id="oContainer"></div>';
+    '<hr class="sm-divider">'+
+    '<input type="date" id="fFecha" onchange="filtrarReset()" title="Fecha exacta">'+
+    '<input type="date" id="fDesde" oninput="_syncFechaGlobal()" onchange="filtrarReset()" title="Desde (rango inicio)">'+
+    '<input type="date" id="fHasta" oninput="_syncFechaGlobal()" onchange="filtrarReset()" title="Hasta (rango fin)">'+
+    '<button class="btn btn-secondary" onclick="_setFechaRapida(\'hoy\')">Hoy</button>'+
+    '<button class="btn btn-secondary" onclick="_setFechaRapida(\'semana\')">Esta semana</button>'+
+    '<button class="btn btn-secondary" onclick="_setFechaRapida(\'mes\')">Este mes</button>'+
+    '<button class="btn btn-secondary" onclick="clearF()">Limpiar filtros</button>';
+  $('ca').innerHTML='<div id="oContainer"></div>';
+  // bgWrap (búsqueda global) va al inicio del submenú, antes de los filtros
   var wrap=document.getElementById('bgWrap');
-  var fbar=$('ca').querySelector('.fbar');
-  if(wrap&&fbar&&wrap.parentNode!==fbar){fbar.insertBefore(wrap,fbar.firstChild);}
-  else if(!wrap){_bgEnsureUI&&_bgEnsureUI();}
+  var tbA=$('tbActions');
+  if(wrap&&tbA&&wrap.parentNode!==tbA){
+    wrap.style.cssText+='width:100%;max-width:100%;box-sizing:border-box;';
+    tbA.insertBefore(wrap,tbA.firstChild);
+  }else if(!wrap){_bgEnsureUI&&_bgEnsureUI();}
   // Restaurar fechas persistidas en variables globales
   if(window._oFechaDesde){var ed=$('fDesde');if(ed)ed.value=window._oFechaDesde;}
   if(window._oFechaHasta){var eh=$('fHasta');if(eh)eh.value=window._oFechaHasta;}
