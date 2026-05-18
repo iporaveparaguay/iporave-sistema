@@ -1946,7 +1946,7 @@ body.alta-visibilidad select{
         .sm-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text);}
         .sm-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;}
         .sm-close:hover{border-color:var(--accent);color:var(--accent);}
-        /* #tbActions: grid 2 col — botones compactos uniformes, combos/dividers ancho completo */
+        /* #tbActions: grid 2 col — botones y combos de a 2, dividers/labels ancho completo */
         @media (max-width:768px){
             #tbActions{display:grid!important;grid-template-columns:1fr 1fr;gap:5px!important;padding:0!important;overflow-y:auto;align-items:start;}
             /* Botones — 2 por fila, tamaño uniforme y compacto */
@@ -1956,9 +1956,16 @@ body.alta-visibilidad select{
                 justify-content:center;gap:4px;box-sizing:border-box;
                 white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;margin:0!important;
             }
-            /* Combos, inputs, selects, dividers y secciones — ancho completo (2 columnas) */
-            #tbActions > .search-combo,#tbActions > input,#tbActions > select,
-            #tbActions > hr,#tbActions > .sm-divider,#tbActions > div,
+            /* Search-combos: 2 por fila también, compactos */
+            #tbActions > .search-combo{width:100%!important;box-sizing:border-box;margin:0!important;}
+            #tbActions > .search-combo .search-combo-input{
+                min-height:30px!important;height:30px!important;
+                font-size:11px!important;padding:3px 8px!important;
+            }
+            /* Solo dividers, inputs sueltos, labels de sección y placeholder — ancho completo */
+            #tbActions > input,#tbActions > select,
+            #tbActions > hr,#tbActions > .sm-divider,
+            #tbActions > div:not(.search-combo),
             #tbActions > [data-placeholder]{grid-column:1 / -1;width:100%!important;box-sizing:border-box;margin:0!important;}
             #tbActions hr,#tbActions .sm-divider{height:1px;background:var(--border);border:none;margin:3px 0!important;}
         }
