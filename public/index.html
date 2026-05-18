@@ -16637,7 +16637,9 @@ PAGES.mapa=function(){
   window._mapaAutoUpdateEnabled=_autoOn;
   const autoToggle='<label class="map-btn" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer;user-select:none" title="Auto-actualizar el mapa cada 5 minutos (sin mover la cámara)"><input type="checkbox" id="mapaAutoUpdate" '+(_autoOn?'checked':'')+' onchange="_mapaToggleAutoUpdate(this)" style="margin:0"><span style="font-size:12px">Auto</span></label>';
   const _panelMenuIcon='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
-  _sfpDestroy();
+  // Eliminar SFP del mapa (Antigravity) — limpieza forzada por si _sfpActiveId era null
+  _sfpActiveId='mapa';_sfpDestroy();
+  ['sfpTabmapa','sfpPanelmapa','sfpOverlaymapa'].forEach(function(id){var el=document.getElementById(id);if(el)el.remove();});
   if(esDelivery){
     // Delivery: Ruta óptima + Turno + Zona en el submenú lateral
     const turnoBtn='<button class="btn '+(turnoActivo?'btn-danger':'btn-success')+'" onclick="_toggleTurno()">'+(turnoActivo?'⏹ Finalizar turno':'▶ Iniciar turno')+'</button>';
