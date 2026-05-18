@@ -2004,6 +2004,7 @@ body.alta-visibilidad select{
             function _smOpen(){
                 const p=_smPanel(),o=_smOverlay();
                 if(!p||!o)return;
+                try{if(typeof _smBuildNav==='function')_smBuildNav();}catch(_){}
                 _ensurePlaceholder();
                 p.classList.add('open');o.classList.add('show');
                 _smRestartTimer();
@@ -5638,9 +5639,11 @@ function _runPageWithSpinner(fn,page){
       '.sc .sval{font-size:1.9rem!important;font-weight:900!important;letter-spacing:-1px!important;line-height:1!important;}',
       '.sc .slabel{font-size:10px!important;text-transform:uppercase!important;letter-spacing:.07em!important;color:var(--text2)!important;margin-top:3px!important;}',
       '.sc .ssub{font-size:11px!important;color:var(--text3)!important;margin-top:1px!important;}',
-    /* 3 — Topbar/header: evitar superposición logo con título en < 480px */
-      '.topbar{flex-wrap:wrap!important;gap:6px!important;padding:8px 12px!important;}',
-      '.tbtitle{font-size:13px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:calc(100vw - 130px)!important;}',
+    /* 3 — Topbar/header: iconos fijos a la derecha, título recorta con ellipsis */
+      '.topbar{flex-wrap:nowrap!important;gap:4px!important;padding:6px 12px!important;}',
+      '#tbGlobalBtns{flex-shrink:0!important;display:flex!important;align-items:center!important;gap:4px!important;margin-left:auto!important;}',
+      '.tbtitle,#tbTitle{flex:1 1 0!important;min-width:0!important;overflow:hidden!important;}',
+      '#tbTitleText{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;display:block!important;max-width:100%!important;}',
       '.tbactions{flex-wrap:wrap!important;gap:4px!important;max-width:100%!important;}',
       '.tbactions .btn{padding:5px 8px!important;font-size:10px!important;}',
     '}'
