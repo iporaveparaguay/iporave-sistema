@@ -7477,13 +7477,17 @@ PAGES.orders=PAGES.mispedidos=function(){
     '<button class="btn btn-secondary" onclick="_setFechaRapida(\'mes\')">Este mes</button>'+
     '<button class="btn btn-secondary" onclick="clearF()">Limpiar filtros</button>';
   $('ca').innerHTML='<div id="oContainer"></div>';
-  // bgWrap (búsqueda global) va al inicio del submenú, antes de los filtros
+  // bgWrap: solo moverlo al submenú en mobile; en PC se queda en el topbar (.fbar)
   var wrap=document.getElementById('bgWrap');
   var tbA=$('tbActions');
-  if(wrap&&tbA&&wrap.parentNode!==tbA){
-    wrap.style.cssText+='width:100%;max-width:100%;box-sizing:border-box;';
-    tbA.insertBefore(wrap,tbA.firstChild);
-  }else if(!wrap){_bgEnsureUI&&_bgEnsureUI();}
+  if(window.innerWidth<=768){
+    if(wrap&&tbA&&wrap.parentNode!==tbA){
+      wrap.style.cssText+='width:100%;max-width:100%;box-sizing:border-box;';
+      tbA.insertBefore(wrap,tbA.firstChild);
+    }else if(!wrap){_bgEnsureUI&&_bgEnsureUI();}
+  }else{
+    if(!wrap){_bgEnsureUI&&_bgEnsureUI();}
+  }
   // Restaurar fechas persistidas en variables globales
   if(window._oFechaDesde){var ed=$('fDesde');if(ed)ed.value=window._oFechaDesde;}
   if(window._oFechaHasta){var eh=$('fHasta');if(eh)eh.value=window._oFechaHasta;}
@@ -16674,8 +16678,8 @@ PAGES.mapa=function(){
       '<button id="mapaAutoPau" class="map-btn'+(window._mapaAutoUpdateEnabled===false?' active':'')+'" onclick="window._mapaAutoUpdateEnabled=false;localStorage.setItem(\'mapa_auto\',\'0\');var a=document.getElementById(\'mapaAutoAct\'),b=document.getElementById(\'mapaAutoPau\');if(b)b.classList.add(\'active\');if(a)a.classList.remove(\'active\')">Auto Pausado</button>'+
       '<hr class="sm-divider">'+
       '<div style="display:flex;gap:5px;grid-column:1/-1;width:100%;box-sizing:border-box;min-width:0;">'+
-        '<div id="mapaZonaCombo" class="search-combo" style="flex:1;min-width:0;height:38px;overflow:hidden;"></div>'+
-        '<div id="mapaVendCombo" class="search-combo" style="flex:1;min-width:0;height:38px;overflow:hidden;"></div>'+
+        '<div id="mapaZonaCombo" class="search-combo" style="flex:1;min-width:0;"></div>'+
+        '<div id="mapaVendCombo" class="search-combo" style="flex:1;min-width:0;"></div>'+
       '</div>'+
       '<hr class="sm-divider">'+
       '<div id="mapaContadores" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;box-sizing:border-box;align-items:start;grid-column:1/-1"></div>';
