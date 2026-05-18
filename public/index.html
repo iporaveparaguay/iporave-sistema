@@ -269,7 +269,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 .dropdown-premium:hover{border-color:var(--accent);background-image:linear-gradient(180deg,var(--bg3),var(--bg2)),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f5a623' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");}
 .dropdown-premium:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.2);}
 :root[data-theme="light"] .dropdown-premium,:root[data-theme="light-soft"] .dropdown-premium{background-image:linear-gradient(180deg,var(--bg2),var(--bg3)),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");}
-.map-btn{background:var(--bg2);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.30);min-height:36px;display:inline-flex;align-items:center;gap:6px;transition:background .15s,border-color .15s,box-shadow .15s;white-space:nowrap;touch-action:manipulation;}
+.map-btn{background:var(--bg2);border:1px solid var(--accent);color:var(--text);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.30);min-height:36px;display:inline-flex;align-items:center;gap:6px;transition:background .15s,border-color .15s,box-shadow .15s;white-space:nowrap;touch-action:manipulation;}
 .map-btn:hover{background:var(--bg3);border-color:var(--accent);box-shadow:0 4px 16px rgba(0,0,0,.35);}
 .map-btn:active{background:var(--bg4);}
 .map-btn.active{background:var(--blue);border-color:var(--blue2);color:#fff;}
@@ -7463,13 +7463,15 @@ PAGES.orders=PAGES.mispedidos=function(){
   $('tbActions').innerHTML=
     (canCreate?'<button id="btnNuevoPedido" class="btn btn-primary" onclick="openNewOrder()">+ Nuevo pedido</button>':'')+
     '<hr class="sm-divider">'+
-    '<select id="fEst" onchange="filtrarReset()"><option value="">Todos los estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
-    '<select id="fZona" onchange="filtrarReset()"><option value="">Todas las zonas</option>'+_zonasCache.map(z=>'<option value="'+z.id+'">'+escHtml(z.nombre||'')+'</option>').join('')+'</select>'+
-    '<select id="fProv" onchange="filtrarReset()"><option value="">Todos los proveedores</option>'+[...new Set(getVisibleOrders().map(o=>o.proveedor).filter(Boolean))].map(p=>'<option value="'+escAttr(p)+'">'+escHtml(p)+'</option>').join('')+'</select>'+
+    '<select id="fEst" onchange="filtrarReset()" style="background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;cursor:pointer;width:100%"><option value="">Todos los Estados</option>'+ESTADOS.map(e=>'<option>'+e+'</option>').join('')+'</select>'+
+    '<select id="fZona" onchange="filtrarReset()" style="background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;cursor:pointer;width:100%"><option value="">Todas las Zonas</option>'+_zonasCache.map(z=>'<option value="'+z.id+'">'+escHtml(z.nombre||'')+'</option>').join('')+'</select>'+
+    '<select id="fProv" onchange="filtrarReset()" style="background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;cursor:pointer;width:100%"><option value="">Todos los Proveedores</option>'+[...new Set(getVisibleOrders().map(o=>o.proveedor).filter(Boolean))].map(p=>'<option value="'+escAttr(p)+'">'+escHtml(p)+'</option>').join('')+'</select>'+
+    (['admin','superadmin'].includes(CU.rol)?'<select id="fDrop" onchange="window._filtroDropshipperId=this.value;filtrarReset()" style="background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;cursor:pointer;width:100%"><option value="">Todos los Dropshippers</option>'+_usersCache.filter(function(u){return u.rol==='dropshipper';}).map(function(u){return '<option value="'+u.id+'">'+escHtml(u.nombre||u.email||'')+'</option>';}).join('')+'</select>':'')+
+    (['admin','superadmin'].includes(CU.rol)?'<select id="fVend" onchange="window._filtroVendedorId=this.value;filtrarReset()" style="background:var(--bg3);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;cursor:pointer;width:100%"><option value="">Todos los Vendedores</option>'+_usersCache.filter(function(u){return u.rol==='vendedor';}).map(function(u){return '<option value="'+u.id+'">'+escHtml(u.nombre||u.email||'')+'</option>';}).join('')+'</select>':'')+
     '<hr class="sm-divider">'+
-    '<input type="date" id="fFecha" onchange="filtrarReset()" title="Fecha exacta">'+
-    '<input type="date" id="fDesde" oninput="_syncFechaGlobal()" onchange="filtrarReset()" title="Desde (rango inicio)">'+
-    '<input type="date" id="fHasta" oninput="_syncFechaGlobal()" onchange="filtrarReset()" title="Hasta (rango fin)">'+
+    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)">Hoy <input type="date" id="fFecha" onchange="filtrarReset()" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
+    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)">Desde <input type="date" id="fDesde" oninput="_syncFechaGlobal()" onchange="filtrarReset()" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
+    '<label style="font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text2)">Hasta <input type="date" id="fHasta" oninput="_syncFechaGlobal()" onchange="filtrarReset()" style="background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;flex:1" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
     '<button class="btn btn-secondary" onclick="_setFechaRapida(\'hoy\')">Hoy</button>'+
     '<button class="btn btn-secondary" onclick="_setFechaRapida(\'semana\')">Esta semana</button>'+
     '<button class="btn btn-secondary" onclick="_setFechaRapida(\'mes\')">Este mes</button>'+
@@ -9710,16 +9712,16 @@ async function _guardarConfigDelivery(userId){
 PAGES.boletas=function(){
   const hoy=today();
   const primerDia=hoy.slice(0,8)+'01';
-  const inp='style="background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;min-width:130px" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"';
-  $('ca').innerHTML='<div class="tc"><div class="th2"><span class="tt">Boletas IVA</span></div>'+
-  '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px;margin-bottom:12px;padding-top:6px;padding-left:16px">'+
-  '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Desde <input type="date" id="bFD" value="'+primerDia+'" onchange="filtrarBoletas()" '+inp+'></label>'+
-  '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Hasta <input type="date" id="bFH" value="'+hoy+'" onchange="filtrarBoletas()" '+inp+'></label>'+
-  '<select id="bEst" onchange="filtrarBoletas()" '+inp+'>'+
-  '<option value="">Todos los estados</option><option>Entregado</option><option>En Ruta</option><option>Despachado</option><option>Nuevo</option><option>Cancelado</option>'+
-  '</select>'+
-  '</div>'+
-  '<div id="boletasBody"></div></div>';
+  const inpStyle='background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;width:100%';
+  $('tbActions').innerHTML=
+    '<div style="display:flex;gap:5px;grid-column:1/-1;width:100%;box-sizing:border-box;">'+
+      '<label style="font-size:12px;display:flex;align-items:center;gap:4px;flex:1;min-width:0;color:var(--text2)">Desde <input type="date" id="bFD" value="'+primerDia+'" onchange="filtrarBoletas()" style="'+inpStyle+'" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
+      '<label style="font-size:12px;display:flex;align-items:center;gap:4px;flex:1;min-width:0;color:var(--text2)">Hasta <input type="date" id="bFH" value="'+hoy+'" onchange="filtrarBoletas()" style="'+inpStyle+'" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"></label>'+
+    '</div>'+
+    '<select id="bEst" onchange="filtrarBoletas()" style="'+inpStyle+'">'+
+      '<option value="">Todos los Estados</option><option>Entregado</option><option>En Ruta</option><option>Despachado</option><option>Nuevo</option><option>Cancelado</option>'+
+    '</select>';
+  $('ca').innerHTML='<div class="tc"><div id="boletasBody"></div></div>';
   filtrarBoletas();
 };
 
@@ -12417,9 +12419,11 @@ PAGES.catalogo=function(q=''){
     '<hr class="sm-divider">'+
     '<input type="text" id="catBuscar" placeholder="Buscar producto por nombre o código…" value="'+escAttr(q)+'" oninput="_filtroProdGrid(this.value)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
     (rolLabel?'<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:5px 10px">💡 <b style="color:var(--accent)">'+rolLabel+'</b></div>':'')+
-    (cats.length?'<select onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.cat=this.value||null;PAGES.catalogo()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;color:var(--text);font-size:12px"><option value="">Todas las categorías</option>'+cats.map(c=>'<option value="'+escAttr(c)+'" '+(f.cat===c?'selected':'')+'>'+escHtml(c)+'</option>').join('')+'</select>':'')+
-    '<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px"><input type="checkbox" '+(f.soloStock?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloStock=this.checked||null;PAGES.catalogo()"> Con stock</label>'+
-    (esAdmin?'<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px"><input type="checkbox" '+(f.soloTienda?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloTienda=this.checked||null;PAGES.catalogo()"> En tienda pública</label>':'')+
+    (cats.length?'<select onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.cat=this.value||null;PAGES.catalogo()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;color:var(--text);font-size:12px"><option value="">Todas las Categorías</option>'+cats.map(c=>'<option value="'+escAttr(c)+'" '+(f.cat===c?'selected':'')+'>'+escHtml(c)+'</option>').join('')+'</select>':'')+
+    '<div style="display:flex;gap:5px;grid-column:1/-1;width:100%;box-sizing:border-box;">'+
+      '<label style="display:flex;align-items:center;justify-content:space-between;gap:5px;font-size:11px;cursor:pointer;background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;flex:1;min-width:0"><span>Con Stock</span><input type="checkbox" '+(f.soloStock?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloStock=this.checked||null;PAGES.catalogo()"></label>'+
+      (esAdmin?'<label style="display:flex;align-items:center;justify-content:space-between;gap:5px;font-size:11px;cursor:pointer;background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;flex:1;min-width:0"><span>En Tienda Pública</span><input type="checkbox" '+(f.soloTienda?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloTienda=this.checked||null;PAGES.catalogo()"></label>':'')+
+    '</div>'+
     (Object.values(f).some(Boolean)?'<button class="filterBtn" onclick="window._catFiltros={};PAGES.catalogo()" style="background:linear-gradient(180deg,#dc2626 0%,#991b1b 100%);color:#fff;border-color:#991b1b">✕ Limpiar filtros</button>':'')+
     '<span style="font-size:11px;color:var(--text3)">'+lista.length+' producto(s)</span>';
   $('ca').innerHTML='<div style="max-width:1100px">'+
@@ -16658,19 +16662,17 @@ PAGES.mapa=function(){
     const turnoBtn='<button class="btn '+(turnoActivo?'btn-danger':'btn-success')+'" onclick="_toggleTurno()">'+(turnoActivo?'⏹ Finalizar turno':'▶ Iniciar turno')+'</button>';
     $('tbActions').innerHTML=rutaBtn+turnoBtn+zonaSel+'<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
   } else if(esAdmin){
-    // Admin: zona + usuarios en flex-row (lado a lado), luego filtros y auto-update
+    // Admin: Auto Activo/Pausado primero, luego combos zona+usuarios, luego mapaContadores
     $('tbActions').innerHTML=
-      '<div style="display:flex;gap:5px;grid-column:1/-1;width:100%;box-sizing:border-box;min-width:0;">'+
-        '<div id="mapaZonaCombo" class="search-combo" style="flex:1;min-width:0;"></div>'+
-        '<div id="mapaVendCombo" class="search-combo" style="flex:1;min-width:0;"></div>'+
-      '</div>'+
-      '<hr class="sm-divider">'+
-      '<button id="mapaFiltPines" class="map-btn'+(window._mapaShowDlvs?'':' active')+'" onclick="window._mapaShowDlvs=false;_mapaCargar();var a=document.getElementById(\'mapaFiltPines\'),b=document.getElementById(\'mapaFiltDlv\');if(a)a.classList.add(\'active\');if(b)b.classList.remove(\'active\')">Todos los pines</button>'+
-      '<button id="mapaFiltDlv" class="map-btn'+(window._mapaShowDlvs?' active':'')+'" onclick="window._mapaShowDlvs=true;_mapaCargar();var a=document.getElementById(\'mapaFiltPines\'),b=document.getElementById(\'mapaFiltDlv\');if(b)b.classList.add(\'active\');if(a)a.classList.remove(\'active\')">Solo deliveries</button>'+
-      '<hr class="sm-divider">'+
       '<button id="mapaAutoAct" class="map-btn'+(window._mapaAutoUpdateEnabled!==false?' active':'')+'" onclick="window._mapaAutoUpdateEnabled=true;localStorage.setItem(\'mapa_auto\',\'1\');var a=document.getElementById(\'mapaAutoAct\'),b=document.getElementById(\'mapaAutoPau\');if(a)a.classList.add(\'active\');if(b)b.classList.remove(\'active\')">Auto Activo</button>'+
       '<button id="mapaAutoPau" class="map-btn'+(window._mapaAutoUpdateEnabled===false?' active':'')+'" onclick="window._mapaAutoUpdateEnabled=false;localStorage.setItem(\'mapa_auto\',\'0\');var a=document.getElementById(\'mapaAutoAct\'),b=document.getElementById(\'mapaAutoPau\');if(b)b.classList.add(\'active\');if(a)a.classList.remove(\'active\')">Auto Pausado</button>'+
-      '<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
+      '<hr class="sm-divider">'+
+      '<div style="display:flex;gap:5px;grid-column:1/-1;width:100%;box-sizing:border-box;min-width:0;">'+
+        '<div id="mapaZonaCombo" class="search-combo" style="flex:1;min-width:0;min-height:38px;"></div>'+
+        '<div id="mapaVendCombo" class="search-combo" style="flex:1;min-width:0;min-height:38px;"></div>'+
+      '</div>'+
+      '<hr class="sm-divider">'+
+      '<div id="mapaContadores" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;box-sizing:border-box;align-items:start;grid-column:1/-1"></div>';
   } else {
     // Vendor/Drop/Prov: 3 pills directamente (Pendiente/En Ruta/Entregado)
     $('tbActions').innerHTML='<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
@@ -17379,12 +17381,11 @@ PAGES.pagos=function(){
       const f=window._pagosFiltro;
       const chip=(id,label)=>'<button class="pagosChip'+(f.rol===id?' active':'')+'" onclick="_setPagosRolFiltro(\''+id+'\')">'+label+'</button>';
 
+      $('tbActions').innerHTML=
+        '<button class="btn btn-secondary btn-sm" onclick="exportarTodosSaldosCSV()" style="display:inline-flex;align-items:center;gap:6px">'+SVG.arrowDown+'<span>Exportar saldos a CSV</span></button>'+
+        '<button class="btn btn-secondary btn-sm" onclick="imprimirBalanceGeneral()">'+SVG.printer+' Imprimir balance general</button>';
       $('ca').innerHTML=
         '<div class="stitle" style="margin-top:0;display:inline-flex;align-items:center;gap:6px">'+SVG.dollar+'<span>Pagos del sistema — '+mes+'</span></div>'+
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
-          '<button class="btn btn-secondary btn-sm" onclick="exportarTodosSaldosCSV()" style="display:inline-flex;align-items:center;gap:6px">'+SVG.arrowDown+'<span>Exportar saldos a CSV</span></button>'+
-          '<button class="btn btn-secondary btn-sm" onclick="imprimirBalanceGeneral()">'+SVG.printer+' Imprimir balance general</button>'+
-        '</div>'+
         '<div class="stitle" style="margin-top:14px;margin-bottom:6px;font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Estado financiero global — '+mes+'</div>'+
         '<div class="sgrid" style="margin-bottom:6px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">'+
           '<div class="sc gr"><div class="slabel">Recaudado</div><div class="sval">'+fmt(_gTotalRecaudado)+'</div></div>'+
@@ -18269,9 +18270,9 @@ PAGES.clientes_zonas = function(){
   });
   const zonas = Object.entries(clientesPorZona).sort((a,b) => b[1].size - a[1].size);
   let html = '<div style="padding:18px">';
-  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">';
+  $('tbActions').innerHTML='<button class="btn btn-secondary" onclick="exportarClientesZonasCSV()">'+SVG.fileSpreadsheet+' Exportar CSV</button>';
+  html += '<div style="margin-bottom:18px">';
   html += '<h2 style="margin:0;font-size:20px;font-weight:900;display:inline-flex;align-items:center;gap:8px">'+SVG.users+'<span>Base de Datos de Clientes</span></h2>';
-  html += '<button class="btn btn-secondary" onclick="exportarClientesZonasCSV()">'+SVG.fileSpreadsheet+' Exportar CSV</button>';
   html += '</div>';
   html += '<input type="search" id="clientesBuscar" placeholder="Buscar cliente..." class="pagosSearchInput" style="margin-bottom:14px;width:100%" oninput="_filtrarClientesZonas(this.value)">';
   html += '<div id="clientesZonasContainer">';
