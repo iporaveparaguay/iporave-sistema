@@ -1916,17 +1916,17 @@ body.alta-visibilidad select{
   <div class="main" id="mainContent">
     
     <!-- SUBMENÚ DE HERRAMIENTAS (Izquierdo) -->
-    <div id="subMenuActions" style="position:fixed; left:-280px; top:60px; bottom:0; width:280px; background:var(--bg2); border-right:1px solid var(--border); z-index:400; transition:left 0.3s; display:flex; flex-direction:column; box-shadow:4px 0 15px rgba(0,0,0,0.3);">
-        <div style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-            <strong style="font-size:14px; text-transform:uppercase; letter-spacing:1px; color:var(--text2);">Herramientas</strong>
-            <button onclick="toggleSubMenuActions()" class="topbar-icon-btn" style="width:28px; height:28px; margin:0;">✕</button>
+    <div id="subMenuActions" style="position:fixed; left:-240px; top:60px; width:240px; height:max-content; max-height:calc(100vh - 80px); background:var(--bg2); border-right:1px solid var(--border); border-bottom:1px solid var(--border); border-radius:0 0 12px 0; z-index:400; transition:left 0.3s; display:flex; flex-direction:column; box-shadow:4px 4px 15px rgba(0,0,0,0.3);">
+        <div style="padding:10px 14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+            <strong style="font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--text2);">Herramientas</strong>
+            <button onclick="toggleSubMenuActions()" class="topbar-icon-btn" style="width:26px; height:26px; margin:0;">✕</button>
         </div>
-        <div class="tbactions" id="tbActions" style="padding:16px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; flex-wrap:nowrap; align-items:stretch;">
+        <div class="tbactions" id="tbActions" style="padding:14px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; flex-wrap:nowrap; align-items:stretch;">
            <!-- Los botones de la pagina se inyectan acá -->
         </div>
         <!-- Pestaña Naranja (siempre visible en el borde izquierdo) -->
-        <div id="subMenuToggleTab" onclick="toggleSubMenuActions()" style="position:absolute; right:-26px; top:20px; width:26px; height:50px; background:var(--accent); border-radius:0 8px 8px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#000; box-shadow:3px 0 8px rgba(0,0,0,0.3);">
-            <svg id="subMenuTabIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <div id="subMenuToggleTab" onclick="toggleSubMenuActions()" style="position:absolute; right:-22px; top:40px; width:22px; height:38px; background:var(--accent); border-radius:0 6px 6px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#000; box-shadow:3px 0 6px rgba(0,0,0,0.3);">
+            <svg id="subMenuTabIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
     </div>
     <script>
@@ -1934,7 +1934,7 @@ body.alta-visibilidad select{
             const panel = document.getElementById('subMenuActions');
             const icon = document.getElementById('subMenuTabIcon');
             if(panel.style.left === '0px') {
-                panel.style.left = '-280px';
+                panel.style.left = '-240px';
                 icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
             } else {
                 panel.style.left = '0px';
@@ -1946,7 +1946,7 @@ body.alta-visibilidad select{
             if(tb) {
                 tb.addEventListener('click', (e) => {
                     if(e.target.closest('button') || e.target.closest('.etiq-chip') || e.target.closest('.map-btn') || e.target.closest('.search-combo-list li')) {
-                        document.getElementById('subMenuActions').style.left = '-280px';
+                        document.getElementById('subMenuActions').style.left = '-240px';
                         document.getElementById('subMenuTabIcon').innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
                     }
                 });
