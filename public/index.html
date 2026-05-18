@@ -2011,13 +2011,11 @@ body.alta-visibilidad select{
                 }
             }
 
-            // Drag vertical de la pestaña — el usuario puede moverla si molesta
+            // Drag vertical de la pestaña — solo dura mientras estás en la página
+            // Al recargar, navegar o reabrir, vuelve al centro (top:50vh por CSS)
             function _smInitDrag(){
                 const tab=_smTab();if(!tab)return;
                 let startY=0,startTop=0,dragging=false,moved=false;
-                const TAB_KEY='subMenuTabTop';
-                const saved=localStorage.getItem(TAB_KEY);
-                if(saved){tab.style.top=saved;tab.style.transform='translateY(-50%)';}
                 function _down(y){startY=y;startTop=tab.getBoundingClientRect().top+tab.offsetHeight/2;dragging=true;moved=false;tab.classList.add('dragging');}
                 function _move(y){
                     if(!dragging)return;
@@ -2030,7 +2028,6 @@ body.alta-visibilidad select{
                     if(!dragging)return;
                     dragging=false;tab.classList.remove('dragging');
                     if(moved){
-                        localStorage.setItem(TAB_KEY,tab.style.top);
                         if(e&&e.preventDefault)e.preventDefault();
                     }else{
                         toggleSubMenuActions();
@@ -2043,6 +2040,11 @@ body.alta-visibilidad select{
                 document.addEventListener('touchmove',e=>{if(dragging&&e.touches.length===1)_move(e.touches[0].clientY);},{passive:true});
                 document.addEventListener('touchend',_up);
             }
+            // Resetear posición de la pestaña al centro cuando se cambia de página
+            window._smResetTabPosition=function(){
+                const tab=document.getElementById('subMenuToggleTab');
+                if(tab){tab.style.top='';}// vuelve a usar top:50vh del CSS
+            };
 
             document.addEventListener('DOMContentLoaded',()=>{
                 _smInitDrag();
@@ -2725,12 +2727,13 @@ const DL = {
       console.warn('saveOrder bloqueado: delivery no puede revertir Entregado');
       return;
     }
-    // Si delivery intenta poner "Entregado" directamente sin pasar por confirmDlv, bloquear
+    // Si delivery intenta poner "Entregado" directamente sin pasar por confirmDlv, bloquear y avisar al usuario
     if(o.estado==='Entregado'&&CU?.rol==='delivery'){
       const _sinFoto=!o.fotoEntrega;
       const _sinMetodo=!o.metodoCobro;
       if(_sinFoto||_sinMetodo){
-        console.warn('saveOrder: Entregado requiere foto y método de cobro');
+        const _falta=[_sinFoto?'foto':null,_sinMetodo?'método de cobro':null].filter(Boolean).join(' y ');
+        pushNotif('No se puede marcar como Entregado: falta '+_falta+'.','e');
         return;
       }
     }
@@ -5443,6 +5446,8 @@ function nav(page){
   }
   // Cerrar coachmark Onboard activo al cambiar de página (sin marcarlo como visto)
   try{ if(typeof Onboard !== 'undefined' && Onboard._closeCurrent) Onboard._closeCurrent(); }catch(_){}
+  // Resetear la pestaña del submenú al centro al cambiar de página
+  try{ if(typeof window._smResetTabPosition === 'function') window._smResetTabPosition(); }catch(_){}
   // Limpiar modales stale al navegar (prevenir modales superpuestos)
   try{
     const mA=document.getElementById('mA');
@@ -8264,6 +8269,8 @@ async function saveEditOrder(id){
 function dlvModal(id){
   const o=getOrders().find(x=>x.id===id);if(!o)return;
   if(o.estado==='Entregado'){pushNotif('Este pedido ya fue entregado y no se puede modificar','e');return;}
+  // BUG-A2: limpiar foto del pedido anterior ANTES de abrir el modal (evita que la foto contamine entre pedidos)
+  _fotoBase64='';
   openA('Actualizar entrega #'+id,
     '<div id="dlvAlert"></div>'+
     '<div class="gpsw"><div class="gpss"><div class="gpsd" id="gpsDot"></div><span style="margin-left:5px" id="gpsText">Obteniendo GPS...</span></div><div class="gpsc" id="gpsCrd">—</div></div>'+
@@ -8285,7 +8292,6 @@ function dlvModal(id){
     '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
     '<button class="btn btn-success" onclick="confirmDlv('+id+')">Confirmar</button>'
   );
-  _fotoBase64='';
   startGPS();toggleDlvF();
 }
 function toggleDlvF(){
@@ -12337,18 +12343,18 @@ PAGES.catalogo=function(q=''){
   const esAdmin=['admin','superadmin'].includes(CU.rol);
   const puedeEditar=CU.rol!=='delivery'&&CU.rol!=='cliente';
   const puedeVender=['vendedor','dropshipper','proveedor'].includes(CU.rol);
-  // Botones topbar
-  let acciones='';
-  if(puedeEditar)acciones+='<button id="btnNuevoProducto" class="btn btn-primary btn-sm" onclick="openNuevoProducto()">+ Nuevo</button>';
-  if(esAdmin){
-    acciones+='<button class="btn btn-secondary btn-sm" onclick="importarCatalogoCSV()">⬆ Importar</button>';
-    acciones+='<button class="btn btn-secondary btn-sm" onclick="exportarCatalogoCSV()">'+SVG.arrowDown+' Exportar</button>';
-    acciones+='<button class="btn btn-sm" onclick="verFeedMetaAds()" style="background:#1877f2;color:#fff;border:none;border-radius:6px;min-height:44px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600;touch-action:manipulation">'+SVG.megaphone+' Meta Ads</button>';
-    acciones='<button class="btn btn-secondary btn-sm" onclick="PAGES.catalogo_todos()">'+SVG.listIcon+' Todos</button>'+acciones;
-  }
-  if(CU.rol!=='delivery')acciones+='<button class="btn btn-secondary btn-sm" onclick="abrirScannerCatalogo()">'+SVG.camera+' Escanear</button>';
-  if(puedeEditar)acciones+='<button class="btn btn-sm" onclick="copiarLinkCatalogo()" style="background:var(--cyan,#06b6d4);color:#fff;border:none;border-radius:6px;min-height:44px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600;touch-action:manipulation">'+SVG.link+' Mi link</button>';
-  $('tbActions').innerHTML=acciones;
+  // Botones topbar agrupados por función, separados por <hr class="sm-divider"> en el submenú
+  const grupoNav = esAdmin ? '<button class="btn btn-secondary btn-sm" onclick="PAGES.catalogo_todos()">'+SVG.listIcon+' Todos</button>' : '';
+  const grupoCrear = puedeEditar ? '<button id="btnNuevoProducto" class="btn btn-primary btn-sm" onclick="openNuevoProducto()">+ Nuevo</button>' : '';
+  const grupoAdmin = esAdmin
+    ? '<button class="btn btn-secondary btn-sm" onclick="importarCatalogoCSV()">⬆ Importar</button>'
+      +'<button class="btn btn-secondary btn-sm" onclick="exportarCatalogoCSV()">'+SVG.arrowDown+' Exportar</button>'
+      +'<button class="btn btn-sm" onclick="verFeedMetaAds()" style="background:#1877f2;color:#fff;border:none;border-radius:6px;min-height:44px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600;touch-action:manipulation">'+SVG.megaphone+' Meta Ads</button>'
+    : '';
+  const grupoHerramientas = (CU.rol!=='delivery' ? '<button class="btn btn-secondary btn-sm" onclick="abrirScannerCatalogo()">'+SVG.camera+' Escanear</button>' : '')
+    + (puedeEditar ? '<button class="btn btn-sm" onclick="copiarLinkCatalogo()" style="background:var(--cyan,#06b6d4);color:#fff;border:none;border-radius:6px;min-height:44px;padding:5px 11px;cursor:pointer;font-size:12px;font-weight:600;touch-action:manipulation">'+SVG.link+' Mi link</button>' : '');
+  const grupos = [grupoNav, grupoCrear, grupoAdmin, grupoHerramientas].filter(g => g);
+  $('tbActions').innerHTML = grupos.join('<hr class="sm-divider">');
 
   const base=CU.rol==='superadmin'?_catalogoCache:_catalogoCache.filter(p=>(p.owner_id||p.owner_user_id)===CU.id||p._isShared);
   _catalogoCache.forEach(p=>{if(!p.owner_id){p.owner_id=1;p.owner_nombre='Administrador';}});
