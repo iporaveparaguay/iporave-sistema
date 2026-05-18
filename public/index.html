@@ -16540,8 +16540,9 @@ PAGES.mapa=function(){
   const _panelMenuIcon='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
   _sfpDestroy();
   if(esDelivery){
-    // Delivery: topbar vacío — solo los 4 iconos globales (🔔🌙🎓🔄)
-    $('tbActions').innerHTML='';
+    // Delivery: Ruta óptima + Turno + Zona en el submenú lateral
+    const turnoBtn='<button class="btn '+(turnoActivo?'btn-danger':'btn-success')+'" onclick="_toggleTurno()">'+(turnoActivo?'⏹ Finalizar turno':'▶ Iniciar turno')+'</button>';
+    $('tbActions').innerHTML=rutaBtn+turnoBtn+zonaSel+'<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
   } else if(esAdmin){
     // Admin: zona + vendor + 4 pills (filtros). Resto en sfp.
     $('tbActions').innerHTML=zonaSel+vendSel+'<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
