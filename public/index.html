@@ -5111,7 +5111,6 @@ const NAV_CFG={
     {s:'Configuración',items:[
       {id:'config',l:'Configuración general',ic:'gear'},
       {id:'configuracion_delivery',l:'Config. Delivery',ic:'truck'},
-      {id:'setup',l:'Setup / SQL',ic:'db'},
     ]},
     {s:'Analítica',items:[
       {id:'analitica_admin',l:'Analítica Ecosistema',ic:'chart'},
@@ -14219,7 +14218,10 @@ PAGES.config=function(){
       '<div class="fg"><label>Supabase URL</label><div class="pwd-wrap"><input type="password" id="cfgSuU" value="'+escAttr(cfg.supabaseUrl)+'" placeholder="https://xxxx.supabase.co" autocomplete="off"><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuU\',this)">👁</button></div></div>'+
       '<div class="fg"><label>Supabase Anon Key</label><div class="pwd-wrap"><input type="password" id="cfgSuK" value="'+escAttr(cfg.supabaseKey)+'" placeholder="eyJ..." autocomplete="off"><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgSuK\',this)">👁</button></div></div>'+
       '<div class="fg"><label>Google Maps API Key</label><div class="pwd-wrap"><input type="password" id="cfgGm" value="'+escAttr(cfg.googleMapsKey)+'" placeholder="AIzaSy..." autocomplete="off"><button type="button" class="pwd-eye" onclick="toggleVis(\'cfgGm\',this)">👁</button></div></div>'+
-      '<button class="btn btn-primary" onclick="saveCfgAPIs()">Guardar y reconectar Supabase</button>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">'+
+        '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveCfgAPIs()">Guardar y reconectar</button>'+
+        '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="openSQLModal()">📋 Ver SQL Setup</button>'+
+      '</div>'+
     '</div>'+
     '<div class="lcard2">'+
       '<div class="stitle" style="margin-top:0"><span style="display:inline-flex;align-items:center;gap:6px">'+SVG.chat+'<span>WhatsApp automático</span></span></div>'+
@@ -15049,6 +15051,21 @@ alter publication supabase_realtime add table pedidos;`;
 function copiarSQL(){
   const b=$('sqlBlock');if(!b)return;
   navigator.clipboard.writeText(b.textContent).then(()=>pushNotif('SQL copiado al portapapeles','s')).catch(()=>pushNotif('Seleccioná el texto manualmente','w'));
+}
+function openSQLModal(){
+  if(!CU||CU.rol!=='superadmin'){pushNotif('Solo Superadmin','w');return;}
+  // Captura el HTML que normalmente PAGES.setup renderizaría, sin perder los inputs de config
+  const ca=$('ca');
+  const savedHTML=ca?ca.innerHTML:'';
+  PAGES.setup();
+  const sqlHTML=ca?ca.innerHTML:'';
+  if(ca)ca.innerHTML=savedHTML;
+  openA('SQL / Setup Supabase',sqlHTML,
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cerrar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="initSupabase().then(()=>{closeA();pushNotif(_supaConnected?\'✓ Reconectado a Supabase\':\'✗ Sin conexión Supabase\',_supaConnected?\'s\':\'w\');})">'+SVG.refresh+' Reconectar</button>'+
+    '</div>'
+  );
 }
 
 /* ─── CSV ─── */
