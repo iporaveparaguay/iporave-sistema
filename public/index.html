@@ -5064,7 +5064,7 @@ const NAV_CFG={
       {id:'recaudacion',l:'Mi recaudación',ic:'dollar'},{id:'cupo',l:'Mi cupo y premios',ic:'trophy'},
       {id:'boletas',l:'Mis boletas',ic:'receipt'},
       {id:'catalogo',l:'Catálogo de Productos',ic:'pkg'},
-      {id:'pagos',l:'Mi Liquidación',ic:'dollar'},
+      {id:'liquidacion',l:'Mi Liquidación',ic:'dollar'},
       {id:'mensajes',l:'Mensajes',ic:'chat'},
       {id:'asistente',l:'Asistente IA',ic:'bot'},
     ]},
@@ -5372,7 +5372,7 @@ function nav(page){
     return nav('dashboard');
   }
   // FIX SEC-3: delivery no puede acceder a páginas de admin/finanzas
-  const _paginasProhibidasDelivery=['pagos','balance','liquidacion','superadmin','config','analitica_admin','finanzas'];
+  const _paginasProhibidasDelivery=['pagos','balance','superadmin','config','analitica_admin','finanzas'];
   if(CU&&CU.rol==='delivery'&&_paginasProhibidasDelivery.includes(page)){
     return nav('orders');
   }
@@ -18974,6 +18974,48 @@ function imprimirBalanceGeneral(){
   setTimeout(()=>{ try{ w.focus(); w.print(); }catch(_){ } },500);
 }
 
+// Banner "Nueva versión disponible" — clave para que la PWA del celular se actualice
+function _showUpdateBanner(){
+  if(document.getElementById('_swUpdateBanner')) return;
+  const b=document.createElement('div');
+  b.id='_swUpdateBanner';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(90deg,#f5a623,#ff6b35);color:#fff;padding:12px 16px;text-align:center;z-index:99999;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;justify-content:center;align-items:center;gap:10px;';
+  b.innerHTML='<span>📦 Nueva versión disponible</span>';
+  const btn=document.createElement('button');
+  btn.textContent='Recargar';
+  btn.style.cssText='background:#fff;color:#f5a623;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:13px;';
+  btn.onclick=function(){
+    if(navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({type:'SKIP_WAITING'});
+    setTimeout(()=>window.location.reload(),200);
+  };
+  b.appendChild(btn);
+  document.body.insertBefore(b,document.body.firstChild);
+}
+
+// Detector de actualizaciones del SW — sin esto la PWA no se entera de nuevas versiones
+function _setupSWUpdateDetection(reg){
+  if(!reg) return;
+  // Si ya hay un SW esperando en este momento, mostrar banner inmediatamente
+  if(reg.waiting && navigator.serviceWorker.controller) _showUpdateBanner();
+  // Detectar futuros updates
+  reg.addEventListener('updatefound',()=>{
+    const newSW=reg.installing;
+    if(!newSW) return;
+    newSW.addEventListener('statechange',()=>{
+      if(newSW.state==='installed' && navigator.serviceWorker.controller) _showUpdateBanner();
+    });
+  });
+  // Recargar la página si cambia el controller (otra pestaña activó el nuevo SW)
+  let _swReloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(_swReloaded) return;
+    _swReloaded=true;
+    window.location.reload();
+  });
+  // Chequear updates cada 60 segundos
+  setInterval(()=>{ try{ reg.update(); }catch(_){} },60000);
+}
+
 document.addEventListener('DOMContentLoaded',function(){
   main().then(()=>console.log('Iporãve Connect v7 listo'));
 
@@ -18981,6 +19023,7 @@ document.addEventListener('DOMContentLoaded',function(){
   if('serviceWorker' in navigator && 'PushManager' in window){
     navigator.serviceWorker.register('/sw.js').then(async reg=>{
       console.log('SW registrado:', reg.scope);
+      _setupSWUpdateDetection(reg);
       const token = sessionStorage.getItem('iporave_token');
       if(!token) return;
       const permission = await Notification.requestPermission();
@@ -19001,7 +19044,7 @@ document.addEventListener('DOMContentLoaded',function(){
     }).catch(err=>console.warn('SW error:', err));
   } else if('serviceWorker' in navigator){
     navigator.serviceWorker.register('/sw.js')
-      .then(reg=>console.log('SW registrado:', reg.scope))
+      .then(reg=>{ console.log('SW registrado:', reg.scope); _setupSWUpdateDetection(reg); })
       .catch(err=>console.warn('SW error:', err));
   }
 });
