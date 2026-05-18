@@ -10569,7 +10569,6 @@ PAGES.analitica_prov=function(){
 /* ─── ANALÍTICA VENDEDOR ─── */
 PAGES.analitica_vend=function(periodo){
   if(!periodo)periodo='mes';
-  $('tbActions').innerHTML='<button class="btn btn-secondary btn-sm" onclick="window.print()" style="display:inline-flex;align-items:center;gap:5px">'+SVG.printer+' Imprimir</button>';
   const all=_ordersCache.filter(o=>o.vendedorId===CU.id);
   const hoyStr=today();const now=new Date();
   const semIni=new Date(now);semIni.setDate(semIni.getDate()-6);const semIniStr=_isoDate(semIni);
@@ -10596,13 +10595,14 @@ PAGES.analitica_vend=function(periodo){
   mine.forEach(o=>{const z=_getZonaO(o).nombre||'Sin zona';if(!zonaMap[z])zonaMap[z]=0;zonaMap[z]++;});
   const topZonas=Object.entries(zonaMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const btnC=p=>periodo===p?'filterBtn active':'filterBtn';
+  $('tbActions').innerHTML=
+    '<button class="btn btn-secondary btn-sm" onclick="window.print()" style="display:inline-flex;align-items:center;gap:5px">'+SVG.printer+' Imprimir</button>'+
+    '<hr class="sm-divider">'+
+    '<button class="'+btnC('hoy')+'" onclick="PAGES.analitica_vend(\'hoy\')">Hoy</button>'+
+    '<button class="'+btnC('semana')+'" onclick="PAGES.analitica_vend(\'semana\')">7 días</button>'+
+    '<button class="'+btnC('mes')+'" onclick="PAGES.analitica_vend(\'mes\')">Este mes</button>'+
+    '<button class="'+btnC('todo')+'" onclick="PAGES.analitica_vend(\'todo\')">Todo</button>';
   const html=
-    '<div class="filterBar">'+
-      '<button class="'+btnC('hoy')+'" onclick="PAGES.analitica_vend(\'hoy\')">Hoy</button>'+
-      '<button class="'+btnC('semana')+'" onclick="PAGES.analitica_vend(\'semana\')">7 días</button>'+
-      '<button class="'+btnC('mes')+'" onclick="PAGES.analitica_vend(\'mes\')">Este mes</button>'+
-      '<button class="'+btnC('todo')+'" onclick="PAGES.analitica_vend(\'todo\')">Todo</button>'+
-    '</div>'+
     '<div class="sgrid">'+
       '<div class="sc ac"><div class="slabel">Pedidos</div><div class="sval">'+mine.length+'</div></div>'+
       '<div class="sc gr"><div class="slabel">Entregados</div><div class="sval">'+ent.length+'</div><div class="ssub">'+pctExito+'% éxito</div></div>'+
@@ -12413,20 +12413,16 @@ PAGES.catalogo=function(q=''){
       (puedeEditar?'<button class="btn btn-primary" onclick="openNuevoProducto()">+ Nuevo producto</button>':'')+'</div>';
     return;
   }
+  $('tbActions').innerHTML +=
+    '<hr class="sm-divider">'+
+    '<input type="text" id="catBuscar" placeholder="Buscar producto por nombre o código…" value="'+escAttr(q)+'" oninput="_filtroProdGrid(this.value)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
+    (rolLabel?'<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:5px 10px">💡 <b style="color:var(--accent)">'+rolLabel+'</b></div>':'')+
+    (cats.length?'<select onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.cat=this.value||null;PAGES.catalogo()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;color:var(--text);font-size:12px"><option value="">Todas las categorías</option>'+cats.map(c=>'<option value="'+escAttr(c)+'" '+(f.cat===c?'selected':'')+'>'+escHtml(c)+'</option>').join('')+'</select>':'')+
+    '<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px"><input type="checkbox" '+(f.soloStock?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloStock=this.checked||null;PAGES.catalogo()"> Con stock</label>'+
+    (esAdmin?'<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px"><input type="checkbox" '+(f.soloTienda?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloTienda=this.checked||null;PAGES.catalogo()"> En tienda pública</label>':'')+
+    (Object.values(f).some(Boolean)?'<button class="filterBtn" onclick="window._catFiltros={};PAGES.catalogo()" style="background:linear-gradient(180deg,#dc2626 0%,#991b1b 100%);color:#fff;border-color:#991b1b">✕ Limpiar filtros</button>':'')+
+    '<span style="font-size:11px;color:var(--text3)">'+lista.length+' producto(s)</span>';
   $('ca').innerHTML='<div style="max-width:1100px">'+
-    // Barra búsqueda + filtros
-    '<div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-      '<input type="text" placeholder="Buscar producto por nombre o código…" value="'+escAttr(q)+'" oninput="_filtroProdGrid(this.value)" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
-      (rolLabel?'<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:5px 10px">💡 <b style="color:var(--accent)">'+rolLabel+'</b></div>':'')+
-    '</div>'+
-    // Filtros rápidos tipo Dropi
-    '<div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
-      (cats.length?'<select onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.cat=this.value||null;PAGES.catalogo()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;color:var(--text);font-size:12px"><option value="">Todas las categorías</option>'+cats.map(c=>'<option value="'+escAttr(c)+'" '+(f.cat===c?'selected':'')+'>'+escHtml(c)+'</option>').join('')+'</select>':'')+
-      '<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px"><input type="checkbox" '+(f.soloStock?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloStock=this.checked||null;PAGES.catalogo()"> Con stock</label>'+
-      (esAdmin?'<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px"><input type="checkbox" '+(f.soloTienda?'checked':'')+' onchange="window._catFiltros=window._catFiltros||{};window._catFiltros.soloTienda=this.checked||null;PAGES.catalogo()"> En tienda pública</label>':'')+
-      (Object.values(f).some(Boolean)?'<button class="filterBtn" onclick="window._catFiltros={};PAGES.catalogo()" style="background:linear-gradient(180deg,#dc2626 0%,#991b1b 100%);color:#fff;border-color:#991b1b">✕ Limpiar filtros</button>':'')+
-      '<span style="margin-left:auto;font-size:11px;color:var(--text3)">'+lista.length+' producto(s)</span>'+
-    '</div>'+
     (lista.length?'<div class="prod-grid">'+lista.map(p=>_renderProductoCard(p,puedeEditar&&(p.owner_id||p.owner_user_id)===CU.id,puedeVender)).join('')+'</div>'
       :'<div style="text-align:center;padding:40px;color:var(--text3)">Sin resultados</div>')+
   '</div>';
@@ -12450,7 +12446,10 @@ PAGES.catalogo=function(q=''){
 
 // Vista admin: todos los catálogos agrupados por usuario
 PAGES.catalogo_todos=function(q=''){
-  $('tbActions').innerHTML='<button class="btn btn-secondary" onclick="PAGES.catalogo()">← Mi catálogo</button>';
+  $('tbActions').innerHTML=
+    '<button class="btn btn-secondary" onclick="PAGES.catalogo()">← Mi catálogo</button>'+
+    '<hr class="sm-divider">'+
+    '<input type="text" id="catTodosBuscar" placeholder="Buscar producto…" value="'+escAttr(q)+'" oninput="_dbSearch(\'catTodos\',this.value,v=>PAGES.catalogo_todos(v))" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">';
   $('tbTitleText').textContent='Todos los catálogos';
   _catalogoCache.forEach(p=>{if(!p.owner_id){p.owner_id=1;p.owner_nombre='Administrador';}});
   const filtrados=q?_catalogoCache.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())):_catalogoCache;
@@ -12466,9 +12465,6 @@ PAGES.catalogo_todos=function(q=''){
   const keys=Object.keys(grupos);
   if(!keys.length){$('ca').innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:64px;margin-bottom:16px">🛍️</div><div style="font-size:16px;font-weight:600;margin-bottom:6px">Catálogo vacío</div><div style="font-size:13px;color:var(--text3);margin-bottom:18px">'+(puedeEditar?'Comenzá agregando tu primer producto':'Aún no hay productos disponibles')+'</div>'+(puedeEditar?'<button class="btn btn-primary" onclick="openNuevoProducto()">+ Nuevo producto</button>':'')+'</div>';return;}
   $('ca').innerHTML='<div style="max-width:860px">'+
-    '<div style="margin-bottom:14px">'+
-      '<input type="text" placeholder="Buscar producto…" value="'+escAttr(q)+'" oninput="_dbSearch(\'catTodos\',this.value,v=>PAGES.catalogo_todos(v))" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 13px;color:var(--text);font-size:13px">'+
-    '</div>'+
     keys.map(oid=>{
       const g=grupos[oid];
       return '<div style="margin-bottom:24px">'+
