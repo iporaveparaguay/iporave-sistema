@@ -1945,7 +1945,7 @@ body.alta-visibilidad select{
             #tbActions > .search-combo{width:100%!important;box-sizing:border-box;margin:0!important;}
             #tbActions > .search-combo .search-combo-input{min-height:30px!important;height:30px!important;font-size:11px!important;padding:3px 8px!important;}
             /* Dividers, inputs sueltos, labels y placeholder — ancho completo */
-            #tbActions > input,#tbActions > select,#tbActions > hr,#tbActions > .sm-divider,#tbActions > div:not(.search-combo),#tbActions > [data-placeholder]{grid-column:1/-1!important;width:100%!important;box-sizing:border-box;margin:0!important;}
+            #tbActions > input,#tbActions > select,#tbActions > label,#tbActions > hr,#tbActions > .sm-divider,#tbActions > div:not(.search-combo),#tbActions > [data-placeholder]{grid-column:1/-1!important;width:100%!important;box-sizing:border-box;margin:0!important;}
             #tbActions hr,#tbActions .sm-divider{height:1px;background:var(--border);border:none;margin:3px 0!important;}
             /* mapBtn (estado/tipo) en mapaContadores: cuadrícula 2 col compacta */
             #mapaContadores{display:grid!important;grid-template-columns:1fr 1fr;gap:5px!important;width:100%!important;box-sizing:border-box!important;align-items:start;}
@@ -16662,10 +16662,12 @@ PAGES.mapa=function(){
     const turnoBtn='<button class="btn '+(turnoActivo?'btn-danger':'btn-success')+'" onclick="_toggleTurno()">'+(turnoActivo?'⏹ Finalizar turno':'▶ Iniciar turno')+'</button>';
     $('tbActions').innerHTML=rutaBtn+turnoBtn+zonaSel+'<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
   } else if(esAdmin){
-    // Admin: zona + usuarios lado a lado, luego filtros y auto-update
+    // Admin: zona + usuarios en flex-row (lado a lado), luego filtros y auto-update
     $('tbActions').innerHTML=
-      zonaSel+
-      vendSel+
+      '<div style="display:flex;gap:5px;grid-column:1/-1;width:100%;box-sizing:border-box;min-width:0;">'+
+        '<div id="mapaZonaCombo" class="search-combo" style="flex:1;min-width:0;"></div>'+
+        '<div id="mapaVendCombo" class="search-combo" style="flex:1;min-width:0;"></div>'+
+      '</div>'+
       '<hr class="sm-divider">'+
       '<button id="mapaFiltPines" class="map-btn'+(window._mapaShowDlvs?'':' active')+'" onclick="window._mapaShowDlvs=false;_mapaCargar();var a=document.getElementById(\'mapaFiltPines\'),b=document.getElementById(\'mapaFiltDlv\');if(a)a.classList.add(\'active\');if(b)b.classList.remove(\'active\')">Todos los pines</button>'+
       '<button id="mapaFiltDlv" class="map-btn'+(window._mapaShowDlvs?' active':'')+'" onclick="window._mapaShowDlvs=true;_mapaCargar();var a=document.getElementById(\'mapaFiltPines\'),b=document.getElementById(\'mapaFiltDlv\');if(b)b.classList.add(\'active\');if(a)a.classList.remove(\'active\')">Solo deliveries</button>'+
