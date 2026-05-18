@@ -334,7 +334,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;bor
 /* APP LAYOUT */
 #appScreen{display:none;min-height:100vh;}
 #appScreen.show{display:flex;}
-.sidebar{width:238px;min-height:100vh;height:100vh;overflow-y:auto;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;transition:width .25s ease;box-shadow:0 0 12px rgba(139,92,246,0.6);}
+.sidebar{width:238px;min-height:100vh;height:100vh;overflow-y:auto;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:1000;transition:width .25s ease;box-shadow:0 0 12px rgba(139,92,246,0.6);}
 .slogo{padding:16px 20px 13px;border-bottom:1px solid var(--border);}
 .slogo h2{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--accent);}
 .slogo p{font-size:10px;color:var(--text3);margin-top:1px;}
@@ -1914,17 +1914,59 @@ body.alta-visibilidad select{
   </div>
 
   <div class="main" id="mainContent">
+    
+    <!-- SUBMENÚ DE HERRAMIENTAS (Izquierdo) -->
+    <div id="subMenuActions" style="position:fixed; left:-280px; top:60px; bottom:0; width:280px; background:var(--bg2); border-right:1px solid var(--border); z-index:400; transition:left 0.3s; display:flex; flex-direction:column; box-shadow:4px 0 15px rgba(0,0,0,0.3);">
+        <div style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+            <strong style="font-size:14px; text-transform:uppercase; letter-spacing:1px; color:var(--text2);">Herramientas</strong>
+            <button onclick="toggleSubMenuActions()" class="topbar-icon-btn" style="width:28px; height:28px; margin:0;">✕</button>
+        </div>
+        <div class="tbactions" id="tbActions" style="padding:16px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; flex-wrap:nowrap; align-items:stretch;">
+           <!-- Los botones de la pagina se inyectan acá -->
+        </div>
+        <!-- Pestaña Naranja (siempre visible en el borde izquierdo) -->
+        <div id="subMenuToggleTab" onclick="toggleSubMenuActions()" style="position:absolute; right:-26px; top:20px; width:26px; height:50px; background:var(--accent); border-radius:0 8px 8px 0; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#000; box-shadow:3px 0 8px rgba(0,0,0,0.3);">
+            <svg id="subMenuTabIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+    </div>
+    <script>
+        function toggleSubMenuActions() {
+            const panel = document.getElementById('subMenuActions');
+            const icon = document.getElementById('subMenuTabIcon');
+            if(panel.style.left === '0px') {
+                panel.style.left = '-280px';
+                icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+            } else {
+                panel.style.left = '0px';
+                icon.innerHTML = '<polyline points="15 18 9 12 15 6"></polyline>';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const tb = document.getElementById('tbActions');
+            if(tb) {
+                tb.addEventListener('click', (e) => {
+                    if(e.target.closest('button') || e.target.closest('.etiq-chip') || e.target.closest('.map-btn') || e.target.closest('.search-combo-list li')) {
+                        document.getElementById('subMenuActions').style.left = '-280px';
+                        document.getElementById('subMenuTabIcon').innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+                    }
+                });
+            }
+        });
+    </script>
+
     <div class="topbar">
       <button id="menuBtn" onclick="toggleSidebar()" aria-label="Menú">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <span class="tbtitle" id="tbTitle">Dashboard</span>
-      <div class="tbactions" id="tbActions"></div>
-      <button id="gpsStatusPill" class="gps-pill" type="button" onclick="_gpsToggleFromPill()" aria-label="Compartiendo ubicacion"><span class="gps-pill-dot"></span><span class="gps-pill-text">GPS activo</span><span class="gps-pill-time"></span></button>
-      <button id="refreshBtn" type="button" onclick="_refreshActualPage()" class="topbar-icon-btn" title="Actualizar página" aria-label="Actualizar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
-      <button id="tutorialToggleBtn" type="button" onclick="_topbarToggleTutorial()" class="topbar-icon-btn" title="Tutorial activado (click para desactivar)" aria-label="Tutorial"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/><line id="tutorialOffLine" x1="3" y1="3" x2="21" y2="21" stroke-width="2.4" style="display:none"/></svg></button>
-      <button id="themeToggleBtn" type="button" onclick="toggleTheme()" class="topbar-icon-btn theme-btn" title="Cambiar tema" aria-label="Cambiar tema"><svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg id="themeIconSoft" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M2 12s3.5-6 10-6 10 6 10 6"/><path d="M12 16v-2"/><path d="M8 14l-1 2"/><path d="M16 14l1 2"/></svg></button>
-      <button id="codexNotifBell" type="button" onclick="_notifSessionToggle()" class="topbar-icon-btn" style="display:none" aria-label="Notificaciones"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="codexNotifBadge"></span></button>
+      <span class="tbtitle" id="tbTitle" style="flex:1; text-align:left; padding-left:12px; display:flex; align-items:center; gap:8px;">Dashboard <button id="gpsStatusPill" class="gps-pill" type="button" onclick="_gpsToggleFromPill()" aria-label="Compartiendo ubicacion" style="margin:0;"><span class="gps-pill-dot"></span><span class="gps-pill-text">GPS activo</span><span class="gps-pill-time"></span></button></span>
+      
+      <!-- Iconos Globales -->
+      <div style="display:flex; align-items:center; gap:4px;">
+        <button id="refreshBtn" type="button" onclick="_refreshActualPage()" class="topbar-icon-btn" title="Actualizar página" aria-label="Actualizar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+        <button id="tutorialToggleBtn" type="button" onclick="_topbarToggleTutorial()" class="topbar-icon-btn" title="Tutorial activado (click para desactivar)" aria-label="Tutorial"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/><line id="tutorialOffLine" x1="3" y1="3" x2="21" y2="21" stroke-width="2.4" style="display:none"/></svg></button>
+        <button id="themeToggleBtn" type="button" onclick="toggleTheme()" class="topbar-icon-btn theme-btn" title="Cambiar tema" aria-label="Cambiar tema"><svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+        <button id="codexNotifBell" type="button" onclick="_notifSessionToggle()" class="topbar-icon-btn" style="display:inline-flex" aria-label="Notificaciones"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="codexNotifBadge"></span></button>
+      </div>
       <div id="topbarKebab" style="display:none;position:relative">
         <button type="button" class="topbar-icon-btn" onclick="_toggleKebab()" aria-label="Más opciones" title="Más opciones">⋮</button>
         <div id="topbarKebabMenu" style="display:none;position:absolute;right:0;top:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:9999;min-width:160px;padding:6px 0">

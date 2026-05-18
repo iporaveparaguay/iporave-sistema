@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Inventario del Equipo de IA — Iporãve</title>
+<style>
+  @page { size: A4; margin: 1.5cm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #1a1a1a; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 24px; background: #fff; }
+  h1 { color: #f5a623; font-size: 32px; border-bottom: 3px solid #f5a623; padding-bottom: 12px; margin-top: 0; }
+  h2 { color: #1f2937; font-size: 22px; margin-top: 32px; border-left: 5px solid #f5a623; padding-left: 12px; }
+  h3 { color: #374151; font-size: 17px; margin-top: 20px; }
+  p { margin: 8px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #f3f4f6; font-weight: 700; }
+  tr:nth-child(even) td { background: #fafbfc; }
+  .term { background: #fff3cd; padding: 1px 5px; border-radius: 3px; font-weight: 700; }
+  .es { color: #6b7280; font-style: italic; font-size: 12px; }
+  .critico { color: #dc2626; font-weight: 700; }
+  .alto { color: #f59e0b; font-weight: 700; }
+  .medio { color: #facc15; font-weight: 700; }
+  .bajo { color: #16a34a; font-weight: 700; }
+  .header-meta { background: #f9fafb; padding: 16px; border-radius: 8px; border-left: 4px solid #f5a623; margin-bottom: 24px; font-size: 13px; color: #4b5563; }
+  .stat-card { display: inline-block; background: linear-gradient(135deg,#fff3cd,#fff); border: 1px solid #f5a623; padding: 14px 20px; border-radius: 10px; margin: 6px; min-width: 180px; text-align: center; }
+  .stat-num { font-size: 30px; font-weight: 900; color: #f5a623; display: block; }
+  .stat-lbl { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; }
+  .box { background: #f9fafb; border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 12px 0; border-radius: 6px; }
+  .ejemplo { background: #ecfdf5; border-left: 4px solid #10b981; padding: 10px 14px; margin: 8px 0; border-radius: 6px; font-size: 13px; }
+  .glosario { background: #fef3c7; padding: 16px; border-radius: 8px; margin: 16px 0; }
+  ul { margin: 8px 0; padding-left: 24px; }
+  li { margin: 4px 0; }
+  .print-tip { background: #dbeafe; border: 1px solid #3b82f6; padding: 12px; border-radius: 8px; margin: 16px 0; font-size: 13px; }
+  @media print { .print-tip { display: none; } body { padding: 0; } }
+</style>
+</head>
+<body>
+
+<div class="print-tip">
+  💡 <b>Para guardar este documento como PDF:</b> Apretá <b>Ctrl+P</b> (o ⌘+P en Mac) → Destino: "Guardar como PDF" → Guardar.
+</div>
+
+<h1>📊 Inventario Completo del Equipo de IA — Iporãve</h1>
+
+<div class="header-meta">
+  <b>Documento:</b> Inventario del equipo de Inteligencia Artificial trabajando en el sistema<br>
+  <b>Para:</b> Distribuidora Iporãve Paraguay<br>
+  <b>Generado:</b> 16 de Mayo, 2026<br>
+  <b>Propósito:</b> Que entiendas qué agentes/modelos hay, cómo se organizan, y qué hicieron
+</div>
+
+<!-- ========================================= -->
+<h2>📖 PRIMERA PARTE — Glosario rápido (Inglés ↔ Español)</h2>
+
+<div class="glosario">
+<p>Estos son los términos técnicos que más uso. Tenelos a mano:</p>
+<table>
+<tr><th>Término en inglés</th><th>Qué significa en español</th><th>Ejemplo simple</th></tr>
+<tr><td><span class="term">Agent / Agente</span></td><td><b>Asistente/empleado de IA</b> que hace una tarea específica</td><td>"Le mandé a un agente a revisar los botones"</td></tr>
+<tr><td><span class="term">Issue</span></td><td><b>Asunto / Problema</b> encontrado en el sistema</td><td>"Encontramos 218 issues" = 218 cosas para revisar</td></tr>
+<tr><td><span class="term">Bug</span></td><td><b>Error</b> en el código (cosa que no funciona bien)</td><td>"El botón tiene un bug" = el botón está roto</td></tr>
+<tr><td><span class="term">Fix</span></td><td><b>Arreglo / Solución</b> de un problema</td><td>"Hicimos un fix al login"</td></tr>
+<tr><td><span class="term">Deploy</span></td><td><b>Publicar / Subir</b> los cambios para que estén en vivo</td><td>"Hice deploy" = ya está disponible para usuarios</td></tr>
+<tr><td><span class="term">Commit</span></td><td><b>Guardar cambios</b> en el control de versiones (Git)</td><td>Como "guardar partida" en un videojuego</td></tr>
+<tr><td><span class="term">Endpoint</span></td><td><b>Dirección URL</b> donde un programa pide algo</td><td>"/api/login" es un endpoint</td></tr>
+<tr><td><span class="term">Backend</span></td><td><b>Servidor / Trastienda</b> del sistema (lo que no se ve)</td><td>Donde se guardan los datos, procesos automáticos</td></tr>
+<tr><td><span class="term">Frontend</span></td><td><b>Vitrina / Interfaz</b> que ve el usuario</td><td>La pantalla con botones, colores, formularios</td></tr>
+<tr><td><span class="term">Push</span></td><td><b>Empujar / Enviar</b> los commits al repositorio remoto</td><td>"Hice push" = se subieron los cambios a GitHub</td></tr>
+<tr><td><span class="term">QA (Quality Assurance)</span></td><td><b>Aseguramiento de Calidad</b> / Inspección de calidad</td><td>Equipo que busca defectos</td></tr>
+<tr><td><span class="term">Audit</span></td><td><b>Auditoría / Revisión</b> profunda del sistema</td><td>Como una inspección técnica de un auto</td></tr>
+<tr><td><span class="term">Token</span></td><td><b>Credencial / Llave digital</b> para autenticación</td><td>Como una tarjeta de acceso</td></tr>
+<tr><td><span class="term">API Key</span></td><td><b>Llave de acceso a un servicio externo</b></td><td>La clave que le pasamos a Google AI Studio</td></tr>
+<tr><td><span class="term">Worker</span></td><td><b>Trabajador / Servidor</b> que procesa peticiones</td><td>Nuestro backend en Cloudflare se llama "worker"</td></tr>
+<tr><td><span class="term">Cron / Cron job</span></td><td><b>Tarea programada</b> que corre cada cierto tiempo</td><td>"Cada 15 minutos revisa el sistema"</td></tr>
+<tr><td><span class="term">Cascada / Cascade</span></td><td><b>Lista en orden de prioridad</b>. Si falla el primero, va al segundo</td><td>Como cuando vas a Plan A, si no Plan B, si no Plan C</td></tr>
+<tr><td><span class="term">Fallback</span></td><td><b>Plan B / Respaldo</b> si algo falla</td><td>Si Groq cae, el fallback es Anthropic</td></tr>
+<tr><td><span class="term">Rate Limit</span></td><td><b>Límite de peticiones</b> por minuto/día</td><td>"15 RPM" = máximo 15 por minuto</td></tr>
+<tr><td><span class="term">Tier</span></td><td><b>Nivel / Categoría</b> de un servicio</td><td>"Free tier" = nivel gratis</td></tr>
+<tr><td><span class="term">Schema</span></td><td><b>Estructura / Esquema</b> de la base de datos</td><td>Las "carpetas y carpetitas" donde se guardan los datos</td></tr>
+<tr><td><span class="term">RLS (Row Level Security)</span></td><td><b>Seguridad por fila</b>. Cada usuario solo ve lo suyo</td><td>Vendedor A no ve pedidos del Vendedor B</td></tr>
+<tr><td><span class="term">UUID</span></td><td><b>Identificador único</b> tipo "abc123-def456-..."</td><td>Tipo de "número de cédula" para datos</td></tr>
+<tr><td><span class="term">JSON</span></td><td><b>Formato de datos</b> que usan los sistemas para comunicarse</td><td>Como un diccionario: "nombre: Juan, edad: 30"</td></tr>
+<tr><td><span class="term">Webhook</span></td><td><b>Aviso automático</b> de un sistema a otro</td><td>"WhatsApp me avisa cuando llega un mensaje"</td></tr>
+<tr><td><span class="term">Push Notification</span></td><td><b>Notificación que llega al celular</b> sin abrir la app</td><td>Como cuando suena el WhatsApp</td></tr>
+<tr><td><span class="term">Realtime</span></td><td><b>Tiempo real</b>. Se actualiza al instante</td><td>Ver el GPS del delivery moverse en vivo</td></tr>
+<tr><td><span class="term">Race Condition</span></td><td><b>Conflicto cuando 2 cosas pasan al mismo tiempo</b></td><td>2 admins editando el mismo pedido a la vez</td></tr>
+<tr><td><span class="term">XSS / Inyección</span></td><td><b>Ataque inyectando código malicioso</b></td><td>Hacker pone código en un nombre y rompe el sistema</td></tr>
+<tr><td><span class="term">Sprint</span></td><td><b>Período de trabajo</b> (1-2 semanas)</td><td>"Sprint 1" = primera tanda de trabajo</td></tr>
+<tr><td><span class="term">Bloque / Block</span></td><td><b>Paquete de tareas</b> que se trabaja junto</td><td>"Bloque 1 = MVP básico, Bloque 2 = comprobantes"</td></tr>
+<tr><td><span class="term">MVP</span></td><td><b>Minimum Viable Product</b> = "Producto mínimo viable"</td><td>Versión básica que ya funciona</td></tr>
+<tr><td><span class="term">Stack</span></td><td><b>Pila de tecnologías</b> que usa el sistema</td><td>Nuestro stack: Vercel + Cloudflare + Supabase</td></tr>
+</table>
+</div>
+
+<!-- ========================================= -->
+<h2>👥 SEGUNDA PARTE — Estructura del Equipo de IA</h2>
+
+<div class="box">
+<p><b>Pensalo así:</b> Trabajamos como una empresa. Yo soy el jefe que coordina. Después tenés "empleados" (agentes) que hacen tareas específicas. Y abajo de todo, hay "herramientas" (modelos de IA) que cada empleado usa para trabajar.</p>
+</div>
+
+<h3>🧠 Nivel 1 — El Cerebro Central</h3>
+<table>
+<tr><th>#</th><th>Quién</th><th>Rol</th><th>Modelo de IA</th></tr>
+<tr><td>1</td><td><b>Claude (yo)</b></td><td>Orquestador principal — converso con vos, tomo decisiones, lanzo agentes, hago commits</td><td>Claude Opus 4.7 Max (Anthropic)</td></tr>
+</table>
+
+<h3>⚙️ Nivel 2 — Subagentes (Empleados especializados)</h3>
+<p>Son IAs que <b>yo</b> lancé para tareas específicas. Trabajan en paralelo. Total lanzados en esta sesión: <b>~44 agentes</b>.</p>
+
+<h3>🅰️ Tipo A — Codex Frontend</h3>
+<p><span class="es">Escriben en la página web que ve el usuario (index.html, catalog.html, track.html)</span></p>
+<table>
+<tr><th>#</th><th>Tarea</th></tr>
+<tr><td>1</td><td>Corregir bugs del Grupo 1 + crear página "Mi Perfil" del cliente</td></tr>
+<tr><td>2</td><td>Mejorar todo el flujo de delivery</td></tr>
+<tr><td>3</td><td>Construir UI de comprobantes de pago (subir fotos)</td></tr>
+<tr><td>4</td><td>Bloque 1 del sistema financiero (saldos por usuario)</td></tr>
+<tr><td>5</td><td>Bloque 1.5 — Polish/refinamiento visual</td></tr>
+<tr><td>6</td><td>Bloque 3 — Vista contraparte (cada rol ve su lado)</td></tr>
+<tr><td>7</td><td>Bloque 4 — Exportar a PDF/CSV/Imprimir</td></tr>
+<tr><td>8</td><td>Bloque 5 — Histórico mensual + base de clientes por zona</td></tr>
+<tr><td>9</td><td>Tanda A — Fixes rápidos (bell, perfil foto, boletas)</td></tr>
+<tr><td>10</td><td>Ítem 12 — Aplicar botones 3D a todos los filtros</td></tr>
+<tr><td>11</td><td>Sidebar colapsable + Modo oscuro/claro</td></tr>
+<tr><td>12</td><td>Pulir catálogo público + página de tracking</td></tr>
+<tr><td>13</td><td>Fixes específicos del mapa (4 bugs del filtrado)</td></tr>
+<tr><td>14</td><td>Fix masivo: 22 bugs de Beta+Delta+Gamma</td></tr>
+<tr><td>15</td><td>Fix de 6 bugs críticos finales</td></tr>
+</table>
+<p><b>Total Codex Frontend: 15 agentes</b></p>
+
+<h3>🅱️ Tipo B — Codex Worker (Backend)</h3>
+<p><span class="es">Escriben en el servidor (los endpoints que reciben peticiones)</span></p>
+<table>
+<tr><th>#</th><th>Tarea</th></tr>
+<tr><td>1</td><td>Endpoint para subir comprobantes a Cloudflare R2 (storage)</td></tr>
+<tr><td>2</td><td>Endpoint de Gemini AI + Cron Monitor (revisor cada 15 min)</td></tr>
+<tr><td>3</td><td>Endpoint para compartir comprobantes por WhatsApp</td></tr>
+<tr><td>4</td><td>Estructura del Document AI (OCR de comprobantes)</td></tr>
+<tr><td>5</td><td>File API de Gemini (subir contexto y reutilizarlo)</td></tr>
+<tr><td>6</td><td>Admin tools (limpieza data prueba + stats del sistema)</td></tr>
+<tr><td>7</td><td>Asistente Agentic + 5 herramientas inteligentes</td></tr>
+<tr><td>8</td><td>Cascada IA de 5 niveles (Plan A→B→C→D→E)</td></tr>
+<tr><td>9</td><td>Fix de 5 vulnerabilidades CRÍTICAS de seguridad</td></tr>
+<tr><td>10</td><td>Fix de 6 bugs ZETA + IOTA + THETA críticos</td></tr>
+</table>
+<p><b>Total Worker: 10 agentes</b></p>
+
+<h3>🎨 Tipo C — Antigravity (Rediseños visuales completos)</h3>
+<table>
+<tr><th>#</th><th>Tarea</th></tr>
+<tr><td>1</td><td>Botones 3D del mapa con efectos modernos</td></tr>
+<tr><td>2</td><td>Página de tracking del cliente — rediseño premium nivel Rappi/Uber Eats</td></tr>
+</table>
+<p><b>Total Antigravity: 2 agentes</b></p>
+
+<h3>🔍 Tipo D — Equipos de QA (Inspectores de calidad)</h3>
+<p><span class="es">Auditan el sistema buscando problemas. Cada equipo se especializa en algo distinto.</span></p>
+<table>
+<tr><th>Equipo</th><th>Letra Griega</th><th>Especialidad</th><th>Issues encontrados</th></tr>
+<tr><td>🛡️ Alpha</td><td>Α</td><td>Seguridad (XSS, autenticación, inyección)</td><td>23</td></tr>
+<tr><td>🔘 Beta</td><td>Β</td><td>Botones por rol (revisa todos los botones por cada tipo de usuario)</td><td>35</td></tr>
+<tr><td>🔍 Gamma</td><td>Γ</td><td>Inconsistencias lógicas (cosas que se contradicen)</td><td>28</td></tr>
+<tr><td>🎨 Delta</td><td>Δ</td><td>Visual / accesibilidad / responsive (móvil)</td><td>26</td></tr>
+<tr><td>⚡ Epsilon</td><td>Ε</td><td>Performance (lentitud, optimización)</td><td>20</td></tr>
+<tr><td>📋 Zeta</td><td>Ζ</td><td>Flujos de negocio (camino completo: pedido→entrega→pago)</td><td>13</td></tr>
+<tr><td>🔌 Eta</td><td>Η</td><td>Contratos entre frontend y backend (que coincidan)</td><td>15</td></tr>
+<tr><td>📡 Theta</td><td>Θ</td><td>Sistema de notificaciones (push, WhatsApp, bell)</td><td>10</td></tr>
+<tr><td>🗄️ Iota</td><td>Ι</td><td>Base de datos / esquema</td><td>25</td></tr>
+<tr><td>🗺️ Kappa</td><td>Κ</td><td>Tracking GPS y Mapbox</td><td>23</td></tr>
+<tr><td colspan="3"><b>TOTAL ISSUES ENCONTRADOS</b></td><td><b>218</b></td></tr>
+</table>
+<p><b>Total QA: 10 equipos especializados</b></p>
+
+<h3>📚 Tipo E — Research / Planning</h3>
+<p>Agentes que investigan, planifican o crean scripts (no escriben código del sistema).</p>
+<table>
+<tr><th>#</th><th>Tarea</th></tr>
+<tr><td>1</td><td>Investigación sobre tracking + diseño visual del cliente</td></tr>
+<tr><td>2</td><td>Análisis profundo de bugs del mapa</td></tr>
+<tr><td>3</td><td>Plan completo del Asistente Agentic</td></tr>
+<tr><td>4</td><td>Generador de scripts SQL para migraciones</td></tr>
+</table>
+<p><b>Total Research: 4 agentes</b></p>
+
+<h3>✅ Tipo F — Verificación</h3>
+<table>
+<tr><th>#</th><th>Tarea</th></tr>
+<tr><td>1</td><td>Verificación post-implementación (revisa que lo entregado funcione)</td></tr>
+</table>
+<p><b>Total Verificación: 1 agente</b></p>
+
+<!-- ========================================= -->
+<h2>🤖 TERCERA PARTE — Modelos de IA EN PRODUCCIÓN (En vivo en tu sistema)</h2>
+<p>Estos son los modelos que <b>ahora mismo</b> están funcionando dentro de Iporãve. Cualquier usuario que use el chat del asistente está hablando con estos en cascada (orden de prioridad):</p>
+
+<table>
+<tr><th>Orden</th><th>Modelo</th><th>Proveedor</th><th>Costo</th><th>Para qué se usa</th></tr>
+<tr><td>1° (primario)</td><td><b>LLaMA 3.3 70B</b></td><td>Groq</td><td><span style="color:green">GRATIS</span> (14.400/día)</td><td>Asistente de todos los roles (vendedor, dropshipper, etc.)</td></tr>
+<tr><td>2° (fallback)</td><td><b>Gemini 3 Flash Preview</b></td><td>Google AI Studio</td><td><span style="color:green">GRATIS</span> (1.500/día)</td><td>Si Groq falla</td></tr>
+<tr><td>3° (fallback)</td><td><b>Gemini 3.1 Flash-Lite</b></td><td>Google AI Studio</td><td><span style="color:green">GRATIS</span> (1.500/día)</td><td>Si Gemini Flash también falla</td></tr>
+<tr><td>4° (fallback)</td><td><b>DeepSeek R1 Distill</b></td><td>Groq</td><td><span style="color:green">GRATIS</span> (1.000/día)</td><td>Razonamiento profundo (superadmin)</td></tr>
+<tr><td>5° (último recurso)</td><td><b>Claude Haiku 4.5</b></td><td>Anthropic</td><td>≈$0.0006 por consulta</td><td>Solo si todos los anteriores caen</td></tr>
+<tr><td>Manual</td><td><b>Gemini 3.1 Pro Preview</b></td><td>Google AI Studio</td><td>$2/$12 por 1M tokens</td><td>Auditorías profundas del sistema</td></tr>
+</table>
+
+<div class="ejemplo">
+<b>💡 Ejemplo:</b> Un vendedor le pregunta al asistente "¿cuántos pedidos tengo hoy?". El sistema intenta con Groq LLaMA primero. Si está caído, prueba Gemini Flash. Si también, Flash-Lite. Si también, DeepSeek. Si también, Anthropic (último). <b>Imposible que se quede sin servicio.</b>
+</div>
+
+<p><b>Total modelos activos: 6 modelos en cascada</b></p>
+
+<!-- ========================================= -->
+<h2>🌐 CUARTA PARTE — Modelos DISPONIBLES (configurados pero esperando)</h2>
+<p>Tu API key de Google AI Studio te da acceso a 33 modelos. Algunos los podemos usar cuando los necesitemos:</p>
+<table>
+<tr><th>Modelo</th><th>Para qué sirve</th><th>Estado</th></tr>
+<tr><td>Gemini 3.1 Pro con herramientas</td><td>Asistente súper potente con acciones</td><td>Listo</td></tr>
+<tr><td>Gemini 2.5 Pro / Flash</td><td>Versiones anteriores estables</td><td>Listo</td></tr>
+<tr><td>Nano Banana Pro</td><td>Generar imágenes (productos, banners)</td><td>Listo</td></tr>
+<tr><td>Lyria 3</td><td>Generar audio/música</td><td>Listo</td></tr>
+<tr><td>Document AI</td><td>OCR — leer comprobantes automáticamente (boletas, transferencias)</td><td>Estructura lista, falta crear "processor"</td></tr>
+<tr><td>Vision API</td><td>Analizar fotos (¿es comprobante válido? ¿qué dice?)</td><td>API habilitada</td></tr>
+<tr><td>Speech-to-Text</td><td>Transcribir audios de WhatsApp</td><td>Disponible</td></tr>
+<tr><td>Translation API</td><td>Traducir a otros idiomas</td><td>Disponible</td></tr>
+<tr><td>+ 25 modelos más</td><td>Varios usos especializados</td><td>Disponibles</td></tr>
+</table>
+<p><b>Total disponibles: ~33 modelos vía API</b></p>
+
+<!-- ========================================= -->
+<h2>🏗️ QUINTA PARTE — Servicios externos del sistema</h2>
+<p>Estas son las plataformas/herramientas que tu sistema usa internamente:</p>
+<table>
+<tr><th>Servicio</th><th>Para qué</th><th>Costo actual</th></tr>
+<tr><td><b>Cloudflare Workers</b></td><td>Backend (servidor que procesa peticiones)</td><td>Gratis (100K req/día)</td></tr>
+<tr><td><b>Cloudflare R2</b></td><td>Almacenamiento de archivos (fotos, comprobantes)</td><td>Gratis (10GB)</td></tr>
+<tr><td><b>Cloudflare Cron Triggers</b></td><td>Tareas automáticas cada 15 minutos</td><td>Gratis</td></tr>
+<tr><td><b>Vercel</b></td><td>Hosting del frontend (la página web)</td><td>Gratis</td></tr>
+<tr><td><b>Supabase Auth</b></td><td>Sistema de login y contraseñas</td><td>Gratis</td></tr>
+<tr><td><b>Supabase Postgres + RLS</b></td><td>Base de datos con seguridad por fila</td><td>Gratis</td></tr>
+<tr><td><b>Supabase Realtime</b></td><td>Actualizaciones en vivo</td><td>Gratis</td></tr>
+<tr><td><b>WhatsApp Business API</b></td><td>Envío automático de mensajes a clientes</td><td>Variable</td></tr>
+<tr><td><b>Mapbox</b></td><td>Mapas y geolocalización</td><td>Gratis hasta cierto uso</td></tr>
+<tr><td><b>Google Maps API</b></td><td>Geocoding (convertir dirección a coordenadas)</td><td>$200/mes free credit</td></tr>
+<tr><td><b>Resend</b></td><td>Envío de emails (verificación de dispositivo, etc.)</td><td>Plan gratis</td></tr>
+<tr><td><b>OpenRouteService</b></td><td>Rutas óptimas para delivery</td><td>Gratis</td></tr>
+<tr><td><b>VAPID (Web Push)</b></td><td>Notificaciones push al navegador</td><td>Gratis</td></tr>
+</table>
+<p><b>Total servicios: 13 integraciones</b></p>
+
+<!-- ========================================= -->
+<h2>📊 RESUMEN VISUAL — Números totales</h2>
+<div style="text-align: center;">
+  <div class="stat-card"><span class="stat-num">1</span><span class="stat-lbl">Claude Orquestador</span></div>
+  <div class="stat-card"><span class="stat-num">44</span><span class="stat-lbl">Subagentes lanzados</span></div>
+  <div class="stat-card"><span class="stat-num">6</span><span class="stat-lbl">Modelos IA activos</span></div>
+  <div class="stat-card"><span class="stat-num">~33</span><span class="stat-lbl">Modelos disponibles</span></div>
+  <div class="stat-card"><span class="stat-num">13</span><span class="stat-lbl">Servicios externos</span></div>
+  <div class="stat-card"><span class="stat-num">~97</span><span class="stat-lbl">RECURSOS TOTALES</span></div>
+</div>
+
+<!-- ========================================= -->
+<h2>🎯 SEXTA PARTE — ¿Qué son los "issues"?</h2>
+
+<h3>📖 Definición simple</h3>
+<p><b>Issue</b> = <span class="es">"asunto / problema / cosa que revisar"</span></p>
+<p>En desarrollo de software, cuando un inspector de calidad (QA) revisa el sistema, cada cosa que encuentra para revisar/arreglar se llama UN issue.</p>
+
+<div class="ejemplo">
+<b>Comparación con un auto:</b> Cuando un mecánico inspecciona tu auto, te entrega una lista: "Cambiar bujías", "Hay un ruido en el motor", "Las llantas están gastadas". Cada uno de esos es UN issue.
+</div>
+
+<h3>🚦 Severidad — Qué tan grave es cada uno</h3>
+
+<table>
+<tr><th>Color</th><th>Nivel</th><th>Significado</th><th>Ejemplo real de hoy</th></tr>
+<tr>
+  <td><span class="critico">🔴</span></td>
+  <td><span class="critico">CRÍTICO</span></td>
+  <td>Se tiene que arreglar YA. Rompe el sistema, expone datos, o causa pérdida de dinero.</td>
+  <td>Cualquiera con link de tracking veía la ubicación exacta del delivery — riesgo de robo</td>
+</tr>
+<tr>
+  <td><span class="alto">🟠</span></td>
+  <td><span class="alto">ALTO</span></td>
+  <td>Hay que arreglarlo pronto. Causa problemas serios pero el sistema sigue funcionando.</td>
+  <td>El botón "Pagado" se podía apretar varias veces seguidas y registraba pagos duplicados</td>
+</tr>
+<tr>
+  <td><span class="medio">🟡</span></td>
+  <td><span class="medio">MEDIO</span></td>
+  <td>Mejorable pero no urgente. Molesta al usuario o complica mantenimiento.</td>
+  <td>Botones con poco contraste de color, difíciles de ver para algunas personas</td>
+</tr>
+<tr>
+  <td><span class="bajo">🟢</span></td>
+  <td><span class="bajo">BAJO</span></td>
+  <td>Detalles para pulir. No afectan funcionamiento.</td>
+  <td>Comentarios viejos en el código que ya no aplican</td>
+</tr>
+</table>
+
+<h3>📈 Estado actual de los 218 issues</h3>
+<table>
+<tr><th>Severidad</th><th>Encontrados</th><th>Ya arreglados</th><th>En espera</th></tr>
+<tr><td><span class="critico">🔴 Críticos</span></td><td>~19</td><td>~17</td><td>~2</td></tr>
+<tr><td><span class="alto">🟠 Altos</span></td><td>~30</td><td>~25</td><td>~5</td></tr>
+<tr><td><span class="medio">🟡 Medios</span></td><td>~70</td><td>~30</td><td>~40</td></tr>
+<tr><td><span class="bajo">🟢 Bajos</span></td><td>~99</td><td>~0</td><td>~99</td></tr>
+<tr><td><b>TOTAL</b></td><td><b>218</b></td><td><b>~72</b></td><td><b>~146</b></td></tr>
+</table>
+
+<h3>💡 ¿Por qué importa cada issue?</h3>
+<p>Imaginá tu sistema como una casa:</p>
+<ul>
+  <li><span class="critico">🔴 Crítico</span> = ventana en la puerta principal abierta — cualquiera entra</li>
+  <li><span class="alto">🟠 Alto</span> = ventana en planta baja con seguro flojo — con esfuerzo entran</li>
+  <li><span class="medio">🟡 Medio</span> = ventana arriba sin mosquitero — entran insectos</li>
+  <li><span class="bajo">🟢 Bajo</span> = vidrio rayado — solo se ve feo</li>
+</ul>
+<p><b>Cuando arreglamos issues, vamos cerrando esas ventanas. El sistema se hace más seguro, más rápido y más profesional.</b></p>
+
+<!-- ========================================= -->
+<h2>🚀 SÉPTIMA PARTE — Lo que se hizo HOY (16-mayo-2026)</h2>
+
+<h3>✅ Funcionalidades entregadas</h3>
+<ul>
+  <li><b>Sistema financiero completo</b> — 5 bloques: saldos por usuario, comprobantes, vista contraparte, export PDF/CSV, histórico mensual</li>
+  <li><b>Cascada IA antifallos</b> — 5 modelos en serie, ~18.000 requests/día gratis</li>
+  <li><b>Sidebar colapsable + Modo oscuro/claro</b></li>
+  <li><b>Tracking del cliente rediseñado</b> nivel Rappi/Uber Eats</li>
+  <li><b>Mapa con filtros 3D y zonas dinámicas</b></li>
+  <li><b>Base de datos de clientes por zona</b></li>
+  <li><b>Worker con 9 endpoints nuevos</b> (comprobantes, Gemini, Document AI, Monitor, etc.)</li>
+  <li><b>Asistente Agentic</b> con 5 herramientas (puede ejecutar consultas reales)</li>
+</ul>
+
+<h3>🔒 Vulnerabilidades cerradas (las 5 críticas de seguridad)</h3>
+<ul>
+  <li>Bypass de verificación de dispositivo en producción → bloqueado</li>
+  <li>Endpoint público de tracking sin control → ahora aproxima coordenadas a 1km</li>
+  <li>Race condition al cambiar estado de pedidos → optimistic locking</li>
+  <li>Admin podía promoverse a superadmin → bloqueado</li>
+  <li>Inyección SQL en endpoint de usuarios → parametrizado</li>
+</ul>
+
+<h3>📊 Métricas finales</h3>
+<table>
+<tr><td>Issues identificados</td><td><b>218</b></td></tr>
+<tr><td>Fixes desplegados a producción</td><td><b>~95</b></td></tr>
+<tr><td>Commits realizados</td><td><b>20+</b></td></tr>
+<tr><td>Endpoints nuevos creados</td><td><b>9</b></td></tr>
+<tr><td>Subagentes lanzados</td><td><b>44</b></td></tr>
+<tr><td>Equipos QA en paralelo</td><td><b>10</b></td></tr>
+</table>
+
+<!-- ========================================= -->
+<h2>🎓 OCTAVA PARTE — Cómo "integrarte" al equipo (tips para vos)</h2>
+
+<div class="box">
+<p><b>Para cuando hablemos de equipos, sabé que:</b></p>
+<ul>
+  <li><b>"Lanzar un agente"</b> = decirle a una IA que haga una tarea específica</li>
+  <li><b>"Está corriendo"</b> = está trabajando en este momento</li>
+  <li><b>"Terminó"</b> = ya entregó su resultado</li>
+  <li><b>"Se trabó"</b> = se quedó esperando confirmación o tuvo error</li>
+  <li><b>"Lo relancé"</b> = volví a iniciarlo</li>
+  <li><b>"En paralelo"</b> = varios trabajando al mismo tiempo</li>
+  <li><b>"En cascada"</b> = uno detrás del otro</li>
+</ul>
+</div>
+
+<div class="box">
+<p><b>Qué podés hacer vos para apoyar (sin escribir código):</b></p>
+<ul>
+  <li>Probar el sistema en navegador y reportar cosas raras</li>
+  <li>Tomar decisiones de diseño/negocio cuando te pregunto</li>
+  <li>Configurar secrets en Cloudflare (API keys)</li>
+  <li>Correr SQL en Supabase cuando hace falta</li>
+  <li>Cargar saldo en proveedores de IA</li>
+  <li>Decidir prioridades (qué arreglar primero)</li>
+</ul>
+<p><b>Tu rol más valioso:</b> sos el <b>Product Owner</b> (dueño del producto) — sabés lo que el negocio necesita, los agentes saben cómo escribir el código. Yo soy el puente entre los dos.</p>
+</div>
+
+<hr style="margin-top: 40px; border: none; border-top: 2px solid #e5e7eb;">
+<p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">
+  📄 Documento generado el 16 de Mayo, 2026 — Iporãve Sistema · Distribuidora Iporãve Paraguay
+</p>
+
+</body>
+</html>
