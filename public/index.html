@@ -14229,7 +14229,7 @@ PAGES.config=function(){
       '<div class="fg"><label>Mensaje pedido confirmado (usa {id},{producto},{cliente})</label><textarea id="cfgWaP">'+escHtml(cfg.waMsgPedido||DEF_CONFIG.waMsgPedido)+'</textarea></div>'+
       '<div class="fg"><label>Mensaje no contesta</label><textarea id="cfgWaNC">'+escHtml(cfg.waMsgNoContesta||DEF_CONFIG.waMsgNoContesta)+'</textarea></div>'+
       '<div class="fg"><label>Mensaje entregado</label><textarea id="cfgWaE2">'+escHtml(cfg.waMsgEntregado||DEF_CONFIG.waMsgEntregado)+'</textarea></div>'+
-      '<button class="btn btn-primary" onclick="saveCfgWA()">Guardar mensajes</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveCfgWA()">Guardar mensajes</button>'+
     '</div>'+
     '<div class="lcard2">'+
       '<div class="stitle" style="margin-top:0">🚴 Cupo y premios Delivery</div>'+
@@ -14243,7 +14243,7 @@ PAGES.config=function(){
       '<div class="fg"><label>Premio 3+ extra/día (Gs.)</label><input type="number" id="cfgP3" value="'+cfg.premioExtra3+'"></div>'+
       '<div class="fg"><label>Tasa IVA por defecto (%)</label><input type="number" id="cfgIVA" value="'+cfg.ivaTasa+'"></div>'+
       '<div id="cfgAlert"></div>'+
-      '<button class="btn btn-primary" onclick="saveCfgMain()">Guardar parámetros</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="saveCfgMain()">Guardar parámetros</button>'+
     '</div>'+
     '<div class="lcard2">'+
       '<div class="stitle" style="margin-top:0">🎨 Personalización del tema</div>'+
@@ -14306,10 +14306,10 @@ PAGES.config=function(){
           '<div id="gradPreview" style="margin-top:10px;height:40px;border-radius:8px;border:1px solid var(--border2);background:linear-gradient(135deg, #f5a623, #7c3aed)"></div>'+
         '</div>'+
       '</div>'+
-      '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">'+
-        '<button class="btn btn-primary" onclick="_guardarTema()">💾 Guardar tema</button>'+
-        '<button class="btn btn-secondary" onclick="_resetTema()">↺ Restaurar defaults</button>'+
-        '<button class="btn btn-secondary" onclick="_exportarTema()">📥 Exportar tema</button>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">'+
+        '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="_guardarTema()">💾 Guardar tema</button>'+
+        '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="_resetTema()">↺ Restaurar defaults</button>'+
+        '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;grid-column:1/-1" onclick="_exportarTema()">📥 Exportar tema</button>'+
       '</div>'+
     '</div>'+
     ((CU&&CU.rol==='delivery')?(
@@ -14329,7 +14329,7 @@ PAGES.config=function(){
         '<span class="toggle-modern-track"></span>'+
         '<span class="toggle-modern-label">Tutorial activo</span>'+
       '</label>'+
-      '<div><button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" type="button" onclick="_resetTutorial()">Reiniciar tutoriales (volver a ver)</button></div>'+
+      '<div><button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" type="button" onclick="_resetTutorial()">Reiniciar tutoriales (volver a ver)</button></div>'+
     '</div>'+
     /* ── SECCIÓN: Datos de la empresa ── */
     (function(){
@@ -14354,7 +14354,7 @@ PAGES.config=function(){
         '<div class="fg"><label>Prefijo mensaje "En Ruta" (usa {cliente},{id},{trackUrl})</label><textarea id="csWaEnRuta" rows="3">'+escHtml(cs.prefWaEnRuta||'🛵 ¡Hola {cliente}! Tu pedido #{id} ya está en camino. Seguí al delivery aquí: {trackUrl} — Iporãve')+'</textarea></div>'+
         '<div class="fg"><label>Prefijo mensaje "Entregado" (usa {cliente},{id})</label><textarea id="csWaEntregado" rows="3">'+escHtml(cs.prefWaEntregado||'🎉 ¡Tu pedido #{id} fue entregado! Gracias por comprar en Iporãve. ¡Hasta la próxima! 😊')+'</textarea></div>'+
         '<div id="cfgSistemaAlert"></div>'+
-        '<button class="btn btn-primary" style="margin-top:8px" onclick="saveCfgSistema()">💾 Guardar configuración del sistema</button>'+
+        '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-top:8px" onclick="saveCfgSistema()">💾 Guardar configuración del sistema</button>'+
       '</div>';
     })()+
     '</div>';
@@ -14474,8 +14474,10 @@ function _doResetTema(){
 function _resetTema(){
   openA('Restaurar colores',
     '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Restaurar todos los colores a los valores originales? La página se va a recargar.</div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn" style="background:var(--accent);color:#fff;border:none" onclick="closeA();_doResetTema()">Sí, restaurar</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_doResetTema()">Sí, restaurar</button>'+
+    '</div>'
   );
 }
 function _exportarTema(){
@@ -14590,8 +14592,10 @@ function resetAll(){
   openA('Resetear datos demo',
     '<div style="padding:8px 4px;font-size:14px;color:var(--text)">¿Resetear <strong>TODOS</strong> los datos al estado demo?</div>'+
     '<div style="font-size:12px;color:var(--red);margin-top:6px">Esta acción no se puede deshacer.</div>',
-    '<button class="btn btn-secondary" onclick="closeA()">Cancelar</button>'+
-    '<button class="btn btn-danger" style="background:var(--red);color:#fff;border:none" onclick="closeA();_doResetAll()">Sí, resetear</button>'
+    '<div class="modal-btn-grid">'+
+      '<button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA()">Cancelar</button>'+
+      '<button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="closeA();_doResetAll()">Sí, resetear</button>'+
+    '</div>'
   );
 }
 
@@ -16961,7 +16965,7 @@ PAGES.perfil=function(){
         '<span class="toggle-modern-track"></span>'+
         '<span class="toggle-modern-label">Tutorial activo</span>'+
       '</label>'+
-      '<div><button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" type="button" onclick="_resetTutorial()">Reiniciar tutoriales (volver a ver)</button></div>'+
+      '<div><button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;justify-content:center;gap:6px" type="button" onclick="_resetTutorial()">Reiniciar tutoriales (volver a ver)</button></div>'+
     '</div>';
   $('ca').innerHTML=
     '<div style="max-width:780px;margin:0 auto;padding:8px">'+
