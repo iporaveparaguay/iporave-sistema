@@ -1193,28 +1193,15 @@ body:has(#appScreen.show) #bgWrap{display:inline-flex !important;max-width:200px
     padding:4px 6px;
     align-items:center;
   }
-  /* Fila 1: botones de acción */
-  .page-mapa #tbActions .map-btn{
-    order:1;
-    flex-shrink:0;
-  }
-  /* Fila 2: combos zona y usuario — 50% cada uno */
-  #mapaZonaCombo,#mapaVendCombo{
-    order:2!important;
-    flex:1 1 calc(50% - 4px)!important;
-    max-width:calc(50% - 4px)!important;
-    min-width:0!important;
-  }
-  /* Dropdown combos: position fixed para evitar clipping por overflow del parent */
-  #mapaZonaCombo .search-combo-list,#mapaVendCombo .search-combo-list{
-    position:fixed!important;
-    left:8px!important;
-    right:8px!important;
-    top:145px!important;
-    width:auto!important;
-    max-height:40vh!important;
-    z-index:9999!important;
-  }
+  /* Botones de acción del mapa: fluyen en orden DOM */
+  .page-mapa #tbActions .map-btn{order:0;flex-shrink:0;}
+  /* Zona: primera del submenú, ancho completo */
+  #mapaZonaCombo{order:0!important;grid-column:1/-1!important;flex:1 1 100%!important;max-width:100%!important;min-width:0!important;}
+  /* Delivery: última del submenú, compacto, ancho completo */
+  #mapaVendCombo{order:99!important;grid-column:1/-1!important;flex:1 1 100%!important;max-width:100%!important;min-width:0!important;}
+  #mapaVendCombo .search-combo-input{min-height:30px!important;height:30px!important;padding:4px 28px 4px 8px!important;font-size:11px!important;}
+  /* Dropdown combos: posición dinámica vía JS (evita clipping overflow subMenuActions) */
+  #mapaZonaCombo .search-combo-list,#mapaVendCombo .search-combo-list{z-index:9999!important;}
   /* Botones del mapa más compactos en mobile */
   .map-btn{padding:5px 8px!important;font-size:11px!important;gap:3px!important;flex-shrink:0;white-space:nowrap;}
   /* Topbar title: solo una línea en mapa */
@@ -2070,6 +2057,30 @@ body.alta-visibilidad select{
                     // Reiniciar timer si el usuario interactúa con el panel
                     _smPanel().addEventListener('mousemove',_smRestartTimer);
                     _smPanel().addEventListener('touchstart',_smRestartTimer,{passive:true});
+                    // Fix dropdown dentro de subMenuActions: posición dinámica con getBoundingClientRect
+                    document.addEventListener('focusin',function(e){
+                        if(!e.target.classList.contains('search-combo-input'))return;
+                        if(!e.target.closest('#subMenuActions'))return;
+                        const combo=e.target.closest('.search-combo');
+                        const list=combo&&combo.querySelector('.search-combo-list');
+                        if(!list||list._smFixed)return;
+                        list._smFixed=true;
+                        new MutationObserver(function(){
+                            if(list.classList.contains('open')){
+                                const r=combo.getBoundingClientRect();
+                                const spaceBelow=window.innerHeight-r.bottom-8;
+                                const spaceAbove=r.top-8;
+                                const openDown=spaceBelow>=100||spaceBelow>=spaceAbove;
+                                if(openDown){
+                                    Object.assign(list.style,{position:'fixed',top:(r.bottom+2)+'px',left:r.left+'px',width:r.width+'px',right:'auto',bottom:'auto',zIndex:'99999',maxHeight:Math.min(220,spaceBelow-4)+'px'});
+                                }else{
+                                    Object.assign(list.style,{position:'fixed',bottom:(window.innerHeight-r.top+2)+'px',left:r.left+'px',width:r.width+'px',right:'auto',top:'auto',zIndex:'99999',maxHeight:Math.min(220,spaceAbove-4)+'px'});
+                                }
+                            }else{
+                                list.style.cssText='';
+                            }
+                        }).observe(list,{attributes:true,attributeFilter:['class']});
+                    },true);
                 }
             });
         })();
@@ -16634,29 +16645,23 @@ PAGES.mapa=function(){
   const autoToggle='<label class="map-btn" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer;user-select:none" title="Auto-actualizar el mapa cada 5 minutos (sin mover la cámara)"><input type="checkbox" id="mapaAutoUpdate" '+(_autoOn?'checked':'')+' onchange="_mapaToggleAutoUpdate(this)" style="margin:0"><span style="font-size:12px">Auto</span></label>';
   const _panelMenuIcon='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
   _sfpDestroy();
+  ['sfpTabmapa','sfpPanelmapa','sfpOverlaymapa'].forEach(function(id){var el=document.getElementById(id);if(el)el.remove();});
   if(esDelivery){
     // Delivery: Ruta óptima + Turno + Zona en el submenú lateral
     const turnoBtn='<button class="btn '+(turnoActivo?'btn-danger':'btn-success')+'" onclick="_toggleTurno()">'+(turnoActivo?'⏹ Finalizar turno':'▶ Iniciar turno')+'</button>';
     $('tbActions').innerHTML=rutaBtn+turnoBtn+zonaSel+'<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
   } else if(esAdmin){
-    // Admin: zona + vendor + 4 pills (filtros). Resto en sfp.
-    $('tbActions').innerHTML=zonaSel+vendSel+'<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
-    _sfpInit({id:'mapa',titulo:'Opciones del mapa',buscarBtn:false,secciones:[
-      {tipo:'pills',label:'Deliveries',nombre:'dlvs',exclusivo:true,
-       items:[
-         {label:'Todos los pines',valor:'0',activo:!window._mapaShowDlvs},
-         {label:'Solo deliveries',valor:'1',activo:!!window._mapaShowDlvs}
-       ]},
-      {tipo:'divider'},
-      {tipo:'pills',label:'Auto-actualizar',nombre:'auto',exclusivo:true,
-       items:[
-         {label:'Activo',valor:'1',activo:window._mapaAutoUpdateEnabled!==false},
-         {label:'Pausado',valor:'0',activo:window._mapaAutoUpdateEnabled===false}
-       ]}
-    ],onCambio:function(s,sec,v){
-      if(sec==='dlvs'){window._mapaShowDlvs=(v==='1');_mapaCargar();}
-      if(sec==='auto'){window._mapaAutoUpdateEnabled=(v==='1');localStorage.setItem('mapa_auto',v);}
-    }});
+    // Admin: filtros en el submenú general (sin SFP Antigravity)
+    $('tbActions').innerHTML=
+      zonaSel+
+      '<hr class="sm-divider">'+
+      '<button class="map-btn'+(window._mapaShowDlvs?'':' active')+'" onclick="window._mapaShowDlvs=false;_mapaCargar()">Todos los pines</button>'+
+      '<button class="map-btn'+(window._mapaShowDlvs?' active':'')+'" onclick="window._mapaShowDlvs=true;_mapaCargar()">Solo deliveries</button>'+
+      '<hr class="sm-divider">'+
+      '<button class="map-btn'+(window._mapaAutoUpdateEnabled!==false?' active':'')+'" onclick="window._mapaAutoUpdateEnabled=true;localStorage.setItem(\'mapa_auto\',\'1\')">Auto Activo</button>'+
+      '<button class="map-btn'+(window._mapaAutoUpdateEnabled===false?' active':'')+'" onclick="window._mapaAutoUpdateEnabled=false;localStorage.setItem(\'mapa_auto\',\'0\')">Auto Pausado</button>'+
+      '<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>'+
+      vendSel;
   } else {
     // Vendor/Drop/Prov: 3 pills directamente (Pendiente/En Ruta/Entregado)
     $('tbActions').innerHTML='<div id="mapaContadores" style="display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center"></div>';
